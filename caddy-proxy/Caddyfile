@@ -1,0 +1,24 @@
+{
+    # Railway handles HTTPS
+    auto_https off
+    admin off
+}
+
+:80 {
+    # Dashboard app (everything under /app/)
+    handle /app/* {
+        uri strip_prefix /app
+        reverse_proxy {$DASHBOARD_HOST}:3000 {
+            header_up X-Forwarded-Proto https
+        }
+    }
+
+    # Everything else -> Ghost (private URL)
+    handle {
+        reverse_proxy http://{$GHOST_RAILWAY_PRIVATE_DOMAIN}:{$GHOST_PORT} {
+            header_up X-Forwarded-Proto https
+            # Preserve Ghost's expected host if needed
+            header_up Host defalt-ghost.up.railway.app
+        }
+    }
+}

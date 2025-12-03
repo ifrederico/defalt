@@ -1,0 +1,69 @@
+{{!--
+    Ghost Card Section - Displays full page content inline
+
+    Parameters:
+    - filter (required): NQL filter for pages (e.g., "tag:hash-ghost-card")
+
+    CONFIGURATION: Edit the CSS variables and classes below to customize
+--}}
+
+
+<style>
+/* Ghost Card Sections - Inline Styles */
+.gd-ghost-cards-section {
+    /* CONFIGURATION: Width control - Change this value to adjust section width
+       Options: 720px (narrow - matches content width),
+                1120px (default - matches article/post width),
+                1320px (wide - matches header/full container width) */
+    --section-width: 1120px;
+
+    /* CONFIGURATION: Heading size - Add a class to the h2 below
+       Options: heading-sm, heading-md (default), heading-lg, heading-xl */
+
+    /* Spacing configuration */
+    --section-padding-top: 64px;
+    --section-padding-bottom: 0px;
+
+    padding-top: var(--section-padding-top);
+    padding-bottom: var(--section-padding-bottom);
+}
+
+.gd-ghost-card-header .gh-article-title {
+    font-size: calc(clamp(3.4rem, 1.36vw + 2.85rem, 4.6rem) * var(--factor, 1));
+}
+
+.gd-ghost-cards-section .gh-inner {
+    max-width: var(--section-width);
+}
+
+.gd-ghost-cards-section:first-of-type {
+    --section-padding-top: max(4vw, 40px);
+}
+</style>
+
+{{#get "pages" filter=filter}}
+  {{#if pages}}
+    <section class="gd-ghost-cards-section gh-outer">
+      <div class="gh-inner">
+        <div class="gd-ghost-cards-inner">
+          {{#foreach pages}}
+            <article class="gh-article gd-ghost-card-article">
+              {{#match show_title_and_feature_image}}
+              <header class="gh-article-header gd-ghost-card-header">
+                <h2 class="gh-article-title is-title heading-md">{{title}}</h2>
+                {{#if custom_excerpt}}
+                  <p class="gh-article-excerpt is-body">{{custom_excerpt}}</p>
+                {{/if}}
+                {{> "feature-image"}}
+              </header>
+              {{/match}}
+              <div class="gh-content is-body gd-ghost-card-content">
+                {{content}}
+              </div>
+            </article>
+        {{/foreach}}
+        </div>
+      </div>
+    </section>
+  {{/if}}
+{{/get}}

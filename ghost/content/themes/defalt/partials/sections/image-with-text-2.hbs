@@ -1,0 +1,108 @@
+{{!--
+    Image with Text Section - Displays image alongside text content
+
+    Parameters:
+    - filter (required): NQL filter for pages (e.g., "tag:hash-image-with-text")
+
+    CONFIGURATION: Edit the CSS variables and classes below to customize
+--}}
+
+
+<style>
+/* Image with Text Section 2 - Inline Styles */
+.gd-image-text-section-2 {
+    /* CONFIGURATION: Layout control
+       Options: row (image left, text right),
+                row-reverse (image right, text left),
+                column (image top, text bottom) */
+    --layout-direction: row-reverse;
+
+    /* Width control */
+    --section-width: 1120px;
+
+    /* CONFIGURATION: Heading size - Add a class to the h2 below
+       Options: heading-sm, heading-md (default), heading-lg, heading-xl */
+
+    /* Spacing configuration */
+    --section-padding-top: 64px;
+    --section-padding-bottom: 0px;
+    --gap: 48px;
+
+    padding-top: var(--section-padding-top);
+    padding-bottom: var(--section-padding-bottom);
+}
+
+.gd-image-text-section-2 .gd-image-text-text-2 h2 {
+    font-size: calc(2.4rem * var(--factor, 1));
+}
+
+.gd-image-text-section-2 .gh-inner {
+    max-width: var(--section-width);
+}
+
+.gd-image-text-content-2 {
+    display: flex;
+    flex-direction: var(--layout-direction);
+    gap: var(--gap);
+    align-items: center;
+}
+
+.gd-image-text-image-2 {
+    flex: 1;
+}
+
+.gd-image-text-image-2 img {
+    width: 100%;
+    height: auto;
+    display: block;
+    border-radius: 8px;
+}
+
+.gd-image-text-text-2 {
+    flex: 1;
+}
+
+@media (max-width: 767px) {
+    .gd-image-text-content-2 {
+        flex-direction: column;
+    }
+}
+</style>
+
+{{#get "pages" filter=filter}}
+  {{#if pages}}
+    <section class="gd-image-text-section-2 gh-outer">
+      <div class="gh-inner">
+        {{#foreach pages}}
+          <div class="gd-image-text-content-2">
+            {{#if feature_image}}
+            <div class="gd-image-text-image-2">
+              <img
+                srcset="{{img_url feature_image size="s"}} 320w,
+                        {{img_url feature_image size="m"}} 600w,
+                        {{img_url feature_image size="l"}} 960w,
+                        {{img_url feature_image size="xl"}} 1200w,
+                        {{img_url feature_image size="xxl"}} 2000w"
+                sizes="(max-width: 767px) 100vw, (max-width: 1200px) 50vw, 560px"
+                src="{{img_url feature_image size="xl"}}"
+                alt="{{#if feature_image_alt}}{{feature_image_alt}}{{else}}{{title}}{{/if}}"
+              />
+            </div>
+            {{/if}}
+            <div class="gd-image-text-text-2">
+              {{#match show_title_and_feature_image}}
+              <h2 class="is-title heading-md">{{title}}</h2>
+              {{#if custom_excerpt}}
+                <p class="is-body">{{custom_excerpt}}</p>
+              {{/if}}
+              {{/match}}
+              <div class="gh-content is-body">
+                {{content}}
+              </div>
+            </div>
+          </div>
+        {{/foreach}}
+      </div>
+    </section>
+  {{/if}}
+{{/get}}

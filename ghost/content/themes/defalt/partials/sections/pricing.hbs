@@ -1,0 +1,71 @@
+{{!--
+    Pricing Section - 3-tier pricing cards for homepage
+    Tiers: Free, Plus, Lifetime
+    Styles: assets/css/util.css
+--}}
+
+<section class="gd-pricing-section gh-outer">
+    <div class="gh-inner">
+        <div class="gd-pricing-section-header">
+            <h2 class="is-title">Pricing</h2>
+            <p class="is-body">Start free, upgrade for premium sections and features.</p>
+        </div>
+
+        <div class="gd-pricing-grid">
+            {{!-- Free --}}
+            <div class="gd-pricing-card">
+                <div class="gd-pricing-header">
+                    <span class="gd-pricing-name">Free</span>
+                    <p class="gd-pricing-desc">For anyone using Source today</p>
+                </div>
+                <div class="gd-pricing-price">
+                    <span class="gd-price-amount">$0</span>
+                </div>
+                <ul class="gd-pricing-features">
+                    <li>Add an announcement bar to your header</li>
+                    <li>Edit and preview changes directly in Defalt</li>
+                    <li>Export your theme and upload to Ghost</li>
+                    <li>Growing library of free sections</li>
+                </ul>
+                <a href="/#/portal/signup/" class="gh-button gd-pricing-cta" data-portal="signup">Get Started</a>
+            </div>
+
+            {{!-- Plus --}}
+            <div class="gd-pricing-card">
+                <div class="gd-pricing-header">
+                    <span class="gd-pricing-name">Plus</span>
+                    <p class="gd-pricing-desc">For Source users who need more</p>
+                </div>
+                <div class="gd-pricing-price">
+                    <span class="gd-price-amount">$9</span>
+                    <span class="gd-price-period">/month</span>
+                </div>
+                <ul class="gd-pricing-features">
+                    <li>Growing premium section library</li>
+                    <li>Cloud backups</li>
+                    <li>Dedicated support</li>
+                </ul>
+                <a href="/#/portal/signup/" class="gh-button gd-pricing-cta" data-portal="signup">Get Plus</a>
+            </div>
+
+            {{!-- Lifetime --}}
+            <div class="gd-pricing-card">
+                <div class="gd-pricing-header">
+                    <span class="gd-pricing-name">Lifetime</span>
+                    <p class="gd-pricing-desc">Pay once, use forever</p>
+                </div>
+                <div class="gd-pricing-price">
+                    <span class="gd-price-amount">$69</span>
+                    <span class="gd-price-period">/once</span>
+                </div>
+                <ul class="gd-pricing-features">
+                    <li>Everything in Plus</li>
+                    <li>Lifetime access</li>
+                    <li>All future updates</li>
+                    <li>Priority support</li>
+                </ul>
+                <a href="/#/portal/support" class="gh-button gd-pricing-cta" data-portal="support">Get Lifetime</a>
+            </div>
+        </div>
+    </div>
+</section>

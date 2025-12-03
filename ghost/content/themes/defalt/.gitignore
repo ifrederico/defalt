@@ -1,0 +1,28 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+
+# IDE & Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Claude Code
+.claude/
+
+# Logs
+*.log
+yarn-error.log
+npm-debug.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Lock files (optional - uncomment if you want to ignore)
+# yarn.lock
+# package-lock.json

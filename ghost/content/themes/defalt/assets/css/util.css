@@ -1,0 +1,346 @@
+/* Util CSS - Custom overrides and utilities
+/* ---------------------------------------------------------- */
+
+/* Page template overrides - reduce bottom margin gap */
+body.page-pricing .gh-content > *:last-child:not(.kg-width-full),
+body.page-changelog .gh-content > *:last-child:not(.kg-width-full) {
+    margin-bottom: 2vw;
+}
+
+/* Global design tokens */
+:root {
+    --border-radius: 4px;
+    --image-border-radius: 2px;
+}
+
+/* Button override - Changed from 100px (pill-shaped) to subtle rounded corners */
+.gh-button {
+    border-radius: var(--border-radius);
+}
+
+.gh-form {
+    border-radius: var(--border-radius);
+}
+
+.gh-form-input {
+    border-radius: var(--border-radius);
+}
+
+/* Global image border radius */
+.gd-image-text-image img,
+.gd-image-text-image-2 img,
+.gh-card-image img,
+.gh-article-image img {
+    border-radius: var(--image-border-radius);
+}
+
+/* Heading size utilities - controls --factor variable for scalable headings */
+.heading-sm { --factor: 0.75; }
+.heading-md { --factor: 1; }    /* default */
+.heading-lg { --factor: 1.25; }
+.heading-xl { --factor: 1.5; }
+
+/* Changelog Section
+/* ---------------------------------------------------------- */
+.gd-changelog-section {
+    padding-top: 0;
+    padding-bottom: var(--container-gap);
+}
+
+.gd-changelog-section .gh-inner {
+    max-width: 720px;
+}
+
+.gd-changelog-entry {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0 16px;
+    margin-bottom: 48px;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.gd-changelog-entry:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+}
+
+.gd-changelog-entry .gh-content {
+    display: contents;
+}
+
+.gd-changelog-entry .gh-content h2:first-child {
+    font-size: 2.4rem;
+    margin: 0;
+    order: 1;
+}
+
+.gd-changelog-date {
+    font-size: 1.5rem;
+    color: var(--color-secondary-text);
+    order: 2;
+}
+
+.gd-changelog-entry .gh-content h3 {
+    width: 100%;
+    margin: 0 0 12px 0;
+    order: 3;
+}
+
+.gd-changelog-entry .gh-content ul {
+    width: 100%;
+    margin: 0 0 16px 0;
+    padding-left: 20px;
+    order: 4;
+}
+
+.gd-changelog-entry .gh-content li {
+    margin: 0 0 4px 0;
+}
+
+/* Pricing Section
+/* ---------------------------------------------------------- */
+.page-pricing .gh-article-header,
+.page-pricing .gh-article > .gh-content,
+.page-changelog .gh-article-header,
+.page-changelog .gh-article > .gh-content {
+    text-align: center;
+}
+
+.gd-pricing-section {
+    padding-bottom: 64px;
+}
+
+.gd-pricing-section .gh-inner {
+    max-width: 1120px;
+}
+
+/* Section header (title + subtitle) */
+.gd-pricing-section-header {
+    text-align: center;
+    margin-bottom: 3rem;
+}
+
+.gd-pricing-section-header h2 {
+    font-size: clamp(2rem, 3vw, 2.8rem);
+    margin: 0 0 0.5rem;
+}
+
+.gd-pricing-section-header p {
+    font-size: 1.8rem;
+    margin: 0;
+}
+
+/* Toggle */
+.gd-pricing-toggle {
+    display: flex;
+    justify-content: center;
+    gap: 0;
+    margin-bottom: 48px;
+    background: var(--color-lighter-gray);
+    border-radius: 100px;
+    padding: 4px;
+    width: fit-content;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.gd-toggle-btn {
+    padding: 8px 24px;
+    border: none;
+    background: transparent;
+    border-radius: 100px;
+    font-size: 1.5rem;
+    font-weight: 500;
+    cursor: pointer;
+    color: var(--color-secondary-text);
+    transition: all 0.2s ease;
+}
+
+.gd-toggle-btn.is-active {
+    background: #fff;
+    color: var(--color-darkgrey);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+/* Grid */
+.gd-pricing-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+}
+
+@media (max-width: 900px) {
+    .gd-pricing-grid {
+        grid-template-columns: 1fr;
+        max-width: 400px;
+        margin: 0 auto;
+    }
+}
+
+/* Card */
+.gd-pricing-card {
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    padding: 32px;
+    display: flex;
+    flex-direction: column;
+}
+
+.gd-pricing-header {
+    margin-bottom: 16px;
+}
+
+.gd-pricing-name {
+    font-size: 1.4rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    color: var(--color-darkgrey);
+}
+
+.gd-pricing-desc {
+    font-size: 1.5rem;
+    margin: 4px 0 0 0;
+}
+
+.gd-pricing-price {
+    margin-bottom: 24px;
+}
+
+.gd-price-amount {
+    font-size: 4.8rem;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.gd-price-period {
+    font-size: 1.6rem;
+}
+
+/* Features */
+.gd-pricing-features {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 32px 0;
+    flex-grow: 1;
+}
+
+.gd-pricing-features li {
+    position: relative;
+    padding-left: 28px;
+    margin-bottom: 12px;
+    font-size: 1.5rem;
+}
+
+.gd-pricing-features li::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 4px;
+    width: 16px;
+    height: 16px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'%3E%3C/polyline%3E%3C/svg%3E");
+    background-size: contain;
+    background-repeat: no-repeat;
+}
+
+/* CTA */
+.gd-pricing-cta {
+    display: block;
+    width: 100%;
+    padding: 12px 24px;
+    border-radius: 4px;
+    font-size: 1.5rem;
+    font-weight: 600;
+    text-align: center;
+    text-decoration: none;
+    background-color: var(--ghost-accent-color);
+    color: #fff;
+    margin-top: auto;
+}
+
+/* Toggle visibility - Default to lifetime */
+.gd-pricing-section .gd-monthly-price {
+    display: none;
+}
+
+.gd-pricing-section[data-plan="monthly"] .gd-monthly-price {
+    display: inline;
+}
+
+.gd-pricing-section[data-plan="monthly"] a.gd-monthly-price {
+    display: block;
+}
+
+.gd-pricing-section[data-plan="monthly"] .gd-lifetime-price {
+    display: none;
+}
+
+/* CTA Bar Section
+/* ---------------------------------------------------------- */
+
+.gd-cta-bar {
+    padding: 80px 0;
+}
+
+.gd-cta-bar-inner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 40px;
+    max-width: var(--container-width);
+    background-color: rgb(0 0 0 / 0.02);
+    border-radius: 16px;
+    padding: 80px 64px;
+}
+
+.gd-cta-bar-title {
+    font-size: clamp(3.2rem, 5vw, 4.9rem);
+    line-height: 1.15;
+    margin: 0;
+}
+
+.gd-cta-bar-subhead {
+    font-size: 1.8rem;
+    line-height: 1.5;
+    margin: -24px 0 0;
+    color: var(--color-secondary-text);
+}
+
+.gd-cta-bar .gh-form {
+    max-width: 480px;
+    width: 100%;
+}
+
+@media (max-width: 767px) {
+    .gd-cta-bar-inner {
+        padding: 40px 24px;
+    }
+}
+
+/* Footer Overrides
+/* ---------------------------------------------------------- */
+
+.gh-footer {
+    margin-top: 0;
+    padding-top: 40px;
+    padding-bottom: 60px;
+}
+
+
+.gh-footer-bar {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 0;
+    padding-block: 0;
+    border: none;
+    border-top: 1px solid var(--color-border);
+    padding-top: 40px;
+}
+
+.gh-footer-copyright {
+    text-align: center;
+}

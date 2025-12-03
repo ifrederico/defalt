@@ -1,0 +1,179 @@
+{{!-- defalt-hero-style-start --}}
+<style>
+.gd-hero-section {
+    --gd-hero-padding-top: 32px;
+    --gd-hero-padding-bottom: 32px;
+    --gd-hero-card-radius: 24px;
+    --gd-hero-background: #000000;
+    --gd-hero-text-color: #ffffff;
+    --gd-hero-inner-padding-top: 64px;
+    --gd-hero-inner-padding-bottom: 64px;
+    --gd-hero-button-color: #ffffff;
+    --gd-hero-button-text-color: #151515;
+    --gd-hero-button-radius: 3px;
+    padding-top: var(--gd-hero-padding-top);
+    padding-bottom: var(--gd-hero-padding-bottom);
+}
+
+.gd-hero-section.gd-hero-section-regular {
+    padding-left: var(--container-gap, clamp(24px, 1.7032rem + 1.9355vw, 48px));
+    padding-right: var(--container-gap, clamp(24px, 1.7032rem + 1.9355vw, 48px));
+}
+
+.gh-hero {
+    border-radius: var(--gd-hero-card-radius, 0px);
+    overflow: hidden;
+}
+
+.gd-hero-card {
+    background-color: var(--gd-hero-background);
+    color: var(--gd-hero-text-color);
+    padding-top: var(--gd-hero-inner-padding-top);
+    padding-bottom: var(--gd-hero-inner-padding-bottom);
+    padding-left: clamp(2.5rem, 6vw, 4em);
+    padding-right: clamp(2.5rem, 6vw, 4em);
+    display: flex;
+    justify-content: center;
+    border-radius: var(--gd-hero-card-radius);
+    overflow: hidden;
+}
+
+.gd-hero-content {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    align-items: center;
+    width: 100%;
+    margin: 0 auto;
+    text-align: center;
+}
+
+.gd-hero-content.gd-align-left {
+    align-items: flex-start;
+    text-align: left;
+}
+
+.gd-hero-content.gd-align-right {
+    align-items: flex-end;
+    text-align: right;
+}
+
+.gd-hero-content.gd-width-regular {
+    max-width: var(--container-width, 1120px);
+    padding-left: var(--container-gap, 32px);
+    padding-right: var(--container-gap, 32px);
+}
+
+.gd-hero-content.gd-width-full {
+    max-width: none;
+}
+
+.gd-hero-content.gd-width-full.gd-align-left {
+    margin-left: 0;
+    margin-right: auto;
+}
+
+.gd-hero-content.gd-width-full.gd-align-right {
+    margin-left: auto;
+    margin-right: 0;
+}
+
+.gd-hero-heading {
+    margin: 0;
+    font-family: var(--gh-font-heading, var(--font-sans));
+    font-size: calc(clamp(3rem, 1.82vw + 2.27rem, 4.6rem) * var(--factor, 1));
+    letter-spacing: -0.028em;
+    line-height: 1.1;
+    color: inherit;
+}
+
+.gd-hero-subheading {
+    margin: 12px 0 0;
+    max-width: 640px;
+    font-size: 1.8rem;
+    font-weight: 450;
+    line-height: 1.4;
+    letter-spacing: -0.014em;
+    color: inherit;
+}
+
+.gd-hero-placeholder {
+    opacity: 0.65;
+}
+
+.gd-hero-button.gd-hero-placeholder,
+.gd-hero-card .kg-button-card.gd-hero-placeholder,
+.gd-hero-card .kg-button-card .kg-btn.gd-hero-placeholder {
+    opacity: 0.7;
+}
+
+.gd-hero-content-placeholder .kg-button-card,
+.gd-hero-content-placeholder .kg-button-card .kg-btn {
+    opacity: 0.7;
+}
+
+.gd-hero-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 2.7em;
+    min-height: 46px;
+    padding: 0 1.2em;
+    border-radius: var(--gd-hero-button-radius);
+    font-size: 1.05em;
+    font-weight: 600;
+    line-height: 1em;
+    text-decoration: none;
+    letter-spacing: 0.2px;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    background-color: var(--gd-hero-button-color);
+    color: var(--gd-hero-button-text-color);
+    margin-top: 2em;
+}
+
+.gd-hero-button:hover {
+    opacity: 0.85;
+}
+
+.gd-hero-card .kg-button-card {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 2em;
+}
+
+.gd-hero-card .kg-button-card .kg-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 46px;
+    padding: 0 1.2em;
+    border-radius: var(--gd-hero-button-radius);
+    font-size: 1.05em;
+    font-weight: 600;
+    line-height: 1em;
+    letter-spacing: 0.2px;
+    text-decoration: none;
+    white-space: nowrap;
+    background-color: var(--gd-hero-button-color);
+    color: var(--gd-hero-button-text-color);
+}
+
+.gd-hero-card .kg-button-card .kg-btn:hover {
+    opacity: 0.85;
+}
+</style>
+{{!-- defalt-hero-style-end --}}
+
+<section class="gd-hero-section{{!-- defalt-hero-section-classes --}} gh-hero" data-section-id="hero-preview">
+    <div class="gd-hero-card">
+        <div class="gd-hero-content{{!-- defalt-hero-content-classes --}}">
+            {{!-- defalt-hero-content-start --}}
+            <h2 class="gd-hero-heading"><span style="white-space: pre-wrap;">Enter heading text</span></h2>
+            <p class="gd-hero-subheading"><span style="white-space: pre-wrap;">Enter subheading text</span></p>
+            <a href="#" class="gd-hero-button">Add button text</a>
+            {{!-- defalt-hero-content-end --}}
+        </div>
+    </div>
+</section>

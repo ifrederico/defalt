@@ -1,0 +1,268 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* Brand colors */
+  --defalt-primary: #111827;
+  --defalt-primary-hover: #1f2937;
+  --defalt-font-accent: #111827;
+  --defalt-font-background: #f3f4f6;
+  --defalt-highlight: #B91C1C;
+  --defalt-highlight-rgb: 185, 28, 28;
+  --defalt-font-stack: Inter, -apple-system, BlinkMacSystemFont, "avenir next", avenir, "helvetica neue", helvetica, ubuntu, roboto, noto, "segoe ui", arial, sans-serif;
+
+  /* Semantic text colors */
+  --color-foreground: #111827;       /* gray-900 - primary text */
+  --color-secondary: #4B5563;        /* gray-600 - secondary text */
+  --color-muted: #6B7280;            /* gray-500 - muted text */
+  --color-placeholder: #9CA3AF;      /* gray-400 - placeholder/disabled */
+
+  /* Semantic background colors */
+  --color-surface: #ffffff;          /* white - main surface */
+  --color-subtle: #F3F4F6;           /* gray-100 - subtle backgrounds */
+  --color-hover: #E5E7EB;            /* gray-200 - hover states */
+  --color-inverse: #111827;          /* gray-900 - dark backgrounds */
+  --color-inverse-subtle: #1F2937;   /* gray-800 - dark surface variant */
+
+  /* Semantic border colors */
+  --color-border: #E5E7EB;           /* gray-200 - default borders */
+  --color-border-strong: #D1D5DB;    /* gray-300 - emphasized borders */
+
+  /* Focus ring color */
+  --color-ring: #9CA3AF;             /* gray-400 - focus rings */
+
+  /* Status colors */
+  --color-error: #DC2626;            /* red-600 - errors */
+  --color-error-light: #FEF2F2;      /* red-50 - error backgrounds */
+  --color-error-border: #FECACA;     /* red-200 - error borders */
+  --color-success: #4dd831;          /* custom green - success */
+  --color-success-light: #F0FDF4;    /* green-50 - success backgrounds */
+  --color-success-border: #BBF7D0;   /* green-200 - success borders */
+  --color-warning: #EA580C;          /* orange-600 - warnings */
+  --color-warning-light: #FFF7ED;    /* orange-50 - warning backgrounds */
+  --color-info: #2563EB;             /* blue-600 - info */
+  --color-info-light: #EFF6FF;       /* blue-50 - info backgrounds */
+  --color-info-border: #BFDBFE;      /* blue-200 - info borders */
+
+  /* Legacy aliases (for gradual migration) */
+  --defalt-surface: var(--color-surface);
+  --defalt-contrast-strong: var(--color-foreground);
+  --defalt-contrast-strong-rgb: 17, 24, 39;
+}
+
+/* TODO: Dark mode - placeholder for future implementation
+@media (prefers-color-scheme: dark) {
+  :root {
+    --defalt-primary: #AC1E3E;
+    --defalt-font-accent: #F691A8;
+    --defalt-font-background: #4B1021;
+    --defalt-surface: #1B1013;
+    --defalt-contrast-strong: #F7FAFC;
+    --defalt-contrast-strong-rgb: 247, 250, 252;
+    --defalt-highlight: #F16B8B;
+    --defalt-highlight-rgb: 241, 107, 139;
+  }
+}
+*/
+
+html {
+  font-family: var(--defalt-font-stack);
+  font-size: 14px;
+  line-height: 21px;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+  font-family: var(--defalt-font-stack);
+  font-size: 14px;
+  line-height: 21px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+/* Custom Range Slider Styles */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+  cursor: pointer;
+}
+
+/* Track */
+input[type="range"]::-webkit-slider-runnable-track {
+  background: var(--defalt-contrast-strong);
+  height: 4px;
+  border-radius: 2px;
+}
+
+input[type="range"]::-moz-range-track {
+  background: var(--defalt-contrast-strong);
+  height: 4px;
+  border-radius: 2px;
+}
+
+/* Thumb */
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  margin-top: -6px;
+  background-color: var(--defalt-contrast-strong);
+  height: 16px;
+  width: 16px;
+  border-radius: 50%;
+}
+
+input[type="range"]::-moz-range-thumb {
+  border: none;
+  background-color: var(--defalt-contrast-strong);
+  height: 16px;
+  width: 16px;
+  border-radius: 50%;
+}
+
+@layer utilities {
+  .font-xl {
+    font-size: 20px;
+    line-height: 25px;
+    font-weight: 700;
+  }
+
+  .font-lg {
+    font-size: 17px;
+    line-height: 18px;
+    font-weight: 700;
+  }
+
+  .font-md {
+    font-size: 14px;
+    line-height: 21px;
+    font-weight: 400;
+  }
+
+  .font-md.font-bold {
+    font-weight: 700;
+  }
+
+
+  .font-sm {
+    font-size: 13px;
+    line-height: 20px;
+    font-weight: 400;
+  }
+
+  .font-sm.font-bold {
+    font-weight: 600;
+  }
+
+  .font-xs {
+    font-size: 12px;
+    line-height: 16.5px;
+    font-weight: 400;
+    letter-spacing: 0.1px;
+  }
+
+  .shadow-lg {
+    --tw-shadow: 0 0 7px rgba(0, 0, 0, 0.08), 0 2.1px 2.2px -5px rgba(0, 0, 0, 0.011), 0 5.1px 5.3px -5px rgba(0, 0, 0, 0.016), 0 9.5px 10px -5px rgba(0, 0, 0, 0.02), 0 17px 17.9px -5px rgba(0, 0, 0, 0.024), 0 31.8px 33.4px -5px rgba(0, 0, 0, 0.029), 0 76px 80px -5px rgba(0, 0, 0, 0.04);
+    --tw-shadow-colored: 0 0 7px var(--tw-shadow-color), 0 2.1px 2.2px -5px var(--tw-shadow-color), 0 5.1px 5.3px -5px var(--tw-shadow-color), 0 9.5px 10px -5px var(--tw-shadow-color), 0 17px 17.9px -5px var(--tw-shadow-color), 0 31.8px 33.4px -5px var(--tw-shadow-color), 0 76px 80px -5px var(--tw-shadow-color);
+    box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
+  }
+}
+
+/* Hide number input spinners */
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type="number"] {
+  -moz-appearance: textfield;
+}
+
+.focus-primary:focus {
+  border-color: var(--defalt-primary);
+  box-shadow: 0 0 0 3px rgba(223, 70, 105, 0.25);
+  outline: 0;
+}
+
+.preview-loading-bar {
+  width: 30%;
+  min-width: 120px;
+  background-image: linear-gradient(90deg, rgba(var(--defalt-contrast-strong-rgb), 0), rgba(var(--defalt-contrast-strong-rgb), 0.6), rgba(var(--defalt-contrast-strong-rgb), 0));
+  animation: preview-loading 1.2s ease-in-out infinite;
+}
+
+@keyframes preview-loading {
+  0% {
+    transform: translateX(-120%);
+  }
+  50% {
+    transform: translateX(-20%);
+  }
+  100% {
+    transform: translateX(150%);
+  }
+}
+
+/* Shadow utilities */
+.shadow-md-heavy {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12), 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+/* AlertDialog Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes fadeOut {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes contentShow {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -48%) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0) scale(1);
+  }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 150ms ease-out;
+}
+
+.animate-fadeOut {
+  animation: fadeOut 150ms ease-in;
+}
+
+.animate-contentShow {
+  animation: contentShow 200ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* DnD placeholder styling (Puck pattern) */
+[data-dnd-placeholder] {
+  background: var(--color-subtle) !important;
+  opacity: 0.5 !important;
+}
+
+[data-dnd-placeholder] * {
+  opacity: 0 !important;
+}
+

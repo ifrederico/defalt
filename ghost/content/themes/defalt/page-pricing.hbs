@@ -1,0 +1,92 @@
+{{!< default}}
+
+{{#post}}
+<main class="gh-main">
+    <article class="gh-article {{post_class}}">
+        {{#match @page.show_title_and_feature_image}}
+        <header class="gh-article-header gh-canvas">
+            <h1 class="gh-article-title is-title">{{title}}</h1>
+            {{#if custom_excerpt}}
+                <p class="gh-article-excerpt is-body">{{custom_excerpt}}</p>
+            {{/if}}
+            {{> "feature-image"}}
+        </header>
+        {{/match}}
+
+        <section class="gh-content gh-canvas is-body">
+            {{content}}
+        </section>
+
+    </article>
+
+    <section class="gd-pricing-section gh-outer">
+        <div class="gh-inner">
+            {{!-- Toggle --}}
+            <div class="gd-pricing-toggle">
+                <button class="gd-toggle-btn" data-plan="monthly">Monthly</button>
+                <button class="gd-toggle-btn is-active" data-plan="lifetime">Lifetime</button>
+            </div>
+
+            {{!-- Pricing Cards --}}
+            <div class="gd-pricing-grid">
+                {{!-- Free Tier --}}
+                <div class="gd-pricing-card">
+                    <div class="gd-pricing-header">
+                        <span class="gd-pricing-name">Free</span>
+                        <p class="gd-pricing-desc">For anyone using Source today</p>
+                    </div>
+                    <div class="gd-pricing-price">
+                        <span class="gd-price-amount">$0</span>
+                    </div>
+                    <ul class="gd-pricing-features">
+                        <li>Add an announcement bar to your header</li>
+                        <li>Edit and preview changes directly in Defalt</li>
+                        <li>Export your theme and upload to Ghost</li>
+                        <li>Growing library of free sections</li>
+                    </ul>
+                    <a href="/#/portal/signup/" class="gh-button gd-pricing-cta" data-portal="signup">Get Started</a>
+                </div>
+
+                {{!-- Plus Tier --}}
+                <div class="gd-pricing-card">
+                    <div class="gd-pricing-header">
+                        <span class="gd-pricing-name">Plus</span>
+                        <p class="gd-pricing-desc">For Source users who need more.</p>
+                    </div>
+                    <div class="gd-pricing-price">
+                        <span class="gd-price-amount gd-monthly-price">$9</span>
+                        <span class="gd-price-period gd-monthly-price">/month</span>
+                        <span class="gd-price-amount gd-lifetime-price">$69</span>
+                        <span class="gd-price-period gd-lifetime-price">/once</span>
+                    </div>
+                    <ul class="gd-pricing-features">
+                        <li>Growing premium section library</li>
+                        <li>Cloud backups</li>
+                        <li>Dedicated support</li>
+                    </ul>
+                    <a href="/#/portal/signup/" class="gh-button gd-pricing-cta gd-monthly-price" data-portal="signup">Get Plus</a>
+                    <a href="/#/portal/support" class="gh-button gd-pricing-cta gd-lifetime-price" data-portal="support">Get Plus</a>
+                </div>
+
+                {{!-- Custom Tier --}}
+                <div class="gd-pricing-card">
+                    <div class="gd-pricing-header">
+                        <span class="gd-pricing-name">Custom</span>
+                        <p class="gd-pricing-desc">For unique projects</p>
+                    </div>
+                    <div class="gd-pricing-price">
+                        <span class="gd-price-amount">$Custom</span>
+                    </div>
+                    <ul class="gd-pricing-features">
+                        <li>Build sections not available in Defalt</li>
+                        <li>Adjust styling or flow for your needs</li>
+                        <li>Direct communication throughout</li>
+                        <li>Faster delivery and personal support</li>
+                    </ul>
+                    <a href="mailto:support@defalt.org?subject=Custom" class="gh-button gd-pricing-cta">Contact Us</a>
+                </div>
+            </div>
+        </div>
+    </section>
+</main>
+{{/post}}

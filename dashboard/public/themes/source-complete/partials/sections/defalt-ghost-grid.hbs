@@ -1,0 +1,225 @@
+{{!-- defalt-ghost-grid-style-start --}}
+<style>
+.gh-outer {
+    padding: 0 max(4vmin, 20px);
+}
+
+.gd-ghost-cards-section {
+    background-color: var(--gd-ghost-cards-background, #ffffff);
+    color: var(--gd-ghost-cards-text, #151515);
+    --gd-ghost-grid-gap: 20px;
+}
+
+.gd-ghost-cards-inner {
+    --gd-ghost-cards-padding-top: 32px;
+    --gd-ghost-cards-padding-bottom: 32px;
+    --gd-ghost-cards-padding-left: 0px;
+    --gd-ghost-cards-padding-right: 0px;
+    padding-top: var(--gd-ghost-cards-padding-top);
+    padding-bottom: var(--gd-ghost-cards-padding-bottom);
+    padding-left: var(--gd-ghost-cards-padding-left);
+    padding-right: var(--gd-ghost-cards-padding-right);
+}
+
+.gd-ghost-grid-layout {
+    display: grid;
+    gap: clamp(20px, 3vw, 32px);
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+}
+
+.gd-ghost-cards-grid {
+    display: grid;
+    gap: clamp(20px, 3vw, 32px);
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+}
+
+.gd-ghost-grid-card {
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    border-radius: 18px;
+    padding: clamp(24px, 3vw, 32px);
+    background-color: #ffffff;
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+}
+
+[data-section-type="ghost-grid"] .gd-ghost-cards-grid {
+    gap: var(--gd-ghost-grid-gap, clamp(20px, 3vw, 32px));
+}
+
+[data-section-type="ghost-grid"].gd-ghost-grid-no-stack .gd-ghost-cards-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.gd-ghost-title-small .gh-article-header .gh-article-title {
+    font-family: var(--gh-font-heading, var(--font-sans));
+    font-size: calc(2.4rem * var(--factor, 1));
+    font-weight: 725;
+    letter-spacing: -0.015em;
+    line-height: 1.1;
+}
+
+.gd-ghost-title-normal .gh-article-header .gh-article-title {
+    font-family: var(--gh-font-heading, var(--font-sans));
+    font-size: calc(clamp(2.8rem, 1.36vw + 2.25rem, 4rem) * var(--factor, 1));
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    line-height: 1.1;
+}
+
+.gd-ghost-title-large .gh-article-header .gh-article-title {
+    font-family: var(--gh-font-heading, var(--font-sans));
+    font-size: calc(clamp(3rem, 1.82vw + 2.27rem, 4.6rem) * var(--factor, 1));
+    font-weight: 700;
+    letter-spacing: -0.028em;
+    line-height: 1.1;
+}
+
+.gd-ghost-placeholder-header {
+    margin-bottom: 24px;
+    opacity: 0.5;
+}
+
+.gd-ghost-placeholder-header .gh-article-title {
+    color: rgba(21, 21, 21, 0.55);
+}
+
+.gd-ghost-grid-placeholder {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: var(--gd-ghost-grid-gap, 20px);
+}
+
+[data-section-type="ghost-grid"].gd-ghost-grid-no-stack .gd-ghost-grid-placeholder {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.gd-ghost-grid-placeholder-column {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.gd-ghost-grid-placeholder-card {
+    border: 1px dashed rgba(107, 114, 128, 0.45);
+    border-radius: 10px;
+    background: #fafafa;
+    padding: 16px;
+    text-align: left;
+    color: #6b7280;
+}
+
+.gd-ghost-grid-placeholder-title {
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: #151515;
+}
+
+.gd-ghost-grid-placeholder-copy {
+    margin: 0;
+    line-height: 1.5;
+}
+
+.gd-ghost-grid-placeholder code {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 6px;
+    margin: 0 2px;
+    border-radius: 4px;
+    background-color: #ffffff;
+    border: 1px solid #e0e0e0;
+    font-size: 12px;
+    font-family: inherit;
+}
+</style>
+{{!-- defalt-ghost-grid-style-end --}}
+
+{{#get "pages" filter="tag:hash-cards-hide+tag:hash-ghost-grid-1,tag:hash-cards-hide+tag:hash-ghost-grid-2" limit="1"}}
+    {{#if pages}}
+        {{!-- Section intentionally hidden via #cards-hide --}}
+    {{else}}
+        {{#get "pages" filter="tag:hash-ghost-grid-1" limit="1" include="tags" as |leftPages|}}
+            {{#get "pages" filter="tag:hash-ghost-grid-2" limit="1" include="tags" as |rightPages|}}
+                <section class="gd-ghost-cards-section gh-outer{{!-- defalt-ghost-grid-section-classes --}}" data-section-type="ghost-grid">
+                    <div class="gh-inner">
+                        <div class="gd-ghost-cards-inner">
+                        {{#if leftPages.[0]}}
+                            <div class="gd-ghost-cards-grid">
+                                {{#foreach leftPages}}
+                                    <article class="gh-article gd-ghost-card">
+                                        <header class="gh-defalt-article-header">
+                                            <h1 class="gh-article-title is-title">{{title}}</h1>
+                                            {{#if custom_excerpt}}
+                                                <p class="gh-article-excerpt is-body">{{custom_excerpt}}</p>
+                                            {{/if}}
+                                        </header>
+                                        <div class="gh-content is-body">
+                                            {{{html}}}
+                                        </div>
+                                    </article>
+                                {{/foreach}}
+                                {{#if rightPages.[0]}}
+                                    {{#foreach rightPages}}
+                                        <article class="gh-article gd-ghost-card">
+                                            <header class="gh-defalt-article-header">
+                                                <h1 class="gh-article-title is-title">{{title}}</h1>
+                                                {{#if custom_excerpt}}
+                                                    <p class="gh-article-excerpt is-body">{{custom_excerpt}}</p>
+                                                {{/if}}
+                                            </header>
+                                            <div class="gh-content is-body">
+                                                {{{html}}}
+                                            </div>
+                                        </article>
+                                    {{/foreach}}
+                                {{/if}}
+                            </div>
+                        {{else}}
+                            {{#if rightPages.[0]}}
+                                <div class="gd-ghost-cards-grid">
+                                    {{#foreach rightPages}}
+                                        <article class="gh-article gd-ghost-card">
+                                            <header class="gh-defalt-article-header">
+                                                <h1 class="gh-article-title is-title">{{title}}</h1>
+                                                {{#if custom_excerpt}}
+                                                    <p class="gh-article-excerpt is-body">{{custom_excerpt}}</p>
+                                                {{/if}}
+                                            </header>
+                                            <div class="gh-content is-body">
+                                                {{{html}}}
+                                            </div>
+                                        </article>
+                                    {{/foreach}}
+                                </div>
+                            {{else}}
+                                <div class="gd-ghost-grid-placeholder" role="status" aria-live="polite">
+                                    <div class="gd-ghost-grid-placeholder-column">
+                                        <header class="gd-ghost-placeholder-header">
+                                            <h1 class="gh-article-title is-title">Page title</h1>
+                                        </header>
+                                        <div class="gd-ghost-grid-placeholder-card">
+                                            <p class="gd-ghost-grid-placeholder-title">Left column</p>
+                                            <p class="gd-ghost-grid-placeholder-copy">
+                                                Highlight a published page tagged <code>#ghost-grid-1</code>.
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <div class="gd-ghost-grid-placeholder-column">
+                                        <header class="gd-ghost-placeholder-header">
+                                            <h1 class="gh-article-title is-title">Page title</h1>
+                                        </header>
+                                        <div class="gd-ghost-grid-placeholder-card">
+                                            <p class="gd-ghost-grid-placeholder-title">Right column</p>
+                                            <p class="gd-ghost-grid-placeholder-copy">
+                                                Highlight a published page tagged <code>#ghost-grid-2</code>.
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            {{/if}}
+                        {{/if}}
+                        </div>
+                    </div>
+                </section>
+            {{/get}}
+        {{/get}}
+    {{/if}}
+{{/get}}

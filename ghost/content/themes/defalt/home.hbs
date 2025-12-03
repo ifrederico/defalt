@@ -1,0 +1,28 @@
+{{!< default}}
+{{!-- The tag above means: insert everything in this file into the body of the default.hbs template --}}
+
+{{> "components/header" headerStyle=@custom.header_style}}
+
+{{!-- Hero Split Section --}}
+{{> "sections/hero-split" filter="tag:hash-hero-split"}}
+
+{{#match @custom.header_style "!=" "Highlight"}}
+    {{> "components/featured" showFeatured=@custom.show_featured_posts limit=4}}
+{{/match}}
+
+{{> "components/cta"}}
+
+{{!-- Ghost Card Section --}}
+{{> "sections/ghost-card" filter="tag:hash-ghost-card"}}
+{{> "sections/text-block" filter="tag:hash-text-block"}}
+
+{{!-- Pricing Section --}}
+{{> "sections/pricing"}}
+
+{{> "sections/ghost-card" filter="tag:hash-ghost-card-2"}}
+
+{{!-- Image with Text Section --}}
+{{> "sections/image-with-text" filter="tag:hash-image-with-text"}}
+{{> "sections/image-with-text-2" filter="tag:hash-image-with-text-2"}}
+
+{{> "components/post-list" feed="home" postFeedStyle=@custom.post_feed_style showTitle=true showSidebar=@custom.show_publication_info_sidebar}}

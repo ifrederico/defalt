@@ -1,0 +1,29 @@
+{{!--
+    Changelog Section - Displays version entries in chronological order
+
+    Parameters:
+    - filter (required): NQL filter for pages (e.g., "tag:hash-changelog")
+
+    Usage in Ghost Admin:
+    - Create pages with tag #changelog
+    - Title = "changelog_030" (for admin organization, not displayed)
+    - Published date = release date
+    - Content = H2 version, H3 "New"/"Fixed", bullet lists
+--}}
+
+{{#get "pages" filter=filter order="published_at DESC"}}
+  {{#if pages}}
+    <section class="gd-changelog-section gh-outer">
+      <div class="gh-inner">
+        {{#foreach pages}}
+          <div class="gd-changelog-entry">
+            <div class="gh-content is-body">
+              {{content}}
+            </div>
+            <time class="gd-changelog-date" datetime="{{date format="YYYY-MM-DD"}}">{{date format="MMM D, YYYY"}}</time>
+          </div>
+        {{/foreach}}
+      </div>
+    </section>
+  {{/if}}
+{{/get}}

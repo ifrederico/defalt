@@ -1,0 +1,25 @@
+{{#if @site.members_enabled}}
+    {{#unless @member}}
+        <section class="gd-cta-bar gh-outer">
+            <div class="gd-cta-bar-inner gh-inner">
+                <h2 class="gd-cta-bar-title is-title">
+                    {{#if @custom.signup_heading}}{{@custom.signup_heading}}{{else}}{{@site.title}}{{/if}}
+                </h2>
+                <p class="gd-cta-bar-subhead is-body">
+                    {{#if @custom.signup_subheading}}{{@custom.signup_subheading}}{{else}}{{@site.description}}{{/if}}
+                </p>
+                {{> "email-subscription" email_field_id="cta-bar-email"}}
+            </div>
+        </section>
+    {{/unless}}
+{{/if}}
+
+<footer class="gh-footer gh-outer">
+    <div class="gh-footer-inner gh-inner">
+        <div class="gh-footer-bar">
+            <div class="gh-footer-copyright">
+                &copy; {{date format="YYYY"}} {{@site.title}}. All rights reserved.
+            </div>
+        </div>
+    </div>
+</footer>

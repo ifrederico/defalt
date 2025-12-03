@@ -1,0 +1,17 @@
+{{!< default}}
+{{!-- The tag above means: insert everything in this file into the body of the default.hbs template --}}
+
+{{!-- defalt-subscribe-start --}}
+{{> "components/header" headerStyle=@custom.header_style}}
+{{!-- defalt-subscribe-end --}}
+
+{{#match @custom.header_style "!=" "Highlight"}}
+    {{> "components/featured" showFeatured=@custom.show_featured_posts limit=4}}
+{{/match}}
+
+{{> "components/cta"}}
+
+
+{{!-- defalt-main-start --}}
+{{> "components/post-list" feed="home" postFeedStyle=@custom.post_feed_style showTitle=true showSidebar=@custom.show_publication_info_sidebar}}
+{{!-- defalt-main-end --}}

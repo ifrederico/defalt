@@ -1,0 +1,186 @@
+{{!-- defalt-image-with-text-style-start --}}
+<style>
+.gd-image-text-section {
+    --gd-image-text-padding-top: 32px;
+    --gd-image-text-padding-bottom: 32px;
+    --gd-image-text-padding-left: 0px;
+    --gd-image-text-padding-right: 0px;
+    --gd-image-text-background: #ffffff;
+    --gd-image-text-text-color: #151515;
+    --gd-image-text-image-radius: 0px;
+    --gd-image-text-button-color: #151515;
+    --gd-image-text-button-text-color: #ffffff;
+    --gd-image-text-button-radius: 3px;
+    background-color: var(--gd-image-text-background);
+    color: var(--gd-image-text-text-color);
+    padding-top: var(--gd-image-text-padding-top);
+    padding-bottom: var(--gd-image-text-padding-bottom);
+    padding-left: var(--gd-image-text-padding-left);
+    padding-right: var(--gd-image-text-padding-right);
+}
+
+.gd-image-text-container {
+    max-width: var(--container-width, 1120px);
+    margin: 0 auto;
+    padding-left: var(--container-gap, clamp(24px, 1.7032rem + 1.9355vw, 48px));
+    padding-right: var(--container-gap, clamp(24px, 1.7032rem + 1.9355vw, 48px));
+}
+
+.gd-image-text-content {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 64px;
+    align-items: center;
+}
+
+.gd-image-text-content.gd-image-text-image-right .gd-image-text-image {
+    order: 2;
+}
+
+.gd-image-text-content.gd-image-text-image-right .gd-image-text-text {
+    order: 1;
+}
+
+.gd-image-text-content.gd-image-text-no-image {
+    grid-template-columns: 1fr;
+}
+
+@media (max-width: 767px) {
+    .gd-image-text-content {
+        grid-template-columns: 1fr;
+        gap: 32px;
+    }
+}
+
+.gd-image-text-image {
+    width: 100%;
+    aspect-ratio: 4/3;
+    border-radius: var(--gd-image-text-image-radius);
+    overflow: hidden;
+    background-color: rgba(0, 0, 0, 0.05);
+}
+
+.gd-image-text-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.gd-image-text-text {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.gd-image-text-heading {
+    margin: 0;
+    font-family: var(--gh-font-heading, var(--font-sans));
+    font-size: calc(clamp(2.8rem, 1.36vw + 2.25rem, 4rem) * var(--factor, 1));
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    line-height: 1.1;
+    color: inherit;
+}
+
+.gd-image-text-description {
+    margin: 0;
+    font-size: 1.6rem;
+    line-height: 1.6;
+    letter-spacing: -0.014em;
+    color: inherit;
+    opacity: 0.9;
+}
+
+.gd-image-text-buttons {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.gd-image-text-buttons > :not(.kg-button-card) {
+    display: none !important;
+}
+
+.gd-image-text-buttons .kg-button-card {
+    margin: 0;
+    display: inline-flex;
+}
+
+.gd-image-text-buttons .kg-button-card .kg-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 46px;
+    padding: 0 1.2em;
+    border-radius: var(--gd-image-text-button-radius);
+    font-size: 1.05em;
+    font-weight: 600;
+    line-height: 1em;
+    letter-spacing: 0.2px;
+    text-decoration: none;
+    white-space: nowrap;
+    background-color: var(--gd-image-text-button-color);
+    color: var(--gd-image-text-button-text-color);
+}
+
+.gd-image-text-buttons .kg-button-card .kg-btn:hover {
+    opacity: 0.85;
+}
+
+.gd-image-text-align-left .gd-image-text-text {
+    text-align: left;
+    align-items: flex-start;
+}
+
+.gd-image-text-align-center .gd-image-text-text {
+    text-align: center;
+    align-items: center;
+}
+
+.gd-image-text-align-right .gd-image-text-text {
+    text-align: right;
+    align-items: flex-end;
+}
+
+.gd-image-text-hide-heading .gd-image-text-heading {
+    display: none;
+}
+</style>
+{{!-- defalt-image-with-text-style-end --}}
+
+{{#get "pages" filter="tag:hash-image-with-text" limit="1" include="tags,authors"}}
+    {{#if pages}}
+        {{#foreach pages}}
+            <section class="gd-image-text-section{{!-- defalt-image-with-text-section-classes --}}" data-section-id="image-with-text" data-page-id="{{id}}">
+                <div class="gd-image-text-container">
+                    {{!-- defalt-image-with-text-content-start --}}
+                    <div class="gd-image-text-content{{#unless feature_image}} gd-image-text-no-image{{/unless}}{{!-- defalt-image-with-text-content-classes --}}">
+                        {{#if feature_image}}
+                            <div class="gd-image-text-image">
+                                <img src="{{img_url feature_image size="xl"}}" alt="{{#if feature_image_alt}}{{feature_image_alt}}{{else}}{{title}}{{/if}}">
+                            </div>
+                        {{/if}}
+                        <div class="gd-image-text-text">
+                            <h2 class="gd-image-text-heading">{{title}}</h2>
+                            {{#if custom_excerpt}}
+                                <p class="gd-image-text-description">{{custom_excerpt}}</p>
+                            {{else}}
+                                {{#if excerpt}}
+                                    <p class="gd-image-text-description">{{excerpt}}</p>
+                                {{/if}}
+                            {{/if}}
+                            {{#if html}}
+                                <div class="gd-image-text-buttons">
+                                    {{{html}}}
+                                </div>
+                            {{/if}}
+                        </div>
+                    </div>
+                    {{!-- defalt-image-with-text-content-end --}}
+                </div>
+            </section>
+        {{/foreach}}
+    {{/if}}
+{{/get}}

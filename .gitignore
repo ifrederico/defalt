@@ -1,0 +1,34 @@
+node_modules/
+dashboard/node_modules/
+ghost/node_modules/
+
+# Environment files (never commit secrets)
+.env
+.env.local
+.env.production
+dashboard/.env
+ghost/.env
+
+# Build outputs
+dist/
+dashboard/dist/
+.vite/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Claude Code local config
+.claude/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Theme export workspace (temp files)
+.theme-export-workspace/
