@@ -557,3 +557,8 @@ body.page-changelog .gh-content > *:last-child:not(.kg-width-full) {
 [data-theme="dark"] .hero-ctas .kg-btn-accent:hover {
     background-color: #e8e8e8;
 }
+
+[data-theme="dark"] .gd-toggle-btn.is-active {
+    background: #fff;
+    color: #15171a;
+}
