@@ -808,7 +808,7 @@
     }
 
     .gd-play-main {
-        height: 320px;
+        height: auto;
     }
 
     .gd-play-page-cards {
@@ -1356,6 +1356,19 @@
     // Viewport switching (mobile/desktop)
     var viewportBtns = document.querySelectorAll('.gd-play-viewport-btn');
     var previewFrame = document.querySelector('.gd-play-preview-frame');
+
+    // Auto-detect user's device and set initial viewport
+    var isMobileDevice = window.matchMedia('(max-width: 768px)').matches;
+    if (isMobileDevice && previewFrame) {
+        previewFrame.classList.add('is-mobile');
+        viewportBtns.forEach(function(b) {
+            if (b.getAttribute('data-viewport') === 'mobile') {
+                b.classList.add('is-active');
+            } else {
+                b.classList.remove('is-active');
+            }
+        });
+    }
 
     viewportBtns.forEach(function(btn) {
         btn.addEventListener('click', function() {
