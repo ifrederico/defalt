@@ -26,9 +26,22 @@
         :root {
             --background-color: {{@custom.site_background_color}}
         }
+        [data-theme="dark"] {
+            --background-color: #15171a;
+        }
     </style>
 
     <script>
+        /* Dark mode initialization - runs early to prevent flash */
+        (function() {
+            var theme = localStorage.getItem('theme');
+            if (theme === 'dark' || (theme === null && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                document.documentElement.setAttribute('data-theme', 'dark');
+            } else {
+                document.documentElement.setAttribute('data-theme', 'light');
+            }
+        })();
+
         /* The script for calculating the color contrast has been taken from
         https://gomakethings.com/dynamically-changing-the-text-color-based-on-background-color-contrast-with-vanilla-js/ */
         var accentColor = getComputedStyle(document.documentElement).getPropertyValue('--background-color');
@@ -44,7 +57,9 @@
         var yiq = ((r * 299) + (g * 587) + (b * 114)) / 1000;
         var textColor = (yiq >= 128) ? 'dark' : 'light';
 
-        document.documentElement.className = `has-${textColor}-text`;
+        if (document.documentElement.getAttribute('data-theme') !== 'dark') {
+            document.documentElement.classList.add(`has-${textColor}-text`);
+        }
     </script>
 
     {{!-- This tag outputs all your advanced SEO meta, structured data, and other important settings, it should always be the last tag before the closing head tag --}}
@@ -70,6 +85,15 @@
 {{!-- Scripts - handle responsive videos, infinite scroll, and navigation dropdowns --}}
 <script src="{{asset "built/source.js"}}"></script>
 <script src="{{asset "custom/utils.js"}}"></script>
+
+<script>
+    function toggleDarkMode() {
+        var currentTheme = document.documentElement.getAttribute('data-theme');
+        var newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+        document.documentElement.setAttribute('data-theme', newTheme);
+        localStorage.setItem('theme', newTheme);
+    }
+</script>
 
 {{!-- Ghost outputs required functional scripts with this tag, it should always be the last thing before the closing body tag --}}
 {{ghost_foot}}
