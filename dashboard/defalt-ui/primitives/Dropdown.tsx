@@ -1,4 +1,4 @@
-import { useMemo, useEffect, useRef, useState } from 'react'
+import { useMemo, useState } from 'react'
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu'
 import { ChevronDown, Check } from 'lucide-react'
 
@@ -20,13 +20,13 @@ export type DropdownProps<TValue> = {
 }
 
 const DEFAULT_TRIGGER_CLASSES =
-  'flex items-center justify-start gap-1.5 px-3 py-2 rounded-md w-[160px] bg-subtle hover:bg-subtle/80 transition-colors focus:outline-none focus-visible:outline-none'
+  'flex items-center justify-start gap-1.5 px-3 py-2 rounded-md w-[160px] bg-subtle hover:bg-subtle/80 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ring-offset-surface'
 
 const DEFAULT_CONTENT_CLASSES =
   'bg-surface rounded-md shadow-lg overflow-hidden min-w-[160px] space-y-0.5 z-[100]'
 
 const DEFAULT_ITEM_CLASSES =
-  'px-3 py-2 rounded outline-none cursor-pointer flex items-center gap-2 transition-colors hover:bg-subtle text-foreground'
+  'px-3 py-2 rounded cursor-pointer flex items-center gap-2 transition-colors hover:bg-subtle text-foreground outline-none data-[highlighted]:bg-subtle'
 
 export function Dropdown<TValue>({
   selected,
@@ -51,33 +51,7 @@ export function Dropdown<TValue>({
     disabled ? ' cursor-not-allowed opacity-60' : ''
   }`
 
-  // Track last input type to decide focus behavior
-  const lastInputWasKeyboardRef = useRef(false)
-  useEffect(() => {
-    const handleKey = () => { lastInputWasKeyboardRef.current = true }
-    const handlePointer = () => { lastInputWasKeyboardRef.current = false }
-    window.addEventListener('keydown', handleKey, { passive: true })
-    window.addEventListener('mousedown', handlePointer, { passive: true })
-    window.addEventListener('pointerdown', handlePointer, { passive: true })
-    return () => {
-      window.removeEventListener('keydown', handleKey)
-      window.removeEventListener('mousedown', handlePointer)
-      window.removeEventListener('pointerdown', handlePointer)
-    }
-  }, [])
-
   const [open, setOpen] = useState(false)
-
-  useEffect(() => {
-    if (open && !lastInputWasKeyboardRef.current) {
-      requestAnimationFrame(() => {
-        const active = document.activeElement as HTMLElement | null
-        if (active && active.blur) {
-          active.blur()
-        }
-      })
-    }
-  }, [open])
 
   return (
     <DropdownMenu.Root open={open} onOpenChange={setOpen}>
@@ -98,6 +72,7 @@ export function Dropdown<TValue>({
           <DropdownMenu.Content
             className={contentClassName ?? DEFAULT_CONTENT_CLASSES}
             sideOffset={1}
+            onCloseAutoFocus={(e) => e.preventDefault()}
           >
           {items.map((item) => (
             <DropdownMenu.Item

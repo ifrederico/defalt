@@ -273,7 +273,7 @@ export function AppContent() {
                 />
 
                 <main className={`${sidebarExpanded ? 'hidden' : 'flex-1'} bg-subtle overflow-hidden`}>
-                    <div className="h-full p-4 overflow-auto">
+                    <div className={`h-full p-4 ${zoomScale === 1 ? 'overflow-auto' : 'overflow-hidden'}`}>
                         <div
                             className="relative bg-surface rounded shadow-sm overflow-auto mx-auto transition-[max-width] duration-300"
                             style={{

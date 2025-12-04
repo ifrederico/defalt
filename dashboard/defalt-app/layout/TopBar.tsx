@@ -91,9 +91,9 @@ export function TopBar({ canDownload = true, onClearCache }: TopBarProps) {
               label: pageLabels[page],
             }))}
             onSelect={setCurrentPage}
-            triggerClassName="flex h-[38px] w-full items-center justify-between gap-1.5 rounded-md bg-subtle px-3 text-md text-foreground transition-colors hover:bg-subtle/80 focus:outline-none focus-visible:outline-none"
+            triggerClassName="flex h-[38px] w-full items-center justify-between gap-1.5 rounded-md bg-subtle px-3 text-md text-foreground transition-colors hover:bg-subtle/80 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ring-offset-surface"
             contentClassName="bg-surface rounded-md shadow-lg overflow-hidden min-w-[180px] z-[100]"
-            itemClassName="flex items-center gap-2 px-3 py-2 text-md text-foreground transition-colors hover:bg-subtle"
+            itemClassName="flex items-center gap-2 px-3 py-2 text-md text-foreground transition-colors hover:bg-subtle outline-none data-[highlighted]:bg-subtle"
           />
         </div>
 
@@ -112,9 +112,9 @@ export function TopBar({ canDownload = true, onClearCache }: TopBarProps) {
                   const index = availablePosts.findIndex((p) => p.id === id)
                   if (index !== -1) setSelectedPostIndex(index)
                 }}
-                triggerClassName="flex h-[38px] w-full items-center justify-between gap-1.5 rounded-md bg-subtle px-3 text-md text-foreground transition-colors hover:bg-subtle/80 focus:outline-none focus-visible:outline-none"
+                triggerClassName="flex h-[38px] w-full items-center justify-between gap-1.5 rounded-md bg-subtle px-3 text-md text-foreground transition-colors hover:bg-subtle/80 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ring-offset-surface"
                 contentClassName="bg-surface rounded-md shadow-lg overflow-hidden min-w-[180px] max-h-[300px] overflow-y-auto z-[100]"
-                itemClassName="flex items-center gap-2 px-3 py-2 text-md text-foreground transition-colors hover:bg-subtle"
+                itemClassName="flex items-center gap-2 px-3 py-2 text-md text-foreground transition-colors hover:bg-subtle outline-none data-[highlighted]:bg-subtle"
               />
             </div>
           </>
@@ -134,9 +134,9 @@ export function TopBar({ canDownload = true, onClearCache }: TopBarProps) {
                   const index = availablePages.findIndex((p) => p.id === id)
                   if (index !== -1) setSelectedPageIndex(index)
                 }}
-                triggerClassName="flex h-[38px] w-full items-center justify-between gap-1.5 rounded-md bg-subtle px-3 text-md text-foreground transition-colors hover:bg-subtle/80 focus:outline-none focus-visible:outline-none"
+                triggerClassName="flex h-[38px] w-full items-center justify-between gap-1.5 rounded-md bg-subtle px-3 text-md text-foreground transition-colors hover:bg-subtle/80 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ring-offset-surface"
                 contentClassName="bg-surface rounded-md shadow-lg overflow-hidden min-w-[180px] max-h-[300px] overflow-y-auto z-[100]"
-                itemClassName="flex items-center gap-2 px-3 py-2 text-md text-foreground transition-colors hover:bg-subtle"
+                itemClassName="flex items-center gap-2 px-3 py-2 text-md text-foreground transition-colors hover:bg-subtle outline-none data-[highlighted]:bg-subtle"
               />
             </div>
           </>
@@ -196,38 +196,19 @@ export function TopBar({ canDownload = true, onClearCache }: TopBarProps) {
 
         <div className="hidden md:block w-px h-6 bg-hover" />
 
-        <DropdownMenu.Root>
-          <DropdownMenu.Trigger asChild>
-            <button
-              type="button"
-              className="hidden md:block w-14 py-1.5 px-2 rounded bg-subtle text-muted hover:text-foreground transition-colors font-sm tabular-nums text-center"
-              title="Preview zoom"
-            >
-              {previewZoom}%
-            </button>
-          </DropdownMenu.Trigger>
-          <DropdownMenu.Portal>
-            <DropdownMenu.Content
-              className="bg-surface rounded-md shadow-lg border border-border p-1 min-w-[80px] z-[100] space-y-px"
-              sideOffset={4}
-              align="center"
-            >
-              {zoomOptions.map((zoom) => (
-                <DropdownMenu.Item
-                  key={zoom}
-                  onSelect={() => setPreviewZoom(zoom)}
-                  className={`h-8 px-3 rounded-md outline-none flex items-center justify-end font-md cursor-pointer tabular-nums ${
-                    zoom === previewZoom
-                      ? 'bg-subtle text-foreground'
-                      : 'text-muted hover:bg-subtle hover:text-foreground'
-                  }`}
-                >
-                  {zoom}%
-                </DropdownMenu.Item>
-              ))}
-            </DropdownMenu.Content>
-          </DropdownMenu.Portal>
-        </DropdownMenu.Root>
+        <div className="hidden md:block relative w-[80px]">
+          <Dropdown
+            selected={previewZoom}
+            items={zoomOptions.map((zoom) => ({
+              value: zoom,
+              label: `${zoom}%`,
+            }))}
+            onSelect={setPreviewZoom}
+            triggerClassName="flex h-[30px] w-full items-center justify-center gap-1.5 rounded-md bg-subtle px-3 text-md text-foreground transition-colors hover:bg-subtle/80 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ring-offset-surface tabular-nums"
+            contentClassName="bg-surface rounded-md shadow-lg overflow-hidden min-w-[80px] z-[100]"
+            itemClassName="flex items-center justify-end gap-2 px-3 py-2 text-md text-foreground transition-colors hover:bg-subtle outline-none data-[highlighted]:bg-subtle tabular-nums"
+          />
+        </div>
       </div>
 
       {/* Right Section - Actions */}
@@ -255,7 +236,7 @@ export function TopBar({ canDownload = true, onClearCache }: TopBarProps) {
                   event.preventDefault()
                   handleRestore()
                 }}
-                className="h-9 px-2 rounded-md outline-none flex items-center gap-2 font-md text-foreground hover:bg-subtle cursor-pointer"
+                className="h-9 px-2 rounded-md outline-none flex items-center gap-2 font-md text-foreground hover:bg-subtle data-[highlighted]:bg-subtle cursor-pointer"
               >
                 <UploadCloud size={16} strokeWidth={1.5} />
                 <span>Upload config</span>
@@ -266,7 +247,7 @@ export function TopBar({ canDownload = true, onClearCache }: TopBarProps) {
                   event.preventDefault()
                   handleBackup()
                 }}
-                className="h-9 px-2 rounded-md outline-none flex items-center gap-2 font-md text-foreground hover:bg-subtle cursor-pointer"
+                className="h-9 px-2 rounded-md outline-none flex items-center gap-2 font-md text-foreground hover:bg-subtle data-[highlighted]:bg-subtle cursor-pointer"
               >
                 <Archive size={16} strokeWidth={1.5} />
                 <span>Download config</span>
@@ -277,7 +258,7 @@ export function TopBar({ canDownload = true, onClearCache }: TopBarProps) {
                   <DropdownMenu.Separator className="h-px bg-subtle my-1" />
                   <DropdownMenu.Item
                     onSelect={onClearCache}
-                    className="h-9 px-2 rounded-md outline-none flex items-center gap-2 font-md text-warning hover:bg-warning-light cursor-pointer"
+                    className="h-9 px-2 rounded-md outline-none flex items-center gap-2 font-md text-warning hover:bg-warning-light data-[highlighted]:bg-warning-light cursor-pointer"
                   >
                     <Trash2 size={16} strokeWidth={1.5} />
                     <span>Clear cache & reload</span>
@@ -289,7 +270,7 @@ export function TopBar({ canDownload = true, onClearCache }: TopBarProps) {
                 <DropdownMenu.Separator className="h-px bg-subtle my-1" />
                 <DropdownMenu.Item
                   onSelect={openResetDialog}
-                  className="h-9 px-2 rounded-md outline-none flex items-center gap-2 font-md text-error hover:bg-error-light cursor-pointer"
+                  className="h-9 px-2 rounded-md outline-none flex items-center gap-2 font-md text-error hover:bg-error-light data-[highlighted]:bg-error-light cursor-pointer"
                 >
                   <RotateCcw size={16} strokeWidth={1.5} />
                   <span>Reset to default</span>

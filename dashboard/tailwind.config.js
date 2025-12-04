@@ -83,6 +83,12 @@ export default {
         base: ['14px', '21px'],
         md: ['14px', '21px'],
       },
+      ringColor: {
+        ring: 'var(--color-ring)',
+      },
+      ringOffsetColor: {
+        surface: 'var(--color-surface)',
+      },
     },
   },
   plugins: [],
