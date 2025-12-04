@@ -64,7 +64,22 @@ Loop over collections (posts, pages, tags, etc.)
 {{#foreach posts as |post|}}
   <div>{{post.title}}</div>
 {{/foreach}}
+
+{{!-- With visibility filter (for tags) --}}
+{{#foreach tags visibility="all"}}
+  {{name}} - {{description}}
+{{/foreach}}
+
+{{!-- Only internal tags --}}
+{{#foreach tags visibility="internal"}}
+  {{name}}
+{{/foreach}}
 ```
+
+**Visibility attribute (tags only):**
+- `"public"` - Only public tags (default)
+- `"internal"` - Only internal tags (those starting with `#`)
+- `"all"` - Both public and internal tags
 
 **Data variables:**
 - `@index` - Zero-based index
