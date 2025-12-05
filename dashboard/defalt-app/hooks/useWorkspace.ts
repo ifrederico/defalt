@@ -234,7 +234,7 @@ export function useWorkspace({
   const buildHeaderConfig = useCallback((): SectionConfig => {
     const headerSnapshot = workspaceSnapshotRef.current.headerSettings ?? DEFAULT_HEADER_SETTINGS
     const headerHidden = sectionManager.sectionVisibility.header ?? false
-    const announcementBarHidden = sectionManager.sectionVisibility['announcement-bar'] ?? true
+    const announcementBarHidden = sectionManager.sectionVisibility['announcement-bar'] ?? false
     const headerPadding = sectionManager.sectionPadding.header
 
     const settings: SectionSettings = {
@@ -599,7 +599,7 @@ export function useWorkspace({
     }
 
     if (!('announcement-bar' in newVisibility)) {
-      newVisibility['announcement-bar'] = true
+      newVisibility['announcement-bar'] = false
     }
 
     // Hydrate section manager

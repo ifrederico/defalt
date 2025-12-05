@@ -84,26 +84,24 @@ export function AnnouncementBarSettings({ accentColor, config, onChange, onPrevi
                 {widthToggleItems}
               </ToggleGroup.Root>
             </InlineControlRow>
-            <div className="space-y-3">
-              <ColorPickerSetting
-                label="Background color"
-                value={sanitizeHex(config.backgroundColor, '#AC1E3E')}
-                swatches={colorSwatches}
-                onChange={(value) => handlePreviewChange({ backgroundColor: sanitizeHex(value, config.backgroundColor) })}
-                onCommit={handleCommit}
-                hasTransparentOption={false}
-                accentColor={accentColor}
-              />
-              <ColorPickerSetting
-                label="Text color"
-                value={sanitizeHex(config.textColor, '#ffffff')}
-                swatches={colorSwatches}
-                onChange={(value) => handlePreviewChange({ textColor: sanitizeHex(value, config.textColor) })}
-                onCommit={handleCommit}
-                hasTransparentOption={false}
-                accentColor={accentColor}
-              />
-            </div>
+            <ColorPickerSetting
+              label="Background color"
+              value={sanitizeHex(config.backgroundColor, '#AC1E3E')}
+              swatches={colorSwatches}
+              onChange={(value) => handlePreviewChange({ backgroundColor: sanitizeHex(value, config.backgroundColor) })}
+              onCommit={handleCommit}
+              hasTransparentOption={false}
+              accentColor={accentColor}
+            />
+            <ColorPickerSetting
+              label="Text color"
+              value={sanitizeHex(config.textColor, '#ffffff')}
+              swatches={colorSwatches}
+              onChange={(value) => handlePreviewChange({ textColor: sanitizeHex(value, config.textColor) })}
+              onCommit={handleCommit}
+              hasTransparentOption={false}
+              accentColor={accentColor}
+            />
             <SliderField
               label="Divider thickness"
               value={config.dividerThickness}
@@ -111,7 +109,7 @@ export function AnnouncementBarSettings({ accentColor, config, onChange, onPrevi
               max={5}
               step={1}
               onChange={(value) => handlePartialChange({ dividerThickness: value })}
-              variant="normal"
+              variant="compact"
             />
           </SettingSection>
 

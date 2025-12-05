@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import { getSectionDefinition, type SectionConfigSchema, type SectionSettingSchema } from '@defalt/sections/definitions/definitions'
-import { SliderField, InlineControlRow, ToggleSwitch, SettingSection, ColorControl } from '@defalt/ui'
+import { SliderField, ToggleSwitch, SettingSection, ColorControl } from '@defalt/ui'
 
 type SchemaSectionSettingsProps = {
   definitionId: string
@@ -161,7 +161,7 @@ export function SchemaSectionSettings({
   }
 
   return (
-    <div className="flex h-full flex-col space-y-4 pl-4 pr-6 py-4">
+    <>
       {settings.length > 0 && (
         <SettingSection title="Settings">
           <div className="space-y-3">
@@ -229,52 +229,48 @@ export function SchemaSectionSettings({
 
       {onPaddingChange && (
         <SettingSection title="Padding">
-          <InlineControlRow label="Top">
-            <SliderField
-              label=""
-              value={padding.top}
-              min={0}
-              max={200}
-              step={1}
-              onChange={(value) => onPaddingChange('top', value)}
-              onCommit={(value) => onPaddingCommit?.('top', value)}
-            />
-          </InlineControlRow>
-          <InlineControlRow label="Bottom">
-            <SliderField
-              label=""
-              value={padding.bottom}
-              min={0}
-              max={200}
-              step={1}
-              onChange={(value) => onPaddingChange('bottom', value)}
-              onCommit={(value) => onPaddingCommit?.('bottom', value)}
-            />
-          </InlineControlRow>
-          <InlineControlRow label="Left">
-            <SliderField
-              label=""
-              value={padding.left ?? 0}
-              min={0}
-              max={200}
-              step={1}
-              onChange={(value) => onPaddingChange('left', value)}
-              onCommit={(value) => onPaddingCommit?.('left', value)}
-            />
-          </InlineControlRow>
-          <InlineControlRow label="Right">
-            <SliderField
-              label=""
-              value={padding.right ?? 0}
-              min={0}
-              max={200}
-              step={1}
-              onChange={(value) => onPaddingChange('right', value)}
-              onCommit={(value) => onPaddingCommit?.('right', value)}
-            />
-          </InlineControlRow>
+          <SliderField
+            label="Top"
+            value={padding.top}
+            min={0}
+            max={200}
+            step={1}
+            onChange={(value) => onPaddingChange('top', value)}
+            onCommit={(value) => onPaddingCommit?.('top', value)}
+            variant="normal"
+          />
+          <SliderField
+            label="Bottom"
+            value={padding.bottom}
+            min={0}
+            max={200}
+            step={1}
+            onChange={(value) => onPaddingChange('bottom', value)}
+            onCommit={(value) => onPaddingCommit?.('bottom', value)}
+            variant="normal"
+          />
+          <SliderField
+            label="Left"
+            value={padding.left ?? 0}
+            min={0}
+            max={200}
+            step={1}
+            onChange={(value) => onPaddingChange('left', value)}
+            onCommit={(value) => onPaddingCommit?.('left', value)}
+            variant="normal"
+          />
+          <SliderField
+            label="Right"
+            value={padding.right ?? 0}
+            min={0}
+            max={200}
+            step={1}
+            onChange={(value) => onPaddingChange('right', value)}
+            onCommit={(value) => onPaddingCommit?.('right', value)}
+            variant="normal"
+          />
         </SettingSection>
       )}
-    </div>
+    </>
   )
 }

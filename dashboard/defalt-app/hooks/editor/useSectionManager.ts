@@ -250,7 +250,7 @@ export function useSectionManager({
 
   // State
   const [sectionVisibility, setSectionVisibility] = useState<Record<string, boolean>>({
-    'announcement-bar': true
+    'announcement-bar': false
   })
   const [footerItems, setFooterItems] = useState<SidebarItem[]>(footerItemsDefault)
   const [templateItems, setTemplateItems] = useState<SidebarItem[]>(() =>

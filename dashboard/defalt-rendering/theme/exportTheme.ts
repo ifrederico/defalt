@@ -555,7 +555,7 @@ export async function applyDefaultTemplateCustomization(themeDir: string, config
   const announcementSectionVisible = sections['announcement-bar']?.settings?.visible
   const announcementBarVisible = typeof announcementSectionVisible === 'boolean'
     ? announcementSectionVisible
-    : headerSettings?.announcementBarVisible ?? false
+    : headerSettings?.announcementBarVisible ?? true
   const navigationVisible = headerSettings?.visible !== false
 
   // Remove announcement bar block if not visible

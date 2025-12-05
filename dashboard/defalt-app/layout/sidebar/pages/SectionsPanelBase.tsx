@@ -37,6 +37,7 @@ import {
   type SectionDetail
 } from './components'
 import { useHistoryInteractionBlocker } from '@defalt/app/contexts/useHistoryInteractionBlocker'
+import { useUIActions } from '@defalt/app/stores'
 
 const GHOST_SECTION_IDS = new Set(['subheader', 'featured', 'footerbar', 'footer-signup', 'footersignup', 'main'])
 
@@ -135,6 +136,7 @@ export function SectionsPanelBase({
   ...props
 }: SectionsPanelBaseProps) {
   const { reorderTemplateItems, reorderFooterItems } = props
+  const { setHoveredSectionId } = useUIActions()
   const isControlled = controlledActiveDetail !== undefined
   const templateDefinitions = useMemo(
     () => props.templateDefinitions.filter((definition) => definition.id !== 'hero'),
@@ -399,6 +401,7 @@ export function SectionsPanelBase({
                               onToggleAnnouncementBar={() => setAnnouncementBarExpanded(!announcementBarExpanded)}
                               isPremium={isItemPremium(item)}
                               isSelected={!renderDetailInline && activeDetail?.id === item.id}
+                              onSectionHover={setHoveredSectionId}
                             />
                             {item.id === 'announcement-bar' && announcementBarExpanded && (
                             <SectionRow
@@ -412,6 +415,7 @@ export function SectionsPanelBase({
                               isSubItem={true}
                               showVisibilityToggle={false}
                               isSelected={!renderDetailInline && activeDetail?.id === 'announcement'}
+                              onSectionHover={setHoveredSectionId}
                             />
                           )}
                           </div>

@@ -15,6 +15,9 @@ interface UIState {
   // Selection
   activeDetail: SectionDetail | null
 
+  // Hover (for preview highlighting)
+  hoveredSectionId: string | null
+
   // Sidebar
   activeTab: ActiveTab
   sidebarExpanded: boolean
@@ -23,6 +26,7 @@ interface UIState {
 // Actions shape
 interface UIActions {
   setActiveDetail: (detail: SectionDetail | null) => void
+  setHoveredSectionId: (id: string | null) => void
   setActiveTab: (tab: ActiveTab) => void
   setSidebarExpanded: (expanded: boolean) => void
   toggleSidebar: () => void
@@ -39,6 +43,7 @@ type UIStore = UIState & UIActions
 // Initial state
 const initialState: UIState = {
   activeDetail: null,
+  hoveredSectionId: null,
   activeTab: 'sections',
   sidebarExpanded: false,
 }
@@ -51,6 +56,8 @@ export const useUIStore = create<UIStore>()(
 
     // Actions
     setActiveDetail: (detail) => set({ activeDetail: detail }),
+
+    setHoveredSectionId: (id) => set({ hoveredSectionId: id }),
 
     setActiveTab: (tab) => set({ activeTab: tab }),
 
@@ -68,6 +75,7 @@ export const useUIStore = create<UIStore>()(
 // Components using these will only re-render when their specific slice changes
 
 export const useActiveDetail = () => useUIStore((state) => state.activeDetail)
+export const useHoveredSectionId = () => useUIStore((state) => state.hoveredSectionId)
 export const useActiveTab = () => useUIStore((state) => state.activeTab)
 export const useSidebarExpanded = () => useUIStore((state) => state.sidebarExpanded)
 
@@ -76,6 +84,7 @@ export const useSidebarExpanded = () => useUIStore((state) => state.sidebarExpan
 export const useUIActions = () => useUIStore(
   useShallow((state) => ({
     setActiveDetail: state.setActiveDetail,
+    setHoveredSectionId: state.setHoveredSectionId,
     setActiveTab: state.setActiveTab,
     setSidebarExpanded: state.setSidebarExpanded,
     toggleSidebar: state.toggleSidebar,

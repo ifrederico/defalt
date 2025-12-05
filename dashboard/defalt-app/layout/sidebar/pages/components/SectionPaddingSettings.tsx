@@ -1,5 +1,5 @@
 import * as Separator from '@radix-ui/react-separator'
-import { SliderField } from '@defalt/ui'
+import { SliderField, SettingSection } from '@defalt/ui'
 import { SECTION_ID_MAP, PADDING_BLOCK_SECTIONS } from '@defalt/utils/config/themeConfig'
 
 export type SectionSpacingMode = 'auto' | 'padding-block' | 'padding' | 'margin'
@@ -56,88 +56,78 @@ export function SectionPaddingSettings({ sectionId, padding, margin, defaultMarg
   const showMarginBottomSlider = showMarginControls && (resolvedMode === 'margin' || margin?.bottom !== undefined || defaultMargin?.bottom !== undefined)
 
   return (
-    <div className="flex h-full flex-col gap-1">
-      <div className="flex-1 overflow-y-auto pl-4 pr-6 py-4">
-        <section className="space-y-4">
-          {showPaddingControls && (
-            <div>
-              <h3 className="font-md font-bold text-foreground tracking-wide">Padding</h3>
-              <div className="mt-3 space-y-4">
-                {isPaddingBlockSection ? (
-                  <SliderField
-                    label="Padding block"
-                    value={padding.top}
-                    min={0}
-                    max={200}
-                    step={1}
-                    onChange={(value) => onChange('top', value)}
-                    onCommit={(value) => onCommit('top', value)}
-                    variant="normal"
-                  />
-                ) : (
-                  <>
-                    <SliderField
-                      label="Top"
-                      value={padding.top}
-                      min={0}
-                      max={200}
-                      step={1}
-                      onChange={(value) => onChange('top', value)}
-                      onCommit={(value) => onCommit('top', value)}
-                      variant="normal"
-                    />
-                    <SliderField
-                      label="Bottom"
-                      value={padding.bottom}
-                      min={0}
-                      max={200}
-                      step={1}
-                      onChange={(value) => onChange('bottom', value)}
-                      onCommit={(value) => onCommit('bottom', value)}
-                      variant="normal"
-                    />
-                  </>
-                )}
-              </div>
-            </div>
-          )}
-
-          {showMarginControls && (
+    <>
+      {showPaddingControls && (
+        <SettingSection title="Padding">
+          {isPaddingBlockSection ? (
+            <SliderField
+              label="Padding block"
+              value={padding.top}
+              min={0}
+              max={200}
+              step={1}
+              onChange={(value) => onChange('top', value)}
+              onCommit={(value) => onCommit('top', value)}
+              variant="normal"
+            />
+          ) : (
             <>
-              <Separator.Root className="h-px bg-hover" />
-              <div>
-                <h3 className="font-md font-bold text-foreground tracking-wide">Margin</h3>
-                <div className="mt-3 space-y-4">
-                  {showMarginTopSlider && (
-                    <SliderField
-                      label="Top"
-                      value={marginTopValue}
-                      min={0}
-                      max={200}
-                      step={1}
-                      onChange={(value) => onMarginChange?.('top', value)}
-                      onCommit={(value) => onMarginCommit?.('top', value)}
-                      variant="normal"
-                    />
-                  )}
-                  {showMarginBottomSlider && (
-                  <SliderField
-                    label="Bottom"
-                    value={marginBottomValue}
-                    min={0}
-                    max={200}
-                    step={1}
-                    onChange={(value) => onMarginChange?.('bottom', value)}
-                    onCommit={(value) => onMarginCommit?.('bottom', value)}
-                    variant="normal"
-                  />
-                  )}
-                </div>
-              </div>
+              <SliderField
+                label="Top"
+                value={padding.top}
+                min={0}
+                max={200}
+                step={1}
+                onChange={(value) => onChange('top', value)}
+                onCommit={(value) => onCommit('top', value)}
+                variant="normal"
+              />
+              <SliderField
+                label="Bottom"
+                value={padding.bottom}
+                min={0}
+                max={200}
+                step={1}
+                onChange={(value) => onChange('bottom', value)}
+                onCommit={(value) => onCommit('bottom', value)}
+                variant="normal"
+              />
             </>
           )}
-        </section>
-      </div>
-    </div>
+        </SettingSection>
+      )}
+
+      {showMarginControls && (
+        <>
+          <Separator.Root className="h-px bg-hover" />
+          <SettingSection title="Margin">
+            {showMarginTopSlider && (
+              <SliderField
+                label="Top"
+                value={marginTopValue}
+                min={0}
+                max={200}
+                step={1}
+                onChange={(value) => onMarginChange?.('top', value)}
+                onCommit={(value) => onMarginCommit?.('top', value)}
+                variant="normal"
+              />
+            )}
+            {showMarginBottomSlider && (
+              <SliderField
+                label="Bottom"
+                value={marginBottomValue}
+                min={0}
+                max={200}
+                step={1}
+                onChange={(value) => onMarginChange?.('bottom', value)}
+                onCommit={(value) => onMarginCommit?.('bottom', value)}
+                variant="normal"
+              />
+            )}
+          </SettingSection>
+        </>
+      )}
+    </>
   )
 }

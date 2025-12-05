@@ -104,22 +104,24 @@ export default function ColorPickerSetting({
 
   return (
     <div data-testid={dataTestId} className={disabled ? 'pointer-events-none opacity-50' : ''}>
-      <div className="flex items-center justify-between gap-3">
-        <p className="font-md text-secondary whitespace-nowrap">{label}</p>
-        <ColorIndicator
-          value={displayValue}
-          activeSwatch={activeSwatch}
-          swatches={koenigSwatches}
-          onSwatchChange={handleSwatchChange}
-          onTogglePicker={handleTogglePicker}
-          onChange={handlePickerChange}
-          onCommit={handleCommit}
-          isExpanded={isExpanded}
-          hasTransparentOption={hasTransparentOption}
-          eyedropper={false}
-        >
-          {children}
-        </ColorIndicator>
+      <div className="flex items-center gap-3">
+        <p className="font-md text-secondary whitespace-nowrap min-w-[96px] flex-shrink-0">{label}</p>
+        <div className="ml-auto">
+          <ColorIndicator
+            value={displayValue}
+            activeSwatch={activeSwatch}
+            swatches={koenigSwatches}
+            onSwatchChange={handleSwatchChange}
+            onTogglePicker={handleTogglePicker}
+            onChange={handlePickerChange}
+            onCommit={handleCommit}
+            isExpanded={isExpanded}
+            hasTransparentOption={hasTransparentOption}
+            eyedropper={false}
+          >
+            {children}
+          </ColorIndicator>
+        </div>
       </div>
     </div>
   )

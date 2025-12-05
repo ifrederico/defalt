@@ -1,6 +1,7 @@
 export {
   useUIStore,
   useActiveDetail,
+  useHoveredSectionId,
   useActiveTab,
   useSidebarExpanded,
   useUIActions,

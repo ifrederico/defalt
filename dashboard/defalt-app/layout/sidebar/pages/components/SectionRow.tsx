@@ -31,6 +31,7 @@ export type SectionRowProps = {
   showVisibilityToggle?: boolean
   isPremium?: boolean
   isSelected?: boolean
+  onSectionHover?: (id: string | null) => void
 }
 
 export const SectionRow = memo(function SectionRow({
@@ -51,6 +52,7 @@ export const SectionRow = memo(function SectionRow({
   showVisibilityToggle = true,
   isPremium = false,
   isSelected = false,
+  onSectionHover,
 }: SectionRowProps) {
   const Icon = item.icon ?? GhostIcon
   const isSelectable = canOpenDetail(item.id)
@@ -121,10 +123,16 @@ export const SectionRow = memo(function SectionRow({
       } ${isDragging ? 'opacity-50' : ''}`}
       data-section-id={item.id}
       data-section-index={index}
-      onMouseEnter={() => !isParentDragging && setRowHovered(true)}
+      onMouseEnter={() => {
+        if (!isParentDragging) {
+          setRowHovered(true)
+          onSectionHover?.(item.id)
+        }
+      }}
       onMouseLeave={() => {
         setRowHovered(false)
         setHandleHovered(false)
+        onSectionHover?.(null)
       }}
       onPointerUp={handlePointerEnd}
       onPointerCancel={handlePointerEnd}

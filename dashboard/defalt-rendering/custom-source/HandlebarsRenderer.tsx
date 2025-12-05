@@ -23,6 +23,7 @@ import {
   reorderTemplateInDOM,
   reorderFooterInDOM,
   highlightSection,
+  highlightHoveredSection,
   applyCustomCss,
   applyAnnouncementBarCustomizations,
   syncTemplateSections,
@@ -65,6 +66,7 @@ interface HandlebarsRendererProps {
   announcementBarConfig?: AnnouncementBarConfig
   announcementContentConfig?: AnnouncementContentConfig
   selectedSectionId?: string | null
+  hoveredSectionId?: string | null
   onSectionSelect?: (sectionId: string) => void
 }
 
@@ -91,6 +93,7 @@ export function HandlebarsRenderer({
   announcementBarConfig,
   announcementContentConfig,
   selectedSectionId,
+  hoveredSectionId,
   onSectionSelect
 }: HandlebarsRendererProps) {
   const iframeRef = useRef<HTMLIFrameElement>(null)
@@ -570,6 +573,26 @@ export function HandlebarsRenderer({
       }
     }
   }, [selectedSectionId, sectionPadding, sectionMargins])
+
+  // Effect to highlight hovered section from sidebar
+  useEffect(() => {
+    const iframe = iframeRef.current
+    if (!iframe) return
+
+    const doc = iframe.contentDocument || iframe.contentWindow?.document
+    if (!doc) return
+
+    const applyHoverHighlight = () => {
+      highlightHoveredSection(doc, hoveredSectionId ?? null)
+    }
+
+    if (doc.readyState === 'complete') {
+      applyHoverHighlight()
+    } else {
+      iframe.addEventListener('load', applyHoverHighlight, { once: true })
+      return () => iframe.removeEventListener('load', applyHoverHighlight)
+    }
+  }, [hoveredSectionId])
 
   return (
     <div style={{ position: 'relative', width: '100%', height: '100%' }}>

@@ -111,9 +111,9 @@ type InlineControlRowProps = {
 
 export function InlineControlRow({ label, children }: InlineControlRowProps) {
   return (
-    <div className="flex items-center justify-between gap-2">
-      <p className="font-md text-foreground">{label}</p>
-      {children}
+    <div className="flex items-center gap-3">
+      <p className="font-md text-secondary min-w-[96px] flex-shrink-0">{label}</p>
+      <div className="ml-auto">{children}</div>
     </div>
   )
 }

@@ -13,10 +13,11 @@ import { useToast } from './components/ToastContext'
 import { useMediaQuery } from '@defalt/utils/hooks'
 import type { StickyHeaderMode } from '@defalt/rendering/custom-source/handlebars/headerCustomization'
 import { LoadingState } from '@defalt/ui/primitives/LoadingState'
-import { useActiveDetail, useSidebarExpanded, useUIActions } from './stores'
+import { useActiveDetail, useHoveredSectionId, useSidebarExpanded, useUIActions } from './stores'
 
 export function AppContent() {
     const activeDetail = useActiveDetail()
+    const hoveredSectionId = useHoveredSectionId()
     const sidebarExpanded = useSidebarExpanded()
     const { selectSection } = useUIActions()
     const isWideScreen = useMediaQuery('(min-width: 1348px)')
@@ -326,6 +327,7 @@ export function AppContent() {
                                     announcementBarConfig={announcementSettings.bar}
                                     announcementContentConfig={announcementSettings.content}
                                     selectedSectionId={activeDetail?.id}
+                                    hoveredSectionId={hoveredSectionId}
                                     onSectionSelect={handlePreviewSectionSelect}
                                 />
                             </PreviewErrorBoundary>

@@ -1769,11 +1769,12 @@ export function setupSectionSelection(
 
   doc.addEventListener('click', handleClick, true)
   doc.addEventListener('pointermove', handlePointerMove as EventListener, true)
-  doc.addEventListener('pointerleave', handlePointerLeave, true)
+  // Use documentElement for pointerleave since document doesn't have boundaries
+  doc.documentElement.addEventListener('pointerleave', handlePointerLeave)
   return () => {
     doc.removeEventListener('click', handleClick, true)
     doc.removeEventListener('pointermove', handlePointerMove as EventListener, true)
-    doc.removeEventListener('pointerleave', handlePointerLeave, true)
+    doc.documentElement.removeEventListener('pointerleave', handlePointerLeave)
     clearHover()
   }
 }
@@ -2272,5 +2273,61 @@ export function highlightSection(
       behavior: 'auto',
       block: 'nearest',
     })
+  }
+}
+
+/**
+ * Highlights a section in the preview iframe on hover (from sidebar).
+ * Uses a subtler highlight style than selection.
+ *
+ * @param doc - Document instance inside the preview iframe
+ * @param sectionId - The section ID to highlight (null to clear hover highlight)
+ */
+export function highlightHoveredSection(
+  doc: Document,
+  sectionId: string | null
+) {
+  // Remove existing hover highlights (but not selection highlights)
+  const existing = doc.querySelectorAll(`.${SECTION_HOVER_CLASS}`)
+  existing.forEach((el) => {
+    if (el.classList.contains(SECTION_OVERLAY_CLASS)) {
+      el.remove()
+    } else {
+      el.classList.remove(SECTION_HOVER_CLASS)
+    }
+  })
+
+  if (!sectionId) {
+    return
+  }
+
+  // Ensure highlight styles are present
+  ensureHighlightStyles(doc)
+
+  // Find the section element
+  const selectors = getSectionSelector(sectionId)
+  let element: Element | null = null
+
+  for (const selector of selectors) {
+    element = doc.querySelector(selector)
+    if (element) break
+  }
+
+  if (!element) {
+    return
+  }
+
+  const target = getHighlightTarget(sectionId, element)
+
+  // Don't apply hover if already selected
+  if (target.classList.contains(SECTION_HIGHLIGHT_CLASS)) {
+    return
+  }
+
+  // Add hover class (use overlay for footer to span full width)
+  if (target !== element && FOOTER_SECTION_IDS.has(sectionId.toLowerCase())) {
+    createOverlayForSection(target as HTMLElement, element, [SECTION_OVERLAY_CLASS, SECTION_HOVER_CLASS])
+  } else {
+    target.classList.add(SECTION_HOVER_CLASS)
   }
 }

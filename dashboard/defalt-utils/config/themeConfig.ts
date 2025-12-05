@@ -220,7 +220,7 @@ const createDefaultHeaderSection = (): SectionConfig => ({
     stickyHeaderMode: DEFAULT_HEADER_SETTINGS.stickyHeaderMode,
     searchEnabled: DEFAULT_HEADER_SETTINGS.searchEnabled,
     typographyCase: DEFAULT_HEADER_SETTINGS.typographyCase,
-    announcementBarVisible: false,
+    announcementBarVisible: true,
     announcementBarConfig: { ...DEFAULT_ANNOUNCEMENT_BAR_CONFIG },
     announcementContentConfig: { ...DEFAULT_ANNOUNCEMENT_CONTENT_CONFIG }
   }
@@ -460,7 +460,7 @@ const normalizeHeaderSection = (section: SectionConfig | undefined): SectionConf
       stickyHeaderMode: (settings.stickyHeaderMode as StickyHeaderModeSetting) ?? defaults.settings.stickyHeaderMode,
       searchEnabled: normalizeBoolean(settings.searchEnabled, defaults.settings.searchEnabled ?? true),
       typographyCase: (settings.typographyCase as HeaderTypographyCaseSetting) ?? defaults.settings.typographyCase,
-      announcementBarVisible: normalizeBoolean(settings.announcementBarVisible, defaults.settings.announcementBarVisible ?? false),
+      announcementBarVisible: normalizeBoolean(settings.announcementBarVisible, defaults.settings.announcementBarVisible ?? true),
       announcementBarConfig: normalizeAnnouncementBarConfig(
         (settings.announcementBarConfig as AnnouncementBarConfig | undefined) ?? defaults.settings.announcementBarConfig!,
         defaults.settings.announcementBarConfig!

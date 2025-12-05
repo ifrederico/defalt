@@ -70,16 +70,16 @@ export function SliderField({
         {!labelHidden ? (
           <label
             id={labelId}
-            className={`font-md text-left ${labelHidden ? '' : 'min-w-[96px] flex-shrink-0'} ${disabled ? 'text-placeholder' : 'text-secondary'}`.trim()}
+            className={`font-md text-left min-w-[96px] flex-shrink-0 ${disabled ? 'text-placeholder' : 'text-secondary'}`}
           >
             {label}
           </label>
         ) : null}
-        <div className="ml-auto flex items-center gap-3 text-sm">
+        <div className="ml-auto flex flex-shrink-0 items-center gap-3 text-sm">
           <Slider.Root
             className={`relative flex h-4 select-none items-center data-[disabled]:opacity-40 data-[disabled]:cursor-not-allowed ${
               variant === 'compact'
-                ? 'w-20 flex-none'
+                ? 'w-16 flex-none'
                 : variant === 'normal'
                 ? 'w-[6rem] flex-none'
                 : 'min-w-[140px] flex-1'

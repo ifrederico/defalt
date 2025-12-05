@@ -41,9 +41,9 @@
   --color-success-border: #BBF7D0;   /* green-200 - success borders */
   --color-warning: #EA580C;          /* orange-600 - warnings */
   --color-warning-light: #FFF7ED;    /* orange-50 - warning backgrounds */
-  --color-info: #2563EB;             /* blue-600 - info */
-  --color-info-light: #EFF6FF;       /* blue-50 - info backgrounds */
-  --color-info-border: #BFDBFE;      /* blue-200 - info borders */
+  --color-info: #003a5a;             /* Polaris teal - info text */
+  --color-info-light: #E5F5FA;       /* Light cyan - info backgrounds */
+  --color-info-border: #B3DFF0;      /* Light cyan - info borders */
 
   /* Legacy aliases (for gradual migration) */
   --defalt-surface: var(--color-surface);
