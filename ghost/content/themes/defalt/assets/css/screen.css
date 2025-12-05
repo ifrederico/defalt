@@ -83,23 +83,23 @@ production stylesheet in assets/built/screen.css
 
 /* Dark mode */
 [data-theme="dark"] {
-    --color-white: #15171a;
+    --color-white: #0f0f0f;
     --color-lighter-gray: rgb(255 255 255 / 0.08);
-    --color-light-gray: #2a2d31;
-    --color-mid-gray: #3d4147;
-    --color-dark-gray: #b0b5bc;
-    --color-darker-gray: #f0f0f0;
-    --color-black: #fff;
-    --color-primary-text: #f0f0f0;
-    --color-secondary-text: rgb(255 255 255 / 0.65);
-    --color-border: rgb(255 255 255 / 0.12);
+    --color-light-gray: #212121;
+    --color-mid-gray: #282828;
+    --color-dark-gray: #aaa;
+    --color-darker-gray: #ebebeb;
+    --color-black: #f1f1f1;
+    --color-primary-text: #f1f1f1;
+    --color-secondary-text: #aaa;
+    --color-border: rgba(255, 255, 255, 0.2);
     --color-dark-border: rgb(255 255 255 / 0.5);
-    --color-form-hover: #3d4147;
-    --background-color: #15171a;
+    --color-form-hover: #282828;
+    --background-color: #0f0f0f;
 }
 
 [data-theme="dark"] body {
-    background-color: #15171a;
+    background-color: var(--background-color);
 }
 
 /* 2. Fonts
@@ -170,7 +170,7 @@ a {
 }
 
 a:hover {
-    opacity: 0.8;
+    opacity: 0.85;
 }
 
 .gh-button {
@@ -191,7 +191,7 @@ a:hover {
 }
 
 .gh-button:hover {
-    opacity: 0.95;
+    opacity: 0.85;
 }
 
 .gh-icon-button {

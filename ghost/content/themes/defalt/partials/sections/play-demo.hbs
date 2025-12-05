@@ -828,43 +828,6 @@
     }
 }
 
-/* Dark Mode */
-[data-theme="dark"] .gd-play-section {
-    --play-bg: #1e2024;
-    --play-sidebar-bg: #15171a;
-    --play-border: #2a2d31;
-    --play-text: #f0f0f0;
-    --play-text-muted: #8b8f96;
-    --play-canvas-bg: #15171a;
-    --play-item-hover: #2a2d31;
-}
-
-[data-theme="dark"] .gd-play-page-btn {
-    background: #fff;
-    color: #15171a;
-}
-
-[data-theme="dark"] .gd-play-page-card-img {
-    background: linear-gradient(135deg, #3d4147, #4b5058);
-}
-
-[data-theme="dark"] .gd-play-drawer-item.gd-play-editable::after {
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' stroke='%238b8f96' stroke-width='2' viewBox='0 0 24 24'%3E%3Cpath d='m9 18 6-6-6-6'/%3E%3C/svg%3E");
-}
-
-[data-theme="dark"] .gd-play-toast {
-    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-}
-
-[data-theme="dark"] .gd-play-cta-overlay {
-    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
-}
-
-[data-theme="dark"] .gd-play-cta-btn {
-    background: #fff;
-    color: #15171a;
-}
-
 /* ===== SECTION HOVER HIGHLIGHTING ===== */
 .gd-play-page-header,
 .gd-play-page-hero,
@@ -972,9 +935,6 @@
     height: 14px;
 }
 
-[data-theme="dark"] .gd-play-section-picker {
-    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-}
 
 /* Dynamically added sections */
 .gd-play-page-section {
@@ -1480,7 +1440,7 @@
                 removeIndicator();
                 syncPreviewOrder();
                 showSavedToast();
-                triggerInteraction();
+                
             }
         });
 
@@ -1528,7 +1488,7 @@
                 removeIndicator();
                 syncPreviewOrder();
                 showSavedToast();
-                triggerInteraction();
+                
             }
         });
 
@@ -1564,6 +1524,7 @@
 
             sectionsPanel.classList.remove('is-active');
             heroEditPanel.classList.add('is-active');
+            showCtaAfterEdit();
         });
     }
 
@@ -1614,6 +1575,7 @@
             if (this.classList.contains('is-dragging')) return;
             sectionsPanel.classList.remove('is-active');
             ghostCardsEditPanel.classList.add('is-active');
+            showCtaAfterEdit();
         });
     }
 
@@ -1667,7 +1629,7 @@
                     img.classList.add('is-hidden');
                 }
             });
-            triggerInteraction();
+            
         });
     }
 
@@ -1688,6 +1650,7 @@
         headerItem.addEventListener('click', function(e) {
             sectionsPanel.classList.remove('is-active');
             headerEditPanel.classList.add('is-active');
+            showCtaAfterEdit();
         });
     }
 
@@ -1717,7 +1680,7 @@
                 }
             }
             showSavedToast();
-            triggerInteraction();
+            
         });
     });
 
@@ -1733,7 +1696,7 @@
                 pageHeader.classList.add('hide-nav');
             }
             showSavedToast();
-            triggerInteraction();
+            
         });
     }
 
@@ -1757,7 +1720,7 @@
             clearTimeout(saveDebounce);
             saveDebounce = setTimeout(function() {
                 showSavedToast();
-                triggerInteraction();
+                
             }, 800);
         });
     });
@@ -1766,18 +1729,15 @@
     var ctaOverlay = document.querySelector('.gd-play-cta-overlay');
     var ctaDismiss = document.querySelector('.gd-play-cta-dismiss');
     var ctaShown = sessionStorage.getItem('play-cta-shown');
-    var interactionCount = 0;
     var ctaTimeout = null;
 
-    function triggerInteraction() {
-        interactionCount++;
-        // Show CTA after 3 meaningful interactions (if not dismissed)
-        if (interactionCount >= 3 && !ctaShown && ctaOverlay) {
-            clearTimeout(ctaTimeout);
-            ctaTimeout = setTimeout(function() {
-                ctaOverlay.classList.add('is-visible');
-            }, 2000);
-        }
+    // Show CTA only after explicit editing intent (opening an edit panel)
+    function showCtaAfterEdit() {
+        if (ctaShown || !ctaOverlay) return;
+        clearTimeout(ctaTimeout);
+        ctaTimeout = setTimeout(function() {
+            ctaOverlay.classList.add('is-visible');
+        }, 3000);
     }
 
     if (ctaDismiss && ctaOverlay) {
@@ -1787,11 +1747,6 @@
             ctaShown = true;
         });
     }
-
-    // Track interactions on various elements
-    document.querySelectorAll('.gd-play-nav-item, .gd-play-viewport-btn, .gd-play-drawer-title').forEach(function(el) {
-        el.addEventListener('click', triggerInteraction);
-    });
 
     // ===== ADD SECTION FUNCTIONALITY =====
     var addSectionBtn = document.querySelector('.gd-play-add-section');
@@ -1859,7 +1814,7 @@
                 var previewEl = previewPage.querySelector('[data-section-id="' + removeId + '"]');
                 if (previewEl) previewEl.remove();
                 showSavedToast();
-                triggerInteraction();
+                
             }
         });
 
@@ -1920,7 +1875,7 @@
             // Hide picker and show toast
             sectionPicker.classList.remove('is-visible');
             showSavedToast();
-            triggerInteraction();
+            
         });
     });
 
@@ -1954,6 +1909,7 @@
         if (targetEditPanel && sectionsPanel) {
             sectionsPanel.classList.remove('is-active');
             targetEditPanel.classList.add('is-active');
+            showCtaAfterEdit();
         }
     }
 
