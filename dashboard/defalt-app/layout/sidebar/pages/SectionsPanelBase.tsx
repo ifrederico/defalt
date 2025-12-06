@@ -421,19 +421,21 @@ export function SectionsPanelBase({
                               showVisibilityToggle={item.id !== 'footer'}
                             />
                             {item.id === 'announcement-bar' && announcementBarExpanded && (
-                            <SectionRow
-                              item={{ id: 'announcement', label: 'Announcement', icon: Maximize }}
-                              index={0}
-                              draggable={false}
-                              hidden={Boolean(props.sectionVisibility['announcement'])}
-                              onToggleVisibility={() => props.toggleSectionVisibility('announcement')}
-                              onOpenDetail={handleOpenDetail}
-                              canOpenDetail={() => true}
-                              isSubItem={true}
-                              showVisibilityToggle={false}
-                              isSelected={!renderDetailInline && activeDetail?.id === 'announcement'}
-                              onSectionHover={setHoveredSectionId}
-                            />
+                            <div className="mt-0.5">
+                              <SectionRow
+                                item={{ id: 'announcement', label: 'Announcement', icon: Maximize }}
+                                index={0}
+                                draggable={false}
+                                hidden={Boolean(props.sectionVisibility['announcement'])}
+                                onToggleVisibility={() => props.toggleSectionVisibility('announcement')}
+                                onOpenDetail={handleOpenDetail}
+                                canOpenDetail={() => true}
+                                isSubItem={true}
+                                showVisibilityToggle={false}
+                                isSelected={!renderDetailInline && activeDetail?.id === 'announcement'}
+                                onSectionHover={setHoveredSectionId}
+                              />
+                            </div>
                           )}
                           {item.id === 'footer' && footerExpanded && (
                             <div className="space-y-0.5 mt-0.5">

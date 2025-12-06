@@ -1761,33 +1761,10 @@ export function setupSectionSelection(
     }
   }
 
-  // Check if pointer is within an element's margin area
-  const findMarginMatch = (event: PointerEvent): { id: string, element: Element } | null => {
-    const footer = doc.querySelector('footer.gh-footer')
-    if (footer) {
-      const rect = footer.getBoundingClientRect()
-      const style = getComputedStyle(footer)
-      const marginTop = parseFloat(style.marginTop) || 0
-      const marginBottom = parseFloat(style.marginBottom) || 0
-      // Check if pointer is within footer's rect + margins
-      if (event.clientY >= rect.top - marginTop &&
-          event.clientY <= rect.bottom + marginBottom &&
-          event.clientX >= rect.left &&
-          event.clientX <= rect.right) {
-        return { id: 'footer', element: footer }
-      }
-    }
-    return null
-  }
-
   // Throttle pointermove to 50ms for performance (Puck pattern)
   const handlePointerMove = throttle((event: PointerEvent) => {
     const target = event.target as Element | null
-    let match = findMatch(target)
-    // If no direct match, check if in margin area of sections
-    if (!match) {
-      match = findMarginMatch(event)
-    }
+    const match = findMatch(target)
     if (!match) {
       clearHover()
       return
