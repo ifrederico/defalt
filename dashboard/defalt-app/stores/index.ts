@@ -2,6 +2,7 @@ export {
   useUIStore,
   useActiveDetail,
   useHoveredSectionId,
+  useScrollToSectionId,
   useActiveTab,
   useSidebarExpanded,
   useUIActions,

@@ -18,6 +18,9 @@ interface UIState {
   // Hover (for preview highlighting)
   hoveredSectionId: string | null
 
+  // Scroll-only trigger (from sidebar hover delay)
+  scrollToSectionId: string | null
+
   // Sidebar
   activeTab: ActiveTab
   sidebarExpanded: boolean
@@ -27,6 +30,7 @@ interface UIState {
 interface UIActions {
   setActiveDetail: (detail: SectionDetail | null) => void
   setHoveredSectionId: (id: string | null) => void
+  setScrollToSectionId: (id: string | null) => void
   setActiveTab: (tab: ActiveTab) => void
   setSidebarExpanded: (expanded: boolean) => void
   toggleSidebar: () => void
@@ -44,6 +48,7 @@ type UIStore = UIState & UIActions
 const initialState: UIState = {
   activeDetail: null,
   hoveredSectionId: null,
+  scrollToSectionId: null,
   activeTab: 'sections',
   sidebarExpanded: false,
 }
@@ -58,6 +63,8 @@ export const useUIStore = create<UIStore>()(
     setActiveDetail: (detail) => set({ activeDetail: detail }),
 
     setHoveredSectionId: (id) => set({ hoveredSectionId: id }),
+
+    setScrollToSectionId: (id) => set({ scrollToSectionId: id }),
 
     setActiveTab: (tab) => set({ activeTab: tab }),
 
@@ -76,6 +83,7 @@ export const useUIStore = create<UIStore>()(
 
 export const useActiveDetail = () => useUIStore((state) => state.activeDetail)
 export const useHoveredSectionId = () => useUIStore((state) => state.hoveredSectionId)
+export const useScrollToSectionId = () => useUIStore((state) => state.scrollToSectionId)
 export const useActiveTab = () => useUIStore((state) => state.activeTab)
 export const useSidebarExpanded = () => useUIStore((state) => state.sidebarExpanded)
 
@@ -85,6 +93,7 @@ export const useUIActions = () => useUIStore(
   useShallow((state) => ({
     setActiveDetail: state.setActiveDetail,
     setHoveredSectionId: state.setHoveredSectionId,
+    setScrollToSectionId: state.setScrollToSectionId,
     setActiveTab: state.setActiveTab,
     setSidebarExpanded: state.setSidebarExpanded,
     toggleSidebar: state.toggleSidebar,

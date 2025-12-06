@@ -94,17 +94,19 @@ export function SectionDetailRenderer({ activeDetail, props }: SectionDetailRend
       const margin = props.sectionMargins[activeDetail.id]
       const footerDefaultMargin = CSS_DEFAULT_MARGIN.footer
       return (
-        <SectionPaddingSettings
-          sectionId={activeDetail.id}
-          padding={padding}
-          margin={margin}
-          defaultMargin={footerDefaultMargin}
-          mode="margin"
-          onChange={(direction, value) => props.onSectionPaddingChange(activeDetail.id, direction, value)}
-          onCommit={(direction, value) => props.onSectionPaddingCommit(activeDetail.id, direction, value)}
-          onMarginChange={(direction, value) => props.onSectionMarginChange(activeDetail.id, direction, value)}
-          onMarginCommit={(direction, value) => props.onSectionMarginCommit(activeDetail.id, direction, value)}
-        />
+        <SettingsPanel>
+          <SectionPaddingSettings
+            sectionId={activeDetail.id}
+            padding={padding}
+            margin={margin}
+            defaultMargin={footerDefaultMargin}
+            mode="margin"
+            onChange={(direction, value) => props.onSectionPaddingChange(activeDetail.id, direction, value)}
+            onCommit={(direction, value) => props.onSectionPaddingCommit(activeDetail.id, direction, value)}
+            onMarginChange={(direction, value) => props.onSectionMarginChange(activeDetail.id, direction, value)}
+            onMarginCommit={(direction, value) => props.onSectionMarginCommit(activeDetail.id, direction, value)}
+          />
+        </SettingsPanel>
       )
     }
     if (activeCustomSection) {
@@ -188,29 +190,41 @@ export function SectionDetailRenderer({ activeDetail, props }: SectionDetailRend
           ? 'padding-block'
           : 'auto'
       return (
-        <SectionPaddingSettings
-          sectionId={activeDetail.id}
-          padding={padding}
-          margin={margin}
-          defaultMargin={defaultMargin}
-          mode={spacingMode}
-          onChange={(direction, value) => props.onSectionPaddingChange(activeDetail.id, direction, value)}
-          onCommit={(direction, value) => props.onSectionPaddingCommit(activeDetail.id, direction, value)}
-          onMarginChange={
-            supportsMargin
-              ? (direction, value) => props.onSectionMarginChange(activeDetail.id, direction, value)
-              : undefined
-          }
-          onMarginCommit={
-            supportsMargin
-              ? (direction, value) => props.onSectionMarginCommit(activeDetail.id, direction, value)
-              : undefined
-          }
-        />
+        <SettingsPanel>
+          <SectionPaddingSettings
+            sectionId={activeDetail.id}
+            padding={padding}
+            margin={margin}
+            defaultMargin={defaultMargin}
+            mode={spacingMode}
+            onChange={(direction, value) => props.onSectionPaddingChange(activeDetail.id, direction, value)}
+            onCommit={(direction, value) => props.onSectionPaddingCommit(activeDetail.id, direction, value)}
+            onMarginChange={
+              supportsMargin
+                ? (direction, value) => props.onSectionMarginChange(activeDetail.id, direction, value)
+                : undefined
+            }
+            onMarginCommit={
+              supportsMargin
+                ? (direction, value) => props.onSectionMarginCommit(activeDetail.id, direction, value)
+                : undefined
+            }
+          />
+        </SettingsPanel>
       )
     }
     return <GenericCustomSectionNotice label={activeDetail.label} />
   }, [activeDetail, activeCustomSection, props])
+}
+
+function SettingsPanel({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="flex h-full flex-col overflow-hidden">
+      <div className="flex-1 overflow-y-auto pl-4 pr-6 py-4 space-y-6">
+        {children}
+      </div>
+    </div>
+  )
 }
 
 function GenericCustomSectionNotice({ label }: { label: string }) {

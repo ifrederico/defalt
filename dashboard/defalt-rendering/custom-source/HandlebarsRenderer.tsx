@@ -24,6 +24,7 @@ import {
   reorderFooterInDOM,
   highlightSection,
   highlightHoveredSection,
+  scrollToSection,
   applyCustomCss,
   applyAnnouncementBarCustomizations,
   syncTemplateSections,
@@ -67,6 +68,8 @@ interface HandlebarsRendererProps {
   announcementContentConfig?: AnnouncementContentConfig
   selectedSectionId?: string | null
   hoveredSectionId?: string | null
+  scrollToSectionId?: string | null
+  onScrollComplete?: () => void
   onSectionSelect?: (sectionId: string) => void
 }
 
@@ -94,6 +97,8 @@ export function HandlebarsRenderer({
   announcementContentConfig,
   selectedSectionId,
   hoveredSectionId,
+  scrollToSectionId,
+  onScrollComplete,
   onSectionSelect
 }: HandlebarsRendererProps) {
   const iframeRef = useRef<HTMLIFrameElement>(null)
@@ -593,6 +598,29 @@ export function HandlebarsRenderer({
       return () => iframe.removeEventListener('load', applyHoverHighlight)
     }
   }, [hoveredSectionId])
+
+  // Effect to scroll to section on delayed hover (1.5s like Shopify)
+  useEffect(() => {
+    if (!scrollToSectionId) return
+
+    const iframe = iframeRef.current
+    if (!iframe) return
+
+    const doc = iframe.contentDocument || iframe.contentWindow?.document
+    if (!doc) return
+
+    const doScroll = () => {
+      scrollToSection(doc, scrollToSectionId)
+      onScrollComplete?.()
+    }
+
+    if (doc.readyState === 'complete') {
+      doScroll()
+    } else {
+      iframe.addEventListener('load', doScroll, { once: true })
+      return () => iframe.removeEventListener('load', doScroll)
+    }
+  }, [scrollToSectionId, onScrollComplete])
 
   return (
     <div style={{ position: 'relative', width: '100%', height: '100%' }}>

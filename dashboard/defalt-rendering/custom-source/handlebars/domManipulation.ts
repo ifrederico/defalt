@@ -1701,15 +1701,23 @@ export function setupSectionSelection(
         return { id: attrId, element: dataEl }
       }
     }
+    // Collect all matches, then pick the innermost (most specific) one
+    const matches: { id: string, element: Element }[] = []
     for (const entry of entries) {
       for (const selector of entry.selectors) {
         const match = target.closest(selector)
         if (match) {
-          return { id: entry.id, element: match }
+          matches.push({ id: entry.id, element: match })
+          break // Only one match per entry
         }
       }
     }
-    return null
+    if (matches.length === 0) return null
+    if (matches.length === 1) return matches[0]
+    // Return innermost: the element that contains no other matched elements
+    return matches.reduce((innermost, current) => {
+      return current.element.contains(innermost.element) ? innermost : current
+    })
   }
 
   let hoveredEl: Element | null = null
@@ -1761,11 +1769,49 @@ export function setupSectionSelection(
     }
   }
 
+  // Parent sections with children - don't hover these in preview, only their children
+  // Users can select parents via sidebar
+  const parentSections = new Set(['footer', 'announcement-bar'])
+
+  // Check if point is within element's box INCLUDING its margins
+  const isInMarginArea = (el: Element, x: number, y: number): boolean => {
+    const rect = el.getBoundingClientRect()
+    const style = getComputedStyle(el)
+    const marginTop = parseFloat(style.marginTop) || 0
+    const marginBottom = parseFloat(style.marginBottom) || 0
+    const expandedTop = rect.top - marginTop
+    const expandedBottom = rect.bottom + marginBottom
+    return x >= rect.left && x <= rect.right && y >= expandedTop && y <= expandedBottom
+  }
+
   // Throttle pointermove to 50ms for performance (Puck pattern)
   const handlePointerMove = throttle((event: PointerEvent) => {
     const target = event.target as Element | null
     const match = findMatch(target)
     if (!match) {
+      clearHover()
+      return
+    }
+    // For parent sections, check if we're in a child's margin area
+    if (parentSections.has(match.id)) {
+      // Check footerBar's margin area when inside footer
+      if (match.id === 'footer') {
+        const footerBar = doc.querySelector('.gh-footer-bar')
+        if (footerBar && isInMarginArea(footerBar, event.clientX, event.clientY)) {
+          if (currentHoverId !== 'footerBar') {
+            applyHover(footerBar, 'footerBar')
+          }
+          return
+        }
+      }
+      // announcement-bar and announcement are the same element
+      // Show hover for 'announcement' (the child ID in sidebar)
+      if (match.id === 'announcement-bar') {
+        if (currentHoverId !== 'announcement') {
+          applyHover(match.element, 'announcement')
+        }
+        return
+      }
       clearHover()
       return
     }
@@ -2251,6 +2297,30 @@ function createOverlayForSection(
  * @param doc - Document instance inside the preview iframe
  * @param sectionId - The section ID to highlight (null to clear highlight)
  */
+/**
+ * Scrolls to a section in the preview iframe without selecting or highlighting it.
+ * Used for hover-delayed scroll from sidebar.
+ */
+export function scrollToSection(doc: Document, sectionId: string | null) {
+  if (!sectionId) return
+
+  const selectors = getSectionSelector(sectionId)
+  let element: Element | null = null
+
+  for (const selector of selectors) {
+    element = doc.querySelector(selector)
+    if (element) break
+  }
+
+  if (!element) return
+
+  const target = getHighlightTarget(sectionId, element)
+  target.scrollIntoView({
+    behavior: 'smooth',
+    block: 'nearest',
+  })
+}
+
 export function highlightSection(
   doc: Document,
   sectionId: string | null,
@@ -2303,7 +2373,7 @@ export function highlightSection(
   // Scroll into view only when explicitly requested (e.g., new selection, not padding updates)
   if (shouldScroll) {
     target.scrollIntoView({
-      behavior: 'auto',
+      behavior: 'smooth',
       block: 'nearest',
     })
   }

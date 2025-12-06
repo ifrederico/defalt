@@ -35,6 +35,7 @@ export type SectionRowProps = {
   isPremium?: boolean
   isSelected?: boolean
   onSectionHover?: (id: string | null) => void
+  onScrollToSection?: (id: string) => void
 }
 
 export const SectionRow = memo(function SectionRow({
@@ -59,6 +60,7 @@ export const SectionRow = memo(function SectionRow({
   isPremium = false,
   isSelected = false,
   onSectionHover,
+  onScrollToSection,
 }: SectionRowProps) {
   const Icon = item.icon ?? GhostIcon
   const isSelectable = canOpenDetail(item.id)
@@ -67,6 +69,7 @@ export const SectionRow = memo(function SectionRow({
   const [handleHovered, setHandleHovered] = useState(false)
   const handleButtonRef = useRef<HTMLButtonElement | null>(null)
   const pointerDownRef = useRef(false)
+  const scrollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const handleVisible = rowHovered || handleHovered || handleFocused
   const handleHighlighted = handleHovered || handleFocused
   const labelWeightClass = 'font-normal'
@@ -103,8 +106,22 @@ export const SectionRow = memo(function SectionRow({
       setHandleFocused(false)
       // Blur the handle to prevent focus restoration when switching tabs
       handleButtonRef.current?.blur()
+      // Clear scroll timer
+      if (scrollTimerRef.current) {
+        clearTimeout(scrollTimerRef.current)
+        scrollTimerRef.current = null
+      }
     }
   }, [isDragging])
+
+  // Cleanup scroll timer on unmount
+  useEffect(() => {
+    return () => {
+      if (scrollTimerRef.current) {
+        clearTimeout(scrollTimerRef.current)
+      }
+    }
+  }, [])
 
   const handlePointerDown = useCallback(() => {
     pointerDownRef.current = true
@@ -138,12 +155,23 @@ export const SectionRow = memo(function SectionRow({
         if (!isParentDragging) {
           setRowHovered(true)
           onSectionHover?.(item.id)
+          // Start scroll timer (750ms delay)
+          if (onScrollToSection) {
+            scrollTimerRef.current = setTimeout(() => {
+              onScrollToSection(item.id)
+            }, 750)
+          }
         }
       }}
       onMouseLeave={() => {
         setRowHovered(false)
         setHandleHovered(false)
         onSectionHover?.(null)
+        // Clear scroll timer
+        if (scrollTimerRef.current) {
+          clearTimeout(scrollTimerRef.current)
+          scrollTimerRef.current = null
+        }
       }}
       onPointerUp={handlePointerEnd}
       onPointerCancel={handlePointerEnd}

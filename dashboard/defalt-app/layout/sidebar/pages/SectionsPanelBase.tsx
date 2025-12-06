@@ -137,7 +137,7 @@ export function SectionsPanelBase({
   ...props
 }: SectionsPanelBaseProps) {
   const { reorderTemplateItems, reorderFooterItems } = props
-  const { setHoveredSectionId } = useUIActions()
+  const { setHoveredSectionId, setScrollToSectionId } = useUIActions()
   const isControlled = controlledActiveDetail !== undefined
   const templateDefinitions = useMemo(
     () => props.templateDefinitions.filter((definition) => definition.id !== 'hero'),
@@ -418,6 +418,7 @@ export function SectionsPanelBase({
                               isPremium={isItemPremium(item)}
                               isSelected={!renderDetailInline && activeDetail?.id === item.id}
                               onSectionHover={setHoveredSectionId}
+                              onScrollToSection={setScrollToSectionId}
                               showVisibilityToggle={item.id !== 'footer'}
                             />
                             {item.id === 'announcement-bar' && announcementBarExpanded && (
@@ -434,6 +435,7 @@ export function SectionsPanelBase({
                                 showVisibilityToggle={false}
                                 isSelected={!renderDetailInline && activeDetail?.id === 'announcement'}
                                 onSectionHover={setHoveredSectionId}
+                                onScrollToSection={setScrollToSectionId}
                               />
                             </div>
                           )}
@@ -454,6 +456,7 @@ export function SectionsPanelBase({
                                   isSubItem={true}
                                   isSelected={!renderDetailInline && activeDetail?.id === footerItem.id}
                                   onSectionHover={setHoveredSectionId}
+                                  onScrollToSection={setScrollToSectionId}
                                 />
                               ))}
                             </div>

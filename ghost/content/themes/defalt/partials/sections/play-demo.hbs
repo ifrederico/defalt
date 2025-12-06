@@ -1,949 +1,1033 @@
 {{!--
-    Play Demo Section - Interactive mockup of the Defalt editor
+Play Demo Section - Interactive mockup of the Defalt editor
 
-    A self-contained marketing section that showcases the dashboard
-    experience without requiring signup. "Just for kids" - a taste
-    of what the editor looks like.
+A self-contained marketing section that showcases the dashboard
+experience without requiring signup. "Just for kids" - a taste
+of what the editor looks like.
 
-    Usage: {{> "sections/play-demo"}}
+Usage: {{> "sections/play-demo"}}
 --}}
 
 <style>
-/* Play Demo Section
+    /* Play Demo Section
 /* ---------------------------------------------------------- */
-.gd-play-section {
-    --play-bg: #f8f9fa;
-    --play-sidebar-bg: #fff;
-    --play-border: #e5e7eb;
-    --play-text: #374151;
-    --play-text-muted: #6b7280;
-    --play-accent: var(--ghost-accent-color, #000);
-    --play-canvas-bg: #fff;
-    --play-item-hover: #f3f4f6;
-    --play-radius: 8px;
-
-    padding-top: 40px;
-    padding-bottom: 40px;
-}
-
-.gd-play-section .gh-inner {
-    max-width: 1120px;
-}
-
-/* Editor Container */
-.gd-play-editor {
-    background: var(--play-bg);
-    border-radius: var(--play-radius);
-    border: 1px solid var(--play-border);
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-    height: 540px;
-}
-
-/* ===== TOP BAR ===== */
-.gd-play-topbar {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 8px 12px;
-    background: var(--play-sidebar-bg);
-    border-bottom: 1px solid var(--play-border);
-    gap: 4px;
-}
-
-/* ===== MAIN BODY (Rail + Sidebar + Main) ===== */
-.gd-play-body {
-    display: flex;
-    flex: 1;
-    overflow: hidden;
-}
-
-/* ===== RAIL BAR ===== */
-.gd-play-rail {
-    width: 52px;
-    background: var(--play-sidebar-bg);
-    border-right: 1px solid var(--play-border);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 12px 0;
-    gap: 4px;
-    flex-shrink: 0;
-}
-
-/* ===== SIDEBAR ===== */
-.gd-play-sidebar {
-    width: 200px;
-    background: var(--play-sidebar-bg);
-    border-right: 1px solid var(--play-border);
-    display: flex;
-    flex-direction: column;
-    flex-shrink: 0;
-    overflow-y: auto;
-    position: relative;
-}
-
-/* Nav Items (in rail) */
-.gd-play-nav {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-}
-
-.gd-play-nav-item {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 36px;
-    height: 36px;
-    border-radius: 6px;
-    color: var(--play-text-muted);
-    cursor: pointer;
-    transition: all 0.15s ease;
-}
-
-.gd-play-nav-item:hover,
-.gd-play-nav-item.is-active {
-    background: var(--play-item-hover);
-    color: var(--play-text);
-}
-
-.gd-play-nav-item.is-active {
-    background: var(--play-item-hover);
-    color: var(--play-text);
-}
-
-.gd-play-nav-item svg {
-    width: 18px;
-    height: 18px;
-}
-
-/* Panels (inside sidebar) */
-.gd-play-panel {
-    display: none;
-    flex: 1;
-}
-
-.gd-play-panel.is-active {
-    display: flex;
-    flex-direction: column;
-}
-
-/* Page Title (inside sections panel) */
-.gd-play-page-title {
-    font-weight: 600;
-    font-size: 1.4rem;
-    padding: 12px;
-    border-bottom: 1px solid var(--play-border);
-    color: var(--play-text);
-}
-
-/* Edit Panel (inside sidebar) - overlays content */
-.gd-play-edit-panel {
-    display: none;
-    flex-direction: column;
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: var(--play-sidebar-bg);
-    z-index: 10;
-}
-
-.gd-play-edit-panel.is-active {
-    display: flex;
-}
-
-.gd-play-edit-header {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 12px;
-    border-bottom: 1px solid var(--play-border);
-}
-
-.gd-play-edit-back {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 24px;
-    height: 24px;
-    border-radius: 4px;
-    color: var(--play-text-muted);
-    cursor: pointer;
-}
-
-.gd-play-edit-back:hover {
-    background: var(--play-item-hover);
-    color: var(--play-text);
-}
-
-.gd-play-edit-back svg {
-    width: 16px;
-    height: 16px;
-}
-
-.gd-play-edit-title {
-    font-weight: 600;
-    font-size: 1.4rem;
-    color: var(--play-text);
-}
-
-.gd-play-edit-content {
-    flex: 1;
-    padding: 12px;
-    overflow-y: auto;
-}
-
-.gd-play-edit-field {
-    margin-bottom: 16px;
-}
-
-.gd-play-edit-label {
-    display: block;
-    font-size: 1.1rem;
-    font-weight: 500;
-    color: var(--play-text-muted);
-    margin-bottom: 6px;
-}
-
-.gd-play-edit-input {
-    width: 100%;
-    padding: 8px 10px;
-    font-size: 1.3rem;
-    border: 1px solid var(--play-border);
-    border-radius: 4px;
-    background: var(--play-canvas-bg);
-    color: var(--play-text);
-}
-
-.gd-play-edit-input:focus {
-    outline: none;
-    border-color: var(--play-accent);
-}
-
-/* Toggle switch */
-.gd-play-edit-toggle {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 10px 0;
-}
-
-.gd-play-edit-toggle-label {
-    font-size: 1.3rem;
-    color: var(--play-text);
-}
-
-.gd-play-toggle-switch {
-    position: relative;
-    width: 40px;
-    height: 22px;
-    background: var(--play-border);
-    border-radius: 11px;
-    cursor: pointer;
-    transition: background 0.2s ease;
-}
-
-.gd-play-toggle-switch.is-on {
-    background: var(--play-accent);
-}
-
-.gd-play-toggle-switch::after {
-    content: '';
-    position: absolute;
-    top: 2px;
-    left: 2px;
-    width: 18px;
-    height: 18px;
-    background: #fff;
-    border-radius: 50%;
-    transition: transform 0.2s ease;
-}
-
-.gd-play-toggle-switch.is-on::after {
-    transform: translateX(18px);
-}
-
-/* Button group for card count */
-.gd-play-btn-group {
-    display: flex;
-    gap: 4px;
-}
-
-.gd-play-section .gd-play-btn-option {
-    padding: 6px 12px;
-    font-size: 1.2rem;
-    border: 1px solid var(--play-border);
-    border-radius: 4px;
-    background: var(--play-canvas-bg);
-    color: var(--play-text-muted);
-    cursor: pointer;
-    transition: all 0.15s ease;
-}
-
-.gd-play-btn-option:hover {
-    border-color: var(--play-text-muted);
-}
-
-.gd-play-btn-option.is-active {
-    background: var(--play-accent);
-    border-color: var(--play-accent);
-    color: #fff;
-}
-
-/* Cards visibility state */
-.gd-play-page-card.is-hidden {
-    display: none;
-}
-
-.gd-play-page-card-img.is-hidden {
-    display: none;
-}
-
-/* Adjust grid when showing 1 card */
-.gd-play-page-cards.show-1 {
-    grid-template-columns: 1fr;
-}
-
-/* Drawer (inside panel) */
-.gd-play-drawer {
-    flex: 1;
-    padding: 12px;
-}
-
-.gd-play-drawer-group {
-    margin-bottom: 16px;
-}
-
-.gd-play-drawer-title {
-    font-size: 1.1rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    color: var(--play-text-muted);
-    padding: 8px 0;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    cursor: pointer;
-}
-
-.gd-play-drawer-title svg {
-    width: 12px;
-    height: 12px;
-    transition: transform 0.2s ease;
-}
-
-.gd-play-drawer-group.is-collapsed .gd-play-drawer-title svg {
-    transform: rotate(-90deg);
-}
-
-.gd-play-drawer-items {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-}
-
-.gd-play-drawer-group.is-collapsed .gd-play-drawer-items {
-    display: none;
-}
-
-.gd-play-drawer-item {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 10px 12px;
-    border-radius: 6px;
-    font-size: 1.4rem;
-    color: var(--play-text);
-    cursor: grab;
-    transition: all 0.15s ease;
-    user-select: none;
-}
-
-.gd-play-drawer-item:hover {
-    background: var(--play-item-hover);
-}
-
-.gd-play-drawer-item:active {
-    cursor: grabbing;
-    background: var(--play-border);
-}
-
-.gd-play-drawer-item.is-dragging {
-    opacity: 0.4;
-    background: var(--play-item-hover);
-}
-
-/* Editable items show chevron on hover */
-.gd-play-drawer-item.gd-play-editable {
-    cursor: pointer;
-}
-
-.gd-play-drawer-item.gd-play-editable::after {
-    content: '';
-    margin-left: auto;
-    width: 16px;
-    height: 16px;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' stroke='%236b7280' stroke-width='2' viewBox='0 0 24 24'%3E%3Cpath d='m9 18 6-6-6-6'/%3E%3C/svg%3E");
-    background-size: contain;
-    opacity: 0;
-    transition: opacity 0.15s ease;
-}
-
-.gd-play-drawer-item.gd-play-editable:hover::after {
-    opacity: 1;
-}
-
-/* Drop indicator line */
-.gd-play-drop-indicator {
-    height: 1px;
-    background: #28c840;
-    margin: 2px 0;
-    pointer-events: none;
-    position: relative;
-}
-
-.gd-play-drop-indicator::before {
-    content: '';
-    position: absolute;
-    left: 0;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 6px;
-    height: 6px;
-    background: #28c840;
-    border-radius: 50%;
-}
-
-.gd-play-add-section {
-    cursor: pointer;
-    color: var(--play-text-muted);
-}
-
-.gd-play-add-section:hover {
-    color: var(--play-text);
-}
-
-.gd-play-grip {
-    color: var(--play-text-muted);
-    opacity: 0.5;
-}
-
-.gd-play-grip svg {
-    width: 12px;
-    height: 12px;
-}
-
-/* ===== MAIN (Preview Canvas) ===== */
-.gd-play-main {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    background: var(--play-bg);
-}
-
-/* Preview Frame */
-.gd-play-preview {
-    flex: 1;
-    padding: 16px;
-    overflow: hidden;
-}
-
-.gd-play-preview-frame {
-    background: var(--play-canvas-bg);
-    border-radius: 2px;
-    border: 1px solid var(--play-border);
-    height: 100%;
-    overflow: hidden;
-    transition: max-width 0.3s ease;
-}
-
-.gd-play-preview-frame.is-mobile {
-    max-width: 375px;
-    margin: 0 auto;
-}
-
-/* Mock Page Content */
-.gd-play-page {
-    height: 100%;
-    overflow-y: auto;
-    font-size: 10px;
-}
-
-.gd-play-page-header {
-    display: grid;
-    grid-template-columns: 1fr auto 1fr;
-    align-items: center;
-    padding: 1.2em 2em;
-    border-bottom: 1px solid var(--play-border);
-}
-
-.gd-play-page-nav-left {
-    display: flex;
-    gap: 2em;
-    font-size: 1.2em;
-    color: var(--play-text-muted);
-}
-
-.gd-play-page-logo {
-    font-weight: 700;
-    font-size: 1.4em;
-    color: var(--play-text);
-    text-align: center;
-}
-
-.gd-play-page-nav-right {
-    display: flex;
-    gap: 1.5em;
-    font-size: 1.2em;
-    color: var(--play-text-muted);
-    justify-content: flex-end;
-    align-items: center;
-}
-
-.gd-play-page-nav-btn {
-    padding: 0.5em 1em;
-    background: var(--play-accent);
-    color: #fff;
-    border-radius: 4px;
-    font-weight: 600;
-    font-size: 1em;
-}
-
-/* Hamburger menu button */
-.gd-play-page-hamburger {
-    display: none;
-    align-items: center;
-    justify-content: center;
-    width: 2.4em;
-    height: 2.4em;
-    color: var(--play-text);
-    cursor: pointer;
-}
-
-.gd-play-page-hamburger svg {
-    width: 1.6em;
-    height: 1.6em;
-}
-
-/* Mobile preview styles */
-.gd-play-preview-frame.is-mobile .gd-play-page-header {
-    grid-template-columns: auto 1fr auto;
-    padding: 1em 1.5em;
-}
-
-.gd-play-preview-frame.is-mobile .gd-play-page-nav-left {
-    display: none;
-}
-
-.gd-play-preview-frame.is-mobile .gd-play-page-logo {
-    text-align: left;
-    padding-left: 0.5em;
-}
-
-.gd-play-preview-frame.is-mobile .gd-play-page-nav-right {
-    gap: 1em;
-}
-
-.gd-play-preview-frame.is-mobile .gd-play-page-nav-right span:not(.gd-play-page-nav-btn) {
-    display: none;
-}
-
-.gd-play-preview-frame.is-mobile .gd-play-page-hamburger {
-    display: flex;
-}
-
-.gd-play-preview-frame.is-mobile .gd-play-page-hero {
-    padding: 3em 1.5em;
-}
-
-.gd-play-preview-frame.is-mobile .gd-play-page-hero h1 {
-    font-size: 2.2em;
-}
-
-.gd-play-preview-frame.is-mobile .gd-play-page-cards {
-    grid-template-columns: 1fr;
-    padding: 1.5em;
-}
-
-.gd-play-page-hero {
-    text-align: center;
-    padding: 4em 2em;
-    background: linear-gradient(to bottom, var(--play-bg), var(--play-canvas-bg));
-}
-
-.gd-play-page-hero h1 {
-    font-size: 2.8em;
-    margin: 0 0 0.5em;
-    color: var(--play-text);
-}
-
-.gd-play-page-hero p {
-    font-size: 1.4em;
-    color: var(--play-text-muted);
-    margin: 0 0 1.5em;
-}
-
-.gd-play-page-btn {
-    display: inline-block;
-    padding: 0.8em 1.6em;
-    background: var(--play-accent);
-    color: #fff;
-    border-radius: 4px;
-    font-size: 1.2em;
-    font-weight: 600;
-}
-
-.gd-play-page-cards {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 1.5em;
-    padding: 2em;
-}
-
-.gd-play-page-card {
-    background: var(--play-bg);
-    border-radius: 6px;
-    overflow: hidden;
-}
-
-.gd-play-page-card-img {
-    height: 8em;
-    background: linear-gradient(135deg, #e5e7eb, #d1d5db);
-}
-
-.gd-play-page-card-body {
-    padding: 1em;
-}
-
-.gd-play-page-card-title {
-    font-size: 1.2em;
-    font-weight: 600;
-    margin: 0 0 0.5em;
-    color: var(--play-text);
-}
-
-.gd-play-page-card-text {
-    font-size: 1em;
-    color: var(--play-text-muted);
-    margin: 0;
-}
-
-/* ===== SAVED TOAST ===== */
-.gd-play-toast {
-    position: absolute;
-    bottom: 12px;
-    left: 12px;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    padding: 6px 12px;
-    background: var(--play-sidebar-bg);
-    border: 1px solid var(--play-border);
-    border-radius: 6px;
-    font-size: 1.2rem;
-    color: var(--play-text);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-    opacity: 0;
-    transform: translateY(8px);
-    transition: all 0.2s ease;
-    z-index: 20;
-    pointer-events: none;
-}
-
-.gd-play-toast.is-visible {
-    opacity: 1;
-    transform: translateY(0);
-}
-
-.gd-play-toast svg {
-    width: 14px;
-    height: 14px;
-    color: #28c840;
-}
-
-/* ===== ADD SECTION ENHANCED ===== */
-.gd-play-add-section {
-    cursor: pointer;
-    color: var(--play-text-muted);
-    position: relative;
-    transition: all 0.2s ease;
-}
-
-.gd-play-add-section:hover {
-    color: var(--play-accent);
-    background: var(--play-item-hover);
-}
-
-.gd-play-add-section svg {
-    transition: transform 0.2s ease;
-}
-
-.gd-play-add-section:hover svg {
-    transform: rotate(90deg);
-}
-
-/* ===== NAV MICRO-INTERACTIONS ===== */
-.gd-play-nav-item {
-    transition: all 0.15s ease;
-}
-
-.gd-play-nav-item:active {
-    transform: scale(0.92);
-}
-
-.gd-play-nav-item svg {
-    transition: transform 0.15s ease;
-}
-
-.gd-play-nav-item:hover svg {
-    transform: scale(1.1);
-}
-
-/* ===== DRAG PERFORMANCE ===== */
-.gd-play-drawer-item.is-dragging {
-    opacity: 0.4;
-    background: var(--play-item-hover);
-    will-change: transform;
-}
-
-/* ===== CTA OVERLAY ===== */
-.gd-play-cta-overlay {
-    position: absolute;
-    bottom: 20px;
-    left: 50%;
-    transform: translateX(-50%) translateY(20px);
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 12px 20px;
-    background: var(--play-sidebar-bg);
-    border: 1px solid var(--play-border);
-    border-radius: 8px;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.12);
-    opacity: 0;
-    visibility: hidden;
-    transition: all 0.3s ease;
-    z-index: 30;
-}
-
-.gd-play-cta-overlay.is-visible {
-    opacity: 1;
-    visibility: visible;
-    transform: translateX(-50%) translateY(0);
-}
-
-.gd-play-cta-text {
-    font-size: 1.4rem;
-    color: var(--play-text);
-}
-
-.gd-play-cta-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 8px 16px;
-    background: var(--play-accent);
-    color: #fff;
-    border-radius: 6px;
-    font-size: 1.3rem;
-    font-weight: 600;
-    text-decoration: none;
-    transition: opacity 0.2s ease;
-}
-
-.gd-play-cta-btn:hover {
-    opacity: 0.9;
-}
-
-.gd-play-cta-btn svg {
-    width: 14px;
-    height: 14px;
-}
-
-.gd-play-cta-dismiss {
-    position: absolute;
-    top: -8px;
-    right: -8px;
-    width: 20px;
-    height: 20px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: var(--play-sidebar-bg);
-    border: 1px solid var(--play-border);
-    border-radius: 50%;
-    color: var(--play-text-muted);
-    cursor: pointer;
-    font-size: 1.2rem;
-    line-height: 1;
-}
-
-.gd-play-cta-dismiss:hover {
-    color: var(--play-text);
-}
-
-/* Responsive */
-@media (max-width: 900px) {
-    .gd-play-sidebar {
-        width: 160px;
+    .gd-play-section {
+        --play-bg: #f8f9fa;
+        --play-sidebar-bg: #fff;
+        --play-border: #e5e7eb;
+        --play-text: #374151;
+        --play-text-muted: #6b7280;
+        --play-accent: var(--ghost-accent-color, #000);
+        --play-canvas-bg: #fff;
+        --play-item-hover: #f3f4f6;
+        --play-radius: 8px;
+        --play-heading-font: inherit;
+        --play-body-font: inherit;
+
+        padding-top: 40px;
+        padding-bottom: 40px;
     }
 
-    .gd-play-page-cards {
-        grid-template-columns: repeat(2, 1fr);
+    .gd-play-section .gh-inner {
+        max-width: 1120px;
     }
-}
 
-@media (max-width: 640px) {
+    /* Editor Container */
+    .gd-play-editor {
+        background: var(--play-bg);
+        border-radius: var(--play-radius);
+        border: 1px solid var(--play-border);
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        height: 540px;
+    }
+
+    /* ===== TOP BAR ===== */
+    .gd-play-topbar {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 8px 12px;
+        background: var(--play-sidebar-bg);
+        border-bottom: 1px solid var(--play-border);
+        gap: 4px;
+    }
+
+    /* ===== MAIN BODY (Rail + Sidebar + Main) ===== */
+    .gd-play-body {
+        display: flex;
+        flex: 1;
+        overflow: hidden;
+    }
+
+    /* ===== RAIL BAR ===== */
     .gd-play-rail {
-        display: none;
+        width: 52px;
+        background: var(--play-sidebar-bg);
+        border-right: 1px solid var(--play-border);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 12px 0;
+        gap: 4px;
+        flex-shrink: 0;
     }
 
+    /* ===== SIDEBAR ===== */
     .gd-play-sidebar {
+        width: 200px;
+        background: var(--play-sidebar-bg);
+        border-right: 1px solid var(--play-border);
+        display: flex;
+        flex-direction: column;
+        flex-shrink: 0;
+        overflow-y: auto;
+        position: relative;
+    }
+
+    /* Nav Items (in rail) */
+    .gd-play-nav {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .gd-play-nav-item {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 36px;
+        height: 36px;
+        border-radius: 6px;
+        color: var(--play-text-muted);
+        cursor: pointer;
+        transition: all 0.15s ease;
+    }
+
+    .gd-play-nav-item:hover,
+    .gd-play-nav-item.is-active {
+        background: var(--play-item-hover);
+        color: var(--play-text);
+    }
+
+    .gd-play-nav-item.is-active {
+        background: var(--play-item-hover);
+        color: var(--play-text);
+    }
+
+    .gd-play-nav-item svg {
+        width: 18px;
+        height: 18px;
+    }
+
+    /* Panels (inside sidebar) */
+    .gd-play-panel {
+        display: none;
+        flex: 1;
+    }
+
+    .gd-play-panel.is-active {
+        display: flex;
+        flex-direction: column;
+    }
+
+    /* Page Title (inside sections panel) */
+    .gd-play-page-title {
+        font-weight: 600;
+        font-size: 1.4rem;
+        padding: 12px;
+        border-bottom: 1px solid var(--play-border);
+        color: var(--play-text);
+    }
+
+    /* Edit Panel (inside sidebar) - overlays content */
+    .gd-play-edit-panel {
+        display: none;
+        flex-direction: column;
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: var(--play-sidebar-bg);
+        z-index: 10;
+    }
+
+    .gd-play-edit-panel.is-active {
+        display: flex;
+    }
+
+    .gd-play-edit-header {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 12px;
+        border-bottom: 1px solid var(--play-border);
+    }
+
+    .gd-play-edit-back {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 24px;
+        height: 24px;
+        border-radius: 4px;
+        color: var(--play-text-muted);
+        cursor: pointer;
+    }
+
+    .gd-play-edit-back:hover {
+        background: var(--play-item-hover);
+        color: var(--play-text);
+    }
+
+    .gd-play-edit-back svg {
+        width: 16px;
+        height: 16px;
+    }
+
+    .gd-play-edit-title {
+        font-weight: 600;
+        font-size: 1.4rem;
+        color: var(--play-text);
+    }
+
+    .gd-play-edit-content {
+        flex: 1;
+        padding: 12px;
+        overflow-y: auto;
+    }
+
+    .gd-play-edit-field {
+        margin-bottom: 16px;
+    }
+
+    .gd-play-edit-label {
+        display: block;
+        font-size: 1.1rem;
+        font-weight: 500;
+        color: var(--play-text-muted);
+        margin-bottom: 6px;
+    }
+
+    .gd-play-edit-input {
+        width: 100%;
+        padding: 8px 10px;
+        font-size: 1.3rem;
+        border: 1px solid var(--play-border);
+        border-radius: 4px;
+        background: var(--play-canvas-bg);
+        color: var(--play-text);
+    }
+
+    .gd-play-edit-input:focus {
+        outline: none;
+        border-color: var(--play-accent);
+    }
+
+    /* Toggle switch */
+    .gd-play-edit-toggle {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 10px 0;
+    }
+
+    .gd-play-edit-toggle-label {
+        font-size: 1.3rem;
+        color: var(--play-text);
+    }
+
+    .gd-play-toggle-switch {
+        position: relative;
+        width: 40px;
+        height: 22px;
+        background: var(--play-border);
+        border-radius: 11px;
+        cursor: pointer;
+        transition: background 0.2s ease;
+    }
+
+    .gd-play-toggle-switch.is-on {
+        background: var(--play-accent);
+    }
+
+    .gd-play-toggle-switch::after {
+        content: '';
+        position: absolute;
+        top: 2px;
+        left: 2px;
+        width: 18px;
+        height: 18px;
+        background: #fff;
+        border-radius: 50%;
+        transition: transform 0.2s ease;
+    }
+
+    .gd-play-toggle-switch.is-on::after {
+        transform: translateX(18px);
+    }
+
+    /* Button group for card count */
+    .gd-play-btn-group {
+        display: flex;
+        gap: 4px;
+    }
+
+    .gd-play-section .gd-play-btn-option {
+        padding: 6px 12px;
+        font-size: 1.2rem;
+        border: 1px solid var(--play-border);
+        border-radius: 4px;
+        background: var(--play-canvas-bg);
+        color: var(--play-text-muted);
+        cursor: pointer;
+        transition: all 0.15s ease;
+    }
+
+    .gd-play-btn-option:hover {
+        border-color: var(--play-text-muted);
+    }
+
+    .gd-play-btn-option.is-active {
+        background: var(--play-accent);
+        border-color: var(--play-accent);
+        color: #fff;
+    }
+
+    /* Cards visibility state */
+    .gd-play-page-card.is-hidden {
         display: none;
     }
 
-    .gd-play-main {
-        height: auto;
+    .gd-play-page-card-img.is-hidden {
+        display: none;
     }
 
-    .gd-play-page-cards {
+    /* Adjust grid when showing 1 card */
+    .gd-play-page-cards.show-1 {
         grid-template-columns: 1fr;
     }
 
-    .gd-play-cta-overlay {
-        left: 16px;
-        right: 16px;
-        transform: translateY(20px);
+    /* Drawer (inside panel) */
+    .gd-play-drawer {
+        flex: 1;
+        padding: 12px;
+    }
+
+    .gd-play-drawer-group {
+        margin-bottom: 16px;
+    }
+
+    .gd-play-drawer-title {
+        font-size: 1.1rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--play-text-muted);
+        padding: 8px 0;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        cursor: pointer;
+    }
+
+    .gd-play-drawer-title svg {
+        width: 12px;
+        height: 12px;
+        transition: transform 0.2s ease;
+    }
+
+    .gd-play-drawer-group.is-collapsed .gd-play-drawer-title svg {
+        transform: rotate(-90deg);
+    }
+
+    .gd-play-drawer-items {
+        display: flex;
         flex-direction: column;
+        gap: 4px;
+    }
+
+    .gd-play-drawer-group.is-collapsed .gd-play-drawer-items {
+        display: none;
+    }
+
+    .gd-play-drawer-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 12px;
+        border-radius: 6px;
+        font-size: 1.4rem;
+        color: var(--play-text);
+        cursor: grab;
+        transition: all 0.15s ease;
+        user-select: none;
+    }
+
+    .gd-play-drawer-item:hover {
+        background: var(--play-item-hover);
+    }
+
+    .gd-play-drawer-item:active {
+        cursor: grabbing;
+        background: var(--play-border);
+    }
+
+    .gd-play-drawer-item.is-dragging {
+        opacity: 0.4;
+        background: var(--play-item-hover);
+    }
+
+    /* Editable items show chevron on hover */
+    .gd-play-drawer-item.gd-play-editable {
+        cursor: pointer;
+    }
+
+    .gd-play-drawer-item.gd-play-editable::after {
+        content: '';
+        margin-left: auto;
+        width: 16px;
+        height: 16px;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' stroke='%236b7280' stroke-width='2' viewBox='0 0 24 24'%3E%3Cpath d='m9 18 6-6-6-6'/%3E%3C/svg%3E");
+        background-size: contain;
+        opacity: 0;
+        transition: opacity 0.15s ease;
+    }
+
+    .gd-play-drawer-item.gd-play-editable:hover::after {
+        opacity: 1;
+    }
+
+    /* Drop indicator line */
+    .gd-play-drop-indicator {
+        height: 1px;
+        background: #28c840;
+        margin: 2px 0;
+        pointer-events: none;
+        position: relative;
+    }
+
+    .gd-play-drop-indicator::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 6px;
+        height: 6px;
+        background: #28c840;
+        border-radius: 50%;
+    }
+
+    .gd-play-add-section {
+        cursor: pointer;
+        color: var(--play-text-muted);
+    }
+
+    .gd-play-add-section:hover {
+        color: var(--play-text);
+    }
+
+    .gd-play-grip {
+        color: var(--play-text-muted);
+        opacity: 0.5;
+    }
+
+    .gd-play-grip svg {
+        width: 12px;
+        height: 12px;
+    }
+
+    /* ===== MAIN (Preview Canvas) ===== */
+    .gd-play-main {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        background: var(--play-bg);
+    }
+
+    /* Preview Frame */
+    .gd-play-preview {
+        flex: 1;
+        padding: 16px;
+        overflow: hidden;
+    }
+
+    .gd-play-preview-frame {
+        background: var(--play-canvas-bg);
+        border-radius: 2px;
+        border: 1px solid var(--play-border);
+        height: 100%;
+        overflow: hidden;
+        transition: max-width 0.3s ease;
+    }
+
+    .gd-play-preview-frame.is-mobile {
+        max-width: 375px;
+        margin: 0 auto;
+    }
+
+    /* Mock Page Content */
+    .gd-play-page {
+        height: 100%;
+        overflow-y: auto;
+        font-size: 10px;
+        font-family: var(--play-body-font);
+    }
+
+    .gd-play-page-logo,
+    .gd-play-page-hero h1,
+    .gd-play-page-card-title {
+        font-family: var(--play-heading-font);
+    }
+
+    .gd-play-page-header {
+        display: grid;
+        grid-template-columns: 1fr auto 1fr;
+        align-items: center;
+        padding: 1.2em 2em;
+        border-bottom: 1px solid var(--play-border);
+    }
+
+    .gd-play-page-nav-left {
+        display: flex;
+        gap: 2em;
+        font-size: 1.2em;
+        color: var(--play-text-muted);
+    }
+
+    .gd-play-page-logo {
+        font-weight: 700;
+        font-size: 1.4em;
+        color: var(--play-text);
         text-align: center;
     }
 
-    .gd-play-cta-overlay.is-visible {
+    .gd-play-page-nav-right {
+        display: flex;
+        gap: 1.5em;
+        font-size: 1.2em;
+        color: var(--play-text-muted);
+        justify-content: flex-end;
+        align-items: center;
+    }
+
+    .gd-play-page-nav-btn {
+        padding: 0.5em 1em;
+        background: var(--play-accent);
+        color: #fff;
+        border-radius: 4px;
+        font-weight: 600;
+        font-size: 1em;
+    }
+
+    /* Hamburger menu button */
+    .gd-play-page-hamburger {
+        display: none;
+        align-items: center;
+        justify-content: center;
+        width: 2.4em;
+        height: 2.4em;
+        color: var(--play-text);
+        cursor: pointer;
+    }
+
+    .gd-play-page-hamburger svg {
+        width: 1.6em;
+        height: 1.6em;
+    }
+
+    /* Mobile preview styles */
+    .gd-play-preview-frame.is-mobile .gd-play-page-header {
+        grid-template-columns: auto 1fr auto;
+        padding: 1em 1.5em;
+    }
+
+    .gd-play-preview-frame.is-mobile .gd-play-page-nav-left {
+        display: none;
+    }
+
+    .gd-play-preview-frame.is-mobile .gd-play-page-logo {
+        text-align: left;
+        padding-left: 0.5em;
+    }
+
+    .gd-play-preview-frame.is-mobile .gd-play-page-nav-right {
+        gap: 1em;
+    }
+
+    .gd-play-preview-frame.is-mobile .gd-play-page-nav-right span:not(.gd-play-page-nav-btn) {
+        display: none;
+    }
+
+    .gd-play-preview-frame.is-mobile .gd-play-page-hamburger {
+        display: flex;
+    }
+
+    .gd-play-preview-frame.is-mobile .gd-play-page-hero {
+        padding: 3em 1.5em;
+    }
+
+    .gd-play-preview-frame.is-mobile .gd-play-page-hero h1 {
+        font-size: 2.2em;
+    }
+
+    .gd-play-preview-frame.is-mobile .gd-play-page-cards {
+        grid-template-columns: 1fr;
+        padding: 1.5em;
+    }
+
+    .gd-play-page-hero {
+        text-align: center;
+        padding: 4em 2em;
+        background: linear-gradient(to bottom, var(--play-bg), var(--play-canvas-bg));
+    }
+
+    .gd-play-page-hero h1 {
+        font-size: 2.8em;
+        margin: 0 0 0.5em;
+        color: var(--play-text);
+    }
+
+    .gd-play-page-hero p {
+        font-size: 1.4em;
+        color: var(--play-text-muted);
+        margin: 0 0 1.5em;
+    }
+
+    .gd-play-page-btn {
+        display: inline-block;
+        padding: 0.8em 1.6em;
+        background: var(--play-accent);
+        color: #fff;
+        border-radius: 4px;
+        font-size: 1.2em;
+        font-weight: 600;
+    }
+
+    .gd-play-page-cards {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1.5em;
+        padding: 2em;
+    }
+
+    .gd-play-page-card {
+        background: var(--play-bg);
+        border-radius: 6px;
+        overflow: hidden;
+    }
+
+    .gd-play-page-card-img {
+        height: 8em;
+        background: linear-gradient(135deg, #e5e7eb, #d1d5db);
+    }
+
+    .gd-play-page-card-body {
+        padding: 1em;
+    }
+
+    .gd-play-page-card-title {
+        font-size: 1.2em;
+        font-weight: 600;
+        margin: 0 0 0.5em;
+        color: var(--play-text);
+    }
+
+    .gd-play-page-card-text {
+        font-size: 1em;
+        color: var(--play-text-muted);
+        margin: 0;
+    }
+
+    /* ===== SAVED TOAST ===== */
+    .gd-play-toast {
+        position: absolute;
+        bottom: 12px;
+        left: 12px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 12px;
+        background: var(--play-sidebar-bg);
+        border: 1px solid var(--play-border);
+        border-radius: 6px;
+        font-size: 1.2rem;
+        color: var(--play-text);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        opacity: 0;
+        transform: translateY(8px);
+        transition: all 0.2s ease;
+        z-index: 20;
+        pointer-events: none;
+    }
+
+    .gd-play-toast.is-visible {
+        opacity: 1;
         transform: translateY(0);
     }
-}
 
-/* ===== SECTION HOVER HIGHLIGHTING ===== */
-.gd-play-page-header,
-.gd-play-page-hero,
-.gd-play-page-cards {
-    transition: box-shadow 0.2s ease;
-    cursor: pointer;
-}
+    .gd-play-toast svg {
+        width: 14px;
+        height: 14px;
+        color: #28c840;
+    }
 
-.gd-play-page-header:hover,
-.gd-play-page-hero:hover,
-.gd-play-page-cards:hover,
-.gd-play-page-header.is-highlighted,
-.gd-play-page-hero.is-highlighted,
-.gd-play-page-cards.is-highlighted {
-    box-shadow: inset 0 0 0 1px #28c840;
-}
+    /* ===== ADD SECTION ENHANCED ===== */
+    .gd-play-add-section {
+        cursor: pointer;
+        color: var(--play-text-muted);
+        position: relative;
+        transition: all 0.2s ease;
+    }
 
-/* Header states */
-.gd-play-page-header.hide-nav .gd-play-page-nav-left {
-    visibility: hidden;
-}
+    .gd-play-add-section:hover {
+        color: var(--play-accent);
+        background: var(--play-item-hover);
+    }
 
-.gd-play-page-header.is-uppercase .gd-play-page-nav-left,
-.gd-play-page-header.is-uppercase .gd-play-page-nav-right,
-.gd-play-page-header.is-uppercase .gd-play-page-logo {
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-}
+    .gd-play-add-section svg {
+        transition: transform 0.2s ease;
+    }
 
-/* Section picker dropdown */
-.gd-play-drawer-group {
-    position: relative;
-}
+    .gd-play-add-section:hover svg {
+        transform: rotate(90deg);
+    }
 
-.gd-play-section-picker {
-    position: absolute;
-    left: 12px;
-    right: 12px;
-    bottom: 0;
-    transform: translateY(100%);
-    background: var(--play-sidebar-bg);
-    border: 1px solid var(--play-border);
-    border-radius: 6px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-    z-index: 20;
-    display: none;
-}
+    /* ===== NAV MICRO-INTERACTIONS ===== */
+    .gd-play-nav-item {
+        transition: all 0.15s ease;
+    }
 
-.gd-play-section-picker.is-visible {
-    display: block;
-}
+    .gd-play-nav-item:active {
+        transform: scale(0.92);
+    }
 
-.gd-play-section-picker-item {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 10px 12px;
-    font-size: 1.3rem;
-    color: var(--play-text);
-    cursor: pointer;
-    transition: background 0.15s ease;
-}
+    .gd-play-nav-item svg {
+        transition: transform 0.15s ease;
+    }
 
-.gd-play-section-picker-item:first-child {
-    border-radius: 6px 6px 0 0;
-}
+    .gd-play-nav-item:hover svg {
+        transform: scale(1.1);
+    }
 
-.gd-play-section-picker-item:last-child {
-    border-radius: 0 0 6px 6px;
-}
+    /* ===== DRAG PERFORMANCE ===== */
+    .gd-play-drawer-item.is-dragging {
+        opacity: 0.4;
+        background: var(--play-item-hover);
+        will-change: transform;
+    }
 
-.gd-play-section-picker-item:hover {
-    background: var(--play-item-hover);
-}
+    /* ===== CTA OVERLAY ===== */
+    .gd-play-cta-overlay {
+        position: absolute;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%) translateY(20px);
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 20px;
+        background: var(--play-sidebar-bg);
+        border: 1px solid var(--play-border);
+        border-radius: 8px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+        opacity: 0;
+        visibility: hidden;
+        transition: all 0.3s ease;
+        z-index: 30;
+    }
 
-.gd-play-section-picker-item svg {
-    width: 16px;
-    height: 16px;
-}
+    .gd-play-cta-overlay.is-visible {
+        opacity: 1;
+        visibility: visible;
+        transform: translateX(-50%) translateY(0);
+    }
 
-/* Remove button for sections */
-.gd-play-drawer-item .gd-play-remove-btn {
-    margin-left: auto;
-    width: 18px;
-    height: 18px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: var(--play-text-muted);
-    opacity: 0;
-    transition: opacity 0.15s ease;
-    cursor: pointer;
-}
+    .gd-play-cta-text {
+        font-size: 1.4rem;
+        color: var(--play-text);
+    }
 
-.gd-play-drawer-item:hover .gd-play-remove-btn {
-    opacity: 1;
-}
+    .gd-play-cta-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 8px 16px;
+        background: var(--play-accent);
+        color: #fff;
+        border-radius: 6px;
+        font-size: 1.3rem;
+        font-weight: 600;
+        text-decoration: none;
+        transition: opacity 0.2s ease;
+    }
 
-.gd-play-drawer-item .gd-play-remove-btn:hover {
-    color: #ef4444;
-}
+    .gd-play-cta-btn:hover {
+        opacity: 0.9;
+    }
 
-.gd-play-drawer-item .gd-play-remove-btn svg {
-    width: 14px;
-    height: 14px;
-}
+    .gd-play-cta-btn svg {
+        width: 14px;
+        height: 14px;
+    }
+
+    .gd-play-cta-dismiss {
+        position: absolute;
+        top: -8px;
+        right: -8px;
+        width: 20px;
+        height: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: var(--play-sidebar-bg);
+        border: 1px solid var(--play-border);
+        border-radius: 50%;
+        color: var(--play-text-muted);
+        cursor: pointer;
+        font-size: 1.2rem;
+        line-height: 1;
+    }
+
+    .gd-play-cta-dismiss:hover {
+        color: var(--play-text);
+    }
+
+    /* Responsive */
+    @media (max-width: 900px) {
+        .gd-play-sidebar {
+            width: 160px;
+        }
+
+        .gd-play-page-cards {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+
+    @media (max-width: 640px) {
+        .gd-play-rail {
+            display: none;
+        }
+
+        .gd-play-sidebar {
+            display: none;
+        }
+
+        .gd-play-main {
+            height: auto;
+        }
+
+        .gd-play-page-cards {
+            grid-template-columns: 1fr;
+        }
+
+        .gd-play-cta-overlay {
+            left: 16px;
+            right: 16px;
+            transform: translateY(20px);
+            flex-direction: column;
+            text-align: center;
+        }
+
+        .gd-play-cta-overlay.is-visible {
+            transform: translateY(0);
+        }
+    }
+
+    /* ===== SECTION HOVER HIGHLIGHTING ===== */
+    .gd-play-page-header,
+    .gd-play-page-hero,
+    .gd-play-page-cards {
+        transition: box-shadow 0.2s ease;
+        cursor: pointer;
+    }
+
+    .gd-play-page-header:hover,
+    .gd-play-page-hero:hover,
+    .gd-play-page-cards:hover,
+    .gd-play-page-header.is-highlighted,
+    .gd-play-page-hero.is-highlighted,
+    .gd-play-page-cards.is-highlighted {
+        box-shadow: inset 0 0 0 1px #28c840;
+    }
+
+    /* Header states */
+    .gd-play-page-header.hide-nav .gd-play-page-nav-left {
+        visibility: hidden;
+    }
+
+    .gd-play-page-header.is-uppercase .gd-play-page-nav-left,
+    .gd-play-page-header.is-uppercase .gd-play-page-nav-right,
+    .gd-play-page-header.is-uppercase .gd-play-page-logo {
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+
+    /* Section picker dropdown */
+    .gd-play-drawer-group {
+        position: relative;
+    }
+
+    .gd-play-section-picker {
+        position: absolute;
+        left: 12px;
+        right: 12px;
+        bottom: 0;
+        transform: translateY(100%);
+        background: var(--play-sidebar-bg);
+        border: 1px solid var(--play-border);
+        border-radius: 6px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        z-index: 20;
+        display: none;
+    }
+
+    .gd-play-section-picker.is-visible {
+        display: block;
+    }
+
+    .gd-play-section-picker-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 12px;
+        font-size: 1.3rem;
+        color: var(--play-text);
+        cursor: pointer;
+        transition: background 0.15s ease;
+    }
+
+    .gd-play-section-picker-item:first-child {
+        border-radius: 6px 6px 0 0;
+    }
+
+    .gd-play-section-picker-item:last-child {
+        border-radius: 0 0 6px 6px;
+    }
+
+    .gd-play-section-picker-item:hover {
+        background: var(--play-item-hover);
+    }
+
+    .gd-play-section-picker-item svg {
+        width: 16px;
+        height: 16px;
+    }
+
+    /* Remove button for sections */
+    .gd-play-drawer-item .gd-play-remove-btn {
+        margin-left: auto;
+        width: 18px;
+        height: 18px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--play-text-muted);
+        opacity: 0;
+        transition: opacity 0.15s ease;
+        cursor: pointer;
+    }
+
+    .gd-play-drawer-item:hover .gd-play-remove-btn {
+        opacity: 1;
+    }
+
+    .gd-play-drawer-item .gd-play-remove-btn:hover {
+        color: #ef4444;
+    }
+
+    .gd-play-drawer-item .gd-play-remove-btn svg {
+        width: 14px;
+        height: 14px;
+    }
 
 
-/* Dynamically added sections */
-.gd-play-page-section {
-    transition: box-shadow 0.2s ease;
-}
+    /* Dynamically added sections */
+    .gd-play-page-section {
+        transition: box-shadow 0.2s ease;
+    }
 
-.gd-play-page-section.is-highlighted {
-    box-shadow: inset 0 0 0 1px #28c840;
-}
+    .gd-play-page-section.is-highlighted {
+        box-shadow: inset 0 0 0 1px #28c840;
+    }
+
+    /* Color Swatches */
+    .gd-play-color-grid {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+
+    .gd-play-color-swatch {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        cursor: pointer;
+        border: 2px solid transparent;
+        position: relative;
+        transition: transform 0.15s ease;
+    }
+
+    .gd-play-color-swatch:hover {
+        transform: scale(1.1);
+    }
+
+    .gd-play-color-swatch.is-active {
+        border-color: var(--play-text);
+    }
+
+    .gd-play-color-swatch::after {
+        content: '';
+        position: absolute;
+        inset: 2px;
+        border-radius: 50%;
+        background: var(--swatch-color);
+        border: 1px solid rgba(0, 0, 0, 0.1);
+    }
+
+    /* Styled Select */
+    .gd-play-select-wrapper {
+        position: relative;
+    }
+
+    .gd-play-select {
+        width: 100%;
+        appearance: none;
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        background: var(--play-canvas-bg);
+        border: 1px solid var(--play-border);
+        border-radius: 6px;
+        padding: 10px 36px 10px 12px;
+        font-size: 1.3rem;
+        color: var(--play-text);
+        cursor: pointer;
+        line-height: 1.5;
+    }
+
+    .gd-play-select:focus {
+        outline: none;
+        border-color: var(--play-accent);
+    }
+
+    .gd-play-select-wrapper::after {
+        content: '';
+        position: absolute;
+        right: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 16px;
+        height: 16px;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' stroke='%236b7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' viewBox='0 0 24 24'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: center;
+        background-size: contain;
+        pointer-events: none;
+        z-index: 10;
+    }
 </style>
 
 <section class="gd-play-section gh-outer">
@@ -952,16 +1036,18 @@
             {{!-- ===== TOP BAR ===== --}}
             <div class="gd-play-topbar">
                 <div class="gd-play-nav-item gd-play-viewport-btn" data-viewport="mobile" title="Mobile">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
-                        <rect x="5" y="2" width="14" height="20" rx="2" ry="2"/>
-                        <path d="M12 18h.01"/>
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+                        <rect x="5" y="2" width="14" height="20" rx="2" ry="2" />
+                        <path d="M12 18h.01" />
                     </svg>
                 </div>
                 <div class="gd-play-nav-item gd-play-viewport-btn is-active" data-viewport="desktop" title="Desktop">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
-                        <rect x="2" y="3" width="20" height="14" rx="2"/>
-                        <line x1="8" x2="16" y1="21" y2="21"/>
-                        <line x1="12" x2="12" y1="17" y2="21"/>
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+                        <rect x="2" y="3" width="20" height="14" rx="2" />
+                        <line x1="8" x2="16" y1="21" y2="21" />
+                        <line x1="12" x2="12" y1="17" y2="21" />
                     </svg>
                 </div>
             </div>
@@ -973,27 +1059,32 @@
                     <div class="gd-play-nav">
                         <div class="gd-play-nav-item is-active" data-panel="sections" title="Sections">
                             {{!-- Layout icon (Lucide) --}}
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
-                                <rect x="3" y="3" width="18" height="18" rx="2"/>
-                                <path d="M3 9h18"/>
-                                <path d="M9 21V9"/>
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="2"
+                                stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+                                <rect x="3" y="3" width="18" height="18" rx="2" />
+                                <path d="M3 9h18" />
+                                <path d="M9 21V9" />
                             </svg>
                         </div>
                         <div class="gd-play-nav-item" data-panel="design" title="Design">
                             {{!-- Palette icon (Lucide) --}}
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
-                                <circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/>
-                                <circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/>
-                                <circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/>
-                                <circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/>
-                                <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.555C21.965 6.012 17.461 2 12 2z"/>
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="2"
+                                stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+                                <circle cx="13.5" cy="6.5" r=".5" fill="currentColor" />
+                                <circle cx="17.5" cy="10.5" r=".5" fill="currentColor" />
+                                <circle cx="8.5" cy="7.5" r=".5" fill="currentColor" />
+                                <circle cx="6.5" cy="12.5" r=".5" fill="currentColor" />
+                                <path
+                                    d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.555C21.965 6.012 17.461 2 12 2z" />
                             </svg>
                         </div>
                         <div class="gd-play-nav-item" data-panel="settings" title="Settings">
                             {{!-- Settings icon (Lucide) --}}
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
-                                <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/>
-                                <circle cx="12" cy="12" r="3"/>
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="2"
+                                stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+                                <path
+                                    d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" />
+                                <circle cx="12" cy="12" r="3" />
                             </svg>
                         </div>
                     </div>
@@ -1011,11 +1102,19 @@
                             <div class="gd-play-drawer-group">
                                 <div class="gd-play-drawer-title">
                                     <span>Header</span>
-                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor"
+                                        stroke-width="2" viewBox="0 0 24 24">
+                                        <path d="m6 9 6 6 6-6" />
+                                    </svg>
                                 </div>
                                 <div class="gd-play-drawer-items">
-                                    <div class="gd-play-drawer-item gd-play-editable" data-edit="header" data-target="header">
-                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" width="16" height="16"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/></svg>
+                                    <div class="gd-play-drawer-item gd-play-editable" data-edit="header"
+                                        data-target="header">
+                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor"
+                                            stroke-width="2" viewBox="0 0 24 24" width="16" height="16">
+                                            <rect x="3" y="3" width="18" height="18" rx="2" />
+                                            <path d="M3 9h18" />
+                                        </svg>
                                         Header
                                     </div>
                                 </div>
@@ -1025,32 +1124,67 @@
                             <div class="gd-play-drawer-group">
                                 <div class="gd-play-drawer-title">
                                     <span>Template</span>
-                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor"
+                                        stroke-width="2" viewBox="0 0 24 24">
+                                        <path d="m6 9 6 6 6-6" />
+                                    </svg>
                                 </div>
                                 <div class="gd-play-drawer-items" data-sortable>
-                                    <div class="gd-play-drawer-item gd-play-editable" draggable="true" data-edit="hero" data-target="hero">
+                                    <div class="gd-play-drawer-item gd-play-editable" draggable="true" data-edit="hero"
+                                        data-target="hero">
                                         {{!-- Gallery vertical icon for Hero (Lucide) --}}
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2h18"/><rect width="18" height="12" x="3" y="6" rx="2"/><path d="M3 22h18"/></svg>
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                                            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                            stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M3 2h18" />
+                                            <rect width="18" height="12" x="3" y="6" rx="2" />
+                                            <path d="M3 22h18" />
+                                        </svg>
                                         Hero
                                     </div>
-                                    <div class="gd-play-drawer-item gd-play-editable" draggable="true" data-edit="ghost-cards" data-target="cards">
+                                    <div class="gd-play-drawer-item gd-play-editable" draggable="true"
+                                        data-edit="ghost-cards" data-target="cards">
                                         {{!-- Ghost icon (Lucide) --}}
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 10h.01"/><path d="M15 10h.01"/><path d="M12 2a8 8 0 0 0-8 8v12l3-3 2.5 2.5L12 19l2.5 2.5L17 19l3 3V10a8 8 0 0 0-8-8z"/></svg>
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                                            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                            stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M9 10h.01" />
+                                            <path d="M15 10h.01" />
+                                            <path
+                                                d="M12 2a8 8 0 0 0-8 8v12l3-3 2.5 2.5L12 19l2.5 2.5L17 19l3 3V10a8 8 0 0 0-8-8z" />
+                                        </svg>
                                         Ghost Cards
                                     </div>
                                     <div class="gd-play-drawer-item gd-play-add-section">
-                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" width="16" height="16"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M12 8v8M8 12h8"/></svg>
+                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor"
+                                            stroke-width="2" viewBox="0 0 24 24" width="16" height="16">
+                                            <rect x="3" y="3" width="18" height="18" rx="2" />
+                                            <path d="M12 8v8M8 12h8" />
+                                        </svg>
                                         Add section
                                     </div>
                                 </div>
                                 {{!-- Section Picker Dropdown (outside sortable for drag compatibility) --}}
                                 <div class="gd-play-section-picker">
                                     <div class="gd-play-section-picker-item" data-add-section="hero">
-                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2h18"/><rect width="18" height="12" x="3" y="6" rx="2"/><path d="M3 22h18"/></svg>
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                                            stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                            stroke-linejoin="round">
+                                            <path d="M3 2h18" />
+                                            <rect width="18" height="12" x="3" y="6" rx="2" />
+                                            <path d="M3 22h18" />
+                                        </svg>
                                         Hero
                                     </div>
                                     <div class="gd-play-section-picker-item" data-add-section="ghost-cards">
-                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 10h.01"/><path d="M15 10h.01"/><path d="M12 2a8 8 0 0 0-8 8v12l3-3 2.5 2.5L12 19l2.5 2.5L17 19l3 3V10a8 8 0 0 0-8-8z"/></svg>
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                                            stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                            stroke-linejoin="round">
+                                            <path d="M9 10h.01" />
+                                            <path d="M15 10h.01" />
+                                            <path
+                                                d="M12 2a8 8 0 0 0-8 8v12l3-3 2.5 2.5L12 19l2.5 2.5L17 19l3 3V10a8 8 0 0 0-8-8z" />
+                                        </svg>
                                         Ghost Cards
                                     </div>
                                 </div>
@@ -1060,11 +1194,18 @@
                             <div class="gd-play-drawer-group">
                                 <div class="gd-play-drawer-title">
                                     <span>Footer</span>
-                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor"
+                                        stroke-width="2" viewBox="0 0 24 24">
+                                        <path d="m6 9 6 6 6-6" />
+                                    </svg>
                                 </div>
                                 <div class="gd-play-drawer-items">
                                     <div class="gd-play-drawer-item">
-                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" width="16" height="16"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 15h18"/></svg>
+                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor"
+                                            stroke-width="2" viewBox="0 0 24 24" width="16" height="16">
+                                            <rect x="3" y="3" width="18" height="18" rx="2" />
+                                            <path d="M3 15h18" />
+                                        </svg>
                                         Footer
                                     </div>
                                 </div>
@@ -1078,21 +1219,27 @@
                             <div class="gd-play-drawer-group">
                                 <div class="gd-play-drawer-title">
                                     <span>Colors</span>
-                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor"
+                                        stroke-width="2" viewBox="0 0 24 24">
+                                        <path d="m6 9 6 6 6-6" />
+                                    </svg>
                                 </div>
                                 <div class="gd-play-drawer-items">
-                                    <div class="gd-play-drawer-item">Primary Color</div>
-                                    <div class="gd-play-drawer-item">Background</div>
+                                    <div class="gd-play-drawer-item gd-play-editable" data-edit="colors">Primary Color
+                                    </div>
                                 </div>
                             </div>
                             <div class="gd-play-drawer-group">
                                 <div class="gd-play-drawer-title">
                                     <span>Typography</span>
-                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor"
+                                        stroke-width="2" viewBox="0 0 24 24">
+                                        <path d="m6 9 6 6 6-6" />
+                                    </svg>
                                 </div>
                                 <div class="gd-play-drawer-items">
-                                    <div class="gd-play-drawer-item">Heading Font</div>
-                                    <div class="gd-play-drawer-item">Body Font</div>
+                                    <div class="gd-play-drawer-item gd-play-editable" data-edit="typography">Typography
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -1104,11 +1251,13 @@
                             <div class="gd-play-drawer-group">
                                 <div class="gd-play-drawer-title">
                                     <span>Site</span>
-                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor"
+                                        stroke-width="2" viewBox="0 0 24 24">
+                                        <path d="m6 9 6 6 6-6" />
+                                    </svg>
                                 </div>
                                 <div class="gd-play-drawer-items">
-                                    <div class="gd-play-drawer-item">Site Title</div>
-                                    <div class="gd-play-drawer-item">Logo</div>
+                                    <div class="gd-play-drawer-item gd-play-editable" data-edit="site">Site Title</div>
                                 </div>
                             </div>
                         </div>
@@ -1119,22 +1268,29 @@
                         <div class="gd-play-edit-header">
                             <div class="gd-play-edit-back">
                                 {{!-- Arrow left icon (Lucide) --}}
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor"
+                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+                                    <path d="m12 19-7-7 7-7" />
+                                    <path d="M19 12H5" />
+                                </svg>
                             </div>
                             <span class="gd-play-edit-title">Hero</span>
                         </div>
                         <div class="gd-play-edit-content">
                             <div class="gd-play-edit-field">
                                 <label class="gd-play-edit-label">Headline</label>
-                                <input type="text" class="gd-play-edit-input" data-edit-field="headline" value="Build something amazing">
+                                <input type="text" class="gd-play-edit-input" data-edit-field="headline"
+                                    value="Build something amazing">
                             </div>
                             <div class="gd-play-edit-field">
                                 <label class="gd-play-edit-label">Description</label>
-                                <input type="text" class="gd-play-edit-input" data-edit-field="description" value="Create beautiful websites with the power of Ghost">
+                                <input type="text" class="gd-play-edit-input" data-edit-field="description"
+                                    value="Create beautiful websites with the power of Ghost">
                             </div>
                             <div class="gd-play-edit-field">
                                 <label class="gd-play-edit-label">Button text</label>
-                                <input type="text" class="gd-play-edit-input" data-edit-field="button" value="Get Started">
+                                <input type="text" class="gd-play-edit-input" data-edit-field="button"
+                                    value="Get Started">
                             </div>
                         </div>
                     </div>
@@ -1143,16 +1299,22 @@
                     <div class="gd-play-edit-panel" data-edit-panel="ghost-cards">
                         <div class="gd-play-edit-header">
                             <div class="gd-play-edit-back">
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor"
+                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+                                    <path d="m12 19-7-7 7-7" />
+                                    <path d="M19 12H5" />
+                                </svg>
                             </div>
                             <span class="gd-play-edit-title">Ghost Cards</span>
                         </div>
                         <div class="gd-play-edit-content">
                             <div class="gd-play-edit-field">
                                 <label class="gd-play-edit-label">Cards to show</label>
-                                <div class="gd-play-btn-group">
-                                    <div class="gd-play-btn-option" data-cards="1">1</div>
-                                    <div class="gd-play-btn-option is-active" data-cards="3">3</div>
+                                <div class="gd-play-select-wrapper">
+                                    <select class="gd-play-select" data-cards>
+                                        <option value="1">1 Card</option>
+                                        <option value="3" selected>3 Cards</option>
+                                    </select>
                                 </div>
                             </div>
                             <div class="gd-play-edit-toggle">
@@ -1166,16 +1328,22 @@
                     <div class="gd-play-edit-panel" data-edit-panel="header">
                         <div class="gd-play-edit-header">
                             <div class="gd-play-edit-back">
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor"
+                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+                                    <path d="m12 19-7-7 7-7" />
+                                    <path d="M19 12H5" />
+                                </svg>
                             </div>
                             <span class="gd-play-edit-title">Header</span>
                         </div>
                         <div class="gd-play-edit-content">
                             <div class="gd-play-edit-field">
                                 <label class="gd-play-edit-label">Text style</label>
-                                <div class="gd-play-btn-group">
-                                    <div class="gd-play-btn-option is-active" data-header-style="default">Default</div>
-                                    <div class="gd-play-btn-option" data-header-style="uppercase">UPPERCASE</div>
+                                <div class="gd-play-select-wrapper">
+                                    <select class="gd-play-select" data-header-style>
+                                        <option value="default" selected>Default</option>
+                                        <option value="uppercase">Uppercase</option>
+                                    </select>
                                 </div>
                             </div>
                             <div class="gd-play-edit-toggle">
@@ -1184,81 +1352,183 @@
                             </div>
                         </div>
                     </div>
-                </div>
 
-                {{!-- ===== MAIN (Preview) ===== --}}
-                <div class="gd-play-main">
-                <div class="gd-play-preview" style="position: relative;">
-                    {{!-- Saved Toast --}}
-                    <div class="gd-play-toast">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>
-                        Saved
-                    </div>
-
-                    <div class="gd-play-preview-frame">
-                        <div class="gd-play-page">
-                            {{!-- Mock Header --}}
-                            <div class="gd-play-page-header">
-                                <div class="gd-play-page-hamburger">
-                                    {{!-- Menu icon (Lucide) --}}
-                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/></svg>
-                                </div>
-                                <div class="gd-play-page-nav-left">
-                                    <span>Home</span>
-                                    <span>All Issues</span>
-                                    <span>About</span>
-                                </div>
-                                <div class="gd-play-page-logo">Defalt</div>
-                                <div class="gd-play-page-nav-right">
-                                    <span>Sign in</span>
-                                    <span class="gd-play-page-nav-btn">Subscribe</span>
-                                </div>
+                    {{!-- Colors Edit Panel --}}
+                    <div class="gd-play-edit-panel" data-edit-panel="colors">
+                        <div class="gd-play-edit-header">
+                            <div class="gd-play-edit-back">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor"
+                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+                                    <path d="m12 19-7-7 7-7" />
+                                    <path d="M19 12H5" />
+                                </svg>
                             </div>
-
-                            {{!-- Mock Hero --}}
-                            <div class="gd-play-page-hero">
-                                <h1>Build something amazing</h1>
-                                <p>Create beautiful websites with the power of Ghost</p>
-                                <span class="gd-play-page-btn">Get Started</span>
-                            </div>
-
-                            {{!-- Mock Cards --}}
-                            <div class="gd-play-page-cards">
-                                <div class="gd-play-page-card">
-                                    <div class="gd-play-page-card-img"></div>
-                                    <div class="gd-play-page-card-body">
-                                        <div class="gd-play-page-card-title">Getting Started</div>
-                                        <p class="gd-play-page-card-text">Learn the basics</p>
-                                    </div>
-                                </div>
-                                <div class="gd-play-page-card">
-                                    <div class="gd-play-page-card-img"></div>
-                                    <div class="gd-play-page-card-body">
-                                        <div class="gd-play-page-card-title">Customization</div>
-                                        <p class="gd-play-page-card-text">Make it yours</p>
-                                    </div>
-                                </div>
-                                <div class="gd-play-page-card">
-                                    <div class="gd-play-page-card-img"></div>
-                                    <div class="gd-play-page-card-body">
-                                        <div class="gd-play-page-card-title">Publishing</div>
-                                        <p class="gd-play-page-card-text">Go live today</p>
-                                    </div>
+                            <span class="gd-play-edit-title">Colors</span>
+                        </div>
+                        <div class="gd-play-edit-content">
+                            <div class="gd-play-edit-field">
+                                <label class="gd-play-edit-label">Primary Color</label>
+                                <div class="gd-play-color-grid">
+                                    <div class="gd-play-color-swatch is-active" data-color="#000000"
+                                        style="--swatch-color: #000000;" title="Black"></div>
+                                    <div class="gd-play-color-swatch" data-color="#2563eb"
+                                        style="--swatch-color: #2563eb;" title="Blue"></div>
+                                    <div class="gd-play-color-swatch" data-color="#dc2626"
+                                        style="--swatch-color: #dc2626;" title="Red"></div>
+                                    <div class="gd-play-color-swatch" data-color="#16a34a"
+                                        style="--swatch-color: #16a34a;" title="Green"></div>
+                                    <div class="gd-play-color-swatch" data-color="#9333ea"
+                                        style="--swatch-color: #9333ea;" title="Purple"></div>
+                                    <div class="gd-play-color-swatch" data-color="#ea580c"
+                                        style="--swatch-color: #ea580c;" title="Orange"></div>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    {{!-- CTA Overlay --}}
-                    <div class="gd-play-cta-overlay">
-                        <span class="gd-play-cta-dismiss">&times;</span>
-                        <span class="gd-play-cta-text">Enjoying the editor?</span>
-                        <a href="/app/" class="gd-play-cta-btn">
-                            Start building
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
-                        </a>
+                    {{!-- Typography Edit Panel --}}
+                    <div class="gd-play-edit-panel" data-edit-panel="typography">
+                        <div class="gd-play-edit-header">
+                            <div class="gd-play-edit-back">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor"
+                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+                                    <path d="m12 19-7-7 7-7" />
+                                    <path d="M19 12H5" />
+                                </svg>
+                            </div>
+                            <span class="gd-play-edit-title">Typography</span>
+                        </div>
+                        <div class="gd-play-edit-content">
+                            <div class="gd-play-edit-field">
+                                <label class="gd-play-edit-label">Headings</label>
+                                <div class="gd-play-select-wrapper">
+                                    <select class="gd-play-select" data-font-heading>
+                                        <option value="sans">Sans-serif</option>
+                                        <option value="serif">Serif</option>
+                                        <option value="mono">Monospace</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="gd-play-edit-field">
+                                <label class="gd-play-edit-label">Body</label>
+                                <div class="gd-play-select-wrapper">
+                                    <select class="gd-play-select" data-font-body>
+                                        <option value="sans">Sans-serif</option>
+                                        <option value="serif">Serif</option>
+                                        <option value="mono">Monospace</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{!-- Site Settings Edit Panel --}}
+                    <div class="gd-play-edit-panel" data-edit-panel="site">
+                        <div class="gd-play-edit-header">
+                            <div class="gd-play-edit-back">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor"
+                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+                                    <path d="m12 19-7-7 7-7" />
+                                    <path d="M19 12H5" />
+                                </svg>
+                            </div>
+                            <span class="gd-play-edit-title">Site</span>
+                        </div>
+                        <div class="gd-play-edit-content">
+                            <div class="gd-play-edit-field">
+                                <label class="gd-play-edit-label">Site Title</label>
+                                <input type="text" class="gd-play-edit-input" data-edit-field="site-title"
+                                    value="Defalt">
+                            </div>
+                        </div>
                     </div>
                 </div>
+
+                {{!-- ===== MAIN (Preview) ===== --}}
+                <div class="gd-play-main">
+                    <div class="gd-play-preview" style="position: relative;">
+                        {{!-- Saved Toast --}}
+                        <div class="gd-play-toast">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="2"
+                                stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+                                <path d="M20 6 9 17l-5-5" />
+                            </svg>
+                            Saved
+                        </div>
+
+                        <div class="gd-play-preview-frame">
+                            <div class="gd-play-page">
+                                {{!-- Mock Header --}}
+                                <div class="gd-play-page-header">
+                                    <div class="gd-play-page-hamburger">
+                                        {{!-- Menu icon (Lucide) --}}
+                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor"
+                                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                                            viewBox="0 0 24 24">
+                                            <line x1="4" x2="20" y1="12" y2="12" />
+                                            <line x1="4" x2="20" y1="6" y2="6" />
+                                            <line x1="4" x2="20" y1="18" y2="18" />
+                                        </svg>
+                                    </div>
+                                    <div class="gd-play-page-nav-left">
+                                        <span>Home</span>
+                                        <span>All Issues</span>
+                                    </div>
+                                    <div class="gd-play-page-logo">Defalt</div>
+                                    <div class="gd-play-page-nav-right">
+                                        <span>Sign in</span>
+                                        <span class="gd-play-page-nav-btn">Subscribe</span>
+                                    </div>
+                                </div>
+
+                                {{!-- Mock Hero --}}
+                                <div class="gd-play-page-hero">
+                                    <h1>Build something amazing</h1>
+                                    <p>Create beautiful websites with the power of Ghost</p>
+                                    <span class="gd-play-page-btn">Get Started</span>
+                                </div>
+
+                                {{!-- Mock Cards --}}
+                                <div class="gd-play-page-cards">
+                                    <div class="gd-play-page-card">
+                                        <div class="gd-play-page-card-img"></div>
+                                        <div class="gd-play-page-card-body">
+                                            <div class="gd-play-page-card-title">Getting Started</div>
+                                            <p class="gd-play-page-card-text">Learn the basics</p>
+                                        </div>
+                                    </div>
+                                    <div class="gd-play-page-card">
+                                        <div class="gd-play-page-card-img"></div>
+                                        <div class="gd-play-page-card-body">
+                                            <div class="gd-play-page-card-title">Customization</div>
+                                            <p class="gd-play-page-card-text">Make it yours</p>
+                                        </div>
+                                    </div>
+                                    <div class="gd-play-page-card">
+                                        <div class="gd-play-page-card-img"></div>
+                                        <div class="gd-play-page-card-body">
+                                            <div class="gd-play-page-card-title">Publishing</div>
+                                            <p class="gd-play-page-card-text">Go live today</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {{!-- CTA Overlay --}}
+                        <div class="gd-play-cta-overlay">
+                            <span class="gd-play-cta-dismiss">&times;</span>
+                            <span class="gd-play-cta-text">Enjoying the editor?</span>
+                            <a href="/app/" class="gd-play-cta-btn">
+                                Start building
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor"
+                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+                                    <path d="M5 12h14" />
+                                    <path d="m12 5 7 7-7 7" />
+                                </svg>
+                            </a>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -1267,661 +1537,753 @@
 
     {{!-- SVG Icon Templates --}}
     <template id="gd-play-icon-hero">
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2h18"/><rect width="18" height="12" x="3" y="6" rx="2"/><path d="M3 22h18"/></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 2h18" />
+            <rect width="18" height="12" x="3" y="6" rx="2" />
+            <path d="M3 22h18" />
+        </svg>
     </template>
     <template id="gd-play-icon-ghost-cards">
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 10h.01"/><path d="M15 10h.01"/><path d="M12 2a8 8 0 0 0-8 8v12l3-3 2.5 2.5L12 19l2.5 2.5L17 19l3 3V10a8 8 0 0 0-8-8z"/></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 10h.01" />
+            <path d="M15 10h.01" />
+            <path d="M12 2a8 8 0 0 0-8 8v12l3-3 2.5 2.5L12 19l2.5 2.5L17 19l3 3V10a8 8 0 0 0-8-8z" />
+        </svg>
     </template>
     <template id="gd-play-icon-remove">
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path d="M18 6 6 18M6 6l12 12" />
+        </svg>
     </template>
 </section>
 
 <script>
-(function() {
-    // Toggle drawer groups
-    document.querySelectorAll('.gd-play-drawer-title').forEach(function(title) {
-        title.addEventListener('click', function() {
-            this.parentElement.classList.toggle('is-collapsed');
+    (function () {
+        // Toggle drawer groups
+        document.querySelectorAll('.gd-play-drawer-title').forEach(function (title) {
+            title.addEventListener('click', function () {
+                this.parentElement.classList.toggle('is-collapsed');
+            });
         });
-    });
 
-    // Rail nav switching - changes sidebar panel
-    document.querySelectorAll('.gd-play-rail .gd-play-nav-item').forEach(function(item) {
-        item.addEventListener('click', function() {
-            var panel = this.getAttribute('data-panel');
+        // Rail nav switching - changes sidebar panel
+        document.querySelectorAll('.gd-play-rail .gd-play-nav-item').forEach(function (item) {
+            item.addEventListener('click', function () {
+                var panel = this.getAttribute('data-panel');
 
-            // Update rail active state
-            document.querySelectorAll('.gd-play-rail .gd-play-nav-item').forEach(function(i) {
+                // Update rail active state
+                document.querySelectorAll('.gd-play-rail .gd-play-nav-item').forEach(function (i) {
+                    i.classList.remove('is-active');
+                });
+                this.classList.add('is-active');
+
+                // Hide any open edit panels
+                document.querySelectorAll('.gd-play-edit-panel').forEach(function (ep) {
+                    ep.classList.remove('is-active');
+                });
+
+                // Switch sidebar panel
+                document.querySelectorAll('.gd-play-panel').forEach(function (p) {
+                    p.classList.remove('is-active');
+                });
+                var targetPanel = document.querySelector('.gd-play-panel[data-panel="' + panel + '"]');
+                if (targetPanel) {
+                    targetPanel.classList.add('is-active');
+                }
+            });
+        });
+
+        // Viewport switching (mobile/desktop)
+        var viewportBtns = document.querySelectorAll('.gd-play-viewport-btn');
+        var previewFrame = document.querySelector('.gd-play-preview-frame');
+
+        // Auto-detect user's device and set initial viewport
+        var isMobileDevice = window.matchMedia('(max-width: 768px)').matches;
+        if (isMobileDevice && previewFrame) {
+            previewFrame.classList.add('is-mobile');
+            viewportBtns.forEach(function (b) {
+                if (b.getAttribute('data-viewport') === 'mobile') {
+                    b.classList.add('is-active');
+                } else {
+                    b.classList.remove('is-active');
+                }
+            });
+        }
+
+        viewportBtns.forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                var viewport = this.getAttribute('data-viewport');
+
+                viewportBtns.forEach(function (b) {
+                    b.classList.remove('is-active');
+                });
+                this.classList.add('is-active');
+
+                if (viewport === 'mobile') {
+                    previewFrame.classList.add('is-mobile');
+                } else {
+                    previewFrame.classList.remove('is-mobile');
+                }
+            });
+        });
+
+        // Drag and drop using event delegation (works for dynamic items)
+        var sortableContainer = document.querySelector('.gd-play-drawer-items[data-sortable]');
+        var dropIndicator = document.createElement('div');
+        dropIndicator.className = 'gd-play-drop-indicator';
+
+        // Get the element that should come after the dragged element
+        function getDragAfterElement(container, y) {
+            var draggableElements = Array.from(
+                container.querySelectorAll('.gd-play-drawer-item:not(.is-dragging):not(.gd-play-add-section)')
+            );
+
+            return draggableElements.reduce(function (closest, child) {
+                var box = child.getBoundingClientRect();
+                var offset = y - box.top - box.height / 2;
+                if (offset < 0 && offset > closest.offset) {
+                    return { offset: offset, element: child };
+                } else {
+                    return closest;
+                }
+            }, { offset: Number.NEGATIVE_INFINITY }).element;
+        }
+
+        function removeIndicator() {
+            if (dropIndicator.parentElement) {
+                dropIndicator.parentElement.removeChild(dropIndicator);
+            }
+        }
+
+        // Preview section mapping for sync
+        var previewSectionMap = {
+            'hero': '.gd-play-page-hero',
+            'cards': '.gd-play-page-cards'
+        };
+        var previewPage = document.querySelector('.gd-play-page');
+
+        function syncPreviewOrder() {
+            if (!previewPage) return;
+
+            // Get current drawer order (only items with data-target, excluding add-section)
+            var drawerItems = document.querySelectorAll('.gd-play-drawer-items[data-sortable] .gd-play-drawer-item[data-target]:not(.gd-play-add-section)');
+            var header = previewPage.querySelector('.gd-play-page-header');
+            if (!header) return;
+
+            // Collect all sections in drawer order
+            var orderedTargets = [];
+            drawerItems.forEach(function (item) {
+                var targetKey = item.getAttribute('data-target');
+                if (targetKey) orderedTargets.push(targetKey);
+            });
+
+            // Reverse to insert in correct order (last becomes first after header)
+            orderedTargets.reverse().forEach(function (targetKey) {
+                var section = null;
+
+                // Check built-in sections first
+                if (previewSectionMap[targetKey]) {
+                    section = previewPage.querySelector(previewSectionMap[targetKey]);
+                }
+
+                // Then check dynamically added sections
+                if (!section) {
+                    section = previewPage.querySelector('[data-section-id="' + targetKey + '"]');
+                }
+
+                if (section && header) {
+                    header.parentNode.insertBefore(section, header.nextSibling);
+                }
+            });
+        }
+
+        // Event delegation for drag events - handles both initial and dynamic items
+        if (sortableContainer) {
+            // Dragstart - delegated
+            sortableContainer.addEventListener('dragstart', function (e) {
+                var item = e.target.closest('.gd-play-drawer-item[draggable="true"]');
+                if (item && !item.classList.contains('gd-play-add-section')) {
+                    item.classList.add('is-dragging');
+                    e.dataTransfer.effectAllowed = 'move';
+                }
+            });
+
+            // Dragend - delegated
+            sortableContainer.addEventListener('dragend', function (e) {
+                var item = e.target.closest('.gd-play-drawer-item');
+                if (item && item.classList.contains('is-dragging')) {
+                    item.classList.remove('is-dragging');
+                    // Move element to indicator position
+                    if (dropIndicator.parentElement) {
+                        dropIndicator.parentElement.insertBefore(item, dropIndicator);
+                    }
+                    removeIndicator();
+                    syncPreviewOrder();
+                    showSavedToast();
+
+                }
+            });
+
+            // Dragover - show drop indicator
+            sortableContainer.addEventListener('dragover', function (e) {
+                e.preventDefault();
+                e.dataTransfer.dropEffect = 'move';
+
+                var draggingElement = sortableContainer.querySelector('.is-dragging');
+                if (!draggingElement) return;
+
+                var afterElement = getDragAfterElement(sortableContainer, e.clientY);
+                var addSection = sortableContainer.querySelector('.gd-play-add-section');
+
+                // Don't show indicator if it would be at the original position
+                var nextSibling = draggingElement.nextElementSibling;
+                if (nextSibling === dropIndicator) {
+                    nextSibling = dropIndicator.nextElementSibling;
+                }
+
+                var targetPosition = afterElement || addSection || null;
+                if (targetPosition === nextSibling || (targetPosition === null && nextSibling === addSection)) {
+                    removeIndicator();
+                    return;
+                }
+
+                if (afterElement == null) {
+                    if (addSection) {
+                        sortableContainer.insertBefore(dropIndicator, addSection);
+                    } else {
+                        sortableContainer.appendChild(dropIndicator);
+                    }
+                } else {
+                    sortableContainer.insertBefore(dropIndicator, afterElement);
+                }
+            });
+
+            // Drop event - finalize the move
+            sortableContainer.addEventListener('drop', function (e) {
+                e.preventDefault();
+                var draggingElement = sortableContainer.querySelector('.is-dragging');
+                if (draggingElement && dropIndicator.parentElement) {
+                    dropIndicator.parentElement.insertBefore(draggingElement, dropIndicator);
+                    draggingElement.classList.remove('is-dragging');
+                    removeIndicator();
+                    syncPreviewOrder();
+                    showSavedToast();
+
+                }
+            });
+
+            // Dragleave - remove indicator when leaving container
+            sortableContainer.addEventListener('dragleave', function (e) {
+                if (!sortableContainer.contains(e.relatedTarget)) {
+                    removeIndicator();
+                }
+            });
+        }
+
+        // Hero edit panel functionality
+        var sectionsPanel = document.querySelector('.gd-play-panel[data-panel="sections"]');
+        var heroEditPanel = document.querySelector('.gd-play-edit-panel[data-edit-panel="hero"]');
+        var heroItem = document.querySelector('.gd-play-editable[data-edit="hero"]');
+        var backBtn = heroEditPanel ? heroEditPanel.querySelector('.gd-play-edit-back') : null;
+
+        // Preview elements to update
+        var heroHeadline = document.querySelector('.gd-play-page-hero h1');
+        var heroDescription = document.querySelector('.gd-play-page-hero p');
+        var heroButton = document.querySelector('.gd-play-page-hero .gd-play-page-btn');
+
+        // Edit inputs
+        var headlineInput = heroEditPanel ? heroEditPanel.querySelector('[data-edit-field="headline"]') : null;
+        var descriptionInput = heroEditPanel ? heroEditPanel.querySelector('[data-edit-field="description"]') : null;
+        var buttonInput = heroEditPanel ? heroEditPanel.querySelector('[data-edit-field="button"]') : null;
+
+        // Open hero edit panel
+        if (heroItem && heroEditPanel && sectionsPanel) {
+            heroItem.addEventListener('click', function (e) {
+                // Don't open if dragging
+                if (this.classList.contains('is-dragging')) return;
+
+                sectionsPanel.classList.remove('is-active');
+                heroEditPanel.classList.add('is-active');
+                showCtaAfterEdit();
+            });
+        }
+
+        // Back button - return to sections
+        if (backBtn && heroEditPanel && sectionsPanel) {
+            backBtn.addEventListener('click', function () {
+                heroEditPanel.classList.remove('is-active');
+                sectionsPanel.classList.add('is-active');
+            });
+        }
+
+        // Live update preview from inputs
+        if (headlineInput && heroHeadline) {
+            headlineInput.addEventListener('input', function () {
+                heroHeadline.textContent = this.value || 'Build something amazing';
+            });
+        }
+
+        if (descriptionInput && heroDescription) {
+            descriptionInput.addEventListener('input', function () {
+                heroDescription.textContent = this.value || 'Create beautiful websites with the power of Ghost';
+            });
+        }
+
+        if (buttonInput && heroButton) {
+            buttonInput.addEventListener('input', function () {
+                heroButton.textContent = this.value || 'Get Started';
+            });
+        }
+
+        // Ghost Cards edit panel functionality
+        var ghostCardsEditPanel = document.querySelector('.gd-play-edit-panel[data-edit-panel="ghost-cards"]');
+        var ghostCardsItem = document.querySelector('.gd-play-editable[data-edit="ghost-cards"]');
+        var ghostCardsBackBtn = ghostCardsEditPanel ? ghostCardsEditPanel.querySelector('.gd-play-edit-back') : null;
+
+        // Preview elements
+        var cardsContainer = document.querySelector('.gd-play-page-cards');
+        var pageCards = document.querySelectorAll('.gd-play-page-card');
+        var cardImages = document.querySelectorAll('.gd-play-page-card-img');
+
+        // Controls
+        var cardCountSelect = ghostCardsEditPanel ? ghostCardsEditPanel.querySelector('[data-cards]') : null;
+        var imagesToggle = ghostCardsEditPanel ? ghostCardsEditPanel.querySelector('[data-toggle="images"]') : null;
+
+        // Open ghost cards edit panel
+        if (ghostCardsItem && ghostCardsEditPanel && sectionsPanel) {
+            ghostCardsItem.addEventListener('click', function (e) {
+                if (this.classList.contains('is-dragging')) return;
+                sectionsPanel.classList.remove('is-active');
+                ghostCardsEditPanel.classList.add('is-active');
+                showCtaAfterEdit();
+            });
+        }
+
+        // Back button
+        if (ghostCardsBackBtn && ghostCardsEditPanel && sectionsPanel) {
+            ghostCardsBackBtn.addEventListener('click', function () {
+                ghostCardsEditPanel.classList.remove('is-active');
+                sectionsPanel.classList.add('is-active');
+            });
+        }
+
+        // Card count toggle
+        if (cardCountSelect) {
+            cardCountSelect.addEventListener('change', function () {
+                var count = parseInt(this.value);
+
+                // Update grid class
+                if (cardsContainer) {
+                    if (count === 1) {
+                        cardsContainer.classList.add('show-1');
+                    } else {
+                        cardsContainer.classList.remove('show-1');
+                    }
+                }
+
+                // Show/hide cards
+                pageCards.forEach(function (card, i) {
+                    if (i < count) {
+                        card.classList.remove('is-hidden');
+                    } else {
+                        card.classList.add('is-hidden');
+                    }
+                });
+                showSavedToast();
+            });
+        }
+
+        // Images toggle
+        if (imagesToggle) {
+            imagesToggle.addEventListener('click', function () {
+                this.classList.toggle('is-on');
+                var showImages = this.classList.contains('is-on');
+
+                cardImages.forEach(function (img) {
+                    if (showImages) {
+                        img.classList.remove('is-hidden');
+                    } else {
+                        img.classList.add('is-hidden');
+                    }
+                });
+
+            });
+        }
+
+        // Header edit panel functionality
+        var headerEditPanel = document.querySelector('.gd-play-edit-panel[data-edit-panel="header"]');
+        var headerItem = document.querySelector('.gd-play-editable[data-edit="header"]');
+        var headerBackBtn = headerEditPanel ? headerEditPanel.querySelector('.gd-play-edit-back') : null;
+
+        // Preview elements
+        var pageHeader = document.querySelector('.gd-play-page-header');
+
+        // Controls
+        var headerStyleSelect = headerEditPanel ? headerEditPanel.querySelector('[data-header-style]') : null;
+        var headerNavToggle = headerEditPanel ? headerEditPanel.querySelector('[data-toggle="header-nav"]') : null;
+
+        // Open header edit panel
+        if (headerItem && headerEditPanel && sectionsPanel) {
+            headerItem.addEventListener('click', function (e) {
+                sectionsPanel.classList.remove('is-active');
+                headerEditPanel.classList.add('is-active');
+                showCtaAfterEdit();
+            });
+        }
+
+        // Back button
+        if (headerBackBtn && headerEditPanel && sectionsPanel) {
+            headerBackBtn.addEventListener('click', function () {
+                headerEditPanel.classList.remove('is-active');
+                sectionsPanel.classList.add('is-active');
+            });
+        }
+
+        // Header style toggle
+        if (headerStyleSelect) {
+            headerStyleSelect.addEventListener('change', function () {
+                var style = this.value;
+
+                // Update header class
+                if (pageHeader) {
+                    if (style === 'uppercase') {
+                        pageHeader.classList.add('is-uppercase');
+                    } else {
+                        pageHeader.classList.remove('is-uppercase');
+                    }
+                }
+                showSavedToast();
+            });
+        }
+        // Navigation toggle
+        if (headerNavToggle && pageHeader) {
+            headerNavToggle.addEventListener('click', function () {
+                this.classList.toggle('is-on');
+                var showNav = this.classList.contains('is-on');
+
+                if (showNav) {
+                    pageHeader.classList.remove('hide-nav');
+                } else {
+                    pageHeader.classList.add('hide-nav');
+                }
+                showSavedToast();
+
+            });
+        }
+
+        // ===== NEW EDIT PANELS LOGIC =====
+
+        // Generic function to setup edit panel opening
+        function setupEditPanel(triggerSelector, panelName) {
+            var trigger = document.querySelector(triggerSelector);
+            var panel = document.querySelector('.gd-play-edit-panel[data-edit-panel="' + panelName + '"]');
+            var backBtn = panel ? panel.querySelector('.gd-play-edit-back') : null;
+            var parentPanel = trigger ? trigger.closest('.gd-play-panel') : null;
+
+            if (trigger && panel && parentPanel) {
+                trigger.addEventListener('click', function () {
+                    parentPanel.classList.remove('is-active');
+                    panel.classList.add('is-active');
+                    showCtaAfterEdit();
+                });
+            }
+
+            if (backBtn && panel && parentPanel) {
+                backBtn.addEventListener('click', function () {
+                    panel.classList.remove('is-active');
+                    parentPanel.classList.add('is-active');
+                });
+            }
+        }
+
+        setupEditPanel('.gd-play-editable[data-edit="colors"]', 'colors');
+        setupEditPanel('.gd-play-editable[data-edit="typography"]', 'typography');
+        setupEditPanel('.gd-play-editable[data-edit="site"]', 'site');
+
+        // Colors Logic
+        var colorSwatches = document.querySelectorAll('.gd-play-color-swatch');
+        var playSection = document.querySelector('.gd-play-section');
+
+        colorSwatches.forEach(function (swatch) {
+            swatch.addEventListener('click', function () {
+                var color = this.getAttribute('data-color');
+
+                // Update active state
+                colorSwatches.forEach(function (s) { s.classList.remove('is-active'); });
+                this.classList.add('is-active');
+
+                // Update CSS variable
+                if (playSection) {
+                    playSection.style.setProperty('--play-accent', color);
+                }
+                showSavedToast();
+            });
+        });
+
+        // Typography Logic
+        var fontHeadingSelect = document.querySelector('[data-font-heading]');
+        var fontBodySelect = document.querySelector('[data-font-body]');
+
+        var fontStacks = {
+            'sans': '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif',
+            'serif': 'Georgia, Cambria, "Times New Roman", Times, serif',
+            'mono': 'Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace'
+        };
+
+        if (fontHeadingSelect) {
+            fontHeadingSelect.addEventListener('change', function () {
+                var type = this.value;
+                if (playSection) {
+                    playSection.style.setProperty('--play-heading-font', fontStacks[type]);
+                }
+                showSavedToast();
+            });
+        }
+
+        if (fontBodySelect) {
+            fontBodySelect.addEventListener('change', function () {
+                var type = this.value;
+                if (playSection) {
+                    playSection.style.setProperty('--play-body-font', fontStacks[type]);
+                }
+                showSavedToast();
+            });
+        }
+
+        // Site Title Logic
+        var siteTitleInput = document.querySelector('[data-edit-field="site-title"]');
+        var siteLogo = document.querySelector('.gd-play-page-logo');
+
+        if (siteTitleInput && siteLogo) {
+            siteTitleInput.addEventListener('input', function () {
+                siteLogo.textContent = this.value || 'Defalt';
+            });
+        }
+
+        // ===== SAVED TOAST =====
+        var toast = document.querySelector('.gd-play-toast');
+        var toastTimeout = null;
+
+        function showSavedToast() {
+            if (!toast) return;
+            toast.classList.add('is-visible');
+            clearTimeout(toastTimeout);
+            toastTimeout = setTimeout(function () {
+                toast.classList.remove('is-visible');
+            }, 1500);
+        }
+
+        // Debounced save indicator on input
+        var saveDebounce = null;
+        document.querySelectorAll('.gd-play-edit-input').forEach(function (input) {
+            input.addEventListener('input', function () {
+                clearTimeout(saveDebounce);
+                saveDebounce = setTimeout(function () {
+                    showSavedToast();
+
+                }, 800);
+            });
+        });
+
+        // ===== CTA OVERLAY =====
+        var ctaOverlay = document.querySelector('.gd-play-cta-overlay');
+        var ctaDismiss = document.querySelector('.gd-play-cta-dismiss');
+        var ctaShown = sessionStorage.getItem('play-cta-shown');
+        var ctaTimeout = null;
+
+        // Show CTA only after explicit editing intent (opening an edit panel)
+        function showCtaAfterEdit() {
+            if (ctaShown || !ctaOverlay) return;
+            clearTimeout(ctaTimeout);
+            ctaTimeout = setTimeout(function () {
+                ctaOverlay.classList.add('is-visible');
+            }, 3000);
+        }
+
+        if (ctaDismiss && ctaOverlay) {
+            ctaDismiss.addEventListener('click', function () {
+                ctaOverlay.classList.remove('is-visible');
+                sessionStorage.setItem('play-cta-shown', 'true');
+                ctaShown = true;
+            });
+        }
+
+        // ===== ADD SECTION FUNCTIONALITY =====
+        var addSectionBtn = document.querySelector('.gd-play-add-section');
+        var sectionPicker = document.querySelector('.gd-play-section-picker');
+        var sectionCounter = 0;
+
+        // Helper to clone icon from template
+        function getIconFromTemplate(templateId) {
+            var template = document.getElementById(templateId);
+            return template ? template.content.cloneNode(true) : null;
+        }
+
+        // Section templates (using HTML template elements for icons)
+        var sectionTemplates = {
+            'hero': {
+                name: 'Hero',
+                iconTemplateId: 'gd-play-icon-hero',
+                previewHtml: '<div class="gd-play-page-hero"><h1>New Hero Section</h1><p>Add your content here</p><span class="gd-play-page-btn">Learn More</span></div>'
+            },
+            'ghost-cards': {
+                name: 'Ghost Cards',
+                iconTemplateId: 'gd-play-icon-ghost-cards',
+                previewHtml: '<div class="gd-play-page-cards"><div class="gd-play-page-card"><div class="gd-play-page-card-img"></div><div class="gd-play-page-card-body"><div class="gd-play-page-card-title">New Card</div><p class="gd-play-page-card-text">Card content</p></div></div><div class="gd-play-page-card"><div class="gd-play-page-card-img"></div><div class="gd-play-page-card-body"><div class="gd-play-page-card-title">New Card</div><p class="gd-play-page-card-text">Card content</p></div></div><div class="gd-play-page-card"><div class="gd-play-page-card-img"></div><div class="gd-play-page-card-body"><div class="gd-play-page-card-title">New Card</div><p class="gd-play-page-card-text">Card content</p></div></div></div>'
+            }
+        };
+
+        // Toggle section picker
+        if (addSectionBtn && sectionPicker) {
+            addSectionBtn.addEventListener('click', function (e) {
+                e.stopPropagation();
+                sectionPicker.classList.toggle('is-visible');
+            });
+
+            // Close picker when clicking outside
+            document.addEventListener('click', function (e) {
+                if (!sectionPicker.contains(e.target) && e.target !== addSectionBtn) {
+                    sectionPicker.classList.remove('is-visible');
+                }
+            });
+        }
+
+        // Helper for hover highlighting
+        var builtInMap = { 'header': '.gd-play-page-header', 'hero': '.gd-play-page-hero', 'cards': '.gd-play-page-cards' };
+
+        function highlightPreviewSection(targetId, highlight) {
+            var targetEl = builtInMap[targetId]
+                ? document.querySelector(builtInMap[targetId])
+                : previewPage.querySelector('[data-section-id="' + targetId + '"]');
+            if (targetEl) {
+                targetEl.classList[highlight ? 'add' : 'remove']('is-highlighted');
+            }
+        }
+
+        // Event delegation for the entire drawer (handles all items including Header)
+        var drawer = document.querySelector('.gd-play-drawer');
+        if (drawer) {
+            // Click delegation for remove buttons
+            drawer.addEventListener('click', function (e) {
+                var removeBtn = e.target.closest('.gd-play-remove-btn');
+                if (removeBtn) {
+                    e.stopPropagation();
+                    var removeId = removeBtn.getAttribute('data-remove');
+                    var drawerItem = removeBtn.closest('.gd-play-drawer-item');
+                    if (drawerItem) drawerItem.remove();
+                    var previewEl = previewPage.querySelector('[data-section-id="' + removeId + '"]');
+                    if (previewEl) previewEl.remove();
+                    showSavedToast();
+
+                }
+            });
+
+            // Hover highlighting for all drawer items (using capture phase)
+            drawer.addEventListener('mouseenter', function (e) {
+                var item = e.target.closest('.gd-play-drawer-item[data-target]');
+                if (item) highlightPreviewSection(item.getAttribute('data-target'), true);
+            }, true);
+
+            drawer.addEventListener('mouseleave', function (e) {
+                var item = e.target.closest('.gd-play-drawer-item[data-target]');
+                if (item) highlightPreviewSection(item.getAttribute('data-target'), false);
+            }, true);
+        }
+
+        // Add section from picker
+        document.querySelectorAll('.gd-play-section-picker-item').forEach(function (item) {
+            item.addEventListener('click', function () {
+                var sectionType = this.getAttribute('data-add-section');
+                var template = sectionTemplates[sectionType];
+                if (!template || !sortableContainer || !previewPage) return;
+
+                sectionCounter++;
+                var sectionId = sectionType + '-' + sectionCounter;
+
+                // Create drawer item
+                var drawerItem = document.createElement('div');
+                drawerItem.className = 'gd-play-drawer-item';
+                drawerItem.setAttribute('draggable', 'true');
+                drawerItem.setAttribute('data-target', sectionId);
+
+                // Clone icon from template
+                var icon = getIconFromTemplate(template.iconTemplateId);
+                if (icon) drawerItem.appendChild(icon);
+
+                // Add text and remove button
+                drawerItem.appendChild(document.createTextNode(' ' + template.name));
+                var removeBtn = document.createElement('span');
+                removeBtn.className = 'gd-play-remove-btn';
+                removeBtn.setAttribute('data-remove', sectionId);
+                var removeIcon = getIconFromTemplate('gd-play-icon-remove');
+                if (removeIcon) removeBtn.appendChild(removeIcon);
+                drawerItem.appendChild(removeBtn);
+
+                // Insert before "Add section" button
+                sortableContainer.insertBefore(drawerItem, addSectionBtn);
+
+                // Create preview section
+                var previewSection = document.createElement('div');
+                previewSection.innerHTML = template.previewHtml;
+                var newSection = previewSection.firstChild;
+                newSection.setAttribute('data-section-id', sectionId);
+                newSection.classList.add('gd-play-page-section');
+                previewPage.appendChild(newSection);
+
+                // No need to add drag/hover events - handled by event delegation!
+
+                // Hide picker and show toast
+                sectionPicker.classList.remove('is-visible');
+                showSavedToast();
+
+            });
+        });
+
+        // ===== PREVIEW SECTION CLICK TO EDIT =====
+        // Click on preview sections to open their edit panels
+        var previewClickMap = {
+            '.gd-play-page-header': 'header',
+            '.gd-play-page-hero': 'hero',
+            '.gd-play-page-cards': 'ghost-cards'
+        };
+
+        function openEditPanel(editPanelName) {
+            // Switch to sections panel in rail
+            document.querySelectorAll('.gd-play-rail .gd-play-nav-item').forEach(function (i) {
                 i.classList.remove('is-active');
             });
-            this.classList.add('is-active');
+            var sectionsNav = document.querySelector('.gd-play-rail .gd-play-nav-item[data-panel="sections"]');
+            if (sectionsNav) sectionsNav.classList.add('is-active');
 
-            // Hide any open edit panels
-            document.querySelectorAll('.gd-play-edit-panel').forEach(function(ep) {
-                ep.classList.remove('is-active');
-            });
-
-            // Switch sidebar panel
-            document.querySelectorAll('.gd-play-panel').forEach(function(p) {
+            // Activate sections panel
+            document.querySelectorAll('.gd-play-panel').forEach(function (p) {
                 p.classList.remove('is-active');
             });
-            var targetPanel = document.querySelector('.gd-play-panel[data-panel="' + panel + '"]');
-            if (targetPanel) {
-                targetPanel.classList.add('is-active');
-            }
-        });
-    });
+            if (sectionsPanel) sectionsPanel.classList.add('is-active');
 
-    // Viewport switching (mobile/desktop)
-    var viewportBtns = document.querySelectorAll('.gd-play-viewport-btn');
-    var previewFrame = document.querySelector('.gd-play-preview-frame');
-
-    // Auto-detect user's device and set initial viewport
-    var isMobileDevice = window.matchMedia('(max-width: 768px)').matches;
-    if (isMobileDevice && previewFrame) {
-        previewFrame.classList.add('is-mobile');
-        viewportBtns.forEach(function(b) {
-            if (b.getAttribute('data-viewport') === 'mobile') {
-                b.classList.add('is-active');
-            } else {
-                b.classList.remove('is-active');
-            }
-        });
-    }
-
-    viewportBtns.forEach(function(btn) {
-        btn.addEventListener('click', function() {
-            var viewport = this.getAttribute('data-viewport');
-
-            viewportBtns.forEach(function(b) {
-                b.classList.remove('is-active');
+            // Close any open edit panels, then open the target one
+            document.querySelectorAll('.gd-play-edit-panel').forEach(function (ep) {
+                ep.classList.remove('is-active');
             });
-            this.classList.add('is-active');
-
-            if (viewport === 'mobile') {
-                previewFrame.classList.add('is-mobile');
-            } else {
-                previewFrame.classList.remove('is-mobile');
+            var targetEditPanel = document.querySelector('.gd-play-edit-panel[data-edit-panel="' + editPanelName + '"]');
+            if (targetEditPanel && sectionsPanel) {
+                sectionsPanel.classList.remove('is-active');
+                targetEditPanel.classList.add('is-active');
+                showCtaAfterEdit();
             }
-        });
-    });
-
-    // Drag and drop using event delegation (works for dynamic items)
-    var sortableContainer = document.querySelector('.gd-play-drawer-items[data-sortable]');
-    var dropIndicator = document.createElement('div');
-    dropIndicator.className = 'gd-play-drop-indicator';
-
-    // Get the element that should come after the dragged element
-    function getDragAfterElement(container, y) {
-        var draggableElements = Array.from(
-            container.querySelectorAll('.gd-play-drawer-item:not(.is-dragging):not(.gd-play-add-section)')
-        );
-
-        return draggableElements.reduce(function(closest, child) {
-            var box = child.getBoundingClientRect();
-            var offset = y - box.top - box.height / 2;
-            if (offset < 0 && offset > closest.offset) {
-                return { offset: offset, element: child };
-            } else {
-                return closest;
-            }
-        }, { offset: Number.NEGATIVE_INFINITY }).element;
-    }
-
-    function removeIndicator() {
-        if (dropIndicator.parentElement) {
-            dropIndicator.parentElement.removeChild(dropIndicator);
         }
-    }
 
-    // Preview section mapping for sync
-    var previewSectionMap = {
-        'hero': '.gd-play-page-hero',
-        'cards': '.gd-play-page-cards'
-    };
-    var previewPage = document.querySelector('.gd-play-page');
-
-    function syncPreviewOrder() {
-        if (!previewPage) return;
-
-        // Get current drawer order (only items with data-target, excluding add-section)
-        var drawerItems = document.querySelectorAll('.gd-play-drawer-items[data-sortable] .gd-play-drawer-item[data-target]:not(.gd-play-add-section)');
-        var header = previewPage.querySelector('.gd-play-page-header');
-        if (!header) return;
-
-        // Collect all sections in drawer order
-        var orderedTargets = [];
-        drawerItems.forEach(function(item) {
-            var targetKey = item.getAttribute('data-target');
-            if (targetKey) orderedTargets.push(targetKey);
-        });
-
-        // Reverse to insert in correct order (last becomes first after header)
-        orderedTargets.reverse().forEach(function(targetKey) {
-            var section = null;
-
-            // Check built-in sections first
-            if (previewSectionMap[targetKey]) {
-                section = previewPage.querySelector(previewSectionMap[targetKey]);
-            }
-
-            // Then check dynamically added sections
-            if (!section) {
-                section = previewPage.querySelector('[data-section-id="' + targetKey + '"]');
-            }
-
-            if (section && header) {
-                header.parentNode.insertBefore(section, header.nextSibling);
+        // Add click handlers to built-in preview sections
+        Object.keys(previewClickMap).forEach(function (selector) {
+            var el = document.querySelector(selector);
+            if (el) {
+                el.addEventListener('click', function (e) {
+                    e.stopPropagation();
+                    openEditPanel(previewClickMap[selector]);
+                });
             }
         });
-    }
-
-    // Event delegation for drag events - handles both initial and dynamic items
-    if (sortableContainer) {
-        // Dragstart - delegated
-        sortableContainer.addEventListener('dragstart', function(e) {
-            var item = e.target.closest('.gd-play-drawer-item[draggable="true"]');
-            if (item && !item.classList.contains('gd-play-add-section')) {
-                item.classList.add('is-dragging');
-                e.dataTransfer.effectAllowed = 'move';
-            }
-        });
-
-        // Dragend - delegated
-        sortableContainer.addEventListener('dragend', function(e) {
-            var item = e.target.closest('.gd-play-drawer-item');
-            if (item && item.classList.contains('is-dragging')) {
-                item.classList.remove('is-dragging');
-                // Move element to indicator position
-                if (dropIndicator.parentElement) {
-                    dropIndicator.parentElement.insertBefore(item, dropIndicator);
-                }
-                removeIndicator();
-                syncPreviewOrder();
-                showSavedToast();
-                
-            }
-        });
-
-        // Dragover - show drop indicator
-        sortableContainer.addEventListener('dragover', function(e) {
-            e.preventDefault();
-            e.dataTransfer.dropEffect = 'move';
-
-            var draggingElement = sortableContainer.querySelector('.is-dragging');
-            if (!draggingElement) return;
-
-            var afterElement = getDragAfterElement(sortableContainer, e.clientY);
-            var addSection = sortableContainer.querySelector('.gd-play-add-section');
-
-            // Don't show indicator if it would be at the original position
-            var nextSibling = draggingElement.nextElementSibling;
-            if (nextSibling === dropIndicator) {
-                nextSibling = dropIndicator.nextElementSibling;
-            }
-
-            var targetPosition = afterElement || addSection || null;
-            if (targetPosition === nextSibling || (targetPosition === null && nextSibling === addSection)) {
-                removeIndicator();
-                return;
-            }
-
-            if (afterElement == null) {
-                if (addSection) {
-                    sortableContainer.insertBefore(dropIndicator, addSection);
-                } else {
-                    sortableContainer.appendChild(dropIndicator);
-                }
-            } else {
-                sortableContainer.insertBefore(dropIndicator, afterElement);
-            }
-        });
-
-        // Drop event - finalize the move
-        sortableContainer.addEventListener('drop', function(e) {
-            e.preventDefault();
-            var draggingElement = sortableContainer.querySelector('.is-dragging');
-            if (draggingElement && dropIndicator.parentElement) {
-                dropIndicator.parentElement.insertBefore(draggingElement, dropIndicator);
-                draggingElement.classList.remove('is-dragging');
-                removeIndicator();
-                syncPreviewOrder();
-                showSavedToast();
-                
-            }
-        });
-
-        // Dragleave - remove indicator when leaving container
-        sortableContainer.addEventListener('dragleave', function(e) {
-            if (!sortableContainer.contains(e.relatedTarget)) {
-                removeIndicator();
-            }
-        });
-    }
-
-    // Hero edit panel functionality
-    var sectionsPanel = document.querySelector('.gd-play-panel[data-panel="sections"]');
-    var heroEditPanel = document.querySelector('.gd-play-edit-panel[data-edit-panel="hero"]');
-    var heroItem = document.querySelector('.gd-play-editable[data-edit="hero"]');
-    var backBtn = heroEditPanel ? heroEditPanel.querySelector('.gd-play-edit-back') : null;
-
-    // Preview elements to update
-    var heroHeadline = document.querySelector('.gd-play-page-hero h1');
-    var heroDescription = document.querySelector('.gd-play-page-hero p');
-    var heroButton = document.querySelector('.gd-play-page-hero .gd-play-page-btn');
-
-    // Edit inputs
-    var headlineInput = heroEditPanel ? heroEditPanel.querySelector('[data-edit-field="headline"]') : null;
-    var descriptionInput = heroEditPanel ? heroEditPanel.querySelector('[data-edit-field="description"]') : null;
-    var buttonInput = heroEditPanel ? heroEditPanel.querySelector('[data-edit-field="button"]') : null;
-
-    // Open hero edit panel
-    if (heroItem && heroEditPanel && sectionsPanel) {
-        heroItem.addEventListener('click', function(e) {
-            // Don't open if dragging
-            if (this.classList.contains('is-dragging')) return;
-
-            sectionsPanel.classList.remove('is-active');
-            heroEditPanel.classList.add('is-active');
-            showCtaAfterEdit();
-        });
-    }
-
-    // Back button - return to sections
-    if (backBtn && heroEditPanel && sectionsPanel) {
-        backBtn.addEventListener('click', function() {
-            heroEditPanel.classList.remove('is-active');
-            sectionsPanel.classList.add('is-active');
-        });
-    }
-
-    // Live update preview from inputs
-    if (headlineInput && heroHeadline) {
-        headlineInput.addEventListener('input', function() {
-            heroHeadline.textContent = this.value || 'Build something amazing';
-        });
-    }
-
-    if (descriptionInput && heroDescription) {
-        descriptionInput.addEventListener('input', function() {
-            heroDescription.textContent = this.value || 'Create beautiful websites with the power of Ghost';
-        });
-    }
-
-    if (buttonInput && heroButton) {
-        buttonInput.addEventListener('input', function() {
-            heroButton.textContent = this.value || 'Get Started';
-        });
-    }
-
-    // Ghost Cards edit panel functionality
-    var ghostCardsEditPanel = document.querySelector('.gd-play-edit-panel[data-edit-panel="ghost-cards"]');
-    var ghostCardsItem = document.querySelector('.gd-play-editable[data-edit="ghost-cards"]');
-    var ghostCardsBackBtn = ghostCardsEditPanel ? ghostCardsEditPanel.querySelector('.gd-play-edit-back') : null;
-
-    // Preview elements
-    var cardsContainer = document.querySelector('.gd-play-page-cards');
-    var pageCards = document.querySelectorAll('.gd-play-page-card');
-    var cardImages = document.querySelectorAll('.gd-play-page-card-img');
-
-    // Controls
-    var cardCountBtns = ghostCardsEditPanel ? ghostCardsEditPanel.querySelectorAll('.gd-play-btn-option') : [];
-    var imagesToggle = ghostCardsEditPanel ? ghostCardsEditPanel.querySelector('[data-toggle="images"]') : null;
-
-    // Open ghost cards edit panel
-    if (ghostCardsItem && ghostCardsEditPanel && sectionsPanel) {
-        ghostCardsItem.addEventListener('click', function(e) {
-            if (this.classList.contains('is-dragging')) return;
-            sectionsPanel.classList.remove('is-active');
-            ghostCardsEditPanel.classList.add('is-active');
-            showCtaAfterEdit();
-        });
-    }
-
-    // Back button
-    if (ghostCardsBackBtn && ghostCardsEditPanel && sectionsPanel) {
-        ghostCardsBackBtn.addEventListener('click', function() {
-            ghostCardsEditPanel.classList.remove('is-active');
-            sectionsPanel.classList.add('is-active');
-        });
-    }
-
-    // Card count toggle
-    cardCountBtns.forEach(function(btn) {
-        btn.addEventListener('click', function() {
-            var count = parseInt(this.getAttribute('data-cards'));
-
-            // Update button states
-            cardCountBtns.forEach(function(b) { b.classList.remove('is-active'); });
-            this.classList.add('is-active');
-
-            // Update grid class
-            if (cardsContainer) {
-                if (count === 1) {
-                    cardsContainer.classList.add('show-1');
-                } else {
-                    cardsContainer.classList.remove('show-1');
-                }
-            }
-
-            // Show/hide cards
-            pageCards.forEach(function(card, i) {
-                if (i < count) {
-                    card.classList.remove('is-hidden');
-                } else {
-                    card.classList.add('is-hidden');
-                }
-            });
-        });
-    });
-
-    // Images toggle
-    if (imagesToggle) {
-        imagesToggle.addEventListener('click', function() {
-            this.classList.toggle('is-on');
-            var showImages = this.classList.contains('is-on');
-
-            cardImages.forEach(function(img) {
-                if (showImages) {
-                    img.classList.remove('is-hidden');
-                } else {
-                    img.classList.add('is-hidden');
-                }
-            });
-            
-        });
-    }
-
-    // Header edit panel functionality
-    var headerEditPanel = document.querySelector('.gd-play-edit-panel[data-edit-panel="header"]');
-    var headerItem = document.querySelector('.gd-play-editable[data-edit="header"]');
-    var headerBackBtn = headerEditPanel ? headerEditPanel.querySelector('.gd-play-edit-back') : null;
-
-    // Preview elements
-    var pageHeader = document.querySelector('.gd-play-page-header');
-
-    // Controls
-    var headerStyleBtns = headerEditPanel ? headerEditPanel.querySelectorAll('[data-header-style]') : [];
-    var headerNavToggle = headerEditPanel ? headerEditPanel.querySelector('[data-toggle="header-nav"]') : null;
-
-    // Open header edit panel
-    if (headerItem && headerEditPanel && sectionsPanel) {
-        headerItem.addEventListener('click', function(e) {
-            sectionsPanel.classList.remove('is-active');
-            headerEditPanel.classList.add('is-active');
-            showCtaAfterEdit();
-        });
-    }
-
-    // Back button
-    if (headerBackBtn && headerEditPanel && sectionsPanel) {
-        headerBackBtn.addEventListener('click', function() {
-            headerEditPanel.classList.remove('is-active');
-            sectionsPanel.classList.add('is-active');
-        });
-    }
-
-    // Header style toggle
-    headerStyleBtns.forEach(function(btn) {
-        btn.addEventListener('click', function() {
-            var style = this.getAttribute('data-header-style');
-
-            // Update button states
-            headerStyleBtns.forEach(function(b) { b.classList.remove('is-active'); });
-            this.classList.add('is-active');
-
-            // Update header class
-            if (pageHeader) {
-                if (style === 'uppercase') {
-                    pageHeader.classList.add('is-uppercase');
-                } else {
-                    pageHeader.classList.remove('is-uppercase');
-                }
-            }
-            showSavedToast();
-            
-        });
-    });
-
-    // Navigation toggle
-    if (headerNavToggle && pageHeader) {
-        headerNavToggle.addEventListener('click', function() {
-            this.classList.toggle('is-on');
-            var showNav = this.classList.contains('is-on');
-
-            if (showNav) {
-                pageHeader.classList.remove('hide-nav');
-            } else {
-                pageHeader.classList.add('hide-nav');
-            }
-            showSavedToast();
-            
-        });
-    }
-
-    // ===== SAVED TOAST =====
-    var toast = document.querySelector('.gd-play-toast');
-    var toastTimeout = null;
-
-    function showSavedToast() {
-        if (!toast) return;
-        toast.classList.add('is-visible');
-        clearTimeout(toastTimeout);
-        toastTimeout = setTimeout(function() {
-            toast.classList.remove('is-visible');
-        }, 1500);
-    }
-
-    // Debounced save indicator on input
-    var saveDebounce = null;
-    document.querySelectorAll('.gd-play-edit-input').forEach(function(input) {
-        input.addEventListener('input', function() {
-            clearTimeout(saveDebounce);
-            saveDebounce = setTimeout(function() {
-                showSavedToast();
-                
-            }, 800);
-        });
-    });
-
-    // ===== CTA OVERLAY =====
-    var ctaOverlay = document.querySelector('.gd-play-cta-overlay');
-    var ctaDismiss = document.querySelector('.gd-play-cta-dismiss');
-    var ctaShown = sessionStorage.getItem('play-cta-shown');
-    var ctaTimeout = null;
-
-    // Show CTA only after explicit editing intent (opening an edit panel)
-    function showCtaAfterEdit() {
-        if (ctaShown || !ctaOverlay) return;
-        clearTimeout(ctaTimeout);
-        ctaTimeout = setTimeout(function() {
-            ctaOverlay.classList.add('is-visible');
-        }, 3000);
-    }
-
-    if (ctaDismiss && ctaOverlay) {
-        ctaDismiss.addEventListener('click', function() {
-            ctaOverlay.classList.remove('is-visible');
-            sessionStorage.setItem('play-cta-shown', 'true');
-            ctaShown = true;
-        });
-    }
-
-    // ===== ADD SECTION FUNCTIONALITY =====
-    var addSectionBtn = document.querySelector('.gd-play-add-section');
-    var sectionPicker = document.querySelector('.gd-play-section-picker');
-    var sectionCounter = 0;
-
-    // Helper to clone icon from template
-    function getIconFromTemplate(templateId) {
-        var template = document.getElementById(templateId);
-        return template ? template.content.cloneNode(true) : null;
-    }
-
-    // Section templates (using HTML template elements for icons)
-    var sectionTemplates = {
-        'hero': {
-            name: 'Hero',
-            iconTemplateId: 'gd-play-icon-hero',
-            previewHtml: '<div class="gd-play-page-hero"><h1>New Hero Section</h1><p>Add your content here</p><span class="gd-play-page-btn">Learn More</span></div>'
-        },
-        'ghost-cards': {
-            name: 'Ghost Cards',
-            iconTemplateId: 'gd-play-icon-ghost-cards',
-            previewHtml: '<div class="gd-play-page-cards"><div class="gd-play-page-card"><div class="gd-play-page-card-img"></div><div class="gd-play-page-card-body"><div class="gd-play-page-card-title">New Card</div><p class="gd-play-page-card-text">Card content</p></div></div><div class="gd-play-page-card"><div class="gd-play-page-card-img"></div><div class="gd-play-page-card-body"><div class="gd-play-page-card-title">New Card</div><p class="gd-play-page-card-text">Card content</p></div></div><div class="gd-play-page-card"><div class="gd-play-page-card-img"></div><div class="gd-play-page-card-body"><div class="gd-play-page-card-title">New Card</div><p class="gd-play-page-card-text">Card content</p></div></div></div>'
-        }
-    };
-
-    // Toggle section picker
-    if (addSectionBtn && sectionPicker) {
-        addSectionBtn.addEventListener('click', function(e) {
-            e.stopPropagation();
-            sectionPicker.classList.toggle('is-visible');
-        });
-
-        // Close picker when clicking outside
-        document.addEventListener('click', function(e) {
-            if (!sectionPicker.contains(e.target) && e.target !== addSectionBtn) {
-                sectionPicker.classList.remove('is-visible');
-            }
-        });
-    }
-
-    // Helper for hover highlighting
-    var builtInMap = { 'header': '.gd-play-page-header', 'hero': '.gd-play-page-hero', 'cards': '.gd-play-page-cards' };
-
-    function highlightPreviewSection(targetId, highlight) {
-        var targetEl = builtInMap[targetId]
-            ? document.querySelector(builtInMap[targetId])
-            : previewPage.querySelector('[data-section-id="' + targetId + '"]');
-        if (targetEl) {
-            targetEl.classList[highlight ? 'add' : 'remove']('is-highlighted');
-        }
-    }
-
-    // Event delegation for the entire drawer (handles all items including Header)
-    var drawer = document.querySelector('.gd-play-drawer');
-    if (drawer) {
-        // Click delegation for remove buttons
-        drawer.addEventListener('click', function(e) {
-            var removeBtn = e.target.closest('.gd-play-remove-btn');
-            if (removeBtn) {
-                e.stopPropagation();
-                var removeId = removeBtn.getAttribute('data-remove');
-                var drawerItem = removeBtn.closest('.gd-play-drawer-item');
-                if (drawerItem) drawerItem.remove();
-                var previewEl = previewPage.querySelector('[data-section-id="' + removeId + '"]');
-                if (previewEl) previewEl.remove();
-                showSavedToast();
-                
-            }
-        });
-
-        // Hover highlighting for all drawer items (using capture phase)
-        drawer.addEventListener('mouseenter', function(e) {
-            var item = e.target.closest('.gd-play-drawer-item[data-target]');
-            if (item) highlightPreviewSection(item.getAttribute('data-target'), true);
-        }, true);
-
-        drawer.addEventListener('mouseleave', function(e) {
-            var item = e.target.closest('.gd-play-drawer-item[data-target]');
-            if (item) highlightPreviewSection(item.getAttribute('data-target'), false);
-        }, true);
-    }
-
-    // Add section from picker
-    document.querySelectorAll('.gd-play-section-picker-item').forEach(function(item) {
-        item.addEventListener('click', function() {
-            var sectionType = this.getAttribute('data-add-section');
-            var template = sectionTemplates[sectionType];
-            if (!template || !sortableContainer || !previewPage) return;
-
-            sectionCounter++;
-            var sectionId = sectionType + '-' + sectionCounter;
-
-            // Create drawer item
-            var drawerItem = document.createElement('div');
-            drawerItem.className = 'gd-play-drawer-item';
-            drawerItem.setAttribute('draggable', 'true');
-            drawerItem.setAttribute('data-target', sectionId);
-
-            // Clone icon from template
-            var icon = getIconFromTemplate(template.iconTemplateId);
-            if (icon) drawerItem.appendChild(icon);
-
-            // Add text and remove button
-            drawerItem.appendChild(document.createTextNode(' ' + template.name));
-            var removeBtn = document.createElement('span');
-            removeBtn.className = 'gd-play-remove-btn';
-            removeBtn.setAttribute('data-remove', sectionId);
-            var removeIcon = getIconFromTemplate('gd-play-icon-remove');
-            if (removeIcon) removeBtn.appendChild(removeIcon);
-            drawerItem.appendChild(removeBtn);
-
-            // Insert before "Add section" button
-            sortableContainer.insertBefore(drawerItem, addSectionBtn);
-
-            // Create preview section
-            var previewSection = document.createElement('div');
-            previewSection.innerHTML = template.previewHtml;
-            var newSection = previewSection.firstChild;
-            newSection.setAttribute('data-section-id', sectionId);
-            newSection.classList.add('gd-play-page-section');
-            previewPage.appendChild(newSection);
-
-            // No need to add drag/hover events - handled by event delegation!
-
-            // Hide picker and show toast
-            sectionPicker.classList.remove('is-visible');
-            showSavedToast();
-            
-        });
-    });
-
-    // ===== PREVIEW SECTION CLICK TO EDIT =====
-    // Click on preview sections to open their edit panels
-    var previewClickMap = {
-        '.gd-play-page-header': 'header',
-        '.gd-play-page-hero': 'hero',
-        '.gd-play-page-cards': 'ghost-cards'
-    };
-
-    function openEditPanel(editPanelName) {
-        // Switch to sections panel in rail
-        document.querySelectorAll('.gd-play-rail .gd-play-nav-item').forEach(function(i) {
-            i.classList.remove('is-active');
-        });
-        var sectionsNav = document.querySelector('.gd-play-rail .gd-play-nav-item[data-panel="sections"]');
-        if (sectionsNav) sectionsNav.classList.add('is-active');
-
-        // Activate sections panel
-        document.querySelectorAll('.gd-play-panel').forEach(function(p) {
-            p.classList.remove('is-active');
-        });
-        if (sectionsPanel) sectionsPanel.classList.add('is-active');
-
-        // Close any open edit panels, then open the target one
-        document.querySelectorAll('.gd-play-edit-panel').forEach(function(ep) {
-            ep.classList.remove('is-active');
-        });
-        var targetEditPanel = document.querySelector('.gd-play-edit-panel[data-edit-panel="' + editPanelName + '"]');
-        if (targetEditPanel && sectionsPanel) {
-            sectionsPanel.classList.remove('is-active');
-            targetEditPanel.classList.add('is-active');
-            showCtaAfterEdit();
-        }
-    }
-
-    // Add click handlers to built-in preview sections
-    Object.keys(previewClickMap).forEach(function(selector) {
-        var el = document.querySelector(selector);
-        if (el) {
-            el.addEventListener('click', function(e) {
-                e.stopPropagation();
-                openEditPanel(previewClickMap[selector]);
-            });
-        }
-    });
-})();
+    })();
 </script>
