@@ -8,7 +8,7 @@ export type SectionDetail = {
   label: string
 }
 
-export type ActiveTab = 'sections' | 'settings' | 'code'
+export type ActiveTab = 'sections' | 'settings' | 'code' | 'ai'
 
 // State shape
 interface UIState {

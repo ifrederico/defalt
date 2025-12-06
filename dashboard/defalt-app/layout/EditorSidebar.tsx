@@ -5,6 +5,7 @@ import { PostSectionsPanel } from './sidebar/pages/PostSectionsPanel'
 import type { SectionsPanelProps } from './sidebar/pages/SectionsPanelBase'
 import { ThemeSettingsPanel } from './sidebar/ThemeSettingsPanel'
 import { CodePanel } from './sidebar/CodePanel'
+import { AIPanel } from './sidebar/AIPanel'
 import { useThemeContext } from '../contexts/useThemeContext'
 import { useWorkspaceContext } from '../contexts/useWorkspaceContext'
 import { useActiveTab, useActiveDetail, useSidebarExpanded, useUIActions } from '../stores'
@@ -283,6 +284,8 @@ export function EditorSidebar({
         onCustomCSSChange={onCustomCSSChange}
       />
     )
+  } else if (activeTab === 'ai') {
+    content = <AIPanel />
   } else {
     content = (
       <CodePanel
