@@ -510,11 +510,6 @@ body[class*=" gh-font-heading"]:not(.gh-font-heading-fira-sans):not(.gh-font-hea
     gap: 24px;
     align-items: center;
     justify-content: flex-end;
-    background-color: var(--background-color);
-}
-
-.gh-navigation.has-accent-color .gh-navigation-actions {
-    background-color: var(--ghost-accent-color);
 }
 
 .gh-navigation-members {

@@ -13,6 +13,24 @@ body.page-changelog .gh-content > *:last-child:not(.kg-width-full) {
     --image-border-radius: 2px;
 }
 
+/* Smoothen theme changes */
+[data-theme] body,
+[data-theme] .gh-navigation,
+[data-theme] .gh-footer,
+[data-theme] .gh-button,
+[data-theme] .gh-form,
+[data-theme] .gh-form-input,
+[data-theme] .gh-card,
+[data-theme] .gh-cta-bar,
+[data-theme] .gh-theme-menu {
+    transition: background-color 0.25s ease, color 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+}
+
+.gh-navigation-actions,
+.gh-navigation.has-accent-color .gh-navigation-actions {
+    background-color: transparent;
+}
+
 /* Button override - Changed from 100px (pill-shaped) to subtle rounded corners */
 .gh-button {
     border-radius: var(--border-radius);
@@ -430,16 +448,33 @@ body.page-changelog .gh-content > *:last-child:not(.kg-width-full) {
     display: flex;
     align-items: center;
     justify-content: center;
+    width: 32px;
+    height: 32px;
     padding: 0;
     background: none;
     border: none;
     cursor: pointer;
     color: var(--color-darker-gray);
-    transition: color 0.2s ease;
+    transition: color 0.2s ease, background-color 0.2s ease;
 }
 
 .gh-theme-toggle:hover {
     color: var(--ghost-accent-color, var(--color-darkgrey));
+}
+
+.gh-theme-toggle--nav {
+    padding: 0;
+    background: none;
+}
+
+.gh-theme-toggle--nav:hover {
+    color: var(--ghost-accent-color, var(--color-darkgrey));
+}
+
+@media (max-width: 767px) {
+    .gh-theme-toggle--nav {
+        padding: 0;
+    }
 }
 
 /* Show sun in light mode, moon in dark mode */
@@ -454,6 +489,77 @@ body.page-changelog .gh-content > *:last-child:not(.kg-width-full) {
 [data-theme="dark"] .gh-theme-icon-moon {
     display: block;
 }
+
+[data-theme="dark"] .gh-theme-toggle--nav {
+    color: var(--color-primary-text);
+}
+
+[data-theme="dark"] .gh-theme-toggle--nav:hover {
+}
+
+.gh-theme-control {
+    position: relative;
+}
+
+.gh-theme-menu {
+    position: absolute;
+    right: 0;
+    top: calc(100% + 10px);
+    padding: 8px;
+    min-width: 140px;
+    background: var(--background-color);
+    color: var(--color-primary-text);
+    border: 1px solid var(--color-border);
+    border-radius: var(--border-radius);
+    box-shadow: 0 14px 40px rgba(0, 0, 0, 0.12);
+    z-index: 20;
+    backdrop-filter: blur(12px);
+    display: grid;
+    gap: 4px;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transform: translateY(6px);
+    transition: opacity 0.18s ease, transform 0.18s ease, visibility 0.18s ease;
+}
+
+[data-theme-menu].is-open {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    transform: translateY(0);
+}
+
+.gh-theme-menu-item {
+    width: 100%;
+    text-align: left;
+    padding: 10px 12px;
+    border-radius: var(--border-radius);
+    border: 0;
+    background: transparent;
+    color: inherit;
+    font-size: 1.4rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s ease, color 0.2s ease, transform 0.12s ease;
+}
+
+.gh-theme-menu-item:hover {
+    background: var(--color-lighter-gray);
+    color: var(--color-primary-text);
+}
+
+.gh-theme-menu-item.is-active {
+    background: var(--ghost-accent-color);
+    color: #fff;
+    transform: translateY(-1px);
+}
+
+[data-theme="dark"] .gh-theme-menu-item.is-active {
+    background: #282828;
+    color: #fff;
+}
+
 
 /* Dark Mode
 /* ---------------------------------------------------------- */

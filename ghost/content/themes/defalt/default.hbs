@@ -34,49 +34,92 @@
     <script>
         (function() {
             /* Dark mode initialization - runs early to prevent flash */
-            var themeKey = 'theme';
+            var themeKey = 'themePreference';
+            var legacyThemeKey = 'theme';
+            var contrastKey = 'themeContrast';
             var mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+            var themeState = 'system';
 
-            function readStoredTheme() {
+            function readStorage(key) {
                 try {
-                    return localStorage.getItem(themeKey);
+                    return localStorage.getItem(key);
                 } catch (e) {
                     return null;
                 }
             }
 
-            function writeStoredTheme(value) {
+            function writeStorage(key, value) {
                 try {
-                    if (value) {
-                        localStorage.setItem(themeKey, value);
-                    } else {
-                        localStorage.removeItem(themeKey);
-                    }
+                    value ? localStorage.setItem(key, value) : localStorage.removeItem(key);
                 } catch (e) {
-                    /* ignore */
+                    /* ignore storage errors */
                 }
+            }
+
+            function readStoredState() {
+                var stored = readStorage(themeKey) || readStorage(legacyThemeKey);
+                return stored === 'light' || stored === 'dark' ? stored : 'system';
+            }
+
+            function writeStoredState(state) {
+                if (state === 'light' || state === 'dark') {
+                    writeStorage(themeKey, state);
+                } else {
+                    writeStorage(themeKey, null);
+                }
+                writeStorage(legacyThemeKey, null);
             }
 
             function systemTheme() {
                 return mediaQuery.matches ? 'dark' : 'light';
             }
 
-            function applyTheme(theme, persist) {
+            function resolveTheme(state) {
+                if (state === 'light' || state === 'dark') {
+                    return state;
+                }
+                return systemTheme();
+            }
+
+            function syncToggleUi(state, theme) {
+                var pressed = state === 'dark' ? 'true' : state === 'light' ? 'false' : 'mixed';
+                var label = state === 'system' ? 'Theme: System (' + theme + ')' : 'Theme: ' + state.charAt(0).toUpperCase() + state.slice(1);
+
+                document.querySelectorAll('[data-theme-toggle]').forEach(function(btn) {
+                    btn.setAttribute('aria-pressed', pressed);
+                    btn.setAttribute('aria-label', label);
+                    btn.setAttribute('data-theme-state', state);
+                });
+
+                document.querySelectorAll('[data-theme-option]').forEach(function(option) {
+                    var value = option.getAttribute('data-theme-option');
+                    var isActive = value === state;
+                    option.classList.toggle('is-active', isActive);
+                    option.setAttribute('aria-checked', isActive ? 'true' : 'false');
+                });
+            }
+
+            function applyState(state, persist) {
+                var theme = resolveTheme(state);
+                themeState = state;
+
                 document.documentElement.setAttribute('data-theme', theme);
+                document.documentElement.setAttribute('data-theme-mode', state);
+                syncToggleUi(state, theme);
 
                 if (persist === true) {
-                    writeStoredTheme(theme);
-                } else if (persist === false) {
-                    writeStoredTheme(null);
+                    writeStoredState(state);
+                } else if (state === 'system') {
+                    writeStoredState(null);
                 }
             }
 
-            var storedTheme = readStoredTheme();
-            applyTheme(storedTheme || systemTheme(), !!storedTheme);
+            var storedState = readStoredState();
+            applyState(storedState, storedState !== 'system');
 
             function handleSystemChange(event) {
-                if (!readStoredTheme()) {
-                    applyTheme(event.matches ? 'dark' : 'light', false);
+                if (themeState === 'system') {
+                    applyState('system', false);
                 }
             }
 
@@ -86,29 +129,112 @@
                 mediaQuery.addListener(handleSystemChange);
             }
 
-            window.toggleDarkMode = function() {
-                var nextTheme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
-                var shouldPersist = nextTheme !== systemTheme();
-                applyTheme(nextTheme, shouldPersist);
-            };
+            function cycleThemeMode() {
+                var nextState = themeState === 'system' ? 'light' : themeState === 'light' ? 'dark' : 'system';
+                applyState(nextState, nextState !== 'system');
+            }
+
+            window.cycleThemeMode = cycleThemeMode;
+
+            function syncAfterDomReady() {
+                syncToggleUi(themeState, resolveTheme(themeState));
+            }
+
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', syncAfterDomReady);
+            } else {
+                syncAfterDomReady();
+            }
+
+            function closeThemeMenus() {
+                document.querySelectorAll('[data-theme-menu]').forEach(function(menu) {
+                    menu.hidden = true;
+                    menu.classList.remove('is-open');
+                });
+                document.querySelectorAll('[data-theme-toggle]').forEach(function(btn) {
+                    btn.setAttribute('aria-expanded', 'false');
+                });
+            }
+
+            function openThemeMenu(toggle, menu) {
+                closeThemeMenus();
+                if (menu) {
+                    menu.hidden = false;
+                    menu.classList.add('is-open');
+                    toggle.setAttribute('aria-expanded', 'true');
+                }
+            }
+
+            document.addEventListener('click', function(evt) {
+                var option = evt.target.closest('[data-theme-option]');
+                if (option) {
+                    evt.preventDefault();
+                    var state = option.getAttribute('data-theme-option');
+                    applyState(state, state !== 'system');
+                    closeThemeMenus();
+                    return;
+                }
+
+                var toggle = evt.target.closest('[data-theme-toggle]');
+                if (toggle) {
+                    evt.preventDefault();
+                    var menu = toggle.closest('.gh-theme-control')?.querySelector('[data-theme-menu]');
+                    var expanded = toggle.getAttribute('aria-expanded') === 'true';
+                    expanded ? closeThemeMenus() : openThemeMenu(toggle, menu);
+                    return;
+                }
+
+                closeThemeMenus();
+            });
+
+            function readCachedContrast(color) {
+                var cached = readStorage(contrastKey);
+                if (!cached) return null;
+                try {
+                    var parsed = JSON.parse(cached);
+                    if (parsed && parsed.color === color && parsed.tone) {
+                        return parsed.tone;
+                    }
+                } catch (e) {
+                    return null;
+                }
+                return null;
+            }
+
+            function writeCachedContrast(color, tone) {
+                try {
+                    writeStorage(contrastKey, JSON.stringify({ color: color, tone: tone }));
+                } catch (e) {
+                    /* ignore storage errors */
+                }
+            }
 
             /* The script for calculating the color contrast has been taken from
             https://gomakethings.com/dynamically-changing-the-text-color-based-on-background-color-contrast-with-vanilla-js/ */
-            var accentColor = getComputedStyle(document.documentElement).getPropertyValue('--background-color');
-            accentColor = accentColor.trim().slice(1);
+            var accentColor = getComputedStyle(document.documentElement).getPropertyValue('--background-color').trim();
+            var cachedTone = readCachedContrast(accentColor);
 
-            if (accentColor.length === 3) {
-                accentColor = accentColor[0] + accentColor[0] + accentColor[1] + accentColor[1] + accentColor[2] + accentColor[2];
+            if (!cachedTone) {
+                var normalized = accentColor.charAt(0) === '#' ? accentColor.slice(1) : accentColor;
+
+                if (normalized.length === 3) {
+                    normalized = normalized[0] + normalized[0] + normalized[1] + normalized[1] + normalized[2] + normalized[2];
+                }
+
+                if (normalized.length === 6) {
+                    var r = parseInt(normalized.substr(0, 2), 16);
+                    var g = parseInt(normalized.substr(2, 2), 16);
+                    var b = parseInt(normalized.substr(4, 2), 16);
+                    var yiq = ((r * 299) + (g * 587) + (b * 114)) / 1000;
+                    cachedTone = (yiq >= 128) ? 'dark' : 'light';
+                } else {
+                    cachedTone = 'dark';
+                }
+                writeCachedContrast(accentColor, cachedTone);
             }
 
-            var r = parseInt(accentColor.substr(0, 2), 16);
-            var g = parseInt(accentColor.substr(2, 2), 16);
-            var b = parseInt(accentColor.substr(4, 2), 16);
-            var yiq = ((r * 299) + (g * 587) + (b * 114)) / 1000;
-            var textColor = (yiq >= 128) ? 'dark' : 'light';
-
             if (document.documentElement.getAttribute('data-theme') !== 'dark') {
-                document.documentElement.classList.add(`has-${textColor}-text`);
+                document.documentElement.classList.add(`has-${cachedTone}-text`);
             }
         })();
     </script>
