@@ -1,4 +1,4 @@
-FROM oven/bun:1 as base
+FROM oven/bun:1 AS base
 
 WORKDIR /app
 
@@ -7,6 +7,7 @@ COPY package.json bun.lock* ./
 
 # Install dependencies
 RUN bun install --frozen-lockfile
+RUN ln -sf /usr/local/bin/bun /usr/local/bin/npm && ln -sf /usr/local/bin/bun /usr/local/bin/npx
 
 # Copy source code
 COPY . .
