@@ -9,7 +9,7 @@
     "build": "tsc -b && vite build",
     "build:theme": "bun install --frozen-lockfile --cwd public/themes/source-complete && bun run --cwd public/themes/source-complete zip",
     "build:all": "bun run build && bun run build:theme",
-    "start": "tsx server.ts",
+    "start": "bun server.ts",
     "lint": "eslint .",
     "test": "vitest run",
     "preview": "vite preview"
