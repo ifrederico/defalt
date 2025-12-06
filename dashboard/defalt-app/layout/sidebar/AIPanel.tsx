@@ -1,7 +1,8 @@
 import { useState, useCallback, useRef, useEffect } from 'react'
 import * as Tabs from '@radix-ui/react-tabs'
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu'
-import { Sparkles, Copy, Check, ChevronDown, Loader2, X, Code, Palette } from 'lucide-react'
+import * as Collapsible from '@radix-ui/react-collapsible'
+import { Sparkles, Copy, Check, ChevronDown, ChevronRight, Loader2, X, Code, Palette, Key, Infinity, Trash2, ExternalLink } from 'lucide-react'
 import { AppButton, Spinner } from '@defalt/ui'
 import { useAIGenerate, type AIModel } from '../../hooks/useAIGenerate'
 import { useToast } from '../../components/ToastContext'
@@ -29,16 +30,25 @@ export function AIPanel() {
     isGenerating,
     generatedSection,
     error,
+    errorCode,
+    usage,
+    settings,
+    isLoadingUsage,
+    isSavingKey,
     generate,
     reset,
     copyTemplate,
     copyCSS,
-    copyAll
+    copyAll,
+    saveOwnApiKey,
+    removeOwnApiKey
   } = useAIGenerate({ showToast })
 
   const [prompt, setPrompt] = useState('')
   const [model, setModel] = useState<AIModel>('sonnet')
   const [copiedField, setCopiedField] = useState<string | null>(null)
+  const [apiKeyInput, setApiKeyInput] = useState('')
+  const [showApiKeyForm, setShowApiKeyForm] = useState(false)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
   // Auto-resize textarea
@@ -74,6 +84,18 @@ export function AIPanel() {
     textareaRef.current?.focus()
   }, [])
 
+  const handleSaveApiKey = useCallback(async () => {
+    const success = await saveOwnApiKey(apiKeyInput)
+    if (success) {
+      setApiKeyInput('')
+      setShowApiKeyForm(false)
+    }
+  }, [saveOwnApiKey, apiKeyInput])
+
+  const handleRemoveApiKey = useCallback(async () => {
+    await removeOwnApiKey()
+  }, [removeOwnApiKey])
+
   if (!aiEnabled) {
     return (
       <div className={`${SECTION_PADDING} flex flex-col items-center justify-center h-full text-center`}>
@@ -88,6 +110,10 @@ export function AIPanel() {
     )
   }
 
+  const hasOwnKey = usage?.hasOwnKey || settings?.hasApiKey
+  const isLimitReached = usage && !hasOwnKey && usage.remaining <= 0
+  const usagePercent = usage ? Math.min((usage.used / usage.limit) * 100, 100) : 0
+
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
@@ -95,6 +121,105 @@ export function AIPanel() {
         <Sparkles className="w-4 h-4 text-primary" />
         <h2 className="font-md font-semibold text-foreground">AI Section Generator</h2>
       </div>
+
+      {/* Usage Bar */}
+      {!isLoadingUsage && usage && (
+        <div className={`${SECTION_PADDING} border-b border-border bg-subtle/30`}>
+          {hasOwnKey ? (
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Infinity className="w-4 h-4 text-success" />
+                <span className="font-sm text-foreground">Unlimited generations</span>
+              </div>
+              <button
+                type="button"
+                onClick={handleRemoveApiKey}
+                disabled={isSavingKey}
+                className="flex items-center gap-1 px-2 py-1 text-muted hover:text-error font-xs rounded-md hover:bg-error/10 transition-colors disabled:opacity-50"
+              >
+                <Trash2 className="w-3 h-3" />
+                Remove key
+              </button>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="font-sm text-foreground">
+                  {usage.used}/{usage.limit} generations
+                </span>
+                <span className="font-xs text-muted">
+                  Resets {new Date(usage.resetDate).toLocaleDateString()}
+                </span>
+              </div>
+              <div className="h-2 bg-hover rounded-full overflow-hidden">
+                <div
+                  className={`h-full transition-all ${isLimitReached ? 'bg-error' : 'bg-primary'}`}
+                  style={{ width: `${usagePercent}%` }}
+                />
+              </div>
+              {isLimitReached && (
+                <p className="font-xs text-error">
+                  Monthly limit reached. Add your own API key for unlimited generations.
+                </p>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* BYOK Section */}
+      {!hasOwnKey && (
+        <Collapsible.Root open={showApiKeyForm} onOpenChange={setShowApiKeyForm}>
+          <Collapsible.Trigger asChild>
+            <button
+              type="button"
+              className="w-full px-4 py-3 flex items-center gap-2 text-left hover:bg-subtle transition-colors border-b border-border"
+            >
+              {showApiKeyForm ? (
+                <ChevronDown className="w-4 h-4 text-muted" />
+              ) : (
+                <ChevronRight className="w-4 h-4 text-muted" />
+              )}
+              <Key className="w-4 h-4 text-muted" />
+              <span className="font-sm text-foreground">Use your own API key</span>
+              <span className="font-xs text-muted ml-auto">Unlimited</span>
+            </button>
+          </Collapsible.Trigger>
+          <Collapsible.Content>
+            <div className={`${SECTION_PADDING} border-b border-border bg-subtle/30 space-y-3`}>
+              <p className="font-xs text-muted">
+                Add your Anthropic API key for unlimited generations. Your key is encrypted and stored securely.
+              </p>
+              <div className="flex gap-2">
+                <input
+                  type="password"
+                  value={apiKeyInput}
+                  onChange={(e) => setApiKeyInput(e.target.value)}
+                  placeholder="sk-ant-..."
+                  className="flex-1 px-3 py-2 bg-surface border border-border rounded-md font-sm text-foreground placeholder:text-placeholder focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                />
+                <AppButton
+                  variant="primary"
+                  onClick={handleSaveApiKey}
+                  disabled={isSavingKey || !apiKeyInput.trim()}
+                  state={isSavingKey ? 'loading' : 'default'}
+                >
+                  {isSavingKey ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Save'}
+                </AppButton>
+              </div>
+              <a
+                href="https://console.anthropic.com/account/keys"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 font-xs text-primary hover:underline"
+              >
+                Get an API key
+                <ExternalLink className="w-3 h-3" />
+              </a>
+            </div>
+          </Collapsible.Content>
+        </Collapsible.Root>
+      )}
 
       {/* Prompt Input */}
       <div className={SECTION_PADDING}>
@@ -113,8 +238,8 @@ export function AIPanel() {
             onChange={(e) => setPrompt(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="e.g., A hero section with a large heading, subtitle, and two CTA buttons..."
-            className="w-full min-h-[100px] max-h-[200px] px-3 py-2 bg-subtle border border-border rounded-md font-sm text-foreground placeholder:text-placeholder resize-none focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
-            disabled={isGenerating}
+            className="w-full min-h-[100px] max-h-[200px] px-3 py-2 bg-subtle border border-border rounded-md font-sm text-foreground placeholder:text-placeholder resize-none focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary disabled:opacity-50"
+            disabled={isGenerating || isLimitReached}
           />
 
           <div className="flex items-center justify-between">
@@ -124,7 +249,7 @@ export function AIPanel() {
             <AppButton
               variant="primary"
               onClick={handleGenerate}
-              disabled={isGenerating || !prompt.trim()}
+              disabled={isGenerating || !prompt.trim() || isLimitReached}
               state={isGenerating ? 'loading' : 'default'}
               className="gap-2"
             >
@@ -145,7 +270,7 @@ export function AIPanel() {
       </div>
 
       {/* Example Prompts (when no section generated) */}
-      {!generatedSection && !isGenerating && (
+      {!generatedSection && !isGenerating && !isLimitReached && (
         <div className={`${SECTION_PADDING} border-t border-border`}>
           <p className="font-sm font-medium text-foreground mb-2">Try an example</p>
           <div className="flex flex-wrap gap-2">
@@ -169,7 +294,9 @@ export function AIPanel() {
           <div className="flex items-start gap-2 p-3 bg-error/10 border border-error/20 rounded-md">
             <X className="w-4 h-4 text-error shrink-0 mt-0.5" />
             <div>
-              <p className="font-sm font-medium text-error">Generation failed</p>
+              <p className="font-sm font-medium text-error">
+                {errorCode === 'LIMIT_EXCEEDED' ? 'Generation limit reached' : 'Generation failed'}
+              </p>
               <p className="font-xs text-error/80">{error}</p>
             </div>
           </div>

@@ -37,10 +37,13 @@ export type GenerateResponse = {
   success: boolean
   section?: GeneratedSection
   error?: string
+  errorCode?: 'LIMIT_EXCEEDED' | 'INVALID_API_KEY' | 'GENERATION_FAILED'
   usage?: {
     inputTokens: number
     outputTokens: number
   }
+  // Updated usage info after generation
+  remaining?: number
 }
 
 export type StreamCallbacks = {
@@ -48,6 +51,20 @@ export type StreamCallbacks = {
   onSection?: (section: GeneratedSection) => void
   onError?: (error: string) => void
   onComplete?: () => void
+}
+
+// Usage tracking types
+export type AIUsage = {
+  used: number
+  limit: number
+  remaining: number
+  resetDate: string      // ISO date when usage resets
+  hasOwnKey: boolean     // User has their own API key
+}
+
+export type AISettings = {
+  hasApiKey: boolean
+  apiKeyPreview?: string  // Last 4 chars, e.g., "...sk3F"
 }
 
 const AI_SERVICE_URL = import.meta.env.VITE_AI_SERVICE_URL as string | undefined
@@ -58,6 +75,131 @@ const AI_API_KEY = import.meta.env.VITE_AI_API_KEY as string | undefined
  */
 export function isAIEnabled(): boolean {
   return Boolean(AI_SERVICE_URL)
+}
+
+/**
+ * Get common headers for AI service requests
+ */
+function getHeaders(): Record<string, string> {
+  return {
+    'Content-Type': 'application/json',
+    ...(AI_API_KEY && { 'Authorization': `Bearer ${AI_API_KEY}` })
+  }
+}
+
+/**
+ * Get current usage for the authenticated user
+ */
+export async function getUsage(): Promise<AIUsage | null> {
+  if (!AI_SERVICE_URL) return null
+
+  try {
+    const response = await fetch(`${AI_SERVICE_URL}/api/usage`, {
+      method: 'GET',
+      headers: getHeaders(),
+      credentials: 'include'
+    })
+
+    if (!response.ok) return null
+    return await response.json() as AIUsage
+  } catch {
+    return null
+  }
+}
+
+/**
+ * Get AI settings for the authenticated user
+ */
+export async function getAISettings(): Promise<AISettings | null> {
+  if (!AI_SERVICE_URL) return null
+
+  try {
+    const response = await fetch(`${AI_SERVICE_URL}/api/settings`, {
+      method: 'GET',
+      headers: getHeaders(),
+      credentials: 'include'
+    })
+
+    if (!response.ok) return null
+    return await response.json() as AISettings
+  } catch {
+    return null
+  }
+}
+
+/**
+ * Save user's own Anthropic API key (BYOK)
+ */
+export async function saveApiKey(apiKey: string): Promise<{ success: boolean; error?: string }> {
+  if (!AI_SERVICE_URL) {
+    return { success: false, error: 'AI service not configured' }
+  }
+
+  try {
+    const response = await fetch(`${AI_SERVICE_URL}/api/settings/api-key`, {
+      method: 'POST',
+      headers: getHeaders(),
+      credentials: 'include',
+      body: JSON.stringify({ apiKey })
+    })
+
+    if (!response.ok) {
+      const data = await response.json().catch(() => ({})) as { error?: string }
+      return { success: false, error: data.error || 'Failed to save API key' }
+    }
+
+    return { success: true }
+  } catch (err) {
+    return { success: false, error: err instanceof Error ? err.message : 'Unknown error' }
+  }
+}
+
+/**
+ * Remove user's own API key
+ */
+export async function removeApiKey(): Promise<{ success: boolean; error?: string }> {
+  if (!AI_SERVICE_URL) {
+    return { success: false, error: 'AI service not configured' }
+  }
+
+  try {
+    const response = await fetch(`${AI_SERVICE_URL}/api/settings/api-key`, {
+      method: 'DELETE',
+      headers: getHeaders(),
+      credentials: 'include'
+    })
+
+    if (!response.ok) {
+      return { success: false, error: 'Failed to remove API key' }
+    }
+
+    return { success: true }
+  } catch (err) {
+    return { success: false, error: err instanceof Error ? err.message : 'Unknown error' }
+  }
+}
+
+/**
+ * Validate an API key before saving
+ */
+export async function validateApiKey(apiKey: string): Promise<{ valid: boolean; error?: string }> {
+  if (!AI_SERVICE_URL) {
+    return { valid: false, error: 'AI service not configured' }
+  }
+
+  try {
+    const response = await fetch(`${AI_SERVICE_URL}/api/settings/validate-key`, {
+      method: 'POST',
+      headers: getHeaders(),
+      credentials: 'include',
+      body: JSON.stringify({ apiKey })
+    })
+
+    const data = await response.json() as { valid: boolean; error?: string }
+    return data
+  } catch (err) {
+    return { valid: false, error: err instanceof Error ? err.message : 'Unknown error' }
+  }
 }
 
 /**
@@ -76,18 +218,26 @@ export async function generateSection(
   try {
     const response = await fetch(`${AI_SERVICE_URL}/api/generate-section`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(AI_API_KEY && { 'Authorization': `Bearer ${AI_API_KEY}` })
-      },
+      headers: getHeaders(),
+      credentials: 'include',
       body: JSON.stringify(request)
     })
 
     if (!response.ok) {
-      const error = await response.text()
-      return {
-        success: false,
-        error: error || `HTTP ${response.status}`
+      // Try to parse error response as JSON
+      try {
+        const errorData = await response.json() as { error?: string; errorCode?: string }
+        return {
+          success: false,
+          error: errorData.error || `HTTP ${response.status}`,
+          errorCode: errorData.errorCode as GenerateResponse['errorCode']
+        }
+      } catch {
+        const error = await response.text()
+        return {
+          success: false,
+          error: error || `HTTP ${response.status}`
+        }
       }
     }
 
@@ -117,10 +267,8 @@ export async function generateSectionStream(
   try {
     const response = await fetch(`${AI_SERVICE_URL}/api/generate-section/stream`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(AI_API_KEY && { 'Authorization': `Bearer ${AI_API_KEY}` })
-      },
+      headers: getHeaders(),
+      credentials: 'include',
       body: JSON.stringify(request)
     })
 
@@ -191,10 +339,8 @@ export async function validateSection(
   try {
     const response = await fetch(`${AI_SERVICE_URL}/api/validate-section`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(AI_API_KEY && { 'Authorization': `Bearer ${AI_API_KEY}` })
-      },
+      headers: getHeaders(),
+      credentials: 'include',
       body: JSON.stringify({ template })
     })
 
