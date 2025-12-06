@@ -739,7 +739,8 @@ app.post('/api/theme/export', async (req, res) => {
       order: {
         template: Array.isArray(pageConfig.order) ? [...pageConfig.order] : [],
         footer: Array.isArray(footerConfig.order) ? [...footerConfig.order] : []
-      }
+      },
+      footerMargin: footerConfig.margin
     }
 
     await applyDefaultTemplateCustomization(workspaceThemeDir, themeConfigForAssets)

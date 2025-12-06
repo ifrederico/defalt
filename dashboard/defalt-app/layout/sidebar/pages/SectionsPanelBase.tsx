@@ -16,7 +16,8 @@ import {
   MessageCircleQuestionMark,
   SquareUserRound,
   LayoutList,
-  GripVertical
+  GripVertical,
+  PanelBottomDashed
 } from 'lucide-react'
 import { DragDropProvider, DragOverlay } from '@dnd-kit/react'
 import { PointerSensor } from '@dnd-kit/react'
@@ -178,6 +179,7 @@ export function SectionsPanelBase({
   }, [isControlled, onActiveDetailChange])
   const [isDragging, setIsDragging] = useState(false)
   const [announcementBarExpanded, setAnnouncementBarExpanded] = useState(true)
+  const [footerExpanded, setFooterExpanded] = useState(true)
   useHistoryInteractionBlocker('sections-drag', isDragging)
 
   // Custom sensors with different constraints for mouse vs touch (Puck pattern)
@@ -238,6 +240,15 @@ export function SectionsPanelBase({
     return allItems
   }, [props.templateItems, props.headerStyleValue, resolveGhostSectionIcon])
 
+  const footerChildItems = useMemo(() =>
+    props.footerItems.map((item, originalIndex) => ({
+      ...item,
+      icon: resolveGhostSectionIcon(item) ?? item.icon ?? GhostIcon,
+      originalIndex
+    })),
+    [props.footerItems, resolveGhostSectionIcon]
+  )
+
   const groups = useMemo<SectionGroupDescriptor[]>(() => ([
     {
       id: 'header',
@@ -257,14 +268,11 @@ export function SectionsPanelBase({
     {
       id: 'footer',
       title: 'Footer',
-      items: props.footerItems.map((item, originalIndex) => ({
-        ...item,
-        icon: resolveGhostSectionIcon(item) ?? item.icon ?? GhostIcon,
-        originalIndex
-      })),
-      allowReorder: true,
+      items: [
+        { id: 'footer', label: 'Footer', icon: PanelBottomDashed }
+      ],
     },
-  ]), [templateItems, props.footerItems, resolveGhostSectionIcon])
+  ]), [templateItems])
 
   // Lookup map for drag overlay
   const itemsById = useMemo(() => {
@@ -272,8 +280,10 @@ export function SectionsPanelBase({
     groups.forEach((group) => {
       group.items.forEach((item) => map.set(item.id, item))
     })
+    // Add footer child items
+    footerChildItems.forEach((item) => map.set(item.id, item))
     return map
-  }, [groups])
+  }, [groups, footerChildItems])
 
   const hasGhostGrid = useMemo(
     () => Object.values(props.customSections).some((section) => section.definitionId === 'ghostGrid'),
@@ -296,8 +306,11 @@ export function SectionsPanelBase({
     if (ids.has('announcement-bar')) {
       ids.add('announcement')
     }
+    if (ids.has('footer')) {
+      footerChildItems.forEach((item) => ids.add(item.id))
+    }
     return ids
-  }, [groups])
+  }, [groups, footerChildItems])
 
   useEffect(() => {
     if (!activeDetail) {
@@ -384,7 +397,7 @@ export function SectionsPanelBase({
                             <SectionRow
                               item={item}
                               index={item.originalIndex ?? 0}
-                              draggable={Boolean(group.allowReorder)}
+                              draggable={Boolean(group.allowReorder) && item.id !== 'footer'}
                               groupType={group.id}
                               hidden={Boolean(props.sectionVisibility[item.id])}
                               isParentDragging={isDragging}
@@ -399,9 +412,13 @@ export function SectionsPanelBase({
                               isAnnouncementBar={item.id === 'announcement-bar'}
                               announcementBarExpanded={announcementBarExpanded}
                               onToggleAnnouncementBar={() => setAnnouncementBarExpanded(!announcementBarExpanded)}
+                              isFooter={item.id === 'footer'}
+                              footerExpanded={footerExpanded}
+                              onToggleFooter={() => setFooterExpanded(!footerExpanded)}
                               isPremium={isItemPremium(item)}
                               isSelected={!renderDetailInline && activeDetail?.id === item.id}
                               onSectionHover={setHoveredSectionId}
+                              showVisibilityToggle={item.id !== 'footer'}
                             />
                             {item.id === 'announcement-bar' && announcementBarExpanded && (
                             <SectionRow
@@ -417,6 +434,27 @@ export function SectionsPanelBase({
                               isSelected={!renderDetailInline && activeDetail?.id === 'announcement'}
                               onSectionHover={setHoveredSectionId}
                             />
+                          )}
+                          {item.id === 'footer' && footerExpanded && (
+                            <div className="space-y-0.5 mt-0.5">
+                              {footerChildItems.map((footerItem) => (
+                                <SectionRow
+                                  key={footerItem.id}
+                                  item={footerItem}
+                                  index={footerItem.originalIndex ?? 0}
+                                  draggable={true}
+                                  groupType="footer"
+                                  isParentDragging={isDragging}
+                                  hidden={Boolean(props.sectionVisibility[footerItem.id])}
+                                  onToggleVisibility={() => props.toggleSectionVisibility(footerItem.id)}
+                                  onOpenDetail={handleOpenDetail}
+                                  canOpenDetail={() => true}
+                                  isSubItem={true}
+                                  isSelected={!renderDetailInline && activeDetail?.id === footerItem.id}
+                                  onSectionHover={setHoveredSectionId}
+                                />
+                              ))}
+                            </div>
                           )}
                           </div>
                         ))
@@ -443,9 +481,10 @@ export function SectionsPanelBase({
                   if (!source) return null
                   const item = itemsById.get(String(source.id))
                   if (!item) return null
+                  const isSubItem = (source.data as { group?: string } | undefined)?.group === 'footer'
                   return (
                     <div className="flex items-center justify-between rounded-md px-2 py-2 bg-subtle/80">
-                      <div className="flex flex-1 items-center gap-1 min-w-0">
+                      <div className={`flex flex-1 items-center gap-1 min-w-0 ${isSubItem ? 'ml-6' : ''}`}>
                         <span className="w-4 shrink-0" />
                         <div className="relative flex h-7 w-7 items-center justify-center">
                           <span className="absolute inset-0 flex h-7 w-7 items-center justify-center rounded-md text-secondary bg-hover">

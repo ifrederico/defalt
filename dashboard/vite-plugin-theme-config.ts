@@ -33,7 +33,7 @@ import {
 } from './defalt-rendering/theme/exportTheme'
 import type { TemplatePartial } from './defalt-rendering/theme/exportTheme'
 import { THEME_DOCUMENT_FILENAME, normalizeThemeDocument } from './defalt-utils/config/themeConfig'
-import type { ThemeDocument, SectionConfig } from './defalt-utils/config/themeConfig'
+import type { ThemeDocument, SectionConfig, SectionMargin } from './defalt-utils/config/themeConfig'
 import { CSRF_COOKIE_NAME, CSRF_HEADER_NAME } from './defalt-utils/security/constants.js'
 
 // Inline helper functions (previously in server-utils/helpers.ts)
@@ -83,6 +83,7 @@ type ThemeConfig = {
     template: string[]
     footer: string[]
   }
+  footerMargin?: SectionMargin
 }
 
 async function runCommand(command: string, args: string[], cwd: string) {
@@ -497,7 +498,8 @@ export function themeConfigPlugin(): Plugin {
                 order: {
                   template: Array.isArray(pageConfig.order) ? [...pageConfig.order] : [],
                   footer: Array.isArray(footerConfig.order) ? [...footerConfig.order] : []
-                }
+                },
+                footerMargin: footerConfig.margin
               }
 
               await applyDefaultTemplateCustomization(workspaceThemeDir, themeConfigForAssets)

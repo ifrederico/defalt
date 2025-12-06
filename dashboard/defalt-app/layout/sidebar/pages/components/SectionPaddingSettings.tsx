@@ -56,24 +56,13 @@ export function SectionPaddingSettings({ sectionId, padding, margin, defaultMarg
   const showMarginBottomSlider = showMarginControls && (resolvedMode === 'margin' || margin?.bottom !== undefined || defaultMargin?.bottom !== undefined)
 
   return (
-    <>
-      {showPaddingControls && (
-        <SettingSection title="Padding">
-          {isPaddingBlockSection ? (
-            <SliderField
-              label="Padding block"
-              value={padding.top}
-              min={0}
-              max={200}
-              step={1}
-              onChange={(value) => onChange('top', value)}
-              onCommit={(value) => onCommit('top', value)}
-              variant="normal"
-            />
-          ) : (
-            <>
+    <div className="flex h-full flex-col overflow-hidden">
+      <div className="flex-1 overflow-y-auto pl-4 pr-6 py-4 space-y-6">
+        {showPaddingControls && (
+          <SettingSection title="Padding">
+            {isPaddingBlockSection ? (
               <SliderField
-                label="Top"
+                label="Padding block"
                 value={padding.top}
                 min={0}
                 max={200}
@@ -82,24 +71,38 @@ export function SectionPaddingSettings({ sectionId, padding, margin, defaultMarg
                 onCommit={(value) => onCommit('top', value)}
                 variant="normal"
               />
-              <SliderField
-                label="Bottom"
-                value={padding.bottom}
-                min={0}
-                max={200}
-                step={1}
-                onChange={(value) => onChange('bottom', value)}
-                onCommit={(value) => onCommit('bottom', value)}
-                variant="normal"
-              />
-            </>
-          )}
-        </SettingSection>
-      )}
+            ) : (
+              <>
+                <SliderField
+                  label="Top"
+                  value={padding.top}
+                  min={0}
+                  max={200}
+                  step={1}
+                  onChange={(value) => onChange('top', value)}
+                  onCommit={(value) => onCommit('top', value)}
+                  variant="normal"
+                />
+                <SliderField
+                  label="Bottom"
+                  value={padding.bottom}
+                  min={0}
+                  max={200}
+                  step={1}
+                  onChange={(value) => onChange('bottom', value)}
+                  onCommit={(value) => onCommit('bottom', value)}
+                  variant="normal"
+                />
+              </>
+            )}
+          </SettingSection>
+        )}
 
-      {showMarginControls && (
-        <>
+        {showPaddingControls && showMarginControls && (
           <Separator.Root className="h-px bg-hover" />
+        )}
+
+        {showMarginControls && (
           <SettingSection title="Margin">
             {showMarginTopSlider && (
               <SliderField
@@ -126,8 +129,8 @@ export function SectionPaddingSettings({ sectionId, padding, margin, defaultMarg
               />
             )}
           </SettingSection>
-        </>
-      )}
-    </>
+        )}
+      </div>
+    </div>
   )
 }

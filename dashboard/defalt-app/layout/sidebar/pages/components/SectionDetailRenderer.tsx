@@ -89,6 +89,24 @@ export function SectionDetailRenderer({ activeDetail, props }: SectionDetailRend
         />
       )
     }
+    if (activeDetail.id === 'footer') {
+      const padding = props.sectionPadding[activeDetail.id] ?? { top: 0, bottom: 0, left: 0, right: 0 }
+      const margin = props.sectionMargins[activeDetail.id]
+      const footerDefaultMargin = CSS_DEFAULT_MARGIN.footer
+      return (
+        <SectionPaddingSettings
+          sectionId={activeDetail.id}
+          padding={padding}
+          margin={margin}
+          defaultMargin={footerDefaultMargin}
+          mode="margin"
+          onChange={(direction, value) => props.onSectionPaddingChange(activeDetail.id, direction, value)}
+          onCommit={(direction, value) => props.onSectionPaddingCommit(activeDetail.id, direction, value)}
+          onMarginChange={(direction, value) => props.onSectionMarginChange(activeDetail.id, direction, value)}
+          onMarginCommit={(direction, value) => props.onSectionMarginCommit(activeDetail.id, direction, value)}
+        />
+      )
+    }
     if (activeCustomSection) {
       const sectionId = activeDetail.id
       if (activeCustomSection.definitionId === 'ghostCards') {
@@ -154,18 +172,19 @@ export function SectionDetailRenderer({ activeDetail, props }: SectionDetailRend
     const isSubheader = configKey === 'subheader'
     const headerStyle = props.headerStyleValue
     const isMarginHeaderStyle = isSubheader && (headerStyle === 'Highlight' || headerStyle === 'Magazine')
+    const isPaddingBlockSection = PADDING_BLOCK_SECTIONS.has(configKey)
     const isPaddingBlockHeaderStyle = isSubheader && (headerStyle === 'Landing' || headerStyle === 'Search')
     const defaultMargin = isMarginHeaderStyle
       ? { top: SUBHEADER_MARGIN_DEFAULT, bottom: 0 }
       : CSS_DEFAULT_MARGIN[configKey]
     const supportsMargin = isMarginHeaderStyle || Boolean(defaultMargin) || Boolean(props.sectionMargins[activeDetail.id])
-    const shouldRenderSpacingControls = isMarginHeaderStyle || PADDING_BLOCK_SECTIONS.has(configKey) || props.sectionPadding[activeDetail.id] || supportsMargin
+    const shouldRenderSpacingControls = isMarginHeaderStyle || isPaddingBlockSection || props.sectionPadding[activeDetail.id] || supportsMargin
     if (shouldRenderSpacingControls) {
       const padding = props.sectionPadding[activeDetail.id] ?? { top: 0, bottom: 0, left: 0, right: 0 }
       const margin = props.sectionMargins[activeDetail.id]
       const spacingMode: SectionSpacingMode = isMarginHeaderStyle
         ? 'margin'
-        : isPaddingBlockHeaderStyle
+        : (isPaddingBlockHeaderStyle || isPaddingBlockSection)
           ? 'padding-block'
           : 'auto'
       return (

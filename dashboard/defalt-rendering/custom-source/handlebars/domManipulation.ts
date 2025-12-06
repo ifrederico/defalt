@@ -1713,6 +1713,7 @@ export function setupSectionSelection(
   }
 
   let hoveredEl: Element | null = null
+  let currentHoverId: string | null = null
 
   const clearHover = () => {
     if (!hoveredEl) return
@@ -1722,16 +1723,26 @@ export function setupSectionSelection(
       hoveredEl.classList.remove(SECTION_HOVER_CLASS)
     }
     hoveredEl = null
+    currentHoverId = null
   }
 
   const applyHover = (el: Element, sectionId: string) => {
+    // Prevent re-applying if already hovering this section
+    if (currentHoverId === sectionId) return
+
     clearHover()
+    currentHoverId = sectionId
+
     const target = getHighlightTarget(sectionId, el)
     if (target.classList.contains(SECTION_HIGHLIGHT_CLASS)) {
       return
     }
-    if (target !== el && FOOTER_SECTION_IDS.has(sectionId.toLowerCase())) {
-      hoveredEl = createOverlayForSection(target as HTMLElement, el, [SECTION_OVERLAY_CLASS, SECTION_HOVER_CLASS])
+    // Check if element has margins - if so, use overlay to include them
+    const computedStyle = getComputedStyle(el)
+    const hasMargins = (parseFloat(computedStyle.marginTop) || 0) > 0 ||
+                       (parseFloat(computedStyle.marginBottom) || 0) > 0
+    if ((target !== el && FOOTER_SECTION_IDS.has(sectionId.toLowerCase())) || hasMargins) {
+      hoveredEl = createOverlayForSection(target as HTMLElement, el, [SECTION_OVERLAY_CLASS, SECTION_HOVER_CLASS], hasMargins)
     } else {
       hoveredEl = target
       target.classList.add(SECTION_HOVER_CLASS)
@@ -1750,31 +1761,66 @@ export function setupSectionSelection(
     }
   }
 
+  // Check if pointer is within an element's margin area
+  const findMarginMatch = (event: PointerEvent): { id: string, element: Element } | null => {
+    const footer = doc.querySelector('footer.gh-footer')
+    if (footer) {
+      const rect = footer.getBoundingClientRect()
+      const style = getComputedStyle(footer)
+      const marginTop = parseFloat(style.marginTop) || 0
+      const marginBottom = parseFloat(style.marginBottom) || 0
+      // Check if pointer is within footer's rect + margins
+      if (event.clientY >= rect.top - marginTop &&
+          event.clientY <= rect.bottom + marginBottom &&
+          event.clientX >= rect.left &&
+          event.clientX <= rect.right) {
+        return { id: 'footer', element: footer }
+      }
+    }
+    return null
+  }
+
   // Throttle pointermove to 50ms for performance (Puck pattern)
   const handlePointerMove = throttle((event: PointerEvent) => {
     const target = event.target as Element | null
-    const match = findMatch(target)
+    let match = findMatch(target)
+    // If no direct match, check if in margin area of sections
+    if (!match) {
+      match = findMarginMatch(event)
+    }
     if (!match) {
       clearHover()
       return
     }
-    if (match.element !== hoveredEl) {
+    // Compare against ID to prevent overlay recreation loop
+    if (match.id !== currentHoverId) {
       applyHover(match.element, match.id)
     }
   }, 50)
 
   const handlePointerLeave = () => {
+    // Cancel any pending throttled calls to prevent stale hover
+    handlePointerMove.cancel()
     clearHover()
   }
 
   doc.addEventListener('click', handleClick, true)
-  doc.addEventListener('pointermove', handlePointerMove as EventListener, true)
-  // Use documentElement for pointerleave since document doesn't have boundaries
+  doc.addEventListener('pointermove', handlePointerMove as unknown as EventListener, true)
+  // Use multiple events for reliable hover clearing when leaving iframe
   doc.documentElement.addEventListener('pointerleave', handlePointerLeave)
+  doc.documentElement.addEventListener('mouseleave', handlePointerLeave)
+  if (doc.body) {
+    doc.body.addEventListener('mouseleave', handlePointerLeave)
+  }
   return () => {
     doc.removeEventListener('click', handleClick, true)
-    doc.removeEventListener('pointermove', handlePointerMove as EventListener, true)
+    doc.removeEventListener('pointermove', handlePointerMove as unknown as EventListener, true)
     doc.documentElement.removeEventListener('pointerleave', handlePointerLeave)
+    doc.documentElement.removeEventListener('mouseleave', handlePointerLeave)
+    if (doc.body) {
+      doc.body.removeEventListener('mouseleave', handlePointerLeave)
+    }
+    handlePointerMove.cancel()
     clearHover()
   }
 }
@@ -2125,7 +2171,7 @@ const SECTION_OVERLAY_CLASS = 'gh-editor-section-overlay'
 const SECTION_HIGHLIGHT_COLOR = '#4dd831'
 const SECTION_HOVER_COLOR = 'rgba(77, 216, 49, 0.6)'
 // Canonical footer ids (lowercase) for preview-only overlays
-const FOOTER_SECTION_IDS = new Set(['footerbar', 'footersignup'])
+const FOOTER_SECTION_IDS = new Set(['footer', 'footerbar', 'footersignup'])
 
 function ensureHighlightStyles(doc: Document) {
   let styleEl = doc.getElementById(SECTION_HIGHLIGHT_STYLE_ID) as HTMLStyleElement | null
@@ -2186,26 +2232,31 @@ function createOverlayForSection(
   const overlay = doc.createElement('div')
   overlay.classList.add(...classNames)
 
+  // Get computed margins to include them in the overlay
+  const computedStyle = getComputedStyle(refElement)
+  const marginTop = parseFloat(computedStyle.marginTop) || 0
+  const marginBottom = parseFloat(computedStyle.marginBottom) || 0
+
   if (useViewportWidth || !container) {
     const refRect = refElement.getBoundingClientRect()
     const scrollTop = (doc.documentElement?.scrollTop ?? 0) || (doc.body?.scrollTop ?? 0)
     overlay.style.position = 'absolute'
-    overlay.style.top = `${refRect.top + scrollTop}px`
+    overlay.style.top = `${refRect.top + scrollTop - marginTop}px`
     overlay.style.left = '0'
     overlay.style.right = '0'
     overlay.style.width = '100%'
     overlay.style.pointerEvents = 'none'
     doc.body.appendChild(overlay)
-    overlay.style.height = `${refRect.height}px`
+    overlay.style.height = `${refRect.height + marginTop + marginBottom}px`
     return overlay
   }
 
   const containerRect = container.getBoundingClientRect()
   const refRect = refElement.getBoundingClientRect()
   const scrollTop = container.scrollTop ?? 0
-  const top = refRect.top - containerRect.top + scrollTop
+  const top = refRect.top - containerRect.top + scrollTop - marginTop
   overlay.style.top = `${top}px`
-  overlay.style.height = `${refRect.height}px`
+  overlay.style.height = `${refRect.height + marginTop + marginBottom}px`
   overlay.style.position = 'absolute'
   overlay.style.left = '0'
   overlay.style.right = '0'
@@ -2260,9 +2311,14 @@ export function highlightSection(
 
   const target = getHighlightTarget(sectionId, element)
 
-  // Add highlight class (use overlay for footer to span full width)
-  if (target !== element && FOOTER_SECTION_IDS.has(sectionId.toLowerCase())) {
-    createOverlayForSection(target as HTMLElement, element, [SECTION_OVERLAY_CLASS, SECTION_HIGHLIGHT_CLASS])
+  // Check if element has margins - if so, use overlay to include them
+  const computedStyle = getComputedStyle(element)
+  const hasMargins = (parseFloat(computedStyle.marginTop) || 0) > 0 ||
+                     (parseFloat(computedStyle.marginBottom) || 0) > 0
+
+  // Add highlight class (use overlay for footer or sections with margins)
+  if ((target !== element && FOOTER_SECTION_IDS.has(sectionId.toLowerCase())) || hasMargins) {
+    createOverlayForSection(target as HTMLElement, element, [SECTION_OVERLAY_CLASS, SECTION_HIGHLIGHT_CLASS], hasMargins)
   } else {
     target.classList.add(SECTION_HIGHLIGHT_CLASS)
   }
@@ -2324,9 +2380,14 @@ export function highlightHoveredSection(
     return
   }
 
-  // Add hover class (use overlay for footer to span full width)
-  if (target !== element && FOOTER_SECTION_IDS.has(sectionId.toLowerCase())) {
-    createOverlayForSection(target as HTMLElement, element, [SECTION_OVERLAY_CLASS, SECTION_HOVER_CLASS])
+  // Check if element has margins - if so, use overlay to include them
+  const computedStyle = getComputedStyle(element)
+  const hasMargins = (parseFloat(computedStyle.marginTop) || 0) > 0 ||
+                     (parseFloat(computedStyle.marginBottom) || 0) > 0
+
+  // Add hover class (use overlay for footer or sections with margins)
+  if ((target !== element && FOOTER_SECTION_IDS.has(sectionId.toLowerCase())) || hasMargins) {
+    createOverlayForSection(target as HTMLElement, element, [SECTION_OVERLAY_CLASS, SECTION_HOVER_CLASS], hasMargins)
   } else {
     target.classList.add(SECTION_HOVER_CLASS)
   }

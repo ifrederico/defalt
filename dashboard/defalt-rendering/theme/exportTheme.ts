@@ -30,6 +30,7 @@ type ThemeConfig = {
     template: string[]
     footer: string[]
   }
+  footerMargin?: SectionMargin
 }
 
 type ThemePageConfig = PageConfig
@@ -1941,6 +1942,38 @@ export async function applyFooterCustomization(themeDir: string, config: ThemeCo
     const before = updatedContent.slice(0, styleStartIdx)
     const after = updatedContent.slice(styleEndIdx + footerBarStyleEnd.length)
     updatedContent = before + footerBarStyleBlock + after
+  }
+
+  // Footer container margin-top customization
+  const footerMarginDefault = CSS_DEFAULT_MARGIN.footer?.top ?? 172
+  const footerMarginTop = Math.max(
+    0,
+    Math.round(
+      typeof config.footerMargin?.top === 'number'
+        ? config.footerMargin.top
+        : footerMarginDefault
+    )
+  )
+
+  const footerContainerStyleBlock = [
+    '{{!-- defalt-footer-style-start --}}',
+    '<style>',
+    '.gh-footer {',
+    `    --defalt-footer-margin-top: ${footerMarginTop}px;`,
+    '    margin-top: var(--defalt-footer-margin-top);',
+    '}',
+    '</style>',
+    '{{!-- defalt-footer-style-end --}}'
+  ].join('\n')
+
+  const footerStyleStart = '{{!-- defalt-footer-style-start --}}'
+  const footerStyleEnd = '{{!-- defalt-footer-style-end --}}'
+  const footerStyleStartIdx = updatedContent.indexOf(footerStyleStart)
+  const footerStyleEndIdx = updatedContent.indexOf(footerStyleEnd)
+  if (footerStyleStartIdx !== -1 && footerStyleEndIdx !== -1 && footerStyleEndIdx > footerStyleStartIdx) {
+    const before = updatedContent.slice(0, footerStyleStartIdx)
+    const after = updatedContent.slice(footerStyleEndIdx + footerStyleEnd.length)
+    updatedContent = before + footerContainerStyleBlock + after
   }
 
   if (updatedContent !== originalContent) {

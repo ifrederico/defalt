@@ -237,7 +237,7 @@ export function HandlebarsRenderer({
       return id
     }
 
-    const ids = new Set<string>(['header', 'announcement-bar', 'announcement'])
+    const ids = new Set<string>(['header', 'announcement-bar', 'announcement', 'footer'])
     filteredTemplateOrder.forEach((id) => ids.add(normalizeSectionId(id)))
     footerOrder.forEach((id) => ids.add(normalizeSectionId(id)))
     renderedTemplateSections.forEach((section) => ids.add(normalizeSectionId(section.id)))

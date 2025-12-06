@@ -28,6 +28,7 @@ export const SECTION_ID_TO_SELECTOR: Record<string, SectionSelector> = {
   'cta': TEMPLATE_SECTION_SELECTORS.cta,
   'main': TEMPLATE_SECTION_SELECTORS.main,
   // Footer sections
+  'footer': FOOTER_ROOT_SELECTOR,
   'footerBar': FOOTER_SECTION_SELECTORS.footerBar,
   'footer-bar': FOOTER_SECTION_SELECTORS.footerBar,
   'footerSignup': FOOTER_SECTION_SELECTORS.footerSignup,

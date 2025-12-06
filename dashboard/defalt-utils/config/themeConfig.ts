@@ -101,6 +101,7 @@ export interface PageConfig {
 export interface FooterConfig {
   order: string[]
   sections: Record<string, SectionConfig>
+  margin?: SectionMargin
 }
 
 export interface ThemeDocument {
@@ -150,6 +151,7 @@ export const CSS_DEFAULT_PADDING: Record<string, number | SectionPadding> = {
 }
 
 export const CSS_DEFAULT_MARGIN: Record<string, SectionMargin> = {
+  footer: { top: 172 },
   footerBar: { bottom: 100 }
 }
 
@@ -532,7 +534,8 @@ const normalizeFooterConfig = (footer: FooterConfig | undefined): FooterConfig =
 
   return {
     order: footerOrder,
-    sections
+    sections,
+    margin: footer?.margin
   }
 }
 
@@ -1005,6 +1008,7 @@ export const SECTION_ID_MAP: Record<string, string> = {
   featured: 'featured',
   cta: 'cta',
   main: 'main',
+  footer: 'footer',
   footerBar: 'footerBar',
   footerSignup: 'footerSignup'
 }
@@ -1015,6 +1019,7 @@ export const CONFIG_TO_ID_MAP: Record<string, string> = {
   featured: 'featured',
   cta: 'cta',
   main: 'main',
+  footer: 'footer',
   footerBar: 'footerBar',
   footerSignup: 'footerSignup'
 }

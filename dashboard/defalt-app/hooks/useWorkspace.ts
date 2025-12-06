@@ -302,9 +302,26 @@ export function useWorkspace({
       }
     })
 
+    // Footer container margin
+    const footerContainerMargin = sectionManager.sectionMargins['footer']
+    let margin: { top?: number; bottom?: number } | undefined
+    if (footerContainerMargin) {
+      const normalizedMargin: { top?: number; bottom?: number } = {}
+      if (typeof footerContainerMargin.top === 'number' && Number.isFinite(footerContainerMargin.top)) {
+        normalizedMargin.top = Math.max(0, footerContainerMargin.top)
+      }
+      if (typeof footerContainerMargin.bottom === 'number' && Number.isFinite(footerContainerMargin.bottom)) {
+        normalizedMargin.bottom = Math.max(0, footerContainerMargin.bottom)
+      }
+      if (normalizedMargin.top !== undefined || normalizedMargin.bottom !== undefined) {
+        margin = normalizedMargin
+      }
+    }
+
     return {
       order,
-      sections
+      sections,
+      margin
     }
   }, [sectionManager.footerItems, sectionManager.sectionMargins, sectionManager.sectionPadding, sectionManager.sectionVisibility])
 
@@ -500,13 +517,16 @@ export function useWorkspace({
     footerOrder.forEach((key) => {
       const section = footerSections[key]
       const stateId = CONFIG_TO_ID_MAP[key] || key
-      if (!section) {
-        return
-      }
-      newVisibility[stateId] = section.settings.visible === false
       const cssDefault = CSS_DEFAULT_PADDING[stateId]
+      const cssMarginDefault = CSS_DEFAULT_MARGIN[stateId]
 
-      if (typeof section.settings.paddingBlock === 'number') {
+      // Set visibility from saved section or default to visible
+      if (section) {
+        newVisibility[stateId] = section.settings.visible === false
+      }
+
+      // Set padding from saved section or CSS defaults
+      if (section && typeof section.settings.paddingBlock === 'number') {
         const value = section.settings.paddingBlock
         newPadding[stateId] = {
           top: value,
@@ -514,7 +534,7 @@ export function useWorkspace({
           left: typeof cssDefault === 'object' ? cssDefault.left ?? 0 : 0,
           right: typeof cssDefault === 'object' ? cssDefault.right ?? 0 : 0
         }
-      } else if (section.settings.padding) {
+      } else if (section && section.settings.padding) {
         const paddingSettings = section.settings.padding as SectionPadding
         newPadding[stateId] = {
           top: paddingSettings.top ?? (typeof cssDefault === 'object' ? cssDefault.top ?? 0 : 0),
@@ -533,8 +553,10 @@ export function useWorkspace({
         }
       }
 
-      const cssMarginDefault = CSS_DEFAULT_MARGIN[stateId]
-      const sectionMargin = (section.settings as SectionSettings & { margin?: { top?: number, bottom?: number } }).margin
+      // Set margins from saved section or CSS defaults
+      const sectionMargin = section
+        ? (section.settings as SectionSettings & { margin?: { top?: number, bottom?: number } }).margin
+        : undefined
       const resolvedTop = (() => {
         if (sectionMargin && typeof sectionMargin.top === 'number') {
           return Math.max(0, sectionMargin.top)
@@ -560,6 +582,34 @@ export function useWorkspace({
         }
       }
     })
+
+    // Footer container margin
+    const footerContainerMarginDefault = CSS_DEFAULT_MARGIN.footer
+    const footerContainerMargin = footerConfig.margin
+    const footerResolvedTop = (() => {
+      if (footerContainerMargin && typeof footerContainerMargin.top === 'number') {
+        return Math.max(0, footerContainerMargin.top)
+      }
+      if (footerContainerMarginDefault && typeof footerContainerMarginDefault.top === 'number') {
+        return Math.max(0, footerContainerMarginDefault.top)
+      }
+      return undefined
+    })()
+    const footerResolvedBottom = (() => {
+      if (footerContainerMargin && typeof footerContainerMargin.bottom === 'number') {
+        return Math.max(0, footerContainerMargin.bottom)
+      }
+      if (footerContainerMarginDefault && typeof footerContainerMarginDefault.bottom === 'number') {
+        return Math.max(0, footerContainerMarginDefault.bottom)
+      }
+      return undefined
+    })()
+    if (footerResolvedTop !== undefined || footerResolvedBottom !== undefined) {
+      newMargins['footer'] = {
+        ...(footerResolvedTop !== undefined ? { top: footerResolvedTop } : {}),
+        ...(footerResolvedBottom !== undefined ? { bottom: footerResolvedBottom } : {})
+      }
+    }
 
     const headerHidden = headerConfig.settings.visible === false
     newVisibility.header = headerHidden

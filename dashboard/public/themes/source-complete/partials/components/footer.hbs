@@ -1,4 +1,12 @@
 {{!-- defalt-footer-start --}}
+{{!-- defalt-footer-style-start --}}
+<style>
+.gh-footer {
+    --defalt-footer-margin-top: 172px;
+    margin-top: var(--defalt-footer-margin-top);
+}
+</style>
+{{!-- defalt-footer-style-end --}}
 <footer class="gh-footer{{#match @custom.header_and_footer_color "Accent color"}} has-accent-color{{/match}} gh-outer">
     <div class="gh-footer-inner gh-inner">
 

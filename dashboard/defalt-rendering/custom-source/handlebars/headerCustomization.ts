@@ -1,4 +1,4 @@
-import { TEMPLATE_SECTION_SELECTORS, FOOTER_SECTION_SELECTORS, toSelectorList } from './sectionSelectors'
+import { TEMPLATE_SECTION_SELECTORS, FOOTER_SECTION_SELECTORS, FOOTER_ROOT_SELECTOR, toSelectorList } from './sectionSelectors'
 type StickyCleanupWindow = Window & {
   __ghEditorStickyCleanup?: () => void
 }
@@ -74,6 +74,7 @@ const VARIABLE_PADDING_SECTIONS: Record<string, { top: string, bottom: string }>
 }
 
 const SECTION_MARGIN_SELECTORS: Record<string, string[]> = {
+  footer: [FOOTER_ROOT_SELECTOR],
   footerBar: [FOOTER_SECTION_SELECTORS.footerBar],
   subheader: toSelectorList(TEMPLATE_SECTION_SELECTORS.subheader),
 }

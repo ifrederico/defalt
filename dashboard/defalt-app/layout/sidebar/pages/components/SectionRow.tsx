@@ -27,6 +27,9 @@ export type SectionRowProps = {
   isAnnouncementBar?: boolean
   announcementBarExpanded?: boolean
   onToggleAnnouncementBar?: () => void
+  isFooter?: boolean
+  footerExpanded?: boolean
+  onToggleFooter?: () => void
   isSubItem?: boolean
   showVisibilityToggle?: boolean
   isPremium?: boolean
@@ -48,6 +51,9 @@ export const SectionRow = memo(function SectionRow({
   isAnnouncementBar = false,
   announcementBarExpanded = false,
   onToggleAnnouncementBar,
+  isFooter = false,
+  footerExpanded = false,
+  onToggleFooter,
   isSubItem = false,
   showVisibilityToggle = true,
   isPremium = false,
@@ -120,9 +126,14 @@ export const SectionRow = memo(function SectionRow({
       ref={sortableRef}
       className={`group relative flex items-center justify-between rounded-md px-2 py-2 font-md transition-colors ${
         isSelected || rowHovered ? 'bg-subtle' : 'bg-surface'
-      } ${isDragging ? 'opacity-50' : ''}`}
+      } ${isDragging ? 'opacity-50' : ''} ${isSelectable ? 'cursor-pointer' : ''}`}
       data-section-id={item.id}
       data-section-index={index}
+      onClick={() => {
+        if (isSelectable) {
+          onOpenDetail(item.id, item.label)
+        }
+      }}
       onMouseEnter={() => {
         if (!isParentDragging) {
           setRowHovered(true)
@@ -151,17 +162,25 @@ export const SectionRow = memo(function SectionRow({
         </div>
       )}
       <div className={`flex flex-1 items-center gap-1 min-w-0 ${isSubItem ? 'ml-6' : ''}`}>
-        {isAnnouncementBar ? (
+        {isAnnouncementBar || isFooter ? (
           <button
             type="button"
             onClick={(e) => {
               e.stopPropagation()
-              onToggleAnnouncementBar?.()
+              if (isAnnouncementBar) {
+                onToggleAnnouncementBar?.()
+              } else if (isFooter) {
+                onToggleFooter?.()
+              }
             }}
             className="flex h-7 w-4 items-center justify-center shrink-0 text-secondary hover:text-foreground transition-colors"
-            aria-label={announcementBarExpanded ? 'Collapse announcement bar' : 'Expand announcement bar'}
+            aria-label={
+              isAnnouncementBar
+                ? (announcementBarExpanded ? 'Collapse announcement bar' : 'Expand announcement bar')
+                : (footerExpanded ? 'Collapse footer' : 'Expand footer')
+            }
           >
-            {announcementBarExpanded ? (
+            {(isAnnouncementBar ? announcementBarExpanded : footerExpanded) ? (
               <ChevronDown size={16} strokeWidth={1.5} />
             ) : (
               <ChevronRight size={16} strokeWidth={1.5} />
