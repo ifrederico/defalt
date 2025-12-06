@@ -32,34 +32,85 @@
     </style>
 
     <script>
-        /* Dark mode initialization - runs early to prevent flash */
         (function() {
-            var theme = localStorage.getItem('theme');
-            if (theme === 'dark' || (theme === null && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-                document.documentElement.setAttribute('data-theme', 'dark');
-            } else {
-                document.documentElement.setAttribute('data-theme', 'light');
+            /* Dark mode initialization - runs early to prevent flash */
+            var themeKey = 'theme';
+            var mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+
+            function readStoredTheme() {
+                try {
+                    return localStorage.getItem(themeKey);
+                } catch (e) {
+                    return null;
+                }
+            }
+
+            function writeStoredTheme(value) {
+                try {
+                    if (value) {
+                        localStorage.setItem(themeKey, value);
+                    } else {
+                        localStorage.removeItem(themeKey);
+                    }
+                } catch (e) {
+                    /* ignore */
+                }
+            }
+
+            function systemTheme() {
+                return mediaQuery.matches ? 'dark' : 'light';
+            }
+
+            function applyTheme(theme, persist) {
+                document.documentElement.setAttribute('data-theme', theme);
+
+                if (persist === true) {
+                    writeStoredTheme(theme);
+                } else if (persist === false) {
+                    writeStoredTheme(null);
+                }
+            }
+
+            var storedTheme = readStoredTheme();
+            applyTheme(storedTheme || systemTheme(), !!storedTheme);
+
+            function handleSystemChange(event) {
+                if (!readStoredTheme()) {
+                    applyTheme(event.matches ? 'dark' : 'light', false);
+                }
+            }
+
+            if (typeof mediaQuery.addEventListener === 'function') {
+                mediaQuery.addEventListener('change', handleSystemChange);
+            } else if (typeof mediaQuery.addListener === 'function') {
+                mediaQuery.addListener(handleSystemChange);
+            }
+
+            window.toggleDarkMode = function() {
+                var nextTheme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+                var shouldPersist = nextTheme !== systemTheme();
+                applyTheme(nextTheme, shouldPersist);
+            };
+
+            /* The script for calculating the color contrast has been taken from
+            https://gomakethings.com/dynamically-changing-the-text-color-based-on-background-color-contrast-with-vanilla-js/ */
+            var accentColor = getComputedStyle(document.documentElement).getPropertyValue('--background-color');
+            accentColor = accentColor.trim().slice(1);
+
+            if (accentColor.length === 3) {
+                accentColor = accentColor[0] + accentColor[0] + accentColor[1] + accentColor[1] + accentColor[2] + accentColor[2];
+            }
+
+            var r = parseInt(accentColor.substr(0, 2), 16);
+            var g = parseInt(accentColor.substr(2, 2), 16);
+            var b = parseInt(accentColor.substr(4, 2), 16);
+            var yiq = ((r * 299) + (g * 587) + (b * 114)) / 1000;
+            var textColor = (yiq >= 128) ? 'dark' : 'light';
+
+            if (document.documentElement.getAttribute('data-theme') !== 'dark') {
+                document.documentElement.classList.add(`has-${textColor}-text`);
             }
         })();
-
-        /* The script for calculating the color contrast has been taken from
-        https://gomakethings.com/dynamically-changing-the-text-color-based-on-background-color-contrast-with-vanilla-js/ */
-        var accentColor = getComputedStyle(document.documentElement).getPropertyValue('--background-color');
-        accentColor = accentColor.trim().slice(1);
-
-        if (accentColor.length === 3) {
-            accentColor = accentColor[0] + accentColor[0] + accentColor[1] + accentColor[1] + accentColor[2] + accentColor[2];
-        }
-
-        var r = parseInt(accentColor.substr(0, 2), 16);
-        var g = parseInt(accentColor.substr(2, 2), 16);
-        var b = parseInt(accentColor.substr(4, 2), 16);
-        var yiq = ((r * 299) + (g * 587) + (b * 114)) / 1000;
-        var textColor = (yiq >= 128) ? 'dark' : 'light';
-
-        if (document.documentElement.getAttribute('data-theme') !== 'dark') {
-            document.documentElement.classList.add(`has-${textColor}-text`);
-        }
     </script>
 
     {{!-- This tag outputs all your advanced SEO meta, structured data, and other important settings, it should always be the last tag before the closing head tag --}}
@@ -85,15 +136,6 @@
 {{!-- Scripts - handle responsive videos, infinite scroll, and navigation dropdowns --}}
 <script src="{{asset "built/source.js"}}"></script>
 <script src="{{asset "custom/utils.js"}}"></script>
-
-<script>
-    function toggleDarkMode() {
-        var currentTheme = document.documentElement.getAttribute('data-theme');
-        var newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-        document.documentElement.setAttribute('data-theme', newTheme);
-        localStorage.setItem('theme', newTheme);
-    }
-</script>
 
 {{!-- Ghost outputs required functional scripts with this tag, it should always be the last thing before the closing body tag --}}
 {{ghost_foot}}
