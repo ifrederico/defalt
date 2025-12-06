@@ -15,11 +15,13 @@ Copy `.env.example` to `.env` and configure:
 **Optional:**
 - `AUTH_SECRET` - Legacy CSRF protection (optional)
 
+Install dependencies with `bun install`.
+
 ## Testing
 
 ```bash
-npm test              # Run all tests via Vitest
-npm test -- sanitizers.test.ts  # Run single test file
+bun test              # Run all tests via Vitest
+bun test -- sanitizers.test.ts  # Run single test file
 ```
 
 Primary test suite: [sanitizers.test.ts](defalt-utils/security/sanitizers.test.ts) validates input sanitization for CSS, hex colors, and tokens.
@@ -27,14 +29,14 @@ Primary test suite: [sanitizers.test.ts](defalt-utils/security/sanitizers.test.t
 ## Development Commands
 
 ```bash
-npm run dev           # Start Vite dev server (http://localhost:5173)
-npm run dev:server    # Start Express server with watch mode
-npm run build         # TypeScript compile + Vite build
-npm run build:theme   # Build the Ghost theme in public/themes/source-complete
-npm run build:all     # Build both app and theme
-npm run start         # Start Express production server
-npm run lint          # Run ESLint
-npm run preview       # Preview production build
+bun run dev           # Start Vite dev server (http://localhost:5173)
+bun run dev:server    # Start Express server with watch mode
+bun run build         # TypeScript compile + Vite build
+bun run build:theme   # Build the Ghost theme in public/themes/source-complete
+bun run build:all     # Build both app and theme
+bun run start         # Start Express production server
+bun run lint          # Run ESLint
+bun run preview       # Preview production build
 ```
 
 **Dev Server Endpoints** (via vite-plugin-theme-config):

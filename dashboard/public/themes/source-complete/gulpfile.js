@@ -80,6 +80,9 @@ function zipper(done) {
             '!dist', '!dist/**',
             '!yarn-error.log',
             '!yarn.lock',
+            '!package-lock.json',
+            '!bun.lock',
+            '!bun.lockb',
             '!gulpfile.js'
         ]),
         zip(filename),
@@ -98,7 +101,7 @@ exports.zip = series(build, zipper);
 exports.default = series(build, serve, watcher);
 
 exports.release = async () => {
-    // @NOTE: https://yarnpkg.com/lang/en/docs/cli/version/
+    // Version read directly from package.json
     // require(./package.json) can run into caching issues, this re-reads from file everytime on release
     let packageJSON = JSON.parse(fs.readFileSync('./package.json'));
     const newVersion = packageJSON.version;

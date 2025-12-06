@@ -26,14 +26,14 @@ A visual theme editor for Ghost CMS. Customize the Ghost Source theme with live 
 # Clone and install
 git clone https://github.com/ifrederico/defalt.git
 cd defalt/dashboard
-npm install
+bun install
 
 # Configure environment
 cp .env.example .env
 # Edit .env with your Ghost URL
 
 # Start development server
-npm run dev
+bun run dev
 ```
 
 Open http://localhost:5173
@@ -73,8 +73,8 @@ Both Ghost and Dashboard deploy to Railway. See [dashboard/CLAUDE.md](dashboard/
 
 ### Self-hosted
 
-1. Build the dashboard: `npm run build:all`
-2. Run with: `npm start`
+1. Build the dashboard: `bun run build:all`
+2. Run with: `bun start`
 3. Point at your Ghost instance via `VITE_GHOST_URL`
 
 ## Contributing

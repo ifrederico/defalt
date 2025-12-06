@@ -814,7 +814,7 @@ async function startServer() {
     console.log(`Static files ready at: ${distPath}`)
   } catch {
     console.error(`WARNING: dist/index.html not found at ${distPath}`)
-    console.error('Run "npm run build" first to generate static files')
+    console.error('Run "bun run build" first to generate static files')
   }
 
   app.listen(PORT, () => {

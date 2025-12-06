@@ -1,12 +1,12 @@
-FROM node:18-alpine
+FROM oven/bun:1 as base
 
 WORKDIR /app
 
-# Copy package files
-COPY package*.json ./
+# Copy package manifests
+COPY package.json bun.lock* ./
 
 # Install dependencies
-RUN npm ci
+RUN bun install --frozen-lockfile
 
 # Copy source code
 COPY . .
@@ -23,10 +23,10 @@ ENV VITE_GHOST_CONTENT_API_KEY=$VITE_GHOST_CONTENT_API_KEY
 ENV VITE_BASE_PATH=$VITE_BASE_PATH
 
 # Build the app
-RUN npm run build
+RUN bun run build
 
 # Expose port (Metal edge defaults to 3000, container listens on $PORT)
 EXPOSE 3000
 
 # Start the server
-CMD ["npm", "start"]
+CMD ["bun", "start"]

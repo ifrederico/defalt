@@ -74,6 +74,13 @@ export function ColorPicker({ value, eyedropper, hasTransparentOption, onChange,
     document.addEventListener('touchend', stopUsingColorPicker)
   }, [stopUsingColorPicker])
 
+  useEffect(() => {
+    return () => {
+      document.removeEventListener('mouseup', stopUsingColorPicker)
+      document.removeEventListener('touchend', stopUsingColorPicker)
+    }
+  }, [stopUsingColorPicker])
+
   const openColorPicker = useCallback(
     (event: MouseEvent<HTMLButtonElement>) => {
       event.preventDefault()

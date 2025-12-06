@@ -487,7 +487,6 @@ export function HandlebarsRenderer({
     const win = doc.defaultView
     const update = () => {
       syncTemplateSections(doc, renderedTemplateSections)
-      reorderTemplateInDOM(doc, filteredTemplateOrder)
     }
 
     if (win) {
@@ -495,7 +494,7 @@ export function HandlebarsRenderer({
     } else {
       update()
     }
-  }, [renderedTemplateSections, filteredTemplateOrder])
+  }, [renderedTemplateSections])
 
   // Separate effect to reorder template when templateOrder changes (without re-rendering)
   useEffect(() => {
@@ -535,7 +534,6 @@ export function HandlebarsRenderer({
   const prevSelectedSectionIdRef = useRef<string | null>(null)
 
   // Effect to highlight selected section
-  // Re-run when padding/margins change since they can cause DOM updates
   useEffect(() => {
     const iframe = iframeRef.current
     if (!iframe) return
@@ -577,7 +575,7 @@ export function HandlebarsRenderer({
         win.removeEventListener('resize', applyHighlight)
       }
     }
-  }, [selectedSectionId, sectionPadding, sectionMargins])
+  }, [selectedSectionId])
 
   // Effect to highlight hovered section from sidebar
   useEffect(() => {

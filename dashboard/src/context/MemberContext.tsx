@@ -1,5 +1,5 @@
 /* eslint-disable react-refresh/only-export-components */
-import { createContext, useContext, type ReactNode } from 'react'
+import { createContext, useContext, useMemo, type ReactNode } from 'react'
 import { useGhostMember } from '../hooks/useGhostMember.ts'
 import type { GhostMember } from '../lib/ghost.ts'
 
@@ -19,9 +19,10 @@ const MemberContext = createContext<MemberContextType | null>(null)
 
 export function MemberProvider({ children }: { children: ReactNode }) {
   const memberData = useGhostMember()
+  const memberValue = useMemo(() => memberData, [memberData])
 
   return (
-    <MemberContext.Provider value={memberData}>
+    <MemberContext.Provider value={memberValue}>
       {children}
     </MemberContext.Provider>
   )

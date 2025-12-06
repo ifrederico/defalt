@@ -23,11 +23,11 @@ All development happens in the `dashboard/` directory. See [dashboard/CLAUDE.md]
 ### Quick Commands (run from `dashboard/`)
 
 ```bash
-npm run dev           # Start Vite dev server (localhost:5173)
-npm run dev:vercel    # Start with serverless functions (for /api/* routes)
-npm run build:all     # Build app and theme
-npm run lint          # Run ESLint
-npm test              # Run Vitest tests
+bun run dev           # Start Vite dev server (localhost:5173)
+bun run dev:vercel    # Start with serverless functions (for /api/* routes)
+bun run build:all     # Build app and theme
+bun run lint          # Run ESLint
+bun test              # Run Vitest tests
 ```
 
 ### Environment Setup

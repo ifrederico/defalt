@@ -2,7 +2,8 @@ import {
   useState,
   useMemo,
   useEffect,
-  useCallback
+  useCallback,
+  memo
 } from 'react'
 import * as Separator from '@radix-ui/react-separator'
 import type { LucideIcon } from 'lucide-react'
@@ -128,7 +129,7 @@ type SectionGroupDescriptor = {
   allowAdd?: boolean
 }
 
-export function SectionsPanelBase({
+export const SectionsPanelBase = memo(function SectionsPanelBase({
   panelTitle,
   allowTemplateAdd = true,
   activeDetail: controlledActiveDetail,
@@ -508,4 +509,4 @@ export function SectionsPanelBase({
       )}
     </div>
   )
-}
+})

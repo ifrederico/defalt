@@ -114,7 +114,7 @@ async function ensureDependenciesInstalled(themeDir: string) {
     // node_modules missing, install dependencies
   }
 
-  await runCommand('npm', ['install', '--legacy-peer-deps'], themeDir)
+  await runCommand('bun', ['install', '--frozen-lockfile'], themeDir)
 }
 
 function ensureAuthorized(req: IncomingMessage, res: ServerResponse, routeName: string): boolean {
@@ -513,7 +513,7 @@ export function themeConfigPlugin(): Plugin {
               await applyFooterCustomization(workspaceThemeDir, themeConfigForAssets)
 
               await fs.rm(path.join(workspaceThemeDir, 'dist'), { recursive: true, force: true })
-              await runCommand('npm', ['run', 'zip'], workspaceThemeDir)
+              await runCommand('bun', ['run', 'zip'], workspaceThemeDir)
 
               const packageName = await readThemePackageName(workspaceThemeDir)
               const zipPath = path.join(workspaceThemeDir, 'dist', `${packageName}.zip`)

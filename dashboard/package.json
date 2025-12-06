@@ -7,8 +7,8 @@
     "dev": "vite",
     "dev:server": "tsx watch server.ts",
     "build": "tsc -b && vite build",
-    "build:theme": "npm install --legacy-peer-deps --prefix public/themes/source-complete && npm run zip --prefix public/themes/source-complete",
-    "build:all": "npm run build && npm run build:theme",
+    "build:theme": "bun install --frozen-lockfile --cwd public/themes/source-complete && bun run --cwd public/themes/source-complete zip",
+    "build:all": "bun run build && bun run build:theme",
     "start": "tsx server.ts",
     "lint": "eslint .",
     "test": "vitest run",
@@ -73,5 +73,6 @@
     "typescript-eslint": "^8.45.0",
     "vite": "^7.1.7",
     "vitest": "^3.2.4"
-  }
+  },
+  "packageManager": "bun@1.3.3"
 }

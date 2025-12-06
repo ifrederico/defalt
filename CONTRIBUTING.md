@@ -13,14 +13,14 @@ Thanks for your interest in contributing to Defalt!
 ```bash
 cd dashboard
 cp .env.example .env  # Configure your Ghost credentials
-npm install
-npm run dev
+bun install
+bun run dev
 ```
 
 ## Pull Request Guidelines
 
 1. Fork the repo and create your branch from `main`
-2. Run `npm run lint` and `npm test` before submitting
+2. Run `bun run lint` and `bun test` before submitting
 3. Keep PRs focused - one feature or fix per PR
 4. Update docs if you change behavior
 

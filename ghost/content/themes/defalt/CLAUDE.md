@@ -9,12 +9,12 @@ Ghost theme called "defalt" (based on Source theme). Uses Handlebars templating,
 ## Commands
 
 ```bash
-yarn install         # Install dependencies
-yarn dev             # Build + watch + livereload
-yarn zip             # Build and package theme to dist/defalt.zip
-yarn test            # Run gscan theme validator
-yarn test:ci         # Run gscan with --fatal --verbose
-npx gulp build       # Build CSS/JS only (no watch)
+bun install         # Install dependencies
+bun run dev         # Build + watch + livereload
+bun run zip         # Build and package theme to dist/defalt.zip
+bun run test        # Run gscan theme validator
+bun run test:ci     # Run gscan with --fatal --verbose
+bun x gulp build    # Build CSS/JS only (no watch)
 ```
 
 ## Architecture
