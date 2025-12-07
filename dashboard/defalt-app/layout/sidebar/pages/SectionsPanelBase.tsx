@@ -423,6 +423,23 @@ export const SectionsPanelBase = memo(function SectionsPanelBase({
                               onScrollToSection={setScrollToSectionId}
                               showVisibilityToggle={item.id !== 'footer'}
                             />
+                            {group.id === 'template' && item.id === 'main' && (
+                              <button
+                                type="button"
+                                onClick={() => setActiveTab('ai')}
+                                className="group mt-1 flex w-full items-center gap-1 rounded-md bg-surface px-2 py-2 font-md font-normal text-foreground transition-colors hover:bg-subtle"
+                              >
+                                <span className="w-4 shrink-0" />
+                                <span className="flex h-7 w-7 items-center justify-center rounded-md bg-hover text-secondary">
+                                  <Sparkles size={16} strokeWidth={1.5} />
+                                </span>
+                                <span className="flex-1 truncate text-left">
+                                  AI Section
+                                  <span className="block font-xs text-muted leading-tight">Appears below Main, before footer</span>
+                                </span>
+                                <span className="text-muted group-hover:text-foreground">→</span>
+                              </button>
+                            )}
                             {item.id === 'announcement-bar' && announcementBarExpanded && (
                             <div className="mt-0.5">
                               <SectionRow
@@ -474,23 +491,6 @@ export const SectionsPanelBase = memo(function SectionsPanelBase({
                         onSelect={props.onAddTemplateSection}
                         disabled={!allowTemplateAdd}
                       />
-                    )}
-                    {group.id === 'template' && (
-                      <button
-                        type="button"
-                        onClick={() => setActiveTab('ai')}
-                        className="group flex w-full items-center gap-1 rounded-md bg-surface px-2 py-2 font-md font-normal text-foreground transition-colors hover:bg-subtle"
-                      >
-                        <span className="w-4 shrink-0" />
-                        <span className="flex h-7 w-7 items-center justify-center rounded-md bg-hover text-secondary">
-                          <Sparkles size={16} strokeWidth={1.5} />
-                        </span>
-                        <span className="flex-1 truncate text-left">
-                          AI Section
-                          <span className="block font-xs text-muted leading-tight">Insert after main, before footer</span>
-                        </span>
-                        <span className="text-muted group-hover:text-foreground">→</span>
-                      </button>
                     )}
                   </div>
                   {groupIndex < groups.length - 1 && (
