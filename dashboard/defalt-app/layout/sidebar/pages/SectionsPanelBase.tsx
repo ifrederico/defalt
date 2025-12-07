@@ -110,6 +110,7 @@ export type SectionsPanelProps = {
   headerStyleValue: string
   // AI-generated sections
   aiSections?: Array<{ id: string; name: string; html: string }>
+  onRemoveAiSection?: (id: string) => void
   // Controlled mode props (optional, for dual-sidebar layout)
   activeDetail?: SectionDetail | null
   onActiveDetailChange?: (detail: SectionDetail | null) => void
@@ -140,7 +141,7 @@ export const SectionsPanelBase = memo(function SectionsPanelBase({
   renderDetailInline = true,
   ...props
 }: SectionsPanelBaseProps) {
-  const { reorderTemplateItems, reorderFooterItems, aiSections = [] } = props
+  const { reorderTemplateItems, reorderFooterItems, aiSections = [], onRemoveAiSection } = props
   const { setHoveredSectionId, setScrollToSectionId, setActiveTab } = useUIActions()
   const isControlled = controlledActiveDetail !== undefined
   const templateDefinitions = useMemo(
@@ -435,7 +436,9 @@ export const SectionsPanelBase = memo(function SectionsPanelBase({
                               onRemoveTemplateSection={
                                 group.id === 'template' && item.definitionId
                                   ? () => props.onRemoveTemplateSection(item.id)
-                                  : undefined
+                                  : group.id === 'ai' && onRemoveAiSection
+                                    ? () => onRemoveAiSection(item.id)
+                                    : undefined
                               }
                               isAnnouncementBar={item.id === 'announcement-bar'}
                               announcementBarExpanded={announcementBarExpanded}

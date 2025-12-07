@@ -221,10 +221,10 @@ export function HandlebarsRenderer({
         id: section.id,
         definitionId: 'ai',
         html: section.html,
-        hidden: false,
+        hidden: Boolean(hiddenSections[section.id]),
       }))
     ],
-    [renderedTemplateSections, aiSections]
+    [renderedTemplateSections, aiSections, hiddenSections]
   )
 
   const resolvedHiddenSections = useMemo(() => {

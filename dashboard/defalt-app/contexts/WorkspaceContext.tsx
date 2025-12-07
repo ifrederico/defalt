@@ -221,6 +221,10 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     })
   }, [slugify])
 
+  const removeAiSection = useCallback((id: string) => {
+    setAiSections((prev) => prev.filter((s) => s.id !== id))
+  }, [])
+
   const clearAiSections = useCallback(() => setAiSections([]), [])
 
   const showFeaturedPostsRef = useRef(showFeaturedPosts)
@@ -591,6 +595,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     customSections,
     aiSections,
     addAiSection,
+    removeAiSection,
     clearAiSections,
     sectionPadding,
     onSectionPaddingChange: handleSectionPaddingChange,
@@ -608,7 +613,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     templateOrder: memoizedTemplateOrder,
     footerOrder: memoizedFooterOrder,
     customTemplateSections: customTemplateSectionList,
-  }), [templateDefinitions, handleAddTemplateSection, handleRemoveTemplateSection, customSections, aiSections, addAiSection, clearAiSections, sectionPadding, handleSectionPaddingChange, handleSectionPaddingCommit, sectionMargins, handleSectionMarginChange, handleSectionMarginCommit, updateCustomSectionConfig, sectionVisibility, templateItems, footerItems, reorderTemplateItems, reorderFooterItems, handleToggleSectionVisibility, memoizedTemplateOrder, memoizedFooterOrder, customTemplateSectionList])
+  }), [templateDefinitions, handleAddTemplateSection, handleRemoveTemplateSection, customSections, aiSections, addAiSection, removeAiSection, clearAiSections, sectionPadding, handleSectionPaddingChange, handleSectionPaddingCommit, sectionMargins, handleSectionMarginChange, handleSectionMarginCommit, updateCustomSectionConfig, sectionVisibility, templateItems, footerItems, reorderTemplateItems, reorderFooterItems, handleToggleSectionVisibility, memoizedTemplateOrder, memoizedFooterOrder, customTemplateSectionList])
 
   const headerControlState = useMemo(() => ({
     stickyHeaderValue: stickyHeaderMode,
