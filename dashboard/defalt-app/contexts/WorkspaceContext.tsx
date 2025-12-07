@@ -67,7 +67,26 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     title: '',
     message: ''
   })
-  const [aiSections, setAiSections] = useState<Array<{ id: string, name: string, html: string }>>([])
+  const AI_SECTIONS_STORAGE_KEY = 'defalt-ai-sections'
+
+  const [aiSections, setAiSections] = useState<Array<{ id: string, name: string, html: string }>>(() => {
+    if (typeof window === 'undefined') return []
+    try {
+      const stored = localStorage.getItem(AI_SECTIONS_STORAGE_KEY)
+      return stored ? JSON.parse(stored) : []
+    } catch {
+      return []
+    }
+  })
+
+  // Persist AI sections to localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem(AI_SECTIONS_STORAGE_KEY, JSON.stringify(aiSections))
+    } catch {
+      // localStorage might be full or unavailable
+    }
+  }, [aiSections])
 
   const showError = useCallback((title: string, message: string) => {
     setErrorDialog({ open: true, title, message })
@@ -226,6 +245,21 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
 
   const removeAiSection = useCallback((id: string) => {
     setAiSections((prev) => prev.filter((s) => s.id !== id))
+  }, [])
+
+  const renameAiSection = useCallback((id: string, newName: string) => {
+    setAiSections((prev) =>
+      prev.map((s) => (s.id === id ? { ...s, name: newName } : s))
+    )
+  }, [])
+
+  const reorderAiSections = useCallback((startIndex: number, endIndex: number) => {
+    setAiSections((prev) => {
+      const result = Array.from(prev)
+      const [removed] = result.splice(startIndex, 1)
+      result.splice(endIndex, 0, removed)
+      return result
+    })
   }, [])
 
   const clearAiSections = useCallback(() => setAiSections([]), [])
@@ -599,6 +633,8 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     aiSections,
     addAiSection,
     removeAiSection,
+    renameAiSection,
+    reorderAiSections,
     clearAiSections,
     sectionPadding,
     onSectionPaddingChange: handleSectionPaddingChange,
@@ -616,7 +652,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     templateOrder: memoizedTemplateOrder,
     footerOrder: memoizedFooterOrder,
     customTemplateSections: customTemplateSectionList,
-  }), [templateDefinitions, handleAddTemplateSection, handleRemoveTemplateSection, customSections, aiSections, addAiSection, removeAiSection, clearAiSections, sectionPadding, handleSectionPaddingChange, handleSectionPaddingCommit, sectionMargins, handleSectionMarginChange, handleSectionMarginCommit, updateCustomSectionConfig, sectionVisibility, templateItems, footerItems, reorderTemplateItems, reorderFooterItems, handleToggleSectionVisibility, memoizedTemplateOrder, memoizedFooterOrder, customTemplateSectionList])
+  }), [templateDefinitions, handleAddTemplateSection, handleRemoveTemplateSection, customSections, aiSections, addAiSection, removeAiSection, renameAiSection, reorderAiSections, clearAiSections, sectionPadding, handleSectionPaddingChange, handleSectionPaddingCommit, sectionMargins, handleSectionMarginChange, handleSectionMarginCommit, updateCustomSectionConfig, sectionVisibility, templateItems, footerItems, reorderTemplateItems, reorderFooterItems, handleToggleSectionVisibility, memoizedTemplateOrder, memoizedFooterOrder, customTemplateSectionList])
 
   const headerControlState = useMemo(() => ({
     stickyHeaderValue: stickyHeaderMode,

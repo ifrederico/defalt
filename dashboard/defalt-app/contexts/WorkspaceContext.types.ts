@@ -81,6 +81,8 @@ export type WorkspaceContextValue = {
   aiSections: Array<{ id: string, name: string, html: string }>
   addAiSection: (section: { id?: string, name: string, html: string }) => void
   removeAiSection: (id: string) => void
+  renameAiSection: (id: string, newName: string) => void
+  reorderAiSections: (startIndex: number, endIndex: number) => void
   clearAiSections: () => void
   sectionPadding: Record<string, { top: number, bottom: number, left?: number, right?: number }>
   onSectionPaddingChange: (id: string, direction: 'top' | 'bottom' | 'left' | 'right', value: number) => void
