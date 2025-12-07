@@ -210,14 +210,17 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
   const addAiSection = useCallback((section: { id?: string, name: string, html: string }) => {
     setAiSections((prev) => {
       const baseId = section.id ? slugify(section.id) : `ai-${slugify(section.name)}`
+      const baseName = section.name
       let uniqueId = baseId
+      let uniqueName = baseName
       let counter = 1
-      while (prev.some((s) => s.id === uniqueId)) {
+      // Find a unique ID and name
+      while (prev.some((s) => s.id === uniqueId || s.name === uniqueName)) {
         uniqueId = `${baseId}-${counter}`
+        uniqueName = `${baseName} (${counter})`
         counter += 1
       }
-      const next = prev.filter((s) => s.id !== uniqueId)
-      return [...next, { id: uniqueId, name: section.name, html: section.html }]
+      return [...prev, { id: uniqueId, name: uniqueName, html: section.html }]
     })
   }, [slugify])
 
