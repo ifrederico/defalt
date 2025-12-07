@@ -433,11 +433,7 @@ export const SectionsPanelBase = memo(function SectionsPanelBase({
                                 <span className="flex h-7 w-7 items-center justify-center rounded-md bg-hover text-secondary">
                                   <Sparkles size={16} strokeWidth={1.5} />
                                 </span>
-                                <span className="flex-1 truncate text-left">
-                                  AI Section
-                                  <span className="block font-xs text-muted leading-tight">Appears below Main, before footer</span>
-                                </span>
-                                <span className="text-muted group-hover:text-foreground">→</span>
+                                <span className="flex-1 truncate text-left font-semibold">AI Section</span>
                               </button>
                             )}
                             {item.id === 'announcement-bar' && announcementBarExpanded && (
