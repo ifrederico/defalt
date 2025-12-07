@@ -430,9 +430,6 @@ export const SectionsPanelBase = memo(function SectionsPanelBase({
                                 className="group mt-1 flex w-full items-center gap-1 rounded-md bg-surface px-2 py-2 font-md font-normal text-foreground transition-colors hover:bg-subtle"
                               >
                                 <span className="w-4 shrink-0" />
-                                <span className="flex h-7 w-7 items-center justify-center rounded-md bg-hover text-secondary">
-                                  <Sparkles size={16} strokeWidth={1.5} />
-                                </span>
                                 <span className="flex-1 truncate text-left font-normal leading-none">AI Section</span>
                               </button>
                             )}
