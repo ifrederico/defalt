@@ -1,8 +1,8 @@
 import { useState, useCallback, useRef, useEffect } from 'react'
 import * as Dialog from '@radix-ui/react-dialog'
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu'
-import { Sparkles, Copy, Check, Loader2, X, Code, Key, Infinity, Trash2, ExternalLink, ChevronLeft, Brain, ArrowUp } from 'lucide-react'
-import { AppButton, Spinner, FloatingTooltip } from '@defalt/ui'
+import { Sparkles, Check, Loader2, X, Key, Infinity as InfinityIcon, Trash2, ExternalLink, ChevronLeft, Brain, ArrowUp } from 'lucide-react'
+import { AppButton, FloatingTooltip } from '@defalt/ui'
 import { useAIGenerate, type AIModel } from '../../hooks/useAIGenerate'
 import { useToast } from '../../components/ToastContext'
 import { useWorkspaceContext } from '../../contexts/useWorkspaceContext'
@@ -16,13 +16,11 @@ const MODEL_OPTIONS: { value: AIModel; label: string; description: string }[] = 
 ]
 
 const EXAMPLE_PROMPTS = [
-  'Hero section with gradient background and CTA button',
+  'Hero section with CTA button',
   'Testimonials grid with star ratings',
   'FAQ accordion with smooth animations',
-  'Newsletter signup with email validation',
-  'Feature cards with icons',
-  'Pricing table with 3 tiers',
 ]
+
 
 export function AIPanel() {
   const { showToast } = useToast()
@@ -31,6 +29,8 @@ export function AIPanel() {
   const {
     aiEnabled,
     isGenerating,
+    isStreaming,
+    streamedContent,
     generatedSection,
     error,
     errorCode,
@@ -40,20 +40,19 @@ export function AIPanel() {
     isSavingKey,
     generate,
     reset,
-    copyTemplate,
-    copyCSS,
-    copyAll,
     saveOwnApiKey,
     removeOwnApiKey
   } = useAIGenerate({ showToast })
 
   const [prompt, setPrompt] = useState('')
-  const [model, setModel] = useState<AIModel>('sonnet')
-  const [copiedField, setCopiedField] = useState<string | null>(null)
+  const [lastPrompt, setLastPrompt] = useState('')
+  const [followUpPrompt, setFollowUpPrompt] = useState('')
+  const [model, setModel] = useState<AIModel>('haiku')
   const [apiKeyInput, setApiKeyInput] = useState('')
   const [isApiKeyModalOpen, setApiKeyModalOpen] = useState(false)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
-  const [combinedSnippet, setCombinedSnippet] = useState<string>('')
+  const followUpRef = useRef<HTMLTextAreaElement>(null)
+  const streamingContentRef = useRef<HTMLDivElement>(null)
   const lastInsertedIdRef = useRef<string | null>(null)
 
   const slugify = useCallback(
@@ -69,9 +68,37 @@ export function AIPanel() {
     }
   }, [prompt])
 
+  // Auto-scroll streaming content to bottom as new content arrives
+  useEffect(() => {
+    if (streamingContentRef.current && streamedContent) {
+      const el = streamingContentRef.current
+      // Use requestAnimationFrame for reliable scroll after render
+      requestAnimationFrame(() => {
+        el.scrollTop = el.scrollHeight
+      })
+    }
+  }, [streamedContent])
+
   const handleGenerate = useCallback(() => {
-    void generate(prompt, { model })
+    setLastPrompt(prompt)
+    void generate(prompt, { model, stream: true })
   }, [generate, prompt, model])
+
+  const handleFollowUp = useCallback(() => {
+    if (!followUpPrompt.trim()) return
+    // Combine original prompt with follow-up for context
+    const combinedPrompt = `${lastPrompt}\n\nFollow-up: ${followUpPrompt}`
+    setLastPrompt(combinedPrompt)
+    setFollowUpPrompt('')
+    void generate(combinedPrompt, { model, stream: true })
+  }, [generate, lastPrompt, followUpPrompt, model])
+
+  const handleFollowUpKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+      e.preventDefault()
+      handleFollowUp()
+    }
+  }, [handleFollowUp])
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
@@ -79,15 +106,6 @@ export function AIPanel() {
       handleGenerate()
     }
   }, [handleGenerate])
-
-  const handleCopy = useCallback(async (field: 'template' | 'css' | 'all') => {
-    const copyFn = field === 'template' ? copyTemplate : field === 'css' ? copyCSS : copyAll
-    const success = await copyFn()
-    if (success) {
-      setCopiedField(field)
-      setTimeout(() => setCopiedField(null), 2000)
-    }
-  }, [copyTemplate, copyCSS, copyAll])
 
   const handleExampleClick = useCallback((example: string) => {
     setPrompt(example)
@@ -117,8 +135,6 @@ ${generatedSection.css || ''}
   ${generatedSection.template || ''}
 </section>`
 
-    setCombinedSnippet(html)
-
     // Avoid duplicate insertions
     if (lastInsertedIdRef.current !== slug) {
       addAiSection({ id: slug, name: generatedSection.name || 'AI Section', html })
@@ -143,7 +159,6 @@ ${generatedSection.css || ''}
   const hasOwnKey = usage?.hasOwnKey || settings?.hasApiKey
   const isLimitReached = usage && !hasOwnKey && usage.remaining <= 0
   const usagePercent = usage ? Math.min((usage.used / usage.limit) * 100, 100) : 0
-  const debugUsagePercent = 60 // TODO: remove - debug to show bar fill
 
   return (
     <div className="flex flex-col h-full">
@@ -232,7 +247,7 @@ ${generatedSection.css || ''}
                   {hasOwnKey ? (
                     <>
                       <div className="flex items-center gap-3 p-4 bg-success/10 border border-success/20 rounded-md">
-                        <Infinity className="w-5 h-5 text-success" />
+                        <InfinityIcon className="w-5 h-5 text-success" />
                         <div>
                           <p className="font-sm font-medium text-foreground">Unlimited generations</p>
                           <p className="font-xs text-muted">Your API key is configured and active</p>
@@ -292,12 +307,12 @@ ${generatedSection.css || ''}
 
       {/* Usage Bar */}
       {!isLoadingUsage && usage && (
-        <div className={`${SECTION_PADDING} border-b border-border bg-subtle/30`}>
+        <div className={SECTION_PADDING}>
           {hasOwnKey ? (
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Infinity className="w-4 h-4 text-success" />
-                <span className="font-sm text-foreground">Unlimited generations</span>
+                <InfinityIcon className="w-4 h-4 text-success" />
+                <span className="text-foreground">Unlimited generations</span>
               </div>
               <button
                 type="button"
@@ -312,18 +327,18 @@ ${generatedSection.css || ''}
           ) : (
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <span className="font-sm text-foreground">
-                  {usage.used}/{usage.limit} generations
-                </span>
-                <span className="font-xs text-muted">
+                <span className="text-muted">
                   Resets {new Date(usage.resetDate).toLocaleDateString()}
+                </span>
+                <span className="text-muted">
+                  {usage.used}/{usage.limit} used
                 </span>
               </div>
               <div className="h-2 bg-hover rounded-full overflow-hidden">
                 <div
                   className="h-full transition-all"
                   style={{
-                    width: `${debugUsagePercent}%`,
+                    width: `${usagePercent}%`,
                     background: isLimitReached
                       ? 'var(--color-error)'
                       : 'linear-gradient(90deg, rgba(247, 110, 133, 0.75), rgba(139, 16, 214, 0.75))'
@@ -343,6 +358,44 @@ ${generatedSection.css || ''}
       {/* Prompt Input */}
       <div className={SECTION_PADDING}>
         <div className="space-y-3">
+          {/* Success header - above the box */}
+          {generatedSection && !isGenerating && (
+            <div className="animate-fadeIn">
+              <div className="flex items-center gap-1 pb-1">
+                <Sparkles
+                  className="w-4 h-4 text-transparent"
+                  style={{
+                    stroke: 'url(#ai-gradient)',
+                  }}
+                />
+                <svg width="0" height="0">
+                  <defs>
+                    <linearGradient id="ai-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stopColor="#a0cbff" />
+                      <stop offset="50%" stopColor="#c6adff" />
+                      <stop offset="100%" stopColor="#f4c2ff" />
+                    </linearGradient>
+                  </defs>
+                </svg>
+                <span
+                  className="font-medium text-transparent bg-clip-text"
+                  style={{
+                    backgroundImage: 'linear-gradient(135deg, #a0cbff, #c6adff, #f4c2ff)',
+                  }}
+                >
+                  AI generated
+                </span>
+              </div>
+              <p
+                className="text-sm text-transparent bg-clip-text"
+                style={{
+                  backgroundImage: 'linear-gradient(135deg, #a0cbff, #c6adff, #f4c2ff)',
+                }}
+              >
+                {lastPrompt}
+              </p>
+            </div>
+          )}
           <div
             className="rounded-lg p-[1px]"
             style={{
@@ -351,29 +404,86 @@ ${generatedSection.css || ''}
             }}
           >
             <div className="relative bg-white rounded-[7px]">
-              <textarea
-                ref={textareaRef}
-                id="ai-prompt"
-                value={prompt}
-                onChange={(e) => setPrompt(e.target.value)}
-                onKeyDown={handleKeyDown}
-                placeholder="Describe the section you want to build"
-                className="w-full min-h-[100px] max-h-[200px] px-3 py-2 pr-12 bg-transparent rounded-[7px] text-foreground placeholder:text-placeholder resize-none focus:outline-none disabled:opacity-50"
-                disabled={isGenerating || isLimitReached}
-              />
-              <button
-                type="button"
-                onClick={handleGenerate}
-                disabled={isGenerating || !prompt.trim() || isLimitReached}
-                className="absolute bottom-2 right-2 w-8 h-8 rounded-full bg-hover text-foreground flex items-center justify-center transition-all hover:bg-border-strong disabled:opacity-50 disabled:cursor-not-allowed"
-                aria-label="Generate"
-              >
-                {isGenerating ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <ArrowUp className="w-4 h-4" />
-                )}
-              </button>
+              {isGenerating ? (
+                <div className="flex flex-col animate-fadeIn">
+                  <div className="flex items-center justify-between px-3 py-3">
+                    <span
+                      className="text-transparent bg-clip-text animate-gradient-text"
+                      style={{
+                        backgroundImage: 'linear-gradient(90deg, #a0cbff, #c6adff, #f4c2ff, #ffd8b7, #a0cbff)',
+                        backgroundSize: '200% auto',
+                      }}
+                    >
+                      Generating...
+                    </span>
+                    <button
+                      type="button"
+                      onClick={reset}
+                      className="w-8 h-8 flex items-center justify-center bg-subtle hover:bg-subtle/80 rounded-full transition-colors"
+                      aria-label="Stop generating"
+                    >
+                      <span className="w-3 h-3 bg-muted rounded-sm" />
+                    </button>
+                  </div>
+                  {isStreaming && streamedContent && (
+                    <div
+                      ref={streamingContentRef}
+                      className="px-3 pb-3 max-h-[600px] overflow-y-auto scrollbar-none"
+                    >
+                      <pre
+                        className="font-mono text-sm whitespace-pre-wrap break-words text-transparent bg-clip-text"
+                        style={{
+                          backgroundImage: 'linear-gradient(135deg, #a0cbff, #c6adff, #f4c2ff, #ffd8b7)',
+                        }}
+                      >
+                        {streamedContent}
+                      </pre>
+                    </div>
+                  )}
+                </div>
+              ) : generatedSection ? (
+                <div className="animate-fadeIn">
+                  <textarea
+                    ref={followUpRef}
+                    value={followUpPrompt}
+                    onChange={(e) => setFollowUpPrompt(e.target.value)}
+                    onKeyDown={handleFollowUpKeyDown}
+                    placeholder="Follow up instructions"
+                    className="w-full min-h-[100px] max-h-[200px] px-3 py-2 pr-12 bg-transparent rounded-[7px] text-foreground placeholder:text-placeholder resize-none focus:outline-none"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleFollowUp}
+                    disabled={!followUpPrompt.trim()}
+                    className="absolute bottom-2 right-2 w-8 h-8 rounded-full flex items-center justify-center transition-all disabled:bg-hover disabled:text-muted disabled:opacity-50 disabled:cursor-not-allowed enabled:bg-primary enabled:text-white enabled:hover:opacity-80"
+                    aria-label="Send follow-up"
+                  >
+                    <ArrowUp className="w-4 h-4" />
+                  </button>
+                </div>
+              ) : (
+                <div className="animate-fadeIn">
+                  <textarea
+                    ref={textareaRef}
+                    id="ai-prompt"
+                    value={prompt}
+                    onChange={(e) => setPrompt(e.target.value)}
+                    onKeyDown={handleKeyDown}
+                    placeholder="Describe the section you want to build"
+                    className="w-full min-h-[100px] max-h-[200px] px-3 py-2 pr-12 bg-transparent rounded-[7px] text-foreground placeholder:text-placeholder resize-none focus:outline-none disabled:opacity-50"
+                    disabled={isLimitReached}
+                  />
+                  <button
+                    type="button"
+                    onClick={handleGenerate}
+                    disabled={!prompt.trim() || isLimitReached}
+                    className="absolute bottom-2 right-2 w-8 h-8 rounded-full flex items-center justify-center transition-all disabled:bg-hover disabled:text-muted disabled:opacity-50 disabled:cursor-not-allowed enabled:bg-primary enabled:text-white enabled:hover:opacity-80"
+                    aria-label="Generate"
+                  >
+                    <ArrowUp className="w-4 h-4" />
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -383,12 +493,12 @@ ${generatedSection.css || ''}
       {!generatedSection && !isGenerating && !isLimitReached && (
         <div className={SECTION_PADDING}>
           <div className="flex flex-wrap gap-2">
-            {EXAMPLE_PROMPTS.slice(0, 3).map((example) => (
+            {EXAMPLE_PROMPTS.map((example) => (
               <button
                 key={example}
                 type="button"
                 onClick={() => handleExampleClick(example)}
-                className="px-2 py-1 bg-subtle hover:bg-hover text-muted hover:text-foreground font-xs rounded-md transition-colors text-left"
+                className="px-2.5 py-1.5 bg-subtle hover:bg-subtle/80 text-foreground rounded-md transition-colors text-left"
               >
                 {example}
               </button>
@@ -411,88 +521,6 @@ ${generatedSection.css || ''}
           </div>
         </div>
       )}
-
-      {/* Loading State */}
-      {isGenerating && (
-        <div className={`${SECTION_PADDING} border-t border-border flex-1 flex items-center justify-center`}>
-          <div className="text-center">
-            <Spinner className="w-8 h-8 mx-auto mb-3" />
-            <p className="font-sm text-muted">Generating your section...</p>
-            <p className="font-xs text-placeholder mt-1">This may take a few seconds</p>
-          </div>
-        </div>
-      )}
-
-      {/* Generated Section Display */}
-      {generatedSection && !isGenerating && (
-        <div className="flex-1 flex flex-col border-t border-border overflow-hidden">
-          {/* Section Info */}
-          <div className={`${SECTION_PADDING} border-b border-border bg-subtle/50`}>
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="font-sm font-semibold text-foreground">{generatedSection.name}</h3>
-                <p className="font-xs text-muted">{generatedSection.description}</p>
-              </div>
-              <button
-                type="button"
-                onClick={reset}
-                className="p-1.5 hover:bg-hover rounded-md transition-colors"
-                title="Clear and start over"
-              >
-                <X className="w-4 h-4 text-muted" />
-              </button>
-            </div>
-          </div>
-
-          <div className="flex-1 overflow-auto p-4">
-            <div
-              className="relative rounded-xl p-[1px]"
-              style={{
-                background: 'linear-gradient(135deg, var(--sidekick-field-glow-color-1, #a0cbff), var(--sidekick-field-glow-color-2, #c6adff), var(--sidekick-field-glow-color-3, #f4c2ff), var(--sidekick-field-glow-color-4, #ffd8b7))',
-                boxShadow: '0 10px 50px rgba(160,203,255,0.35)',
-              }}
-            >
-              <div className="rounded-[12px] bg-surface/90 backdrop-blur p-4 shadow-sm border border-border/50">
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-2">
-                    <Code className="w-4 h-4 text-primary" />
-                    <span className="font-sm text-foreground">Combined snippet</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="font-xs text-success">Added to preview</span>
-                    <CopyButton onClick={() => handleCopy('all')} copied={copiedField === 'all'} />
-                  </div>
-                </div>
-                <pre className="font-mono font-xs text-foreground whitespace-pre-wrap break-words bg-subtle/60 rounded-md p-3 border border-border/50">
-{combinedSnippet}
-                </pre>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
-  )
-}
-
-type CopyButtonProps = {
-  onClick: () => void
-  copied: boolean
-}
-
-function CopyButton({ onClick, copied }: CopyButtonProps) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="absolute top-2 right-2 p-1.5 bg-surface border border-border rounded-md hover:bg-subtle transition-colors"
-      title="Copy to clipboard"
-    >
-      {copied ? (
-        <Check className="w-3.5 h-3.5 text-success" />
-      ) : (
-        <Copy className="w-3.5 h-3.5 text-muted" />
-      )}
-    </button>
   )
 }

@@ -20,7 +20,7 @@ export default {
 
         /* Semantic background colors - use with bg-* */
         surface: 'var(--color-surface)',
-        subtle: 'var(--color-subtle)',
+        subtle: 'rgb(var(--color-subtle-rgb) / <alpha-value>)',
         hover: 'var(--color-hover)',
         inverse: 'var(--color-inverse)',
         'inverse-subtle': 'var(--color-inverse-subtle)',

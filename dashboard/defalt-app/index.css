@@ -20,6 +20,7 @@
 
   /* Semantic background colors */
   --color-surface: #ffffff;          /* white - main surface */
+  --color-subtle-rgb: 243 244 246;   /* gray-100 RGB for opacity support */
   --color-subtle: #F3F4F6;           /* gray-100 - subtle backgrounds */
   --color-hover: #E5E7EB;            /* gray-200 - hover states */
   --color-inverse: #111827;          /* gray-900 - dark backgrounds */
@@ -256,6 +257,15 @@ input[type="number"] {
   animation: contentShow 200ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
+/* Hide scrollbar but allow scrolling */
+.scrollbar-none {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;  /* Chrome, Safari, Opera */
+}
+
 /* DnD placeholder styling (Puck pattern) */
 [data-dnd-placeholder] {
   background: var(--color-subtle) !important;
@@ -326,5 +336,19 @@ input[type="number"] {
 .ai-glow-button:hover::before {
   opacity: 1;
   animation: ai-glow-rotate 3s linear infinite;
+}
+
+/* AI Gradient Text Animation */
+@keyframes gradient-text {
+  0% {
+    background-position: 0% center;
+  }
+  100% {
+    background-position: 200% center;
+  }
+}
+
+.animate-gradient-text {
+  animation: gradient-text 2s linear infinite;
 }
 
