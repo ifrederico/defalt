@@ -262,8 +262,6 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     })
   }, [])
 
-  const clearAiSections = useCallback(() => setAiSections([]), [])
-
   const showFeaturedPostsRef = useRef(showFeaturedPosts)
   const visibilityToggleTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const previousHeaderStyleRef = useRef(headerStyleValue)
@@ -635,7 +633,6 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     removeAiSection,
     renameAiSection,
     reorderAiSections,
-    clearAiSections,
     sectionPadding,
     onSectionPaddingChange: handleSectionPaddingChange,
     onSectionPaddingCommit: handleSectionPaddingCommit,
@@ -652,7 +649,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     templateOrder: memoizedTemplateOrder,
     footerOrder: memoizedFooterOrder,
     customTemplateSections: customTemplateSectionList,
-  }), [templateDefinitions, handleAddTemplateSection, handleRemoveTemplateSection, customSections, aiSections, addAiSection, removeAiSection, renameAiSection, reorderAiSections, clearAiSections, sectionPadding, handleSectionPaddingChange, handleSectionPaddingCommit, sectionMargins, handleSectionMarginChange, handleSectionMarginCommit, updateCustomSectionConfig, sectionVisibility, templateItems, footerItems, reorderTemplateItems, reorderFooterItems, handleToggleSectionVisibility, memoizedTemplateOrder, memoizedFooterOrder, customTemplateSectionList])
+  }), [templateDefinitions, handleAddTemplateSection, handleRemoveTemplateSection, customSections, aiSections, addAiSection, removeAiSection, renameAiSection, reorderAiSections, sectionPadding, handleSectionPaddingChange, handleSectionPaddingCommit, sectionMargins, handleSectionMarginChange, handleSectionMarginCommit, updateCustomSectionConfig, sectionVisibility, templateItems, footerItems, reorderTemplateItems, reorderFooterItems, handleToggleSectionVisibility, memoizedTemplateOrder, memoizedFooterOrder, customTemplateSectionList])
 
   const headerControlState = useMemo(() => ({
     stickyHeaderValue: stickyHeaderMode,

@@ -18,8 +18,7 @@ import {
   SquareUserRound,
   LayoutList,
   GripVertical,
-  PanelBottomDashed,
-  Trash2
+  PanelBottomDashed
 } from 'lucide-react'
 import { DragDropProvider, DragOverlay } from '@dnd-kit/react'
 import { PointerSensor } from '@dnd-kit/react'
@@ -114,7 +113,6 @@ export type SectionsPanelProps = {
   onRemoveAiSection?: (id: string) => void
   onRenameAiSection?: (id: string, newName: string) => void
   onReorderAiSections?: (startIndex: number, endIndex: number) => void
-  onClearAiSections?: () => void
   // Controlled mode props (optional, for dual-sidebar layout)
   activeDetail?: SectionDetail | null
   onActiveDetailChange?: (detail: SectionDetail | null) => void
@@ -145,7 +143,7 @@ export const SectionsPanelBase = memo(function SectionsPanelBase({
   renderDetailInline = true,
   ...props
 }: SectionsPanelBaseProps) {
-  const { reorderTemplateItems, reorderFooterItems, aiSections = [], onRemoveAiSection, onReorderAiSections, onClearAiSections } = props
+  const { reorderTemplateItems, reorderFooterItems, aiSections = [], onRemoveAiSection, onReorderAiSections } = props
   const { setHoveredSectionId, setScrollToSectionId, setActiveTab } = useUIActions()
   const isControlled = controlledActiveDetail !== undefined
   const templateDefinitions = useMemo(
@@ -421,20 +419,7 @@ export const SectionsPanelBase = memo(function SectionsPanelBase({
                   key={group.id}
                   className="mt-5 space-y-2 first:mt-0"
                 >
-                  <div className="flex items-center justify-between">
-                    <h3 className="font-md font-bold text-foreground">{group.title}</h3>
-                    {group.id === 'ai' && onClearAiSections && group.items.length > 0 && (
-                      <button
-                        type="button"
-                        onClick={onClearAiSections}
-                        className="flex items-center gap-1 rounded-md px-2 py-1 font-sm text-secondary hover:bg-hover hover:text-error transition-colors"
-                        title="Clear all AI sections"
-                      >
-                        <Trash2 size={14} />
-                        <span>Clear all</span>
-                      </button>
-                    )}
-                  </div>
+                  <h3 className="font-md font-bold text-foreground">{group.title}</h3>
                   <div className="flex flex-col gap-1">
                     <div className="space-y-0.5">
                       {group.items.length === 0 ? (
