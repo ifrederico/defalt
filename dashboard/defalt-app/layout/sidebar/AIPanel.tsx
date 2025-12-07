@@ -108,10 +108,12 @@ export function AIPanel() {
     if (!generatedSection || isGenerating) return
     const slug = slugify(generatedSection.id || generatedSection.name || 'ai-section')
     const html = `{{!-- ${generatedSection.name || 'AI Section'} --}}
-<style>
+<section data-section-id="${slug}" class="ai-generated-section">
+  <style>
 ${generatedSection.css || ''}
-</style>
-${generatedSection.template || ''}`
+  </style>
+  ${generatedSection.template || ''}
+</section>`
 
     setCombinedSnippet(html)
 
