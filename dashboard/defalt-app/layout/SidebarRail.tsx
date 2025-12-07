@@ -1,5 +1,5 @@
 import { useState, useCallback, memo, useEffect, useMemo } from 'react'
-import { PanelsTopLeft, Settings, CircleUserRound, MessageCircleQuestion, CloudCog, CloudCheck, X, RefreshCw, Sparkles } from 'lucide-react'
+import { PanelsTopLeft, Settings, CircleUserRound, MessageCircleQuestion, CloudCog, CloudCheck, X, RefreshCw } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import * as Dialog from '@radix-ui/react-dialog'
 import { FloatingTooltip } from '@defalt/ui'
@@ -7,7 +7,6 @@ import { SettingsModal } from '../components/SettingsModal'
 import { GhostConnectionSettings } from '../components/GhostConnectionSettings'
 import { useWorkspaceContext } from '../contexts/useWorkspaceContext'
 import { useActiveTab, useUIActions } from '../stores'
-import { isAIEnabled } from '@defalt/utils/api/aiService'
 
 function formatRelativeTime(date: Date): string {
   const now = new Date()
@@ -75,10 +74,7 @@ export function SidebarRail() {
 
   const handleSectionsClick = useCallback(() => setActiveTab('sections'), [setActiveTab])
   const handleSettingsClick = useCallback(() => setActiveTab('settings'), [setActiveTab])
-  const handleAIClick = useCallback(() => setActiveTab('ai'), [setActiveTab])
   const handleUserClick = useCallback(() => setSettingsModalOpen(true), [])
-
-  const aiEnabled = isAIEnabled()
 
   return (
     <>
@@ -96,15 +92,6 @@ export function SidebarRail() {
           active={activeTab === 'settings'}
           onClick={handleSettingsClick}
         />
-
-        {aiEnabled && (
-          <IconButton
-            icon={Sparkles}
-            label="AI Section Generator"
-            active={activeTab === 'ai'}
-            onClick={handleAIClick}
-          />
-        )}
 
         <Dialog.Root open={isPreviewModalOpen} onOpenChange={setPreviewModalOpen}>
           <FloatingTooltip content={isGhostConnected ? 'Preview connected' : 'Preview connection'}>
