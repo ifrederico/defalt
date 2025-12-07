@@ -78,6 +78,9 @@ export type WorkspaceContextValue = {
   onAddTemplateSection: (definitionId: string) => void
   onRemoveTemplateSection: (sectionId: string) => void
   customSections: Record<string, import('@defalt/sections/definitions/definitions').SectionInstance>
+  aiSections: Array<{ id: string, name: string, html: string }>
+  addAiSection: (section: { id?: string, name: string, html: string }) => void
+  clearAiSections: () => void
   sectionPadding: Record<string, { top: number, bottom: number, left?: number, right?: number }>
   onSectionPaddingChange: (id: string, direction: 'top' | 'bottom' | 'left' | 'right', value: number) => void
   onSectionPaddingCommit: (id: string, direction: 'top' | 'bottom' | 'left' | 'right', value: number) => void

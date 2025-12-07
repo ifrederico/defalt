@@ -67,6 +67,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     title: '',
     message: ''
   })
+  const [aiSections, setAiSections] = useState<Array<{ id: string, name: string, html: string }>>([])
 
   const showError = useCallback((title: string, message: string) => {
     setErrorDialog({ open: true, title, message })
@@ -200,6 +201,27 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     setCurrentPage(page)
     setPreviewPage(page)
   }, [cancelActiveSave, setPreviewPage])
+
+  const slugify = useCallback(
+    (value: string) => value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '') || 'ai-section',
+    []
+  )
+
+  const addAiSection = useCallback((section: { id?: string, name: string, html: string }) => {
+    setAiSections((prev) => {
+      const baseId = section.id ? slugify(section.id) : `ai-${slugify(section.name)}`
+      let uniqueId = baseId
+      let counter = 1
+      while (prev.some((s) => s.id === uniqueId)) {
+        uniqueId = `${baseId}-${counter}`
+        counter += 1
+      }
+      const next = prev.filter((s) => s.id !== uniqueId)
+      return [...next, { id: uniqueId, name: section.name, html: section.html }]
+    })
+  }, [slugify])
+
+  const clearAiSections = useCallback(() => setAiSections([]), [])
 
   const showFeaturedPostsRef = useRef(showFeaturedPosts)
   const visibilityToggleTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -567,6 +589,9 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     onAddTemplateSection: handleAddTemplateSection,
     onRemoveTemplateSection: handleRemoveTemplateSection,
     customSections,
+    aiSections,
+    addAiSection,
+    clearAiSections,
     sectionPadding,
     onSectionPaddingChange: handleSectionPaddingChange,
     onSectionPaddingCommit: handleSectionPaddingCommit,
@@ -583,7 +608,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     templateOrder: memoizedTemplateOrder,
     footerOrder: memoizedFooterOrder,
     customTemplateSections: customTemplateSectionList,
-  }), [templateDefinitions, handleAddTemplateSection, handleRemoveTemplateSection, customSections, sectionPadding, handleSectionPaddingChange, handleSectionPaddingCommit, sectionMargins, handleSectionMarginChange, handleSectionMarginCommit, updateCustomSectionConfig, sectionVisibility, templateItems, footerItems, reorderTemplateItems, reorderFooterItems, handleToggleSectionVisibility, memoizedTemplateOrder, memoizedFooterOrder, customTemplateSectionList])
+  }), [templateDefinitions, handleAddTemplateSection, handleRemoveTemplateSection, customSections, aiSections, addAiSection, clearAiSections, sectionPadding, handleSectionPaddingChange, handleSectionPaddingCommit, sectionMargins, handleSectionMarginChange, handleSectionMarginCommit, updateCustomSectionConfig, sectionVisibility, templateItems, footerItems, reorderTemplateItems, reorderFooterItems, handleToggleSectionVisibility, memoizedTemplateOrder, memoizedFooterOrder, customTemplateSectionList])
 
   const headerControlState = useMemo(() => ({
     stickyHeaderValue: stickyHeaderMode,

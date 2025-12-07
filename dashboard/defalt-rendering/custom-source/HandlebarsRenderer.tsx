@@ -63,6 +63,7 @@ interface HandlebarsRendererProps {
   onNavigate?: (href: string) => boolean
   customCss?: string
   customTemplateSections?: SectionInstance[]
+  aiSections?: Array<{ id: string, html: string, name?: string, hidden?: boolean }>
   customSettingsOverrides?: Record<string, unknown>
   announcementBarConfig?: AnnouncementBarConfig
   announcementContentConfig?: AnnouncementContentConfig
@@ -92,6 +93,7 @@ export function HandlebarsRenderer({
   onNavigate,
   customCss,
   customTemplateSections = [],
+  aiSections = [],
   customSettingsOverrides,
   announcementBarConfig,
   announcementContentConfig,
@@ -212,6 +214,19 @@ export function HandlebarsRenderer({
     [customTemplateSections, hiddenSections, sectionPadding, previewPages]
   )
 
+  const mergedCustomSections = useMemo(
+    () => [
+      ...renderedTemplateSections,
+      ...aiSections.map((section) => ({
+        id: section.id,
+        definitionId: 'ai',
+        html: section.html,
+        hidden: false,
+      }))
+    ],
+    [renderedTemplateSections, aiSections]
+  )
+
   const resolvedHiddenSections = useMemo(() => {
     const resolved = { ...hiddenSections }
     const mainHidden = Boolean(hiddenSections.main)
@@ -246,8 +261,9 @@ export function HandlebarsRenderer({
     filteredTemplateOrder.forEach((id) => ids.add(normalizeSectionId(id)))
     footerOrder.forEach((id) => ids.add(normalizeSectionId(id)))
     renderedTemplateSections.forEach((section) => ids.add(normalizeSectionId(section.id)))
+    aiSections.forEach((section) => ids.add(normalizeSectionId(section.id)))
     return Array.from(ids)
-  }, [filteredTemplateOrder, footerOrder, renderedTemplateSections])
+  }, [filteredTemplateOrder, footerOrder, renderedTemplateSections, aiSections])
 
   // Keep refs in sync with latest values using useLayoutEffect
   // to ensure they update synchronously before inject effect runs
@@ -416,7 +432,7 @@ export function HandlebarsRenderer({
       announcementBarConfig: sanitizedAnnouncementBarConfig,
       announcementContentConfig: sanitizedAnnouncementContentConfig,
       customCss: sanitizedCustomCss,
-      customSections: renderedTemplateSections,
+      customSections: mergedCustomSections,
       sectionIds: onSectionSelect ? sectionIdsForPreview : undefined,
       onSelectSection: onSectionSelect,
       selectedSectionId: selectedSectionId ?? null,
@@ -486,7 +502,7 @@ export function HandlebarsRenderer({
 
     const win = doc.defaultView
     const update = () => {
-      syncTemplateSections(doc, renderedTemplateSections)
+      syncTemplateSections(doc, mergedCustomSections)
     }
 
     if (win) {
@@ -494,7 +510,7 @@ export function HandlebarsRenderer({
     } else {
       update()
     }
-  }, [renderedTemplateSections])
+  }, [mergedCustomSections])
 
   // Separate effect to reorder template when templateOrder changes (without re-rendering)
   useEffect(() => {

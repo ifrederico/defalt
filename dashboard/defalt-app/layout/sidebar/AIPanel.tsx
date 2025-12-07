@@ -1,11 +1,11 @@
 import { useState, useCallback, useRef, useEffect } from 'react'
-import * as Tabs from '@radix-ui/react-tabs'
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu'
 import * as Collapsible from '@radix-ui/react-collapsible'
-import { Sparkles, Copy, Check, ChevronDown, ChevronRight, Loader2, X, Code, Palette, Key, Infinity, Trash2, ExternalLink } from 'lucide-react'
+import { Sparkles, Copy, Check, ChevronDown, ChevronRight, Loader2, X, Code, Key, Infinity, Trash2, ExternalLink } from 'lucide-react'
 import { AppButton, Spinner } from '@defalt/ui'
 import { useAIGenerate, type AIModel } from '../../hooks/useAIGenerate'
 import { useToast } from '../../components/ToastContext'
+import { useWorkspaceContext } from '../../contexts/useWorkspaceContext'
 
 const SECTION_PADDING = 'px-4 py-4'
 const MODEL_OPTIONS: { value: AIModel; label: string; description: string }[] = [
@@ -25,6 +25,7 @@ const EXAMPLE_PROMPTS = [
 
 export function AIPanel() {
   const { showToast } = useToast()
+  const { addAiSection } = useWorkspaceContext()
   const {
     aiEnabled,
     isGenerating,
@@ -50,6 +51,13 @@ export function AIPanel() {
   const [apiKeyInput, setApiKeyInput] = useState('')
   const [showApiKeyForm, setShowApiKeyForm] = useState(false)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const [combinedSnippet, setCombinedSnippet] = useState<string>('')
+  const lastInsertedIdRef = useRef<string | null>(null)
+
+  const slugify = useCallback(
+    (value: string) => value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '') || 'ai-section',
+    []
+  )
 
   // Auto-resize textarea
   useEffect(() => {
@@ -95,6 +103,24 @@ export function AIPanel() {
   const handleRemoveApiKey = useCallback(async () => {
     await removeOwnApiKey()
   }, [removeOwnApiKey])
+
+  useEffect(() => {
+    if (!generatedSection || isGenerating) return
+    const slug = slugify(generatedSection.id || generatedSection.name || 'ai-section')
+    const html = `{{!-- ${generatedSection.name || 'AI Section'} --}}
+<style>
+${generatedSection.css || ''}
+</style>
+${generatedSection.template || ''}`
+
+    setCombinedSnippet(html)
+
+    // Avoid duplicate insertions
+    if (lastInsertedIdRef.current !== slug) {
+      addAiSection({ id: slug, name: generatedSection.name || 'AI Section', html })
+      lastInsertedIdRef.current = slug
+    }
+  }, [generatedSection, isGenerating, addAiSection, slugify])
 
   if (!aiEnabled) {
     return (
@@ -335,69 +361,30 @@ export function AIPanel() {
             </div>
           </div>
 
-          {/* Code Tabs */}
-          <Tabs.Root defaultValue="template" className="flex-1 flex flex-col overflow-hidden">
-            <Tabs.List className="flex border-b border-border shrink-0">
-              <Tabs.Trigger
-                value="template"
-                className="flex-1 px-4 py-2 font-sm text-muted data-[state=active]:text-foreground data-[state=active]:border-b-2 data-[state=active]:border-primary transition-colors flex items-center justify-center gap-1.5"
-              >
-                <Code className="w-3.5 h-3.5" />
-                Template
-              </Tabs.Trigger>
-              <Tabs.Trigger
-                value="css"
-                className="flex-1 px-4 py-2 font-sm text-muted data-[state=active]:text-foreground data-[state=active]:border-b-2 data-[state=active]:border-primary transition-colors flex items-center justify-center gap-1.5"
-              >
-                <Palette className="w-3.5 h-3.5" />
-                CSS
-              </Tabs.Trigger>
-            </Tabs.List>
-
-            <Tabs.Content value="template" className="flex-1 overflow-auto">
-              <div className="relative">
-                <CopyButton
-                  onClick={() => handleCopy('template')}
-                  copied={copiedField === 'template'}
-                />
-                <pre className="p-4 font-mono font-xs text-foreground whitespace-pre-wrap break-words">
-                  {generatedSection.template}
-                </pre>
-              </div>
-            </Tabs.Content>
-
-            <Tabs.Content value="css" className="flex-1 overflow-auto">
-              <div className="relative">
-                <CopyButton
-                  onClick={() => handleCopy('css')}
-                  copied={copiedField === 'css'}
-                />
-                <pre className="p-4 font-mono font-xs text-foreground whitespace-pre-wrap break-words">
-                  {generatedSection.css}
-                </pre>
-              </div>
-            </Tabs.Content>
-          </Tabs.Root>
-
-          {/* Copy All Button */}
-          <div className={`${SECTION_PADDING} border-t border-border bg-surface`}>
-            <AppButton
-              variant="secondary"
-              onClick={() => handleCopy('all')}
-              className="w-full gap-2"
+          <div className="flex-1 overflow-auto p-4">
+            <div
+              className="relative rounded-xl p-[1px]"
+              style={{
+                background: 'linear-gradient(135deg, var(--sidekick-field-glow-color-1, #a0cbff), var(--sidekick-field-glow-color-2, #c6adff), var(--sidekick-field-glow-color-3, #f4c2ff), var(--sidekick-field-glow-color-4, #ffd8b7))',
+                boxShadow: '0 10px 50px rgba(160,203,255,0.35)',
+              }}
             >
-              {copiedField === 'all' ? (
-                <>
-                  <Check className="w-4 h-4" />
-                  Copied!
-                </>
-              ) : (
-                <>
-                  <Copy className="w-4 h-4" />
-                  Copy All Code
-                </>
-              )}
-            </AppButton>
+              <div className="rounded-[12px] bg-surface/90 backdrop-blur p-4 shadow-sm border border-border/50">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <Code className="w-4 h-4 text-primary" />
+                    <span className="font-sm text-foreground">Combined snippet</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="font-xs text-success">Added to preview</span>
+                    <CopyButton onClick={() => handleCopy('all')} copied={copiedField === 'all'} />
+                  </div>
+                </div>
+                <pre className="font-mono font-xs text-foreground whitespace-pre-wrap break-words bg-subtle/60 rounded-md p-3 border border-border/50">
+{combinedSnippet}
+                </pre>
+              </div>
+            </div>
           </div>
         </div>
       )}

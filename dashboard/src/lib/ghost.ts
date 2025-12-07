@@ -65,6 +65,19 @@ export function isLifetimeMember(member: GhostMember | null): boolean {
  * Uses /api/member proxy to handle cross-domain cookie forwarding.
  */
 export async function getCurrentMember(): Promise<GhostMember | null> {
+  if (import.meta.env.VITE_DEV_BYPASS_AUTH === 'true') {
+    return {
+      uuid: 'dev-member',
+      email: 'dev@example.com',
+      name: 'Dev User',
+      firstname: 'Dev',
+      avatar_image: null,
+      subscribed: true,
+      paid: false,
+      subscriptions: [],
+      labels: []
+    }
+  }
   try {
     // Use proxy endpoint which forwards cookies to Ghost
     const response = await fetch(apiPath('/api/member'), {
@@ -111,6 +124,7 @@ export function getMemberTier(member: GhostMember | null): string | null {
 }
 
 export function redirectToLogin(): void {
+  if (import.meta.env.VITE_DEV_BYPASS_AUTH === 'true') return
   if (!ghostUrl) {
     return
   }
@@ -118,6 +132,7 @@ export function redirectToLogin(): void {
 }
 
 export function redirectToSignup(): void {
+  if (import.meta.env.VITE_DEV_BYPASS_AUTH === 'true') return
   if (!ghostUrl) {
     return
   }
@@ -125,6 +140,7 @@ export function redirectToSignup(): void {
 }
 
 export function redirectToAccount(): void {
+  if (import.meta.env.VITE_DEV_BYPASS_AUTH === 'true') return
   if (!ghostUrl) {
     return
   }
@@ -136,6 +152,10 @@ export function redirectToAccount(): void {
  * This clears the session cookie without redirecting to the portal.
  */
 export async function signOut(): Promise<void> {
+  if (import.meta.env.VITE_DEV_BYPASS_AUTH === 'true') {
+    window.location.reload()
+    return
+  }
   if (!ghostUrl) {
     return
   }

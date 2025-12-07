@@ -67,6 +67,7 @@ export function AppContent() {
         sectionVisibility,
         customCSS,
         customSections,
+        aiSections,
         onUpdateCustomSection,
         templateItems,
         footerItems,
@@ -324,6 +325,7 @@ export function AppContent() {
                                     onNavigate={handlePreviewNavigateWrapper}
                                     customCss={customCSS}
                                     customTemplateSections={customTemplateSections}
+                                    aiSections={aiSections}
                                     customSettingsOverrides={customSettingsOverrides}
                                     announcementBarConfig={announcementSettings.bar}
                                     announcementContentConfig={announcementSettings.content}
