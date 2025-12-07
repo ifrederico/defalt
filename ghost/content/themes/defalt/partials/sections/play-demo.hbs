@@ -1222,6 +1222,77 @@ Usage: {{> "sections/play-demo"}}
     .gd-play-nav-item.gd-play-ai-nav:hover svg {
         stroke: url(#gd-ai-nav-gradient-active);
     }
+
+    /* AI Generated drawer group */
+    .gd-play-ai-drawer-group {
+        display: none;
+    }
+
+    .gd-play-ai-drawer-group.is-visible {
+        display: block;
+    }
+
+    .gd-play-ai-drawer-item {
+        background: linear-gradient(135deg, rgba(160, 203, 255, 0.1), rgba(244, 194, 255, 0.1));
+        border: 1px solid rgba(198, 173, 255, 0.3);
+    }
+
+    .gd-play-ai-drawer-item:hover {
+        background: linear-gradient(135deg, rgba(160, 203, 255, 0.2), rgba(244, 194, 255, 0.2));
+    }
+
+    .gd-play-ai-drawer-item svg {
+        stroke: url(#gd-ai-nav-gradient-active);
+    }
+
+    /* AI Edit Panel padding slider */
+    .gd-play-ai-slider-group {
+        margin-bottom: 16px;
+    }
+
+    .gd-play-ai-slider-label {
+        display: flex;
+        justify-content: space-between;
+        font-size: 1.2rem;
+        color: var(--play-text);
+        margin-bottom: 8px;
+    }
+
+    .gd-play-ai-slider-value {
+        color: var(--play-text-muted);
+        font-size: 1.1rem;
+    }
+
+    .gd-play-ai-slider {
+        width: 100%;
+        height: 6px;
+        border-radius: 3px;
+        background: var(--play-border);
+        appearance: none;
+        -webkit-appearance: none;
+        cursor: pointer;
+    }
+
+    .gd-play-ai-slider::-webkit-slider-thumb {
+        appearance: none;
+        -webkit-appearance: none;
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #a0cbff, #c6adff, #f4c2ff);
+        cursor: pointer;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    }
+
+    .gd-play-ai-slider::-moz-range-thumb {
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #a0cbff, #c6adff, #f4c2ff);
+        cursor: pointer;
+        border: none;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    }
 </style>
 
 <section class="gd-play-section gh-outer">
@@ -1409,6 +1480,25 @@ Usage: {{> "sections/play-demo"}}
                                 </div>
                             </div>
 
+                            {{!-- AI Generated Section (hidden until demo completes) --}}
+                            <div class="gd-play-drawer-group gd-play-ai-drawer-group" id="gd-ai-drawer-group">
+                                <div class="gd-play-drawer-title">
+                                    <span>AI Generated</span>
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor"
+                                        stroke-width="2" viewBox="0 0 24 24">
+                                        <path d="m6 9 6 6 6-6" />
+                                    </svg>
+                                </div>
+                                <div class="gd-play-drawer-items">
+                                    <div class="gd-play-drawer-item gd-play-ai-drawer-item gd-play-editable" draggable="true" data-edit="ai-testimonials" data-target="ai-section" id="gd-ai-drawer-item">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                            <path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/>
+                                        </svg>
+                                        Testimonials
+                                    </div>
+                                </div>
+                            </div>
+
                             {{!-- Footer Section --}}
                             <div class="gd-play-drawer-group">
                                 <div class="gd-play-drawer-title">
@@ -1567,6 +1657,36 @@ Usage: {{> "sections/play-demo"}}
                             <div class="gd-play-edit-toggle">
                                 <span class="gd-play-edit-toggle-label">Show images</span>
                                 <div class="gd-play-toggle-switch is-on" data-toggle="images"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{!-- AI Testimonials Edit Panel --}}
+                    <div class="gd-play-edit-panel" data-edit-panel="ai-testimonials">
+                        <div class="gd-play-edit-header">
+                            <div class="gd-play-edit-back">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor"
+                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+                                    <path d="m12 19-7-7 7-7" />
+                                    <path d="M19 12H5" />
+                                </svg>
+                            </div>
+                            <span class="gd-play-edit-title">Testimonials</span>
+                        </div>
+                        <div class="gd-play-edit-content">
+                            <div class="gd-play-ai-slider-group">
+                                <div class="gd-play-ai-slider-label">
+                                    <span>Padding top</span>
+                                    <span class="gd-play-ai-slider-value" id="gd-ai-padding-top-value">40px</span>
+                                </div>
+                                <input type="range" class="gd-play-ai-slider" id="gd-ai-padding-top" min="0" max="80" value="40">
+                            </div>
+                            <div class="gd-play-ai-slider-group">
+                                <div class="gd-play-ai-slider-label">
+                                    <span>Padding bottom</span>
+                                    <span class="gd-play-ai-slider-value" id="gd-ai-padding-bottom-value">40px</span>
+                                </div>
+                                <input type="range" class="gd-play-ai-slider" id="gd-ai-padding-bottom" min="0" max="80" value="40">
                             </div>
                         </div>
                     </div>
@@ -1761,9 +1881,9 @@ Usage: {{> "sections/play-demo"}}
                                 </div>
 
                                 {{!-- AI Generated Section (initially hidden) --}}
-                                <div class="gd-play-page-ai-section" id="gd-ai-preview-section">
-                                    <h3>Testimonials</h3>
-                                    <p>AI-generated section with customer reviews</p>
+                                <div class="gd-play-page-ai-section" id="gd-ai-preview-section" style="padding-top: 40px; padding-bottom: 40px;">
+                                    <h3>★★★★★ Testimonials</h3>
+                                    <p>"This product changed everything!" — Happy Customer</p>
                                 </div>
                             </div>
                         </div>
@@ -2550,6 +2670,9 @@ Usage: {{> "sections/play-demo"}}
         var aiSuccess = document.getElementById('gd-ai-success');
         var aiPreviewSection = document.getElementById('gd-ai-preview-section');
         var aiNavItem = document.querySelector('.gd-play-ai-nav');
+        var aiDrawerGroup = document.getElementById('gd-ai-drawer-group');
+        var aiDrawerItem = document.getElementById('gd-ai-drawer-item');
+        var sectionsNavItem = document.querySelector('.gd-play-nav-item[data-panel="sections"]');
         var aiDemoStarted = false;
         var aiDemoComplete = false;
 
@@ -2560,6 +2683,7 @@ Usage: {{> "sections/play-demo"}}
             if (aiStreamContent) aiStreamContent.textContent = '';
             if (aiSuccess) aiSuccess.classList.remove('is-active');
             if (aiPreviewSection) aiPreviewSection.classList.remove('is-visible');
+            if (aiDrawerGroup) aiDrawerGroup.classList.remove('is-visible');
             aiDemoStarted = false;
             aiDemoComplete = false;
         }
@@ -2596,12 +2720,18 @@ Usage: {{> "sections/play-demo"}}
                     aiStream.scrollTop = aiStream.scrollHeight;
                     setTimeout(streamCode, 20 + Math.random() * 15);
                 } else {
-                    // Phase 3: Complete
+                    // Phase 3: Complete - show section and switch to sections panel
                     setTimeout(function() {
                         aiGenerating.classList.remove('is-active');
                         aiSuccess.classList.add('is-active');
                         aiPreviewSection.classList.add('is-visible');
                         aiDemoComplete = true;
+
+                        // Show AI section in drawer and switch to sections panel
+                        setTimeout(function() {
+                            if (aiDrawerGroup) aiDrawerGroup.classList.add('is-visible');
+                            if (sectionsNavItem) sectionsNavItem.click();
+                        }, 800);
                     }, 200);
                 }
             }
@@ -2619,6 +2749,43 @@ Usage: {{> "sections/play-demo"}}
                         runAiDemo();
                     }
                 }, 300);
+            });
+        }
+
+        // Make AI preview section clickable to open edit panel
+        if (aiPreviewSection) {
+            aiPreviewSection.addEventListener('click', function(e) {
+                e.stopPropagation();
+                if (aiDemoComplete) {
+                    // Switch to sections panel first if not already there
+                    if (sectionsNavItem) sectionsNavItem.click();
+                    // Open the AI edit panel
+                    setTimeout(function() {
+                        openEditPanel('ai-testimonials');
+                    }, 100);
+                }
+            });
+        }
+
+        // AI padding sliders
+        var aiPaddingTop = document.getElementById('gd-ai-padding-top');
+        var aiPaddingTopValue = document.getElementById('gd-ai-padding-top-value');
+        var aiPaddingBottom = document.getElementById('gd-ai-padding-bottom');
+        var aiPaddingBottomValue = document.getElementById('gd-ai-padding-bottom-value');
+
+        if (aiPaddingTop && aiPreviewSection) {
+            aiPaddingTop.addEventListener('input', function() {
+                var value = this.value + 'px';
+                aiPaddingTopValue.textContent = value;
+                aiPreviewSection.style.paddingTop = value;
+            });
+        }
+
+        if (aiPaddingBottom && aiPreviewSection) {
+            aiPaddingBottom.addEventListener('input', function() {
+                var value = this.value + 'px';
+                aiPaddingBottomValue.textContent = value;
+                aiPreviewSection.style.paddingBottom = value;
             });
         }
 
