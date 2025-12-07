@@ -1028,6 +1028,200 @@ Usage: {{> "sections/play-demo"}}
         pointer-events: none;
         z-index: 10;
     }
+
+    /* ===== AI DEMO STYLES ===== */
+    .gd-play-ai-panel {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        padding: 12px;
+    }
+
+    .gd-play-ai-header {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        margin-bottom: 12px;
+        font-size: 1.3rem;
+        font-weight: 600;
+        color: var(--play-text);
+    }
+
+    .gd-play-ai-header svg {
+        width: 16px;
+        height: 16px;
+    }
+
+    .gd-play-ai-input-wrapper {
+        position: relative;
+        border-radius: 8px;
+        padding: 1px;
+        background: linear-gradient(135deg, #a0cbff, #c6adff, #f4c2ff, #ffd8b7);
+        box-shadow: 0 0 4px 0px rgba(160, 203, 255, 0.4), 0 0 8px 1px rgba(198, 173, 255, 0.3);
+    }
+
+    .gd-play-ai-input {
+        width: 100%;
+        min-height: 70px;
+        padding: 10px;
+        border: none;
+        border-radius: 7px;
+        background: #fff;
+        font-size: 1.2rem;
+        color: var(--play-text);
+        resize: none;
+        font-family: inherit;
+    }
+
+    .gd-play-ai-input:focus {
+        outline: none;
+    }
+
+    .gd-play-ai-input::placeholder {
+        color: var(--play-text-muted);
+    }
+
+    /* Streaming code area */
+    .gd-play-ai-stream {
+        display: none;
+        margin-top: 12px;
+        padding: 10px;
+        border-radius: 8px;
+        background: #1a1a2e;
+        max-height: 180px;
+        overflow-y: auto;
+    }
+
+    .gd-play-ai-stream.is-active {
+        display: block;
+    }
+
+    .gd-play-ai-stream-content {
+        font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+        font-size: 1rem;
+        line-height: 1.5;
+        white-space: pre-wrap;
+        word-break: break-all;
+        background: linear-gradient(135deg, #a0cbff, #c6adff, #f4c2ff, #ffd8b7);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+    }
+
+    /* Generating state */
+    .gd-play-ai-generating {
+        display: none;
+        align-items: center;
+        gap: 6px;
+        padding: 10px;
+        font-size: 1.2rem;
+        background: linear-gradient(90deg, #a0cbff, #c6adff, #f4c2ff, #ffd8b7, #a0cbff);
+        background-size: 200% auto;
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+        animation: gd-ai-gradient 2s linear infinite;
+    }
+
+    .gd-play-ai-generating.is-active {
+        display: flex;
+    }
+
+    @keyframes gd-ai-gradient {
+        0% { background-position: 0% center; }
+        100% { background-position: 200% center; }
+    }
+
+    /* Typing cursor animation */
+    .gd-play-ai-cursor {
+        display: inline-block;
+        width: 2px;
+        height: 1.2em;
+        background: var(--play-text);
+        margin-left: 1px;
+        animation: gd-ai-blink 0.8s infinite;
+        vertical-align: text-bottom;
+    }
+
+    @keyframes gd-ai-blink {
+        0%, 50% { opacity: 1; }
+        51%, 100% { opacity: 0; }
+    }
+
+    /* Success badge */
+    .gd-play-ai-success {
+        display: none;
+        align-items: center;
+        gap: 6px;
+        margin-top: 12px;
+        padding: 8px 12px;
+        border-radius: 6px;
+        background: linear-gradient(135deg, rgba(160, 203, 255, 0.15), rgba(244, 194, 255, 0.15));
+        border: 1px solid rgba(198, 173, 255, 0.3);
+        font-size: 1.2rem;
+    }
+
+    .gd-play-ai-success.is-active {
+        display: flex;
+    }
+
+    .gd-play-ai-success-text {
+        background: linear-gradient(135deg, #a0cbff, #c6adff, #f4c2ff);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+        font-weight: 500;
+    }
+
+    /* AI-generated section in preview */
+    .gd-play-page-ai-section {
+        display: none;
+        padding: 20px 16px;
+        background: linear-gradient(135deg, rgba(160, 203, 255, 0.08), rgba(244, 194, 255, 0.08));
+        border: 1px dashed rgba(198, 173, 255, 0.4);
+        text-align: center;
+    }
+
+    .gd-play-page-ai-section.is-visible {
+        display: block;
+        animation: gd-ai-section-appear 0.4s ease-out;
+    }
+
+    @keyframes gd-ai-section-appear {
+        from {
+            opacity: 0;
+            transform: translateY(-10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .gd-play-page-ai-section h3 {
+        font-size: 1.4rem;
+        font-weight: 600;
+        margin-bottom: 6px;
+        background: linear-gradient(135deg, #7c3aed, #c026d3);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+    }
+
+    .gd-play-page-ai-section p {
+        font-size: 1.1rem;
+        color: var(--play-text-muted);
+    }
+
+    /* Sparkles gradient for nav */
+    .gd-play-nav-item.gd-play-ai-nav svg {
+        stroke: url(#gd-ai-nav-gradient);
+    }
+
+    .gd-play-nav-item.gd-play-ai-nav.is-active svg,
+    .gd-play-nav-item.gd-play-ai-nav:hover svg {
+        stroke: url(#gd-ai-nav-gradient-active);
+    }
 </style>
 
 <section class="gd-play-section gh-outer">
@@ -1085,6 +1279,31 @@ Usage: {{> "sections/play-demo"}}
                                 <path
                                     d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" />
                                 <circle cx="12" cy="12" r="3" />
+                            </svg>
+                        </div>
+                        <div class="gd-play-nav-item gd-play-ai-nav" data-panel="ai" title="AI Generate">
+                            {{!-- Sparkles icon (Lucide) --}}
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="2"
+                                stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+                                <path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/>
+                                <path d="M20 3v4"/>
+                                <path d="M22 5h-4"/>
+                                <path d="M4 17v2"/>
+                                <path d="M5 18H3"/>
+                            </svg>
+                            {{!-- SVG gradient definitions --}}
+                            <svg width="0" height="0" style="position: absolute;">
+                                <defs>
+                                    <linearGradient id="gd-ai-nav-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                                        <stop offset="0%" stop-color="#a0cbff" />
+                                        <stop offset="50%" stop-color="#c6adff" />
+                                        <stop offset="100%" stop-color="#f4c2ff" />
+                                    </linearGradient>
+                                    <linearGradient id="gd-ai-nav-gradient-active" x1="0%" y1="0%" x2="100%" y2="100%">
+                                        <stop offset="0%" stop-color="#7c3aed" />
+                                        <stop offset="100%" stop-color="#c026d3" />
+                                    </linearGradient>
+                                </defs>
                             </svg>
                         </div>
                     </div>
@@ -1259,6 +1478,34 @@ Usage: {{> "sections/play-demo"}}
                                 <div class="gd-play-drawer-items">
                                     <div class="gd-play-drawer-item gd-play-editable" data-edit="site">Site Title</div>
                                 </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{!-- AI Panel --}}
+                    <div class="gd-play-panel" data-panel="ai">
+                        <div class="gd-play-ai-panel">
+                            <div class="gd-play-ai-header">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="2"
+                                    stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+                                    <path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/>
+                                </svg>
+                                Generate block
+                            </div>
+                            <div class="gd-play-ai-input-wrapper">
+                                <div class="gd-play-ai-input" id="gd-ai-input" contenteditable="false"></div>
+                            </div>
+                            <div class="gd-play-ai-generating" id="gd-ai-generating">
+                                Generating...
+                            </div>
+                            <div class="gd-play-ai-stream" id="gd-ai-stream">
+                                <div class="gd-play-ai-stream-content" id="gd-ai-stream-content"></div>
+                            </div>
+                            <div class="gd-play-ai-success" id="gd-ai-success">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                    <path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/>
+                                </svg>
+                                <span class="gd-play-ai-success-text">Section added to preview!</span>
                             </div>
                         </div>
                     </div>
@@ -1511,6 +1758,12 @@ Usage: {{> "sections/play-demo"}}
                                             <p class="gd-play-page-card-text">Go live today</p>
                                         </div>
                                     </div>
+                                </div>
+
+                                {{!-- AI Generated Section (initially hidden) --}}
+                                <div class="gd-play-page-ai-section" id="gd-ai-preview-section">
+                                    <h3>Testimonials</h3>
+                                    <p>AI-generated section with customer reviews</p>
                                 </div>
                             </div>
                         </div>
@@ -2285,5 +2538,106 @@ Usage: {{> "sections/play-demo"}}
                 });
             }
         });
+
+        // ===== AI DEMO ANIMATION =====
+        var aiDemoPrompt = 'Testimonials section with star ratings';
+        var aiDemoCode = '<section class="testimonials">\n  <style>\n    .testimonials { padding: 40px; }\n    .testimonial-grid {\n      display: grid;\n      grid-template-columns: repeat(3, 1fr);\n      gap: 20px;\n    }\n    .testimonial-card {\n      background: #fff;\n      padding: 24px;\n      border-radius: 12px;\n      box-shadow: 0 2px 8px rgba(0,0,0,0.1);\n    }\n    .stars { color: #fbbf24; }\n  </style>\n  <div class="testimonial-grid">\n    <div class="testimonial-card">\n      <div class="stars">★★★★★</div>\n      <p>"Amazing product!"</p>\n      <span>— Sarah K.</span>\n    </div>\n  </div>\n</section>';
+
+        var aiInput = document.getElementById('gd-ai-input');
+        var aiGenerating = document.getElementById('gd-ai-generating');
+        var aiStream = document.getElementById('gd-ai-stream');
+        var aiStreamContent = document.getElementById('gd-ai-stream-content');
+        var aiSuccess = document.getElementById('gd-ai-success');
+        var aiPreviewSection = document.getElementById('gd-ai-preview-section');
+        var aiNavItem = document.querySelector('.gd-play-ai-nav');
+        var aiDemoStarted = false;
+        var aiDemoComplete = false;
+
+        function resetAiDemo() {
+            if (aiInput) aiInput.textContent = '';
+            if (aiGenerating) aiGenerating.classList.remove('is-active');
+            if (aiStream) aiStream.classList.remove('is-active');
+            if (aiStreamContent) aiStreamContent.textContent = '';
+            if (aiSuccess) aiSuccess.classList.remove('is-active');
+            if (aiPreviewSection) aiPreviewSection.classList.remove('is-visible');
+            aiDemoStarted = false;
+            aiDemoComplete = false;
+        }
+
+        function runAiDemo() {
+            if (aiDemoStarted || aiDemoComplete) return;
+            aiDemoStarted = true;
+
+            var charIndex = 0;
+            var codeIndex = 0;
+
+            // Phase 1: Type the prompt
+            function typePrompt() {
+                if (charIndex < aiDemoPrompt.length) {
+                    aiInput.textContent = aiDemoPrompt.substring(0, charIndex + 1);
+                    charIndex++;
+                    setTimeout(typePrompt, 50 + Math.random() * 30);
+                } else {
+                    // Phase 2: Show generating state
+                    setTimeout(function() {
+                        aiGenerating.classList.add('is-active');
+                        aiStream.classList.add('is-active');
+                        setTimeout(streamCode, 400);
+                    }, 300);
+                }
+            }
+
+            // Phase 2: Stream the code
+            function streamCode() {
+                if (codeIndex < aiDemoCode.length) {
+                    var charsToAdd = Math.floor(Math.random() * 4) + 2;
+                    aiStreamContent.textContent = aiDemoCode.substring(0, codeIndex + charsToAdd);
+                    codeIndex += charsToAdd;
+                    aiStream.scrollTop = aiStream.scrollHeight;
+                    setTimeout(streamCode, 20 + Math.random() * 15);
+                } else {
+                    // Phase 3: Complete
+                    setTimeout(function() {
+                        aiGenerating.classList.remove('is-active');
+                        aiSuccess.classList.add('is-active');
+                        aiPreviewSection.classList.add('is-visible');
+                        aiDemoComplete = true;
+                    }, 200);
+                }
+            }
+
+            typePrompt();
+        }
+
+        // Start AI demo when switching to AI panel
+        if (aiNavItem) {
+            aiNavItem.addEventListener('click', function() {
+                // Small delay to let panel switch animation complete
+                setTimeout(function() {
+                    if (!aiDemoComplete) {
+                        resetAiDemo();
+                        runAiDemo();
+                    }
+                }, 300);
+            });
+        }
+
+        // Also auto-start after a delay when user views the demo (using IntersectionObserver)
+        var playSection = document.querySelector('.gd-play-section');
+        if (playSection && 'IntersectionObserver' in window) {
+            var observer = new IntersectionObserver(function(entries) {
+                entries.forEach(function(entry) {
+                    if (entry.isIntersecting && !aiDemoStarted && !aiDemoComplete) {
+                        // Auto-switch to AI panel and run demo after 3 seconds of viewing
+                        setTimeout(function() {
+                            if (aiNavItem && !aiDemoStarted) {
+                                aiNavItem.click();
+                            }
+                        }, 3000);
+                    }
+                });
+            }, { threshold: 0.5 });
+            observer.observe(playSection);
+        }
     })();
 </script>
