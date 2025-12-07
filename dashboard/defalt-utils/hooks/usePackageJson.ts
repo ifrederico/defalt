@@ -347,7 +347,7 @@ export function usePackageJson() {
     setCustomFieldValue('header_text', value, 'text')
   }, [setCustomFieldValue])
 
-  const backgroundImageEnabled = useMemo(() => getBooleanFieldValue('background_image', true), [getBooleanFieldValue])
+  const backgroundImageEnabled = useMemo(() => getBooleanFieldValue('background_image', false), [getBooleanFieldValue])
   const handleBackgroundImageToggle = useCallback((value: boolean) => {
     setCustomFieldValue('background_image', value, 'boolean')
   }, [setCustomFieldValue])

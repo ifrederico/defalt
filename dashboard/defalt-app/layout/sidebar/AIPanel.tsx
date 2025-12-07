@@ -1,8 +1,8 @@
 import { useState, useCallback, useRef, useEffect } from 'react'
+import * as Dialog from '@radix-ui/react-dialog'
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu'
-import * as Collapsible from '@radix-ui/react-collapsible'
-import { Sparkles, Copy, Check, ChevronDown, ChevronRight, Loader2, X, Code, Key, Infinity, Trash2, ExternalLink, ChevronLeft } from 'lucide-react'
-import { AppButton, Spinner } from '@defalt/ui'
+import { Sparkles, Copy, Check, Loader2, X, Code, Key, Infinity, Trash2, ExternalLink, ChevronLeft, Brain, ArrowUp } from 'lucide-react'
+import { AppButton, Spinner, FloatingTooltip } from '@defalt/ui'
 import { useAIGenerate, type AIModel } from '../../hooks/useAIGenerate'
 import { useToast } from '../../components/ToastContext'
 import { useWorkspaceContext } from '../../contexts/useWorkspaceContext'
@@ -51,7 +51,7 @@ export function AIPanel() {
   const [model, setModel] = useState<AIModel>('sonnet')
   const [copiedField, setCopiedField] = useState<string | null>(null)
   const [apiKeyInput, setApiKeyInput] = useState('')
-  const [showApiKeyForm, setShowApiKeyForm] = useState(false)
+  const [isApiKeyModalOpen, setApiKeyModalOpen] = useState(false)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const [combinedSnippet, setCombinedSnippet] = useState<string>('')
   const lastInsertedIdRef = useRef<string | null>(null)
@@ -98,7 +98,7 @@ export function AIPanel() {
     const success = await saveOwnApiKey(apiKeyInput)
     if (success) {
       setApiKeyInput('')
-      setShowApiKeyForm(false)
+      setApiKeyModalOpen(false)
     }
   }, [saveOwnApiKey, apiKeyInput])
 
@@ -143,21 +143,151 @@ ${generatedSection.css || ''}
   const hasOwnKey = usage?.hasOwnKey || settings?.hasApiKey
   const isLimitReached = usage && !hasOwnKey && usage.remaining <= 0
   const usagePercent = usage ? Math.min((usage.used / usage.limit) * 100, 100) : 0
+  const debugUsagePercent = 60 // TODO: remove - debug to show bar fill
 
   return (
     <div className="flex flex-col h-full">
-      {/* Header */}
-      <div className="px-4 py-3 border-b border-border flex items-center gap-2">
-        <button
-          type="button"
-          onClick={() => setActiveTab('sections')}
-          className="p-1 -ml-1 rounded-md hover:bg-subtle transition-colors"
-          aria-label="Back to sections"
-        >
-          <ChevronLeft className="w-4 h-4 text-muted" />
-        </button>
-        <Sparkles className="w-4 h-4 text-primary" />
-        <h2 className="font-md font-semibold text-foreground">AI Section Generator</h2>
+      {/* Header with AI gradient */}
+      <div className="shrink-0 border-b border-border">
+        <header className="flex h-12 items-center justify-between px-4">
+          <button
+            type="button"
+            onClick={() => setActiveTab('sections')}
+            className="inline-flex items-center gap-2 font-md font-bold transition-colors hover:opacity-80"
+          >
+            <ChevronLeft size={16} className="text-muted" />
+            <span>Generate block</span>
+          </button>
+
+          <div className="flex items-center gap-1">
+            {/* Model Selector */}
+            <DropdownMenu.Root>
+              <FloatingTooltip content={`Model: ${MODEL_OPTIONS.find(m => m.value === model)?.label}`}>
+                <DropdownMenu.Trigger asChild disabled={isGenerating}>
+                  <button
+                    type="button"
+                    className="w-8 h-8 rounded-md flex items-center justify-center transition-colors focus:outline-none bg-surface hover:bg-subtle text-muted disabled:opacity-50 disabled:cursor-not-allowed"
+                    aria-label="Select AI model"
+                  >
+                    <Brain size={16} strokeWidth={1.5} />
+                  </button>
+                </DropdownMenu.Trigger>
+              </FloatingTooltip>
+              <DropdownMenu.Portal>
+                <DropdownMenu.Content
+                  className="min-w-[120px] bg-surface border border-border rounded-md shadow-lg p-1 z-50"
+                  sideOffset={4}
+                  align="end"
+                >
+                  {MODEL_OPTIONS.map((option) => (
+                    <DropdownMenu.Item
+                      key={option.value}
+                      className="flex items-center justify-between px-3 py-2 font-sm text-foreground rounded hover:bg-subtle cursor-pointer outline-none"
+                      onSelect={() => setModel(option.value)}
+                    >
+                      <span>{option.label}</span>
+                      {model === option.value && <Check className="w-4 h-4 text-primary" />}
+                    </DropdownMenu.Item>
+                  ))}
+                </DropdownMenu.Content>
+              </DropdownMenu.Portal>
+            </DropdownMenu.Root>
+
+            {/* API Key Modal */}
+            <Dialog.Root open={isApiKeyModalOpen} onOpenChange={setApiKeyModalOpen}>
+              <FloatingTooltip content={hasOwnKey ? 'API key configured' : 'Configure API key'}>
+                <Dialog.Trigger asChild>
+                  <button
+                    type="button"
+                    className={`w-8 h-8 rounded-md flex items-center justify-center transition-colors focus:outline-none ${
+                      isApiKeyModalOpen ? 'bg-subtle' : 'bg-surface hover:bg-subtle'
+                    } ${hasOwnKey ? 'text-success' : 'text-muted'}`}
+                    aria-label="API key settings"
+                  >
+                    <Key size={16} strokeWidth={1.5} />
+                  </button>
+                </Dialog.Trigger>
+              </FloatingTooltip>
+            <Dialog.Portal>
+              <Dialog.Overlay className="fixed inset-0 z-40 bg-gradient-to-br from-black/20 to-black/10 backdrop-blur-[2px] data-[state=open]:animate-fadeIn data-[state=closed]:animate-fadeOut" />
+              <Dialog.Content className="fixed left-1/2 top-[10%] z-50 w-[min(480px,calc(100vw-2rem))] -translate-x-1/2 rounded-lg bg-surface shadow-xl focus:outline-none data-[state=open]:animate-contentShow">
+                <div className="flex items-center justify-between px-6 py-4 border-b border-border">
+                  <Dialog.Title className="text-lg font-semibold text-foreground">
+                    API Key Settings
+                  </Dialog.Title>
+                  <Dialog.Description className="sr-only">
+                    Configure your Anthropic API key for unlimited AI generations
+                  </Dialog.Description>
+                  <Dialog.Close asChild>
+                    <button
+                      type="button"
+                      className="w-8 h-8 rounded-md flex items-center justify-center text-secondary hover:bg-subtle transition-colors"
+                      aria-label="Close"
+                    >
+                      <X size={18} />
+                    </button>
+                  </Dialog.Close>
+                </div>
+                <div className="p-6 space-y-4">
+                  {hasOwnKey ? (
+                    <>
+                      <div className="flex items-center gap-3 p-4 bg-success/10 border border-success/20 rounded-md">
+                        <Infinity className="w-5 h-5 text-success" />
+                        <div>
+                          <p className="font-sm font-medium text-foreground">Unlimited generations</p>
+                          <p className="font-xs text-muted">Your API key is configured and active</p>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleRemoveApiKey}
+                        disabled={isSavingKey}
+                        className="w-full flex items-center justify-center gap-2 px-4 py-2 text-error hover:bg-error/10 font-sm rounded-md transition-colors disabled:opacity-50"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                        Remove API key
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <p className="font-sm text-muted">
+                        Add your Anthropic API key for unlimited generations. Your key is encrypted and stored securely.
+                      </p>
+                      <div className="space-y-3">
+                        <input
+                          type="password"
+                          value={apiKeyInput}
+                          onChange={(e) => setApiKeyInput(e.target.value)}
+                          placeholder="sk-ant-..."
+                          className="w-full px-3 py-2 bg-subtle border border-border rounded-md font-sm text-foreground placeholder:text-placeholder focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                        />
+                        <AppButton
+                          variant="primary"
+                          onClick={handleSaveApiKey}
+                          disabled={isSavingKey || !apiKeyInput.trim()}
+                          state={isSavingKey ? 'loading' : 'default'}
+                          className="w-full"
+                        >
+                          {isSavingKey ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Save API Key'}
+                        </AppButton>
+                      </div>
+                      <a
+                        href="https://console.anthropic.com/account/keys"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 font-xs text-primary hover:underline"
+                      >
+                        Get an API key from Anthropic
+                        <ExternalLink className="w-3 h-3" />
+                      </a>
+                    </>
+                  )}
+                </div>
+              </Dialog.Content>
+            </Dialog.Portal>
+          </Dialog.Root>
+          </div>
+        </header>
       </div>
 
       {/* Usage Bar */}
@@ -191,8 +321,13 @@ ${generatedSection.css || ''}
               </div>
               <div className="h-2 bg-hover rounded-full overflow-hidden">
                 <div
-                  className={`h-full transition-all ${isLimitReached ? 'bg-error' : 'bg-primary'}`}
-                  style={{ width: `${usagePercent}%` }}
+                  className="h-full transition-all"
+                  style={{
+                    width: `${debugUsagePercent}%`,
+                    background: isLimitReached
+                      ? 'var(--color-error)'
+                      : 'linear-gradient(90deg, rgba(247, 110, 133, 0.75), rgba(139, 16, 214, 0.75))'
+                  }}
                 />
               </div>
               {isLimitReached && (
@@ -205,119 +340,55 @@ ${generatedSection.css || ''}
         </div>
       )}
 
-      {/* BYOK Section */}
-      {!hasOwnKey && (
-        <Collapsible.Root open={showApiKeyForm} onOpenChange={setShowApiKeyForm}>
-          <Collapsible.Trigger asChild>
-            <button
-              type="button"
-              className="w-full px-4 py-3 flex items-center gap-2 text-left hover:bg-subtle transition-colors border-b border-border"
-            >
-              {showApiKeyForm ? (
-                <ChevronDown className="w-4 h-4 text-muted" />
-              ) : (
-                <ChevronRight className="w-4 h-4 text-muted" />
-              )}
-              <Key className="w-4 h-4 text-muted" />
-              <span className="font-sm text-foreground">Use your own API key</span>
-              <span className="font-xs text-muted ml-auto">Unlimited</span>
-            </button>
-          </Collapsible.Trigger>
-          <Collapsible.Content>
-            <div className={`${SECTION_PADDING} border-b border-border bg-subtle/30 space-y-3`}>
-              <p className="font-xs text-muted">
-                Add your Anthropic API key for unlimited generations. Your key is encrypted and stored securely.
-              </p>
-              <div className="flex gap-2">
-                <input
-                  type="password"
-                  value={apiKeyInput}
-                  onChange={(e) => setApiKeyInput(e.target.value)}
-                  placeholder="sk-ant-..."
-                  className="flex-1 px-3 py-2 bg-surface border border-border rounded-md font-sm text-foreground placeholder:text-placeholder focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
-                />
-                <AppButton
-                  variant="primary"
-                  onClick={handleSaveApiKey}
-                  disabled={isSavingKey || !apiKeyInput.trim()}
-                  state={isSavingKey ? 'loading' : 'default'}
-                >
-                  {isSavingKey ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Save'}
-                </AppButton>
-              </div>
-              <a
-                href="https://console.anthropic.com/account/keys"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1 font-xs text-primary hover:underline"
-              >
-                Get an API key
-                <ExternalLink className="w-3 h-3" />
-              </a>
-            </div>
-          </Collapsible.Content>
-        </Collapsible.Root>
-      )}
-
       {/* Prompt Input */}
       <div className={SECTION_PADDING}>
         <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <label htmlFor="ai-prompt" className="font-sm font-medium text-foreground">
-              Describe your section
-            </label>
-            <ModelSelector value={model} onChange={setModel} disabled={isGenerating} />
-          </div>
-
-          <textarea
-            ref={textareaRef}
-            id="ai-prompt"
-            value={prompt}
-            onChange={(e) => setPrompt(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder="e.g., A hero section with a large heading, subtitle, and two CTA buttons..."
-            className="w-full min-h-[100px] max-h-[200px] px-3 py-2 bg-subtle border border-border rounded-md font-sm text-foreground placeholder:text-placeholder resize-none focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary disabled:opacity-50"
-            disabled={isGenerating || isLimitReached}
-          />
-
-          <div className="flex items-center justify-between">
-            <span className="font-xs text-muted">
-              {prompt.length > 0 ? `${prompt.length} characters` : 'Cmd+Enter to generate'}
-            </span>
-            <AppButton
-              variant="primary"
-              onClick={handleGenerate}
-              disabled={isGenerating || !prompt.trim() || isLimitReached}
-              state={isGenerating ? 'loading' : 'default'}
-              className="gap-2"
-            >
-              {isGenerating ? (
-                <>
+          <div
+            className="rounded-lg p-[1px]"
+            style={{
+              background: 'linear-gradient(135deg, #a0cbff, #c6adff, #f4c2ff, #ffd8b7)',
+              boxShadow: '0 0 4px 0px rgba(160, 203, 255, 0.4), 0 0 8px 1px rgba(198, 173, 255, 0.3), 0 0 12px 2px rgba(244, 194, 255, 0.2)',
+            }}
+          >
+            <div className="relative bg-white rounded-[7px]">
+              <textarea
+                ref={textareaRef}
+                id="ai-prompt"
+                value={prompt}
+                onChange={(e) => setPrompt(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder="Describe the section you want to build"
+                className="w-full min-h-[100px] max-h-[200px] px-3 py-2 pr-12 bg-transparent rounded-[7px] text-foreground placeholder:text-placeholder resize-none focus:outline-none disabled:opacity-50"
+                disabled={isGenerating || isLimitReached}
+              />
+              <button
+                type="button"
+                onClick={handleGenerate}
+                disabled={isGenerating || !prompt.trim() || isLimitReached}
+                className="absolute bottom-2 right-2 w-8 h-8 rounded-full bg-hover text-foreground flex items-center justify-center transition-all hover:bg-border-strong disabled:opacity-50 disabled:cursor-not-allowed"
+                aria-label="Generate"
+              >
+                {isGenerating ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  Generating...
-                </>
-              ) : (
-                <>
-                  <Sparkles className="w-4 h-4" />
-                  Generate
-                </>
-              )}
-            </AppButton>
+                ) : (
+                  <ArrowUp className="w-4 h-4" />
+                )}
+              </button>
+            </div>
           </div>
         </div>
       </div>
 
       {/* Example Prompts (when no section generated) */}
       {!generatedSection && !isGenerating && !isLimitReached && (
-        <div className={`${SECTION_PADDING} border-t border-border`}>
-          <p className="font-sm font-medium text-foreground mb-2">Try an example</p>
+        <div className={SECTION_PADDING}>
           <div className="flex flex-wrap gap-2">
-            {EXAMPLE_PROMPTS.map((example) => (
+            {EXAMPLE_PROMPTS.slice(0, 3).map((example) => (
               <button
                 key={example}
                 type="button"
                 onClick={() => handleExampleClick(example)}
-                className="px-2 py-1 bg-subtle hover:bg-hover text-muted hover:text-foreground font-xs rounded-md transition-colors"
+                className="px-2 py-1 bg-subtle hover:bg-hover text-muted hover:text-foreground font-xs rounded-md transition-colors text-left"
               >
                 {example}
               </button>
@@ -401,52 +472,6 @@ ${generatedSection.css || ''}
         </div>
       )}
     </div>
-  )
-}
-
-type ModelSelectorProps = {
-  value: AIModel
-  onChange: (value: AIModel) => void
-  disabled?: boolean
-}
-
-function ModelSelector({ value, onChange, disabled }: ModelSelectorProps) {
-  const selected = MODEL_OPTIONS.find(m => m.value === value)
-
-  return (
-    <DropdownMenu.Root>
-      <DropdownMenu.Trigger asChild disabled={disabled}>
-        <button
-          type="button"
-          className="flex items-center gap-1 px-2 py-1 text-muted hover:text-foreground font-xs rounded-md hover:bg-subtle transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {selected?.label}
-          <ChevronDown className="w-3 h-3" />
-        </button>
-      </DropdownMenu.Trigger>
-
-      <DropdownMenu.Portal>
-        <DropdownMenu.Content
-          className="min-w-[160px] bg-surface border border-border rounded-md shadow-lg p-1 z-50"
-          sideOffset={4}
-          align="end"
-        >
-          {MODEL_OPTIONS.map((option) => (
-            <DropdownMenu.Item
-              key={option.value}
-              className="flex items-center justify-between px-3 py-2 font-sm text-foreground rounded hover:bg-subtle cursor-pointer outline-none"
-              onSelect={() => onChange(option.value)}
-            >
-              <div>
-                <div className="font-medium">{option.label}</div>
-                <div className="font-xs text-muted">{option.description}</div>
-              </div>
-              {value === option.value && <Check className="w-4 h-4 text-primary" />}
-            </DropdownMenu.Item>
-          ))}
-        </DropdownMenu.Content>
-      </DropdownMenu.Portal>
-    </DropdownMenu.Root>
   )
 }
 

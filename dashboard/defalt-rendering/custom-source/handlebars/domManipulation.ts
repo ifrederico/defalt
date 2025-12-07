@@ -1412,6 +1412,11 @@ export function syncTemplateSections(doc: Document, sections: Array<{ id: string
   const viewport = doc.querySelector(TEMPLATE_CONTAINER_SELECTOR)
   if (!viewport) return
 
+  // Find footer anchor to insert AI sections before it (between main and footer)
+  const footerAnchor =
+    viewport.querySelector(FOOTER_ROOT_SELECTOR) ??
+    viewport.querySelector('footer.gh-footer')
+
   const desiredIds = new Set(sections.map((section) => section.id))
 
   Array.from(viewport.querySelectorAll<HTMLElement>('[data-section-id]')).forEach((element) => {
@@ -1442,6 +1447,9 @@ export function syncTemplateSections(doc: Document, sections: Array<{ id: string
     const existing = viewport.querySelector<HTMLElement>(selector)
     if (existing) {
       existing.replaceWith(newElement)
+    } else if (footerAnchor) {
+      // Insert before footer so AI sections appear between main and footer
+      viewport.insertBefore(newElement, footerAnchor)
     } else {
       viewport.appendChild(newElement)
     }

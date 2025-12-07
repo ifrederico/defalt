@@ -67,7 +67,7 @@ export function FloatingTooltip({
             ref={refs.setFloating}
             style={floatingStyles}
             {...getFloatingProps()}
-            className="z-[200] rounded-full bg-subtle text-foreground font-sm px-2.5 py-1 shadow-lg border border-border"
+            className="z-[200] rounded bg-subtle text-foreground font-sm px-2.5 py-1 shadow-lg border border-border"
           >
             {content}
           </div>

@@ -427,13 +427,37 @@ export const SectionsPanelBase = memo(function SectionsPanelBase({
                               <button
                                 type="button"
                                 onClick={() => setActiveTab('ai')}
-                                className="group mt-1 flex w-full items-center gap-1 rounded-md bg-surface px-2 py-2 font-md font-normal text-foreground transition-colors hover:bg-subtle"
+                                className="ai-glow-button group mt-1 flex w-full items-center gap-1 rounded-md bg-surface px-2 py-2 font-md font-normal text-foreground transition-colors"
                               >
                                 <span className="w-4 shrink-0" />
-                                <span className="flex h-7 w-7 items-center justify-center rounded-md bg-hover text-secondary">
-                                  <Sparkles size={16} strokeWidth={1.5} />
+                                <span
+                                  className="flex h-7 w-7 items-center justify-center"
+                                  style={{
+                                    backgroundImage: 'linear-gradient(135deg, #ad5ae1, #e9618d, #fd9e5f)',
+                                    WebkitBackgroundClip: 'text',
+                                    backgroundClip: 'text',
+                                  }}
+                                >
+                                  <Sparkles size={16} strokeWidth={1.5} style={{ stroke: 'url(#ai-gradient)' }} />
+                                  <svg width="0" height="0" style={{ position: 'absolute' }}>
+                                    <defs>
+                                      <linearGradient id="ai-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                                        <stop offset="0%" stopColor="#ad5ae1" />
+                                        <stop offset="50%" stopColor="#e9618d" />
+                                        <stop offset="100%" stopColor="#fd9e5f" />
+                                      </linearGradient>
+                                    </defs>
+                                  </svg>
                                 </span>
-                                <span className="flex-1 truncate text-left font-normal leading-none">AI Section</span>
+                                <span
+                                  className="flex-1 truncate text-left font-normal leading-none"
+                                  style={{
+                                    backgroundImage: 'linear-gradient(135deg, var(--color-ai-grading-1, #f76e85), var(--color-ai-grading-5, #8b10d6))',
+                                    WebkitBackgroundClip: 'text',
+                                    backgroundClip: 'text',
+                                    WebkitTextFillColor: 'transparent',
+                                  }}
+                                >Generate block</span>
                               </button>
                             )}
                             {item.id === 'announcement-bar' && announcementBarExpanded && (
