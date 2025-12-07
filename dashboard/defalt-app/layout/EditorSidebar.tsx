@@ -110,7 +110,8 @@ export function EditorSidebar({
     footerItems,
     reorderTemplateItems,
     reorderFooterItems,
-    toggleSectionVisibility
+    toggleSectionVisibility,
+    aiSections
   } = workspace
   const isFooterBarHidden = Boolean(sectionVisibility['footerBar'])
   const panelProps = useMemo<SectionsPanelProps>(() => ({
@@ -161,6 +162,7 @@ export function EditorSidebar({
     announcementContentConfig,
     onAnnouncementContentConfigChange,
     headerStyleValue,
+    aiSections,
   }), [
     accentColor,
     postFeedStyleValue,
@@ -209,6 +211,7 @@ export function EditorSidebar({
     announcementContentConfig,
     onAnnouncementContentConfigChange,
     headerStyleValue,
+    aiSections,
   ])
 
   let content: React.ReactNode

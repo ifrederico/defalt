@@ -108,6 +108,8 @@ export type SectionsPanelProps = {
   announcementContentConfig: AnnouncementContentConfig
   onAnnouncementContentConfigChange: (updater: (config: AnnouncementContentConfig) => AnnouncementContentConfig) => void
   headerStyleValue: string
+  // AI-generated sections
+  aiSections?: Array<{ id: string; name: string; html: string }>
   // Controlled mode props (optional, for dual-sidebar layout)
   activeDetail?: SectionDetail | null
   onActiveDetailChange?: (detail: SectionDetail | null) => void
@@ -123,7 +125,7 @@ export type SectionsPanelBaseProps = SectionsPanelProps & {
 export type { SectionDetail }
 
 type SectionGroupDescriptor = {
-  id: 'header' | 'template' | 'footer'
+  id: 'header' | 'template' | 'ai' | 'footer'
   title: string
   items: SidebarItem[]
   allowReorder?: boolean
@@ -138,7 +140,7 @@ export const SectionsPanelBase = memo(function SectionsPanelBase({
   renderDetailInline = true,
   ...props
 }: SectionsPanelBaseProps) {
-  const { reorderTemplateItems, reorderFooterItems } = props
+  const { reorderTemplateItems, reorderFooterItems, aiSections = [] } = props
   const { setHoveredSectionId, setScrollToSectionId, setActiveTab } = useUIActions()
   const isControlled = controlledActiveDetail !== undefined
   const templateDefinitions = useMemo(
@@ -251,30 +253,54 @@ export const SectionsPanelBase = memo(function SectionsPanelBase({
     [props.footerItems, resolveGhostSectionIcon]
   )
 
-  const groups = useMemo<SectionGroupDescriptor[]>(() => ([
-    {
-      id: 'header',
-      title: 'Header',
-      items: [
-        { id: 'announcement-bar', label: 'Announcement bar', icon: PanelTopDashed },
-        { id: 'header', label: 'Header', icon: GhostIcon }
-      ],
-    },
-    {
-      id: 'template',
-      title: 'Template',
-      items: templateItems,
-      allowReorder: true,
-      allowAdd: true,
-    },
-    {
+  const aiSectionItems = useMemo(() =>
+    aiSections.map((section) => ({
+      id: section.id,
+      label: section.name,
+      icon: Sparkles,
+      isAiGenerated: true
+    })),
+    [aiSections]
+  )
+
+  const groups = useMemo<SectionGroupDescriptor[]>(() => {
+    const baseGroups: SectionGroupDescriptor[] = [
+      {
+        id: 'header',
+        title: 'Header',
+        items: [
+          { id: 'announcement-bar', label: 'Announcement bar', icon: PanelTopDashed },
+          { id: 'header', label: 'Header', icon: GhostIcon }
+        ],
+      },
+      {
+        id: 'template',
+        title: 'Template',
+        items: templateItems,
+        allowReorder: true,
+        allowAdd: true,
+      },
+    ]
+
+    // Add AI sections group only if there are AI-generated sections
+    if (aiSectionItems.length > 0) {
+      baseGroups.push({
+        id: 'ai',
+        title: 'AI Generated',
+        items: aiSectionItems,
+      })
+    }
+
+    baseGroups.push({
       id: 'footer',
       title: 'Footer',
       items: [
         { id: 'footer', label: 'Footer', icon: PanelBottomDashed }
       ],
-    },
-  ]), [templateItems])
+    })
+
+    return baseGroups
+  }, [templateItems, aiSectionItems])
 
   // Lookup map for drag overlay
   const itemsById = useMemo(() => {
