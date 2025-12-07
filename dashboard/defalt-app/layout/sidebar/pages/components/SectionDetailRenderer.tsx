@@ -36,15 +36,11 @@ export function SectionDetailRenderer({ activeDetail, props }: SectionDetailRend
     }
     // AI-generated section
     if (activeAiSection) {
-      const padding = props.sectionPadding[activeDetail.id] ?? { top: 0, bottom: 0, left: 0, right: 0 }
       return (
         <AiSectionSettings
           sectionId={activeDetail.id}
           name={activeAiSection.name}
           html={activeAiSection.html}
-          padding={padding}
-          onPaddingChange={(direction, value) => props.onSectionPaddingChange(activeDetail.id, direction, value)}
-          onPaddingCommit={(direction, value) => props.onSectionPaddingCommit(activeDetail.id, direction, value)}
           onRename={props.onRenameAiSection}
         />
       )
@@ -261,9 +257,6 @@ type AiSectionSettingsProps = {
   sectionId: string
   name: string
   html: string
-  padding: { top: number; bottom: number; left?: number; right?: number }
-  onPaddingChange: (direction: 'top' | 'bottom' | 'left' | 'right', value: number) => void
-  onPaddingCommit: (direction: 'top' | 'bottom' | 'left' | 'right', value: number) => void
   onRename?: (id: string, newName: string) => void
 }
 
@@ -271,9 +264,6 @@ function AiSectionSettings({
   sectionId,
   name,
   html,
-  padding,
-  onPaddingChange,
-  onPaddingCommit,
   onRename,
 }: AiSectionSettingsProps) {
   const [copied, setCopied] = useState(false)
@@ -373,15 +363,6 @@ function AiSectionSettings({
             )}
           </div>
         )}
-
-        {/* Padding controls */}
-        <SectionPaddingSettings
-          sectionId={sectionId}
-          padding={padding}
-          mode="padding-block"
-          onChange={onPaddingChange}
-          onCommit={onPaddingCommit}
-        />
 
         {/* Code viewer */}
         <div className="space-y-2">
