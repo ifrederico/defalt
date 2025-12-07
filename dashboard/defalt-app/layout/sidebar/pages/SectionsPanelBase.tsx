@@ -40,6 +40,7 @@ import {
 } from './components'
 import { useHistoryInteractionBlocker } from '@defalt/app/contexts/useHistoryInteractionBlocker'
 import { useUIActions } from '@defalt/app/stores'
+import { Sparkles } from 'lucide-react'
 
 const GHOST_SECTION_IDS = new Set(['subheader', 'featured', 'footerbar', 'footer-signup', 'footersignup', 'main'])
 
@@ -138,7 +139,7 @@ export const SectionsPanelBase = memo(function SectionsPanelBase({
   ...props
 }: SectionsPanelBaseProps) {
   const { reorderTemplateItems, reorderFooterItems } = props
-  const { setHoveredSectionId, setScrollToSectionId } = useUIActions()
+  const { setHoveredSectionId, setScrollToSectionId, setActiveTab } = useUIActions()
   const isControlled = controlledActiveDetail !== undefined
   const templateDefinitions = useMemo(
     () => props.templateDefinitions.filter((definition) => definition.id !== 'hero'),
@@ -375,6 +376,21 @@ export const SectionsPanelBase = memo(function SectionsPanelBase({
         <>
           <PanelHeader title={panelTitle} />
           <div className="flex-1 overflow-y-auto pl-4 pr-6 py-5">
+            <button
+              type="button"
+              onClick={() => setActiveTab('ai')}
+              className="group flex w-full items-center gap-2 rounded-md border border-border bg-surface px-3 py-2 font-md font-normal text-foreground transition-colors hover:bg-subtle"
+            >
+              <span className="flex h-8 w-8 items-center justify-center rounded-md bg-hover text-secondary">
+                <Sparkles size={16} strokeWidth={1.5} />
+              </span>
+              <div className="flex flex-col text-left flex-1 min-w-0">
+                <span className="font-semibold text-foreground truncate">AI Section</span>
+                <span className="font-xs text-muted truncate">Generate and insert a custom section</span>
+              </div>
+              <span className="text-muted group-hover:text-foreground">→</span>
+            </button>
+
             <DragDropProvider
               sensors={sensors}
               onDragStart={() => setIsDragging(true)}

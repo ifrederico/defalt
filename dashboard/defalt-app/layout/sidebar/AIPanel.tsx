@@ -1,11 +1,12 @@
 import { useState, useCallback, useRef, useEffect } from 'react'
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu'
 import * as Collapsible from '@radix-ui/react-collapsible'
-import { Sparkles, Copy, Check, ChevronDown, ChevronRight, Loader2, X, Code, Key, Infinity, Trash2, ExternalLink } from 'lucide-react'
+import { Sparkles, Copy, Check, ChevronDown, ChevronRight, Loader2, X, Code, Key, Infinity, Trash2, ExternalLink, ChevronLeft } from 'lucide-react'
 import { AppButton, Spinner } from '@defalt/ui'
 import { useAIGenerate, type AIModel } from '../../hooks/useAIGenerate'
 import { useToast } from '../../components/ToastContext'
 import { useWorkspaceContext } from '../../contexts/useWorkspaceContext'
+import { useUIActions } from '../../stores'
 
 const SECTION_PADDING = 'px-4 py-4'
 const MODEL_OPTIONS: { value: AIModel; label: string; description: string }[] = [
@@ -26,6 +27,7 @@ const EXAMPLE_PROMPTS = [
 export function AIPanel() {
   const { showToast } = useToast()
   const { addAiSection } = useWorkspaceContext()
+  const { setActiveTab } = useUIActions()
   const {
     aiEnabled,
     isGenerating,
@@ -146,6 +148,14 @@ ${generatedSection.css || ''}
     <div className="flex flex-col h-full">
       {/* Header */}
       <div className="px-4 py-3 border-b border-border flex items-center gap-2">
+        <button
+          type="button"
+          onClick={() => setActiveTab('sections')}
+          className="p-1 -ml-1 rounded-md hover:bg-subtle transition-colors"
+          aria-label="Back to sections"
+        >
+          <ChevronLeft className="w-4 h-4 text-muted" />
+        </button>
         <Sparkles className="w-4 h-4 text-primary" />
         <h2 className="font-md font-semibold text-foreground">AI Section Generator</h2>
       </div>
