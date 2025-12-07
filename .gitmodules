@@ -1,0 +1,3 @@
+[submodule "defalt-ai"]
+	path = defalt-ai
+	url = https://github.com/ifrederico/defalt-ai.git
