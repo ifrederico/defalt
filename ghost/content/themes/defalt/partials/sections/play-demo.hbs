@@ -1322,7 +1322,7 @@ Usage: {{> "sections/play-demo"}}
                 {{!-- ===== RAIL BAR ===== --}}
                 <div class="gd-play-rail">
                     <div class="gd-play-nav">
-                        <div class="gd-play-nav-item is-active" data-panel="sections" title="Sections">
+                        <div class="gd-play-nav-item" data-panel="sections" title="Sections">
                             {{!-- Layout icon (Lucide) --}}
                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="2"
                                 stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
@@ -1352,7 +1352,7 @@ Usage: {{> "sections/play-demo"}}
                                 <circle cx="12" cy="12" r="3" />
                             </svg>
                         </div>
-                        <div class="gd-play-nav-item gd-play-ai-nav" data-panel="ai" title="AI Generate">
+                        <div class="gd-play-nav-item gd-play-ai-nav is-active" data-panel="ai" title="AI Generate">
                             {{!-- Sparkles icon (Lucide) --}}
                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="2"
                                 stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
@@ -1383,7 +1383,7 @@ Usage: {{> "sections/play-demo"}}
                 {{!-- ===== SIDEBAR ===== --}}
                 <div class="gd-play-sidebar">
                     {{!-- Sections Panel --}}
-                    <div class="gd-play-panel is-active" data-panel="sections">
+                    <div class="gd-play-panel" data-panel="sections">
                         {{!-- Page Title --}}
                         <div class="gd-play-page-title">Homepage</div>
 
@@ -1573,7 +1573,7 @@ Usage: {{> "sections/play-demo"}}
                     </div>
 
                     {{!-- AI Panel --}}
-                    <div class="gd-play-panel" data-panel="ai">
+                    <div class="gd-play-panel is-active" data-panel="ai">
                         <div class="gd-play-ai-panel">
                             <div class="gd-play-ai-header">
                                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="2"
@@ -2789,16 +2789,17 @@ Usage: {{> "sections/play-demo"}}
             });
         }
 
-        // Also auto-start after a delay when user views the demo (using IntersectionObserver)
+        // Auto-start demo after a delay when user views the section (using IntersectionObserver)
+        // Since AI panel is now the default, we just start the demo directly
         var playSection = document.querySelector('.gd-play-section');
         if (playSection && 'IntersectionObserver' in window) {
             var observer = new IntersectionObserver(function(entries) {
                 entries.forEach(function(entry) {
                     if (entry.isIntersecting && !aiDemoStarted && !aiDemoComplete) {
-                        // Auto-switch to AI panel and run demo after 3 seconds of viewing
+                        // Start the AI demo after 3 seconds of viewing
                         setTimeout(function() {
-                            if (aiNavItem && !aiDemoStarted) {
-                                aiNavItem.click();
+                            if (!aiDemoStarted) {
+                                runAiDemo();
                             }
                         }, 3000);
                     }
