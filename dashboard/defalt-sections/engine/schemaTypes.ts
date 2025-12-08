@@ -22,9 +22,12 @@ export const SettingInputType = z.enum([
   'richtext',
   'url',
   'color',
+  'color_background',
   'checkbox',
   'range',
   'select',
+  'radio',
+  'image_picker',
   'header',
   'paragraph'
 ])
@@ -94,6 +97,17 @@ export const colorSettingSchema = z.object({
 })
 
 /**
+ * Color background setting (supports gradients - Pro tier)
+ */
+export const colorBackgroundSettingSchema = z.object({
+  type: z.literal('color_background'),
+  id: z.string(),
+  label: z.string(),
+  default: z.string().default('#000000'),
+  info: z.string().optional()
+})
+
+/**
  * Checkbox/toggle setting
  */
 export const checkboxSettingSchema = z.object({
@@ -137,6 +151,34 @@ export const selectSettingSchema = z.object({
 })
 
 /**
+ * Radio button group setting (visual layout selection)
+ */
+export const radioSettingSchema = z.object({
+  type: z.literal('radio'),
+  id: z.string(),
+  label: z.string(),
+  default: z.string().optional(),
+  options: z.array(
+    z.object({
+      label: z.string(),
+      value: z.string()
+    })
+  ),
+  info: z.string().optional()
+})
+
+/**
+ * Image picker setting (with drag-drop upload)
+ */
+export const imagePickerSettingSchema = z.object({
+  type: z.literal('image_picker'),
+  id: z.string(),
+  label: z.string(),
+  default: z.string().optional(),
+  info: z.string().optional()
+})
+
+/**
  * Header (display only, for grouping settings)
  */
 export const headerSettingSchema = z.object({
@@ -168,9 +210,12 @@ export const settingSchema = z.discriminatedUnion('type', [
   richtextSettingSchema,
   urlSettingSchema,
   colorSettingSchema,
+  colorBackgroundSettingSchema,
   checkboxSettingSchema,
   rangeSettingSchema,
   selectSettingSchema,
+  radioSettingSchema,
+  imagePickerSettingSchema,
   headerSettingSchema,
   paragraphSettingSchema
 ])

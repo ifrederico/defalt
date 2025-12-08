@@ -84,6 +84,71 @@ function renderSettingInput(
         ))}
       </select>
     )
+    case 'radio':
+      return (
+        <div className="flex flex-wrap gap-2">
+          {setting.options.map((opt) => {
+            const isSelected = value === opt.value
+            return (
+              <button
+                key={opt.value}
+                type="button"
+                className={`px-3 py-1.5 text-sm rounded-md border transition-colors ${
+                  isSelected
+                    ? 'border-accent bg-accent/10 text-accent'
+                    : 'border-border bg-surface text-foreground hover:border-border-strong'
+                }`}
+                onClick={() => onChange(opt.value)}
+              >
+                {opt.label}
+              </button>
+            )
+          })}
+        </div>
+      )
+    case 'image_picker':
+      return (
+        <div className="space-y-2">
+          <div className="border-2 border-dashed border-border rounded-md p-4 text-center hover:border-border-strong transition-colors cursor-pointer">
+            {typeof value === 'string' && value ? (
+              <div className="space-y-2">
+                <img src={value} alt="Preview" className="max-h-32 mx-auto rounded" />
+                <button
+                  type="button"
+                  className="text-sm text-secondary hover:text-foreground"
+                  onClick={() => onChange('')}
+                >
+                  Remove
+                </button>
+              </div>
+            ) : (
+              <div className="text-sm text-secondary">
+                <p>Click or drag image here</p>
+                <p className="text-xs text-muted mt-1">PNG, JPG up to 2MB</p>
+              </div>
+            )}
+          </div>
+          <input
+            type="url"
+            placeholder="Or paste image URL..."
+            className={`${baseClasses} text-xs`}
+            value={typeof value === 'string' ? value : ''}
+            onChange={(e) => onChange(e.target.value)}
+          />
+        </div>
+      )
+    case 'color_background':
+      // Pro tier: supports gradients. For now, falls back to color picker
+      return (
+        <div className="space-y-2">
+          <ColorControl
+            label={setting.label}
+            value={typeof value === 'string' ? value : (typeof setting.default === 'string' ? setting.default : '#000000')}
+            onChange={(next) => onChange(next)}
+          />
+          <p className="text-xs text-muted">Pro: Gradient support coming soon</p>
+        </div>
+      )
     case 'header':
       return <h4 className="text-sm font-semibold text-foreground">{setting.label}</h4>
     case 'paragraph':
@@ -169,7 +234,7 @@ export function SchemaSectionSettings({
               const currentValue = configRecord[setting.id]
               return (
                 <div key={setting.id} className="space-y-1">
-                  {setting.type !== 'header' && setting.type !== 'paragraph' && setting.type !== 'color' && (
+                  {setting.type !== 'header' && setting.type !== 'paragraph' && setting.type !== 'color' && setting.type !== 'color_background' && (
                     <label className="text-sm font-medium text-foreground block">{setting.label}</label>
                   )}
                   {renderSettingInput(setting, currentValue, (next) => handleFieldChange(setting.id, next))}

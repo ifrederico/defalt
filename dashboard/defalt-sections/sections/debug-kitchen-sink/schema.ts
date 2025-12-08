@@ -36,12 +36,21 @@ export const kitchenSinkConfigSchema = z.object({
   selectSize: z.enum(['small', 'normal', 'large', 'x-large']).default('normal'),
   selectWidth: z.enum(['narrow', 'regular', 'wide', 'full']).default('regular'),
 
+  // Radio Buttons
+  radioLayout: z.enum(['grid', 'list', 'masonry']).default('grid'),
+
+  // Image Picker
+  heroImage: z.string().default(''),
+
   // Colors
   colorPrimary: z.string().default('#4F46E5'),
   colorSecondary: z.string().default('#10B981'),
   colorBackground: z.string().default('#FFFFFF'),
   colorText: z.string().default('#1F2937'),
-  colorAccent: z.string().default('#F59E0B')
+  colorAccent: z.string().default('#F59E0B'),
+
+  // Color Background (Gradients - Pro)
+  gradientOverlay: z.string().default('linear-gradient(180deg, transparent 0%, rgba(0,0,0,0.5) 100%)')
 })
 
 export type KitchenSinkConfig = z.infer<typeof kitchenSinkConfigSchema>
@@ -271,5 +280,72 @@ export const kitchenSinkSettingsSchema: SettingSchema[] = [
     label: 'Accent Color',
     default: '#F59E0B',
     info: 'Highlight/accent (Amber)'
+  },
+
+  // =========================================================================
+  // RADIO BUTTONS
+  // =========================================================================
+  {
+    type: 'header',
+    id: 'radio-header',
+    label: 'Radio Buttons'
+  },
+  {
+    type: 'paragraph',
+    id: 'radio-info',
+    content: 'Visual layout selection with button-style radio options.'
+  },
+  {
+    type: 'radio',
+    id: 'radioLayout',
+    label: 'Layout Style',
+    default: 'grid',
+    options: [
+      { label: 'Grid', value: 'grid' },
+      { label: 'List', value: 'list' },
+      { label: 'Masonry', value: 'masonry' }
+    ],
+    info: 'Choose a layout style for content display'
+  },
+
+  // =========================================================================
+  // IMAGE PICKER
+  // =========================================================================
+  {
+    type: 'header',
+    id: 'image-header',
+    label: 'Image Picker'
+  },
+  {
+    type: 'paragraph',
+    id: 'image-info',
+    content: 'Upload images via drag-drop or paste URL.'
+  },
+  {
+    type: 'image_picker',
+    id: 'heroImage',
+    label: 'Hero Image',
+    info: 'Main hero/background image'
+  },
+
+  // =========================================================================
+  // COLOR BACKGROUND (PRO)
+  // =========================================================================
+  {
+    type: 'header',
+    id: 'gradient-header',
+    label: 'Color Background (Pro)'
+  },
+  {
+    type: 'paragraph',
+    id: 'gradient-info',
+    content: 'Pro tier feature: CSS gradients for overlays and backgrounds.'
+  },
+  {
+    type: 'color_background',
+    id: 'gradientOverlay',
+    label: 'Gradient Overlay',
+    default: '#000000',
+    info: 'Supports linear-gradient() in Pro tier'
   }
 ]
