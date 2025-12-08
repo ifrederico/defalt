@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import { getSectionDefinition, type SectionConfigSchema, type SectionSettingSchema } from '@defalt/sections/engine'
-import { SliderField, ToggleSwitch, SettingSection, ColorControl } from '@defalt/ui'
+import { SliderField, ToggleSwitch, SettingSection, ColorControl, Dropdown } from '@defalt/ui'
 
 type SchemaSectionSettingsProps = {
   definitionId: string
@@ -87,16 +87,12 @@ function renderSettingInput(
       )
     case 'select':
       return (
-        <select
-          className={baseClasses}
-          value={typeof value === 'string' ? value : (setting.default ?? '')}
-          onChange={(e) => onChange(e.target.value)}
-        >
-        {setting.options.map((opt) => (
-          <option key={opt.value} value={opt.value}>{opt.label}</option>
-        ))}
-      </select>
-    )
+        <Dropdown
+          selected={typeof value === 'string' ? value : (setting.default ?? '')}
+          items={setting.options}
+          onSelect={(val) => onChange(val)}
+        />
+      )
     case 'radio':
       return (
         <div className="flex flex-wrap gap-2">
