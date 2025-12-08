@@ -20,19 +20,30 @@ function renderSettingInput(
 
   switch (setting.type) {
     case 'text':
+      return (
+        <input
+          type="text"
+          className={baseClasses}
+          placeholder={setting.placeholder || 'Enter text...'}
+          value={typeof value === 'string' ? value : ''}
+          onChange={(e) => onChange(e.target.value)}
+        />
+      )
     case 'url':
       return (
         <input
-          type={setting.type === 'url' ? 'url' : 'text'}
+          type="url"
           className={baseClasses}
+          placeholder={setting.placeholder || 'https://...'}
           value={typeof value === 'string' ? value : ''}
-          onChange={(e) => onChange(e.target.value)}
+          onChange={(e) => onChange(e.target.value || '#')}
         />
       )
     case 'textarea':
       return (
         <textarea
           className={`${baseClasses} min-h-[80px]`}
+          placeholder={setting.placeholder || 'Enter content...'}
           value={typeof value === 'string' ? value : ''}
           onChange={(e) => onChange(e.target.value)}
         />
@@ -41,6 +52,7 @@ function renderSettingInput(
       return (
         <textarea
           className={`${baseClasses} min-h-[100px]`}
+          placeholder="Add text..."
           value={typeof value === 'string' ? value : ''}
           onChange={(e) => onChange(e.target.value)}
         />
@@ -69,6 +81,7 @@ function renderSettingInput(
           min={setting.min}
           max={setting.max}
           step={setting.step}
+          unit={setting.unit}
           onChange={(val) => onChange(val)}
         />
       )
@@ -122,15 +135,25 @@ function renderSettingInput(
                 </button>
               </div>
             ) : (
-              <div className="text-sm text-secondary">
-                <p>Click or drag image here</p>
+              <div className="py-4">
+                {/* Placeholder SVG - intentional empty state */}
+                <svg
+                  className="mx-auto h-12 w-12 text-muted"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  viewBox="0 0 24 24"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
+                </svg>
+                <p className="mt-2 text-sm text-secondary">Drop image or paste URL</p>
                 <p className="text-xs text-muted mt-1">PNG, JPG up to 2MB</p>
               </div>
             )}
           </div>
           <input
             type="url"
-            placeholder="Or paste image URL..."
+            placeholder="https://example.com/image.jpg"
             className={`${baseClasses} text-xs`}
             value={typeof value === 'string' ? value : ''}
             onChange={(e) => onChange(e.target.value)}

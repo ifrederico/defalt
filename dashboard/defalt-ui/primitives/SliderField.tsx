@@ -7,6 +7,7 @@ export type SliderFieldProps = {
   min: number
   max: number
   step?: number
+  unit?: string
   onChange: (value: number) => void
   onCommit?: (value: number) => void
   disabled?: boolean
@@ -20,6 +21,7 @@ export function SliderField({
   min,
   max,
   step = 1,
+  unit,
   onChange,
   onCommit,
   disabled = false,
@@ -108,10 +110,12 @@ export function SliderField({
               max={max}
               aria-label={labelHidden ? label : undefined}
               aria-labelledby={!labelHidden ? labelId : undefined}
-              className="w-[4.5rem] pl-2 pr-7 py-1 border border-border-strong rounded font-sm text-right focus:outline-none focus:ring-2 focus:ring-ring disabled:bg-subtle disabled:text-placeholder"
+              className={`w-[4.5rem] pl-2 py-1 border border-border-strong rounded font-sm text-right focus:outline-none focus:ring-2 focus:ring-ring disabled:bg-subtle disabled:text-placeholder ${unit ? 'pr-7' : 'pr-2'}`}
               disabled={disabled}
             />
-            <span className="absolute right-2 top-1/2 -translate-y-1/2 font-sm text-placeholder pointer-events-none">px</span>
+            {unit && (
+              <span className="absolute right-2 top-1/2 -translate-y-1/2 font-sm text-placeholder pointer-events-none">{unit}</span>
+            )}
           </div>
         </div>
       </div>
