@@ -151,7 +151,7 @@ export const headerSettingSchema = z.object({
 export const paragraphSettingSchema = z.object({
   type: z.literal('paragraph'),
   id: z.string(),
-  label: z.string()
+  content: z.string()
 })
 
 // =============================================================================

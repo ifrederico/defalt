@@ -1,0 +1,127 @@
+{{!-- Kitchen Sink Debug Section Template
+     This section displays all configured values for visual testing.
+     For development/debugging only - should not appear in exports. --}}
+
+<section class="gd-kitchen-sink-section" data-section-id="debug-kitchen-sink" style="
+  background-color: {{config.colorBackground}};
+  color: {{config.colorText}};
+  padding: 48px 24px;
+">
+  <div style="max-width: 800px; margin: 0 auto;">
+    <h2 style="
+      font-size: 2rem;
+      font-weight: 700;
+      margin: 0 0 32px;
+      color: {{config.colorPrimary}};
+    ">
+      🧪 Kitchen Sink Debug Panel
+    </h2>
+
+    {{!-- Text Values --}}
+    <div style="margin-bottom: 32px; padding: 20px; background: rgba(0,0,0,0.03); border-radius: 12px;">
+      <h3 style="font-size: 1rem; font-weight: 600; margin: 0 0 16px; color: {{config.colorSecondary}};">
+        Text Inputs
+      </h3>
+      <p style="margin: 8px 0;"><strong>Short:</strong> {{config.textShort}}</p>
+      <p style="margin: 8px 0;"><strong>Long:</strong> {{config.textLong}}</p>
+      <p style="margin: 8px 0;"><strong>URL:</strong> <a href="{{config.textUrl}}" style="color: {{config.colorPrimary}};">{{config.textUrl}}</a></p>
+    </div>
+
+    {{!-- Toggle Values --}}
+    <div style="margin-bottom: 32px; padding: 20px; background: rgba(0,0,0,0.03); border-radius: 12px;">
+      <h3 style="font-size: 1rem; font-weight: 600; margin: 0 0 16px; color: {{config.colorSecondary}};">
+        Boolean Toggles
+      </h3>
+      <p style="margin: 8px 0;">
+        <strong>Toggle ON:</strong>
+        <span style="
+          display: inline-block;
+          padding: 2px 8px;
+          border-radius: 4px;
+          font-size: 0.85rem;
+          background: {{#if config.toggleOn}}#10B981{{else}}#EF4444{{/if}};
+          color: white;
+        ">
+          {{#if config.toggleOn}}✓ ON{{else}}✗ OFF{{/if}}
+        </span>
+      </p>
+      <p style="margin: 8px 0;">
+        <strong>Toggle OFF:</strong>
+        <span style="
+          display: inline-block;
+          padding: 2px 8px;
+          border-radius: 4px;
+          font-size: 0.85rem;
+          background: {{#if config.toggleOff}}#10B981{{else}}#EF4444{{/if}};
+          color: white;
+        ">
+          {{#if config.toggleOff}}✓ ON{{else}}✗ OFF{{/if}}
+        </span>
+      </p>
+    </div>
+
+    {{!-- Range Values --}}
+    <div style="margin-bottom: 32px; padding: 20px; background: rgba(0,0,0,0.03); border-radius: 12px;">
+      <h3 style="font-size: 1rem; font-weight: 600; margin: 0 0 16px; color: {{config.colorSecondary}};">
+        Range Sliders
+      </h3>
+      <p style="margin: 8px 0;"><strong>Padding:</strong> {{config.rangePadding}}px</p>
+      <p style="margin: 8px 0;"><strong>Opacity:</strong> {{config.rangeOpacity}}</p>
+      <p style="margin: 8px 0;"><strong>Border Radius:</strong> {{config.rangeBorderRadius}}px</p>
+      <p style="margin: 8px 0;"><strong>Small Step:</strong> {{config.rangeSmallStep}}</p>
+
+      {{!-- Visual demo of border radius --}}
+      <div style="
+        margin-top: 16px;
+        width: 100px;
+        height: 100px;
+        background: {{config.colorAccent}};
+        border-radius: {{config.rangeBorderRadius}}px;
+        opacity: {{config.rangeOpacity}};
+      "></div>
+    </div>
+
+    {{!-- Select Values --}}
+    <div style="margin-bottom: 32px; padding: 20px; background: rgba(0,0,0,0.03); border-radius: 12px;">
+      <h3 style="font-size: 1rem; font-weight: 600; margin: 0 0 16px; color: {{config.colorSecondary}};">
+        Select Dropdowns
+      </h3>
+      <p style="margin: 8px 0;"><strong>Alignment:</strong> {{config.selectAlignment}}</p>
+      <p style="margin: 8px 0;"><strong>Size:</strong> {{config.selectSize}}</p>
+      <p style="margin: 8px 0;"><strong>Width:</strong> {{config.selectWidth}}</p>
+    </div>
+
+    {{!-- Color Swatches --}}
+    <div style="margin-bottom: 32px; padding: 20px; background: rgba(0,0,0,0.03); border-radius: 12px;">
+      <h3 style="font-size: 1rem; font-weight: 600; margin: 0 0 16px; color: {{config.colorSecondary}};">
+        Color Pickers
+      </h3>
+      <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+        <div style="text-align: center;">
+          <div style="width: 48px; height: 48px; background: {{config.colorPrimary}}; border-radius: 8px; border: 2px solid rgba(0,0,0,0.1);"></div>
+          <small style="font-size: 0.7rem;">Primary</small>
+        </div>
+        <div style="text-align: center;">
+          <div style="width: 48px; height: 48px; background: {{config.colorSecondary}}; border-radius: 8px; border: 2px solid rgba(0,0,0,0.1);"></div>
+          <small style="font-size: 0.7rem;">Secondary</small>
+        </div>
+        <div style="text-align: center;">
+          <div style="width: 48px; height: 48px; background: {{config.colorBackground}}; border-radius: 8px; border: 2px solid rgba(0,0,0,0.1);"></div>
+          <small style="font-size: 0.7rem;">Background</small>
+        </div>
+        <div style="text-align: center;">
+          <div style="width: 48px; height: 48px; background: {{config.colorText}}; border-radius: 8px; border: 2px solid rgba(0,0,0,0.1);"></div>
+          <small style="font-size: 0.7rem;">Text</small>
+        </div>
+        <div style="text-align: center;">
+          <div style="width: 48px; height: 48px; background: {{config.colorAccent}}; border-radius: 8px; border: 2px solid rgba(0,0,0,0.1);"></div>
+          <small style="font-size: 0.7rem;">Accent</small>
+        </div>
+      </div>
+    </div>
+
+    <p style="font-size: 0.85rem; color: #6B7280; text-align: center; margin-top: 32px;">
+      ⚠️ This section is for development testing only and will not appear in exported themes.
+    </p>
+  </div>
+</section>

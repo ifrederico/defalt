@@ -87,7 +87,7 @@ function renderSettingInput(
     case 'header':
       return <h4 className="text-sm font-semibold text-foreground">{setting.label}</h4>
     case 'paragraph':
-      return <p className="text-sm text-secondary">{setting.label}</p>
+      return <p className="text-sm text-secondary">{setting.content}</p>
     default:
       return null
   }
