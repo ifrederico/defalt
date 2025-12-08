@@ -1,7 +1,9 @@
 import { useMemo, useState, useCallback, type ReactNode } from 'react'
 import type { SectionsPanelProps } from '../SectionsPanelBase'
 import type { SectionConfigSchema, GhostCardsSectionConfig, GhostGridSectionConfig, ImageWithTextSectionConfig } from '@defalt/sections/engine'
+import { getSectionDefinition } from '@defalt/sections/engine'
 import { SECTION_ID_MAP, PADDING_BLOCK_SECTIONS, CSS_DEFAULT_MARGIN } from '@defalt/utils/config/themeConfig'
+import { SchemaSectionSettings } from '../../components/SchemaSectionSettings'
 import { HeaderSectionSettings } from './HeaderSectionSettings'
 import { SectionPaddingSettings, type SectionSpacingMode } from './SectionPaddingSettings'
 import { AnnouncementBarSettings } from '@defalt/sections/header/settings/AnnouncementBarSettings'
@@ -179,6 +181,24 @@ export function SectionDetailRenderer({ activeDetail, props }: SectionDetailRend
                 sectionId,
                 (current) => updater(current as ImageWithTextSectionConfig) as SectionConfigSchema
               )
+            }
+          />
+        )
+      }
+      // Generic fallback: use SchemaSectionSettings for any section with a settingsSchema
+      const definition = getSectionDefinition(activeCustomSection.definitionId)
+      if (definition?.settingsSchema && definition.settingsSchema.length > 0) {
+        const config = activeCustomSection.config as SectionConfigSchema
+        const padding = props.sectionPadding[sectionId] ?? { top: 0, bottom: 0, left: 0, right: 0 }
+        return (
+          <SchemaSectionSettings
+            definitionId={activeCustomSection.definitionId}
+            config={config}
+            padding={padding}
+            onPaddingChange={(direction, value) => props.onSectionPaddingChange(sectionId, direction, value)}
+            onPaddingCommit={(direction, value) => props.onSectionPaddingCommit(sectionId, direction, value)}
+            onUpdateConfig={(updater) =>
+              props.onUpdateCustomSection(sectionId, updater)
             }
           />
         )
