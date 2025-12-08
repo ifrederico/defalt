@@ -26,7 +26,7 @@ import {
   highlightHoveredSection,
   scrollToSection,
   applyCustomCss,
-  applyAnnouncementBarCustomizations,
+  syncAnnouncementBar,
   syncTemplateSections,
   updateColorVariables,
 } from './handlebars/domManipulation'
@@ -40,7 +40,14 @@ import {
   type AnnouncementContentConfig
 } from '@defalt/utils/config/themeConfig'
 import { sanitizeHexColor, sanitizeToken, sanitizeCustomCss } from '@defalt/utils/security/sanitizers'
-import { getSectionDefinition, type SectionInstance } from '@defalt/sections/definitions/definitions'
+import type { SectionInstance } from '@defalt/sections/engine'
+import {
+  renderSection,
+  preloadTemplates,
+  getSectionTemplatePath,
+  sectionDefinitions as engineSectionDefinitions,
+  type AnnouncementBarSectionConfig
+} from '@defalt/sections/engine'
 
 const BASE_PATH = (import.meta.env.VITE_BASE_PATH ?? '/').replace(/\/$/, '')
 
@@ -186,33 +193,85 @@ export function HandlebarsRenderer({
   // Build preview pages from Ghost API data (for custom sections like Ghost Cards)
   const previewPages = useMemo(() => buildPreviewPages(previewData), [previewData])
 
-  const renderedTemplateSections = useMemo(
-    () =>
-      customTemplateSections
-        .map((section) => {
-          const definition = getSectionDefinition(section.definitionId)
-          if (!definition) {
-            return null
-          }
+  // Preload section templates on mount
+  const [templatesReady, setTemplatesReady] = useState(false)
+  useEffect(() => {
+    const templates = engineSectionDefinitions
+      .filter(def => def.templatePath)
+      .map(def => ({ sectionId: def.id, templatePath: def.templatePath }))
 
-          const padding = sectionPadding[section.id]
-          const html = definition.renderHtml(
-            section.config as Parameters<typeof definition.renderHtml>[0],
-            { padding, pages: previewPages }
-          )
+    if (templates.length === 0) {
+      setTemplatesReady(true)
+      return
+    }
 
-          return {
-            id: section.id,
-            definitionId: section.definitionId,
-            html,
-            hidden: Boolean(hiddenSections[section.id])
+    preloadTemplates(templates)
+      .then(() => setTemplatesReady(true))
+      .catch((err) => {
+        console.warn('[HandlebarsRenderer] Failed to preload section templates:', err)
+        setTemplatesReady(true) // Continue anyway, will fall back to legacy
+      })
+  }, [])
+
+  // Render custom sections using the new engine (async)
+  const [renderedTemplateSections, setRenderedTemplateSections] = useState<
+    Array<{ id: string; definitionId: string; html: string; hidden: boolean }>
+  >([])
+
+  useEffect(() => {
+    if (!templatesReady) return
+
+    let cancelled = false
+
+    const renderSections = async () => {
+      const results: Array<{ id: string; definitionId: string; html: string; hidden: boolean }> = []
+
+      for (const section of customTemplateSections) {
+        if (cancelled) return
+
+        const templatePath = getSectionTemplatePath(section.definitionId)
+        const padding = sectionPadding[section.id]
+
+        let html: string
+
+        if (templatePath) {
+          // Use the new engine with HBS templates
+          try {
+            html = await renderSection(
+              section.definitionId,
+              templatePath,
+              section.config as Record<string, unknown>,
+              { padding, pages: previewPages }
+            )
+          } catch (err) {
+            console.warn(`[HandlebarsRenderer] Failed to render ${section.definitionId}:`, err)
+            html = `<section class="gd-section-error">Failed to render section: ${section.definitionId}</section>`
           }
+        } else {
+          // No template path found for this section
+          console.warn(`[HandlebarsRenderer] No template path found for section: ${section.definitionId}`)
+          html = `<section class="gd-section-error">Unknown section: ${section.definitionId}</section>`
+        }
+
+        results.push({
+          id: section.id,
+          definitionId: section.definitionId,
+          html,
+          hidden: Boolean(hiddenSections[section.id])
         })
-        .filter(
-          (value): value is { id: string, definitionId: string, html: string, hidden: boolean } => Boolean(value)
-        ),
-    [customTemplateSections, hiddenSections, sectionPadding, previewPages]
-  )
+      }
+
+      if (!cancelled) {
+        setRenderedTemplateSections(results)
+      }
+    }
+
+    void renderSections()
+
+    return () => {
+      cancelled = true
+    }
+  }, [templatesReady, customTemplateSections, hiddenSections, sectionPadding, previewPages])
 
   const mergedCustomSections = useMemo(
     () => [
@@ -226,6 +285,59 @@ export function HandlebarsRenderer({
     ],
     [renderedTemplateSections, aiSections, hiddenSections]
   )
+
+  // Render announcement bar using the new engine
+  const [renderedAnnouncementBar, setRenderedAnnouncementBar] = useState<string>('')
+
+  // Convert legacy configs to unified announcement bar config
+  const announcementBarSectionConfig = useMemo<AnnouncementBarSectionConfig>(() => ({
+    width: sanitizedAnnouncementBarConfig.width,
+    backgroundColor: sanitizedAnnouncementBarConfig.backgroundColor,
+    textColor: sanitizedAnnouncementBarConfig.textColor,
+    paddingTop: sanitizedAnnouncementBarConfig.paddingTop,
+    paddingBottom: sanitizedAnnouncementBarConfig.paddingBottom,
+    dividerThickness: sanitizedAnnouncementBarConfig.dividerThickness,
+    typographySize: sanitizedAnnouncementContentConfig.typographySize,
+    typographyWeight: sanitizedAnnouncementContentConfig.typographyWeight,
+    typographySpacing: sanitizedAnnouncementContentConfig.typographySpacing,
+    typographyCase: sanitizedAnnouncementContentConfig.typographyCase,
+    underlineLinks: sanitizedAnnouncementContentConfig.underlineLinks,
+    previewText: sanitizedAnnouncementContentConfig.previewText
+  }), [sanitizedAnnouncementBarConfig, sanitizedAnnouncementContentConfig])
+
+  useEffect(() => {
+    if (!templatesReady) return
+
+    let cancelled = false
+
+    const renderAnnouncementBar = async () => {
+      const templatePath = getSectionTemplatePath('announcement-bar')
+      if (!templatePath) {
+        console.warn('[HandlebarsRenderer] No template path for announcement-bar')
+        return
+      }
+
+      try {
+        const html = await renderSection(
+          'announcement-bar',
+          templatePath,
+          announcementBarSectionConfig as Record<string, unknown>,
+          { padding: { top: announcementBarSectionConfig.paddingTop, bottom: announcementBarSectionConfig.paddingBottom } }
+        )
+        if (!cancelled) {
+          setRenderedAnnouncementBar(html)
+        }
+      } catch (err) {
+        console.warn('[HandlebarsRenderer] Failed to render announcement-bar:', err)
+      }
+    }
+
+    void renderAnnouncementBar()
+
+    return () => {
+      cancelled = true
+    }
+  }, [templatesReady, announcementBarSectionConfig])
 
   const resolvedHiddenSections = useMemo(() => {
     const resolved = { ...hiddenSections }
@@ -429,8 +541,7 @@ export function HandlebarsRenderer({
         subheaderStyle: subheaderStyleForPreview,
         showFeaturedPosts: showFeaturedForPreview,
       },
-      announcementBarConfig: sanitizedAnnouncementBarConfig,
-      announcementContentConfig: sanitizedAnnouncementContentConfig,
+      announcementBarHtml: renderedAnnouncementBar,
       customCss: sanitizedCustomCss,
       customSections: mergedCustomSections,
       sectionIds: onSectionSelect ? sectionIdsForPreview : undefined,
@@ -460,7 +571,7 @@ export function HandlebarsRenderer({
         subheaderStyle: subheaderStyleForPreview,
         showFeaturedPosts: showFeaturedForPreview,
       })
-      applyAnnouncementBarCustomizations(doc, sanitizedAnnouncementBarConfig, sanitizedAnnouncementContentConfig)
+      syncAnnouncementBar(doc, renderedAnnouncementBar)
       applyCustomCss(doc, sanitizedCustomCss)
     }
 
@@ -469,7 +580,7 @@ export function HandlebarsRenderer({
     } else {
       update()
     }
-  }, [stickyHeaderMode, showSearch, typographyCase, sectionPadding, sectionMargins, subheaderStyleForPreview, showFeaturedForPreview, sanitizedAnnouncementBarConfig, sanitizedAnnouncementContentConfig, sanitizedCustomCss])
+  }, [stickyHeaderMode, showSearch, typographyCase, sectionPadding, sectionMargins, subheaderStyleForPreview, showFeaturedForPreview, renderedAnnouncementBar, sanitizedCustomCss])
 
   // Effect for incremental color/layout updates (no full iframe rewrite)
   // This prevents scroll jumps when only colors change

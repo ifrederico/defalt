@@ -1,6 +1,7 @@
 node_modules/
 dashboard/node_modules/
 ghost/node_modules/
+code-to-study/
 
 # Environment files (never commit secrets)
 .env

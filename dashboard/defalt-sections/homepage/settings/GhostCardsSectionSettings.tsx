@@ -1,7 +1,7 @@
 import { useMemo, useCallback } from 'react'
 import * as Separator from '@radix-ui/react-separator'
 import { AlignLeft, AlignCenter, AlignRight, Info, CircleQuestionMark, Image, Minus, RectangleEllipsis, BookOpen, Bookmark, Code, Eye, FileWarning, GalleryVertical, Images, MousePointer, Music4, Paperclip, Play, SquareArrowDown, Star, UserPlus } from 'lucide-react'
-import type { GhostCardsSectionConfig } from '@defalt/sections/definitions/definitions'
+import type { GhostCardsSectionConfig } from '@defalt/sections/engine'
 import {
   SliderField,
   ToggleSwitch,

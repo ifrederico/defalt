@@ -1,21 +1,13 @@
 {{!--
+    Post List Partial - Source Template
+    During export, Defalt Theme Editor prepends styles with user config values.
+
     Parameters:
     * feed (index, home, archive, recent)
     * postFeedStyle (list, grid)
     * showTitle (true, false)
     * showSidebar (true, false)
 --}}
-
-{{!-- defalt-main-style-start --}}
-<style>
-.defalt-main-section {
-    --defalt-main-padding-top: 64px;
-    --defalt-main-padding-bottom: 0px;
-    padding-top: var(--defalt-main-padding-top);
-    padding-bottom: var(--defalt-main-padding-bottom);
-}
-</style>
-{{!-- defalt-main-style-end --}}
 
 <section class="gh-container is-{{#match postFeedStyle "List"}}list{{else}}grid{{/match}}{{#if showSidebar}} has-sidebar{{/if}}{{#unless @custom.show_images_in_feed}} no-image{{/unless}} gh-outer defalt-main-section">
     <div class="gh-container-inner gh-inner">

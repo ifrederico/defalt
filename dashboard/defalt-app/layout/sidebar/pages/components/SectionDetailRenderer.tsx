@@ -1,6 +1,6 @@
 import { useMemo, useState, useCallback, type ReactNode } from 'react'
 import type { SectionsPanelProps } from '../SectionsPanelBase'
-import type { SectionConfigSchema, GhostCardsSectionConfig, GhostGridSectionConfig, ImageWithTextSectionConfig } from '@defalt/sections/definitions/definitions'
+import type { SectionConfigSchema, GhostCardsSectionConfig, GhostGridSectionConfig, ImageWithTextSectionConfig } from '@defalt/sections/engine'
 import { SECTION_ID_MAP, PADDING_BLOCK_SECTIONS, CSS_DEFAULT_MARGIN } from '@defalt/utils/config/themeConfig'
 import { HeaderSectionSettings } from './HeaderSectionSettings'
 import { SectionPaddingSettings, type SectionSpacingMode } from './SectionPaddingSettings'

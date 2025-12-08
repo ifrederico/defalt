@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { getSectionDefinition, type SectionConfigSchema, type SectionSettingSchema } from '@defalt/sections/definitions/definitions'
+import { getSectionDefinition, type SectionConfigSchema, type SectionSettingSchema } from '@defalt/sections/engine'
 import { SliderField, ToggleSwitch, SettingSection, ColorControl } from '@defalt/ui'
 
 type SchemaSectionSettingsProps = {

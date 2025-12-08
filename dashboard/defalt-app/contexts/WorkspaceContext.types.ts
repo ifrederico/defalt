@@ -74,10 +74,10 @@ export type WorkspaceContextValue = {
   customCSS: string
   onCustomCSSChange: (value: string) => void
 
-  templateDefinitions: import('@defalt/sections/definitions/definitions').SectionDefinition[]
+  templateDefinitions: import('@defalt/sections/engine').SectionDefinition[]
   onAddTemplateSection: (definitionId: string) => void
   onRemoveTemplateSection: (sectionId: string) => void
-  customSections: Record<string, import('@defalt/sections/definitions/definitions').SectionInstance>
+  customSections: Record<string, import('@defalt/sections/engine').SectionInstance>
   aiSections: Array<{ id: string, name: string, html: string }>
   addAiSection: (section: { id?: string, name: string, html: string }) => void
   removeAiSection: (id: string) => void
@@ -89,7 +89,7 @@ export type WorkspaceContextValue = {
   sectionMargins: Record<string, { top?: number, bottom?: number }>
   onSectionMarginChange: (id: string, direction: 'top' | 'bottom', value: number) => void
   onSectionMarginCommit: (id: string, direction: 'top' | 'bottom', value: number) => void
-  onUpdateCustomSection: (id: string, updater: (config: import('@defalt/sections/definitions/definitions').SectionConfigSchema) => import('@defalt/sections/definitions/definitions').SectionConfigSchema) => void
+  onUpdateCustomSection: (id: string, updater: (config: import('@defalt/sections/engine').SectionConfigSchema) => import('@defalt/sections/engine').SectionConfigSchema) => void
   sectionVisibility: Record<string, boolean>
   templateItems: import('@defalt/utils/hooks/configStateDefaults').SidebarItem[]
   footerItems: import('@defalt/utils/hooks/configStateDefaults').SidebarItem[]
@@ -117,6 +117,6 @@ export type WorkspaceContextValue = {
   previewData: import('@defalt/rendering/custom-source/handlebars/dataResolvers').PreviewData
   templateOrder: string[]
   footerOrder: string[]
-  customTemplateSections: import('@defalt/sections/definitions/definitions').SectionInstance[]
+  customTemplateSections: import('@defalt/sections/engine').SectionInstance[]
   customSettingsOverrides: Record<string, unknown>
 }

@@ -3,7 +3,7 @@
  * Used by ghostCards, ghostGrid, and imageWithText sections
  */
 
-import type { PreviewPageData } from '../definitions/sectionTypes.js'
+import type { PreviewPageData } from '../engine/index.js'
 
 // Re-export the type for convenience
 export type { PreviewPageData }

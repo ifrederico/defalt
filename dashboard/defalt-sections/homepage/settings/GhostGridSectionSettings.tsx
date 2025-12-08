@@ -25,7 +25,7 @@ import {
   UserPlus
 } from 'lucide-react'
 
-import type { GhostGridSectionConfig } from '@defalt/sections/definitions/definitions'
+import type { GhostGridSectionConfig } from '@defalt/sections/engine'
 import {
   SliderField,
   ToggleSwitch,

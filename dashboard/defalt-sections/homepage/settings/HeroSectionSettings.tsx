@@ -10,7 +10,7 @@ import {
   UnfoldVertical
 } from 'lucide-react'
 
-import type { HeroSectionConfig } from '@defalt/sections/definitions/definitions'
+import type { HeroSectionConfig } from '@defalt/sections/engine'
 import {
   ToggleSwitch,
   SliderField,

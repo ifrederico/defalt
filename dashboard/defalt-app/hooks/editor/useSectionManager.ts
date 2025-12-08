@@ -9,7 +9,7 @@ import {
   listDefinitionsByCategory,
   type SectionInstance,
   type SectionConfigSchema
-} from '@defalt/sections/definitions/definitions'
+} from '@defalt/sections/engine'
 import { Ghost as GhostIcon, GalleryVertical } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import {

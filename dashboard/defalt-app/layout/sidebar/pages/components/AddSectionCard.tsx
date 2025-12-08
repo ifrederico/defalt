@@ -13,10 +13,12 @@ import {
   MapPin,
   FileText,
   Component,
-  Crown
+  Crown,
+  LayoutList,
+  GalleryVertical
 } from 'lucide-react'
 import { FloatingTooltip } from '@defalt/ui'
-import type { SectionDefinition } from '@defalt/sections/definitions/definitions'
+import type { SectionDefinition } from '@defalt/sections/engine'
 
 type UpcomingSection = {
   id: string
@@ -37,6 +39,8 @@ const UPCOMING_TEMPLATE_SECTIONS: UpcomingSection[] = [
 ]
 
 const SECTION_ICON_MAP: Record<string, LucideIcon> = {
+  'hero': GalleryVertical,
+  'image-with-text': LayoutList,
   'grid': Grid3x3,
   'testimonials': MessageSquareQuote,
   'faq': MessageCircleQuestionMark,

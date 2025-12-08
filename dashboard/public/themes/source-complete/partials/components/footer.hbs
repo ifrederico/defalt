@@ -1,24 +1,11 @@
-{{!-- defalt-footer-start --}}
-{{!-- defalt-footer-style-start --}}
-<style>
-.gh-footer {
-    --defalt-footer-margin-top: 172px;
-    margin-top: var(--defalt-footer-margin-top);
-}
-</style>
-{{!-- defalt-footer-style-end --}}
+{{!-- Footer Partial - Source Template
+     During export, Defalt Theme Editor prepends styles with user config values.
+     Section reordering markers (defalt-footer-bar-start/end, etc.) are needed for section ordering. --}}
+
 <footer class="gh-footer{{#match @custom.header_and_footer_color "Accent color"}} has-accent-color{{/match}} gh-outer">
     <div class="gh-footer-inner gh-inner">
 
         {{!-- defalt-footer-bar-start --}}
-        {{!-- defalt-footer-bar-style-start --}}
-        <style>
-        .gh-footer-bar {
-            --defalt-footer-bar-margin-bottom: 100px;
-            margin-bottom: var(--defalt-footer-bar-margin-bottom);
-        }
-        </style>
-        {{!-- defalt-footer-bar-style-end --}}
         <div class="gh-footer-bar">
             <span class="gh-footer-logo is-title">
                 {{#if @site.logo}}
@@ -54,4 +41,3 @@
 
     </div>
 </footer>
-{{!-- defalt-footer-end --}}

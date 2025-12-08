@@ -5,7 +5,7 @@ import type {
   AnnouncementContentConfig
 } from '@defalt/utils/config/themeConfig'
 import type { SidebarItem } from '@defalt/utils/hooks/configStateDefaults'
-import type { SectionInstance } from '@defalt/sections/definitions/definitions'
+import type { SectionInstance, SectionConfigSchema, listDefinitionsByCategory } from '@defalt/sections/engine'
 import type { LucideIcon } from 'lucide-react'
 import type { HistoryCommand } from '@defalt/utils/history/commands'
 import type { WorkspacePage } from '../../types/workspace'
@@ -54,7 +54,7 @@ export interface SectionManagerReturn {
   customSectionsRef: MutableRefObject<Record<string, SectionInstance>>
 
   // Memoized values
-  templateDefinitions: ReturnType<typeof import('@defalt/sections/definitions/definitions').listDefinitionsByCategory>
+  templateDefinitions: ReturnType<typeof listDefinitionsByCategory>
   memoizedTemplateOrder: string[]
   memoizedFooterOrder: string[]
   customTemplateSectionList: SectionInstance[]
@@ -106,7 +106,7 @@ export interface SectionManagerReturn {
   // Custom section functions
   updateCustomSectionConfig: (
     id: string,
-    updater: (config: import('@defalt/sections/definitions/definitions').SectionConfigSchema) => import('@defalt/sections/definitions/definitions').SectionConfigSchema
+    updater: (config: SectionConfigSchema) => SectionConfigSchema
   ) => void
 
   // Subheader spacing

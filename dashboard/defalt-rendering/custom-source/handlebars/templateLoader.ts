@@ -88,16 +88,11 @@ export function filterTemplatesByVisibility(
 
   const filtered = { ...templates }
 
-  // Filter default.hbs to remove announcement bar and navigation
+  // Filter default.hbs to remove navigation
+  // Note: announcement bar visibility is now controlled via CSS (app-hide-announcement-bar class)
+  // and partial generation during export (empty partial when hidden)
   if (filtered.default) {
     let defaultContent = filtered.default
-
-    if (hiddenSections['announcement-bar']) {
-      defaultContent = defaultContent.replace(
-        /\{\{!-- defalt-announcement-bar-start --\}\}[\s\S]*?\{\{!-- defalt-announcement-bar-end --\}\}/g,
-        ''
-      )
-    }
 
     if (hiddenSections.header) {
       defaultContent = defaultContent.replace(

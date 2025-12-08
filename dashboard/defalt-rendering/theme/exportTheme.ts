@@ -21,8 +21,64 @@ import type {
   SectionPadding,
   SectionMargin,
 } from '../../defalt-utils/config/themeConfig.js'
-import { getSectionDefinition, type HeroSectionConfig, type GhostCardsSectionConfig, type GhostGridSectionConfig, type ImageWithTextSectionConfig } from '../../defalt-sections/definitions/definitions.js'
-import { sanitizeHref } from '../../defalt-sections/definitions/sectionTypes.js'
+// Import from individual files to avoid pulling in sectionRegistry (which uses import.meta.glob)
+// This is needed because exportTheme runs during Vite config loading
+import { sanitizeHref } from '../../defalt-sections/engine/hbsRenderer.js'
+import type { HeroSectionConfig } from '../../defalt-sections/sections/hero/schema.js'
+import type { GhostCardsSectionConfig } from '../../defalt-sections/sections/ghostCards/schema.js'
+import type { GhostGridSectionConfig } from '../../defalt-sections/sections/ghostGrid/schema.js'
+import type { ImageWithTextSectionConfig } from '../../defalt-sections/sections/image-with-text/schema.js'
+
+// Known section types that can be exported
+const KNOWN_SECTION_TYPES = new Set(['hero', 'ghostCards', 'ghostGrid', 'image-with-text'])
+
+// Path to the new section templates (source of truth)
+const SECTIONS_SOURCE_DIR = path.resolve(import.meta.dirname, '../../defalt-sections/sections')
+
+// Static template path mapping for export context
+// (avoids importing sectionRegistry which uses import.meta.glob - doesn't work during Vite config loading)
+const SECTION_TEMPLATE_PATHS: Record<string, string> = {
+  'hero': 'hero/hero.hbs',
+  'ghostCards': 'ghostCards/ghostCards.hbs',
+  'ghostGrid': 'ghostGrid/ghostGrid.hbs',
+  'image-with-text': 'image-with-text/image-with-text.hbs',
+}
+
+function getSectionTemplatePath(sectionId: string): string | null {
+  return SECTION_TEMPLATE_PATHS[sectionId] ?? null
+}
+
+/**
+ * Read a section template from the new engine structure
+ * Falls back to the old location if not found
+ */
+async function readSectionTemplate(sectionId: string, themeDir: string): Promise<string | null> {
+  // Try new location first
+  const templatePath = getSectionTemplatePath(sectionId)
+  if (templatePath) {
+    const newPath = path.join(SECTIONS_SOURCE_DIR, templatePath)
+    try {
+      return await fs.readFile(newPath, 'utf-8')
+    } catch {
+      // Fall through to old location
+    }
+  }
+
+  // Fall back to old location in theme partials
+  const sectionNameMap: Record<string, string> = {
+    'hero': 'defalt-hero',
+    'ghostCards': 'defalt-ghost-cards',
+    'ghostGrid': 'defalt-ghost-grid',
+    'image-with-text': 'defalt-image-with-text'
+  }
+  const partialName = sectionNameMap[sectionId] || `defalt-${sectionId}`
+  const oldPath = path.join(themeDir, 'partials', 'sections', `${partialName}.hbs`)
+  try {
+    return await fs.readFile(oldPath, 'utf-8')
+  } catch {
+    return null
+  }
+}
 
 type ThemeConfig = {
   sections: Record<string, SectionConfig>
@@ -247,11 +303,7 @@ export function generateHomeTemplate(
       }
 
       const definitionId = sectionConfig?.settings?.definitionId
-      if (!definitionId) {
-        continue
-      }
-      const definition = getSectionDefinition(definitionId)
-      if (!definition) {
+      if (!definitionId || !KNOWN_SECTION_TYPES.has(definitionId)) {
         continue
       }
       if (definitionId === 'hero') {
@@ -271,13 +323,8 @@ export function generateHomeTemplate(
         const suffix = getSectionInstanceSuffix(key, definitionId)
         sectionSnippets.push(`{{> "sections/defalt-image-with-text${suffix}"}}`)
       } else {
-        const providedConfig = sectionConfig?.settings?.customConfig ?? {}
-        const finalConfig = {
-          ...definition.createConfig(),
-          ...providedConfig
-        }
-        const sectionPadding = resolveSectionPadding(sectionConfig, definition.defaultPadding)
-        sectionSnippets.push(definition.renderHtml(finalConfig, { padding: sectionPadding }))
+        // Unknown section type - all known types should be handled above
+        console.warn(`[exportTheme] Unknown section type: ${definitionId}, skipping`)
       }
     }
   }
@@ -553,25 +600,9 @@ export async function applyDefaultTemplateCustomization(themeDir: string, config
 
   // NOTE: "header" section controls {{> "components/navigation"}} (nav bar in default.hbs)
   // "subheader" section controls {{> "components/header"}} (Magazine/Search/Highlight/Landing in home.hbs)
-  const announcementSectionVisible = sections['announcement-bar']?.settings?.visible
-  const announcementBarVisible = typeof announcementSectionVisible === 'boolean'
-    ? announcementSectionVisible
-    : headerSettings?.announcementBarVisible ?? true
+  // NOTE: Announcement bar visibility is now handled in applyAnnouncementBarCustomization
+  // which generates an empty partial when hidden, so no marker-based removal needed here
   const navigationVisible = headerSettings?.visible !== false
-
-  // Remove announcement bar block if not visible
-  if (!announcementBarVisible) {
-    const markerStart = '{{!-- defalt-announcement-bar-start --}}'
-    const markerEnd = '{{!-- defalt-announcement-bar-end --}}'
-    const lowerContent = originalContent.toLowerCase()
-    const startIdx = lowerContent.indexOf(markerStart.toLowerCase())
-    const endIdx = lowerContent.indexOf(markerEnd.toLowerCase(), startIdx)
-
-    if (startIdx !== -1 && endIdx !== -1) {
-      const blockEnd = endIdx + markerEnd.length
-      originalContent = originalContent.slice(0, startIdx) + originalContent.slice(blockEnd)
-    }
-  }
 
   // Remove navigation block if not visible
   if (!navigationVisible) {
@@ -591,7 +622,9 @@ export async function applyDefaultTemplateCustomization(themeDir: string, config
 }
 
 /**
- * Injects announcement bar markup/styles into the compiled theme output.
+ * Generates and writes announcement bar partial for the exported theme.
+ * Uses the new engine approach - generates complete clean file without markers.
+ * Handles visibility: generates empty partial when hidden.
  *
  * @param themeDir - Path to the theme being customized.
  * @param config - Editor configuration containing section settings.
@@ -600,17 +633,25 @@ export async function applyDefaultTemplateCustomization(themeDir: string, config
 export async function applyAnnouncementBarCustomization(themeDir: string, config: ThemeConfig, document?: ThemeDocument) {
   const partialPath = path.join(themeDir, 'partials', 'sections', 'announcement-bar.hbs')
 
-  let originalContent: string
-  try {
-    originalContent = await fs.readFile(partialPath, 'utf-8')
-  } catch {
+  const sections = config.sections || {}
+  const headerSettings = sections.header?.settings as (SectionSettings & {
+    announcementBarVisible?: boolean
+    announcementBarConfig?: AnnouncementBarConfig
+    announcementContentConfig?: AnnouncementContentConfig
+  }) | undefined
+
+  // Check visibility - support both new section-based and legacy header-based config
+  const announcementSectionVisible = sections['announcement-bar']?.settings?.visible
+  const isVisible = typeof announcementSectionVisible === 'boolean'
+    ? announcementSectionVisible
+    : headerSettings?.announcementBarVisible ?? true
+
+  // If not visible, generate empty partial
+  if (!isVisible) {
+    await fs.writeFile(partialPath, '{{!-- Announcement Bar - Hidden by Defalt Theme Editor --}}\n', 'utf-8')
     return
   }
 
-  const headerSettings = config.sections.header?.settings as (SectionSettings & {
-    announcementBarConfig?: AnnouncementBarConfig,
-    announcementContentConfig?: AnnouncementContentConfig
-  }) | undefined
   const normalizedConfig = normalizeAnnouncementBarConfig(
     headerSettings?.announcementBarConfig ?? DEFAULT_ANNOUNCEMENT_BAR_CONFIG,
     DEFAULT_ANNOUNCEMENT_BAR_CONFIG
@@ -621,114 +662,13 @@ export async function applyAnnouncementBarCustomization(themeDir: string, config
     headerSettings?.announcementBarConfig
   )
 
+  // Resolve background color - use CSS variable if it matches accent
   const accentReference = (document?.accentColor ?? DEFAULT_HEADER_SETTINGS.accentColor)?.toLowerCase() ?? ''
   const backgroundColorValue = normalizedConfig.backgroundColor.toLowerCase() === accentReference
     ? 'var(--ghost-accent-color)'
     : normalizedConfig.backgroundColor
 
-  const styleBlock = [
-    '{{!-- defalt-announcement-bar-style-start --}}',
-    '<style>',
-    '.announcement-bar {',
-    `    --announcement-bar-padding-top: ${normalizedConfig.paddingTop}px;`,
-    `    --announcement-bar-padding-bottom: ${normalizedConfig.paddingBottom}px;`,
-    `    --announcement-bar-background-color: ${backgroundColorValue};`,
-    `    --announcement-bar-text-color: ${normalizedConfig.textColor};`,
-    `    --announcement-bar-divider-thickness: ${normalizedConfig.dividerThickness}px;`,
-    '    background-color: var(--announcement-bar-background-color);',
-    '    color: var(--announcement-bar-text-color);',
-    '    padding-top: var(--announcement-bar-padding-top);',
-    '    padding-bottom: var(--announcement-bar-padding-bottom);',
-    '    text-align: center;',
-    '    display: flex;',
-    '    align-items: center;',
-    '    justify-content: center;',
-    '    position: relative;',
-    '    border-bottom: var(--announcement-bar-divider-thickness) solid var(--color-light-gray);',
-    '}',
-    '',
-    '.announcement-bar.gh-inner {',
-    '    max-width: var(--container-width);',
-    '    margin-left: auto;',
-    '    margin-right: auto;',
-    '}',
-    '',
-    '.announcement-bar__text {',
-      '    display: inline-flex;',
-      '    align-items: center;',
-      '    justify-content: center;',
-      '    flex-wrap: wrap;',
-    '    column-gap: 1.2rem;',
-    '    row-gap: 0.6rem;',
-    '    font-size: 1.4rem;',
-    '    line-height: 1.8rem;',
-    '    font-weight: 500;',
-    '    letter-spacing: 0.03em;',
-    '}',
-    '',
-    '.announcement-bar__copy {',
-      '    display: inline-flex;',
-      '    align-items: center;',
-      '    white-space: pre-wrap;',
-    '}',
-    '',
-    '.announcement-bar__copy a {',
-      '    color: inherit;',
-      '    text-decoration: none;',
-    '}',
-    '',
-    '.announcement-bar--underline-links .announcement-bar__copy a {',
-      '    text-decoration: underline;',
-    '}',
-    '',
-    '.announcement-bar__copy--rich {',
-      '    display: inline-flex;',
-      '    flex-wrap: wrap;',
-      '    align-items: center;',
-      '    justify-content: center;',
-    '}',
-    '',
-    '.announcement-bar__copy--rich > p {',
-      '    margin: 0;',
-      '    display: inline;',
-    '}',
-    '',
-    '.announcement-bar__copy--rich > :not(p:first-of-type) {',
-      '    display: none !important;',
-    '}',
-    '',
-    '.announcement-bar--size-small .announcement-bar__text {',
-    '    font-size: 1.2rem;',
-    '    line-height: 1.6rem;',
-    '}',
-    '.announcement-bar--size-large .announcement-bar__text {',
-    '    font-size: 1.6rem;',
-    '    line-height: 2rem;',
-    '}',
-    '.announcement-bar--size-x-large .announcement-bar__text {',
-    '    font-size: 1.8rem;',
-    '    line-height: 2.2rem;',
-    '}',
-    '.announcement-bar--weight-light .announcement-bar__text {',
-    '    font-weight: 400;',
-    '}',
-    '.announcement-bar--weight-bold .announcement-bar__text {',
-    '    font-weight: 600;',
-    '}',
-    '.announcement-bar--spacing-tight .announcement-bar__text {',
-    '    letter-spacing: 0.01em;',
-    '}',
-    '.announcement-bar--spacing-wide .announcement-bar__text {',
-    '    letter-spacing: 0.08em;',
-    '}',
-    '.announcement-bar--uppercase .announcement-bar__text {',
-    '    text-transform: uppercase;',
-    '}',
-    '',
-    '</style>',
-    '{{!-- defalt-announcement-bar-style-end --}}'
-  ].join('\n')
-
+  // Build class names based on config
   const classNames: string[] = []
   if (contentConfig.typographySize === 'small') {
     classNames.push('announcement-bar--size-small')
@@ -757,29 +697,129 @@ export async function applyAnnouncementBarCustomization(themeDir: string, config
     classNames.push('gh-inner')
   }
 
-  const classInsertion = classNames.length > 0 ? ` ${classNames.join(' ')}` : ''
+  const classString = classNames.length > 0 ? ` ${classNames.join(' ')}` : ''
 
-  const styleStart = '{{!-- defalt-announcement-bar-style-start --}}'
-  const styleEnd = '{{!-- defalt-announcement-bar-style-end --}}'
-  const startIdx = originalContent.indexOf(styleStart)
-  const endIdx = originalContent.indexOf(styleEnd, startIdx)
-  if (startIdx !== -1 && endIdx !== -1) {
-    const blockEnd = endIdx + styleEnd.length
-    originalContent = originalContent.slice(0, startIdx) + styleBlock + originalContent.slice(blockEnd)
-  }
+  // Generate complete clean template (no markers)
+  const template = `{{!-- Announcement Bar - Generated by Defalt Theme Editor --}}
+<style>
+.announcement-bar {
+    --announcement-bar-padding-top: ${normalizedConfig.paddingTop}px;
+    --announcement-bar-padding-bottom: ${normalizedConfig.paddingBottom}px;
+    --announcement-bar-background-color: ${backgroundColorValue};
+    --announcement-bar-text-color: ${normalizedConfig.textColor};
+    --announcement-bar-divider-thickness: ${normalizedConfig.dividerThickness}px;
+    background-color: var(--announcement-bar-background-color);
+    color: var(--announcement-bar-text-color);
+    padding-top: var(--announcement-bar-padding-top);
+    padding-bottom: var(--announcement-bar-padding-bottom);
+    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    border-bottom: var(--announcement-bar-divider-thickness) solid var(--color-light-gray);
+}
 
-  originalContent = originalContent.replace('{{!-- defalt-announcement-bar-classes --}}', classInsertion)
+.announcement-bar.gh-inner {
+    max-width: var(--container-width);
+    margin-left: auto;
+    margin-right: auto;
+}
 
-  const previewBlockStart = '{{!-- defalt-announcement-bar-preview-start --}}'
-  const previewBlockEnd = '{{!-- defalt-announcement-bar-preview-end --}}'
-  const previewStartIdx = originalContent.indexOf(previewBlockStart)
-  const previewEndIdx = originalContent.indexOf(previewBlockEnd, previewStartIdx)
-  if (previewStartIdx !== -1 && previewEndIdx !== -1) {
-    const blockEnd = previewEndIdx + previewBlockEnd.length
-    originalContent = originalContent.slice(0, previewStartIdx) + originalContent.slice(blockEnd)
-  }
+.announcement-bar__text {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    column-gap: 1.2rem;
+    row-gap: 0.6rem;
+    font-size: 1.4rem;
+    line-height: 1.8rem;
+    font-weight: 500;
+    letter-spacing: 0.03em;
+}
 
-  await fs.writeFile(partialPath, originalContent, 'utf-8')
+.announcement-bar__copy {
+    display: inline-flex;
+    align-items: center;
+    white-space: pre-wrap;
+}
+
+.announcement-bar__copy a {
+    color: inherit;
+    text-decoration: none;
+}
+
+.announcement-bar--underline-links .announcement-bar__copy a {
+    text-decoration: underline;
+}
+
+.announcement-bar__copy--rich {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+}
+
+.announcement-bar__copy--rich > p {
+    margin: 0;
+    display: inline;
+}
+
+.announcement-bar__copy--rich > :not(p:first-of-type) {
+    display: none !important;
+}
+
+.announcement-bar--size-small .announcement-bar__text {
+    font-size: 1.2rem;
+    line-height: 1.6rem;
+}
+
+.announcement-bar--size-large .announcement-bar__text {
+    font-size: 1.6rem;
+    line-height: 2rem;
+}
+
+.announcement-bar--size-x-large .announcement-bar__text {
+    font-size: 1.8rem;
+    line-height: 2.2rem;
+}
+
+.announcement-bar--weight-light .announcement-bar__text {
+    font-weight: 400;
+}
+
+.announcement-bar--weight-bold .announcement-bar__text {
+    font-weight: 600;
+}
+
+.announcement-bar--spacing-tight .announcement-bar__text {
+    letter-spacing: 0.01em;
+}
+
+.announcement-bar--spacing-wide .announcement-bar__text {
+    letter-spacing: 0.08em;
+}
+
+.announcement-bar--uppercase .announcement-bar__text {
+    text-transform: uppercase;
+}
+</style>
+
+{{#get "pages" filter="tag:hash-announcement-bar" limit="1" include="tags" as |announcementPages|}}
+    {{#if announcementPages.[0]}}
+        <section class="announcement-bar${classString}" id="announcement" role="status" aria-live="polite">
+            <div class="announcement-bar__text" aria-label="Announcement">
+                <div class="announcement-bar__copy announcement-bar__copy--rich">
+                    {{{announcementPages.[0].html}}}
+                </div>
+            </div>
+        </section>
+    {{/if}}
+{{/get}}
+`
+
+  await fs.writeFile(partialPath, template, 'utf-8')
 }
 
 /**
@@ -827,9 +867,8 @@ export async function applyHeroCustomization(themeDir: string, config: ThemeConf
 
   const effectiveCardBorderRadius = contentWidth === 'full' ? 0 : cardBorderRadius
 
-  // Style block
+  // Style block (prepended to template content)
   const styleBlock = [
-    '{{!-- defalt-hero-style-start --}}',
     '<style>',
     '.gd-hero-section {',
     `    --gd-hero-padding-top: ${paddingTop}px;`,
@@ -994,20 +1033,11 @@ export async function applyHeroCustomization(themeDir: string, config: ThemeConf
     '.gd-hero-card .kg-button-card .kg-btn:hover {',
     '    opacity: 0.85;',
     '}',
-    '</style>',
-    '{{!-- defalt-hero-style-end --}}'
+    '</style>'
   ].join('\n')
 
-  // Replace style block
-  const styleStartMarker = '{{!-- defalt-hero-style-start --}}'
-  const styleEndMarker = '{{!-- defalt-hero-style-end --}}'
-  const styleStartIdx = originalContent.indexOf(styleStartMarker)
-  const styleEndIdx = originalContent.indexOf(styleEndMarker)
-  if (styleStartIdx !== -1 && styleEndIdx !== -1 && styleEndIdx > styleStartIdx) {
-    const before = originalContent.slice(0, styleStartIdx)
-    const after = originalContent.slice(styleEndIdx + styleEndMarker.length)
-    originalContent = before + styleBlock + after
-  }
+  // Prepend style block to content
+  originalContent = styleBlock + '\n' + originalContent
 
   // Replace section classes
   const sectionClassInsertion = contentWidth === 'regular' ? ' gd-hero-section-regular' : ''
@@ -1090,8 +1120,8 @@ export async function applyMainSectionCustomization(themeDir: string, config: Th
   const mainSection = config.sections?.main
   const resolvedPadding = resolveSectionPadding(mainSection, fallback)
 
+  // Style block (prepended to template content)
   const styleBlock = [
-    '{{!-- defalt-main-style-start --}}',
     '<style>',
     '.defalt-main-section {',
     `    --defalt-main-padding-top: ${resolvedPadding.top}px;`,
@@ -1099,25 +1129,13 @@ export async function applyMainSectionCustomization(themeDir: string, config: Th
     '    padding-top: var(--defalt-main-padding-top);',
     '    padding-bottom: var(--defalt-main-padding-bottom);',
     '}',
-    '</style>',
-    '{{!-- defalt-main-style-end --}}'
+    '</style>'
   ].join('\n')
 
-  const styleStartMarker = '{{!-- defalt-main-style-start --}}'
-  const styleEndMarker = '{{!-- defalt-main-style-end --}}'
-  const styleStartIdx = originalContent.indexOf(styleStartMarker)
-  const styleEndIdx = originalContent.indexOf(styleEndMarker)
-  if (styleStartIdx === -1 || styleEndIdx === -1 || styleEndIdx <= styleStartIdx) {
-    return
-  }
+  // Prepend style block to content
+  const updatedContent = styleBlock + '\n' + originalContent
 
-  const before = originalContent.slice(0, styleStartIdx)
-  const after = originalContent.slice(styleEndIdx + styleEndMarker.length)
-  const updatedContent = before + styleBlock + after
-
-  if (updatedContent !== originalContent) {
-    await fs.writeFile(partialPath, updatedContent, 'utf-8')
-  }
+  await fs.writeFile(partialPath, updatedContent, 'utf-8')
 }
 
 /**
@@ -1128,14 +1146,13 @@ export async function applyMainSectionCustomization(themeDir: string, config: Th
  * @param config - Editor configuration containing section settings.
  */
 export async function applyGhostCardsCustomization(themeDir: string, config: ThemeConfig) {
-  const basePartialPath = path.join(themeDir, 'partials', 'sections', 'defalt-ghost-cards.hbs')
-
-  let baseContent: string
-  try {
-    baseContent = await fs.readFile(basePartialPath, 'utf-8')
-  } catch {
+  // Read from new section template location (source of truth)
+  const baseContent = await readSectionTemplate('ghostCards', themeDir)
+  if (!baseContent) {
     return
   }
+
+  const basePartialPath = path.join(themeDir, 'partials', 'sections', 'defalt-ghost-cards.hbs')
 
   // Find all ghostCards sections
   const allGhostCardsSections = findAllSectionsByDefinitionId(config, 'ghostCards')
@@ -1190,8 +1207,8 @@ export async function applyGhostCardsCustomization(themeDir: string, config: The
     const internalTag = formatInternalTag(cardsConfig.ghostPageTag) || fallbackTag
     const slugTag = internalTag.length > 1 ? `hash-${internalTag.slice(1)}` : 'hash-ghost-card'
 
+    // Style block (prepended to template content)
     const styleBlock = [
-      '{{!-- defalt-ghost-cards-style-start --}}',
       '<style>',
       '.gh-outer {',
       '    padding: 0 max(4vmin, 20px);',
@@ -1292,19 +1309,11 @@ export async function applyGhostCardsCustomization(themeDir: string, config: The
       '    font-size: 12px;',
       '    font-family: inherit;',
       '}',
-      '</style>',
-      '{{!-- defalt-ghost-cards-style-end --}}'
+      '</style>'
     ].join('\n')
 
-    const styleStartMarker = '{{!-- defalt-ghost-cards-style-start --}}'
-    const styleEndMarker = '{{!-- defalt-ghost-cards-style-end --}}'
-    const styleStartIdx = content.indexOf(styleStartMarker)
-    const styleEndIdx = content.indexOf(styleEndMarker)
-    if (styleStartIdx !== -1 && styleEndIdx !== -1 && styleEndIdx > styleStartIdx) {
-      const before = content.slice(0, styleStartIdx)
-      const after = content.slice(styleEndIdx + styleEndMarker.length)
-      content = before + styleBlock + after
-    }
+    // Prepend style block to content
+    content = styleBlock + '\n' + content
 
     const sectionClasses: string[] = []
     if (!showHeader) {
@@ -1341,15 +1350,13 @@ export async function applyGhostCardsCustomization(themeDir: string, config: The
 }
 
 export async function applyGhostGridCustomization(themeDir: string, config: ThemeConfig) {
-  const partialPath = path.join(themeDir, 'partials', 'sections', 'defalt-ghost-grid.hbs')
-
-  let originalContent: string
-  try {
-    originalContent = await fs.readFile(partialPath, 'utf-8')
-  } catch {
+  // Read from new section template location (source of truth)
+  let originalContent = await readSectionTemplate('ghostGrid', themeDir)
+  if (!originalContent) {
     return
   }
 
+  const partialPath = path.join(themeDir, 'partials', 'sections', 'defalt-ghost-grid.hbs')
   const ghostGridSection = findSectionByDefinitionId(config, 'ghostGrid')
   if (!ghostGridSection) return
 
@@ -1375,8 +1382,8 @@ export async function applyGhostGridCustomization(themeDir: string, config: Them
   const paddingLeft = Math.max(0, Math.round(padding.left ?? 0))
   const paddingRight = Math.max(0, Math.round(padding.right ?? 0))
 
+  // Style block (prepended to template content)
   const styleBlock = [
-    '{{!-- defalt-ghost-grid-style-start --}}',
     '<style>',
     '.gh-outer {',
     '    padding: 0 max(4vmin, 20px);',
@@ -1496,19 +1503,11 @@ export async function applyGhostGridCustomization(themeDir: string, config: Them
     '    font-size: 12px;',
     '    font-family: inherit;',
     '}',
-    '</style>',
-    '{{!-- defalt-ghost-grid-style-end --}}'
+    '</style>'
   ].join('\n')
 
-  const styleStartMarker = '{{!-- defalt-ghost-grid-style-start --}}'
-  const styleEndMarker = '{{!-- defalt-ghost-grid-style-end --}}'
-  const styleStartIdx = originalContent.indexOf(styleStartMarker)
-  const styleEndIdx = originalContent.indexOf(styleEndMarker)
-  if (styleStartIdx !== -1 && styleEndIdx !== -1 && styleEndIdx > styleStartIdx) {
-    const before = originalContent.slice(0, styleStartIdx)
-    const after = originalContent.slice(styleEndIdx + styleEndMarker.length)
-    originalContent = before + styleBlock + after
-  }
+  // Prepend style block to content
+  originalContent = styleBlock + '\n' + originalContent
 
   const sectionClasses: string[] = []
   if (!showHeader) {
@@ -1533,14 +1532,13 @@ export async function applyGhostGridCustomization(themeDir: string, config: Them
  * @param config - Editor configuration containing section settings.
  */
 export async function applyImageWithTextCustomization(themeDir: string, config: ThemeConfig) {
-  const basePartialPath = path.join(themeDir, 'partials', 'sections', 'defalt-image-with-text.hbs')
-
-  let baseContent: string
-  try {
-    baseContent = await fs.readFile(basePartialPath, 'utf-8')
-  } catch {
+  // Read from new section template location (source of truth)
+  const baseContent = await readSectionTemplate('image-with-text', themeDir)
+  if (!baseContent) {
     return
   }
+
+  const basePartialPath = path.join(themeDir, 'partials', 'sections', 'defalt-image-with-text.hbs')
 
   // Find all image-with-text sections
   const allImageWithTextSections = findAllSectionsByDefinitionId(config, 'image-with-text')
@@ -1599,8 +1597,8 @@ export async function applyImageWithTextCustomization(themeDir: string, config: 
     const internalTag = formatInternalTag(sectionConfig.ghostPageTag) || fallbackTag
     const slugTag = internalTag.length > 1 ? `hash-${internalTag.slice(1)}` : 'hash-image-with-text'
 
+    // Style block (prepended to template content)
     const styleBlock = [
-      '{{!-- defalt-image-with-text-style-start --}}',
       '<style>',
       '.gd-image-text-section {',
       `    --gd-image-text-padding-top: ${paddingTop}px;`,
@@ -1749,19 +1747,11 @@ export async function applyImageWithTextCustomization(themeDir: string, config: 
       '.gd-image-text-hide-heading .gd-image-text-heading {',
       '    display: none;',
       '}',
-      '</style>',
-      '{{!-- defalt-image-with-text-style-end --}}'
+      '</style>'
     ].join('\n')
 
-    const styleStartMarker = '{{!-- defalt-image-with-text-style-start --}}'
-    const styleEndMarker = '{{!-- defalt-image-with-text-style-end --}}'
-    const styleStartIdx = content.indexOf(styleStartMarker)
-    const styleEndIdx = content.indexOf(styleEndMarker)
-    if (styleStartIdx !== -1 && styleEndIdx !== -1 && styleEndIdx > styleStartIdx) {
-      const before = content.slice(0, styleStartIdx)
-      const after = content.slice(styleEndIdx + styleEndMarker.length)
-      content = before + styleBlock + after
-    }
+    // Prepend style block to content
+    content = styleBlock + '\n' + content
 
     const sectionClasses: string[] = []
     if (!showHeader) {
@@ -1923,27 +1913,6 @@ export async function applyFooterCustomization(themeDir: string, config: ThemeCo
     )
   )
 
-  const footerBarStyleBlock = [
-    '{{!-- defalt-footer-bar-style-start --}}',
-    '<style>',
-    '.gh-footer-bar {',
-    `    --defalt-footer-bar-margin-bottom: ${footerBarMarginBottom}px;`,
-    '    margin-bottom: var(--defalt-footer-bar-margin-bottom);',
-    '}',
-    '</style>',
-    '{{!-- defalt-footer-bar-style-end --}}'
-  ].join('\n')
-
-  const footerBarStyleStart = '{{!-- defalt-footer-bar-style-start --}}'
-  const footerBarStyleEnd = '{{!-- defalt-footer-bar-style-end --}}'
-  const styleStartIdx = updatedContent.indexOf(footerBarStyleStart)
-  const styleEndIdx = updatedContent.indexOf(footerBarStyleEnd)
-  if (styleStartIdx !== -1 && styleEndIdx !== -1 && styleEndIdx > styleStartIdx) {
-    const before = updatedContent.slice(0, styleStartIdx)
-    const after = updatedContent.slice(styleEndIdx + footerBarStyleEnd.length)
-    updatedContent = before + footerBarStyleBlock + after
-  }
-
   // Footer container margin-top customization
   const footerMarginDefault = CSS_DEFAULT_MARGIN.footer?.top ?? 172
   const footerMarginTop = Math.max(
@@ -1955,26 +1924,22 @@ export async function applyFooterCustomization(themeDir: string, config: ThemeCo
     )
   )
 
-  const footerContainerStyleBlock = [
-    '{{!-- defalt-footer-style-start --}}',
+  // Style block (prepended to template content)
+  const styleBlock = [
     '<style>',
     '.gh-footer {',
     `    --defalt-footer-margin-top: ${footerMarginTop}px;`,
     '    margin-top: var(--defalt-footer-margin-top);',
     '}',
-    '</style>',
-    '{{!-- defalt-footer-style-end --}}'
+    '.gh-footer-bar {',
+    `    --defalt-footer-bar-margin-bottom: ${footerBarMarginBottom}px;`,
+    '    margin-bottom: var(--defalt-footer-bar-margin-bottom);',
+    '}',
+    '</style>'
   ].join('\n')
 
-  const footerStyleStart = '{{!-- defalt-footer-style-start --}}'
-  const footerStyleEnd = '{{!-- defalt-footer-style-end --}}'
-  const footerStyleStartIdx = updatedContent.indexOf(footerStyleStart)
-  const footerStyleEndIdx = updatedContent.indexOf(footerStyleEnd)
-  if (footerStyleStartIdx !== -1 && footerStyleEndIdx !== -1 && footerStyleEndIdx > footerStyleStartIdx) {
-    const before = updatedContent.slice(0, footerStyleStartIdx)
-    const after = updatedContent.slice(footerStyleEndIdx + footerStyleEnd.length)
-    updatedContent = before + footerContainerStyleBlock + after
-  }
+  // Prepend style block to content
+  updatedContent = styleBlock + '\n' + updatedContent
 
   if (updatedContent !== originalContent) {
     await fs.writeFile(footerPath, updatedContent, 'utf-8')

@@ -38,7 +38,7 @@ import {
   getSectionDefinition,
   type SectionInstance,
   type SectionConfigSchema
-} from '@defalt/sections/definitions/definitions'
+} from '@defalt/sections/engine'
 import { Ghost as GhostIcon } from 'lucide-react'
 import {
   footerDefaultsById,

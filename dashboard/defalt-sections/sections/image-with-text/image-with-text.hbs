@@ -1,0 +1,182 @@
+{{!--
+  Image With Text Section Template
+
+  Display an image alongside text content with optional call-to-action.
+
+  Context variables:
+  - config: Section configuration object
+  - padding: { top, bottom, left, right } padding values
+  - pages: Ghost pages data (optional)
+--}}
+
+<style>
+.gh-image-with-text {
+  padding-top: {{default padding.top 32}}px;
+  padding-bottom: {{default padding.bottom 32}}px;
+}
+
+.gd-image-with-text-content {
+  display: flex;
+  flex-direction: row;
+  gap: {{default config.gap 32}}px;
+}
+
+.gd-image-with-text-content.gd-image-right {
+  flex-direction: row-reverse;
+}
+
+.gd-image-with-text-image {
+  flex: 0 0 50%;
+  max-width: 50%;
+}
+
+.gd-image-with-text-image img {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.gd-image-with-text-content .gh-article {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.gd-container-narrow .gh-inner {
+  max-width: 800px;
+}
+
+.gd-container-full {
+  padding: 0;
+}
+
+.gd-container-full .gd-image-with-text-content {
+  gap: 0;
+}
+
+.gd-header-left { text-align: left; }
+.gd-header-center { text-align: center; }
+.gd-header-right { text-align: right; }
+
+.gd-image-with-text-placeholder {
+  display: flex;
+  flex-direction: row;
+  gap: {{default config.gap 32}}px;
+}
+
+.gd-image-with-text-placeholder.gd-image-right {
+  flex-direction: row-reverse;
+}
+
+.gd-image-with-text-placeholder-image {
+  flex: 0 0 50%;
+  max-width: 50%;
+  background-color: #f0f0f0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+}
+
+.gd-image-with-text-placeholder-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.gd-image-with-text-placeholder-copy {
+  color: #6b7280;
+  text-align: center;
+  padding: 24px;
+  background-color: #fafafa;
+  border: 1px dashed #d4d4d4;
+  border-radius: 8px;
+}
+
+.gd-image-with-text-placeholder-copy code {
+  display: inline-flex;
+  padding: 2px 6px;
+  margin: 0 2px;
+  border-radius: 4px;
+  background-color: #ffffff;
+  border: 1px solid #e0e0e0;
+  font-size: 12px;
+}
+
+.gd-ghost-placeholder-header {
+  opacity: 0.5;
+  margin-bottom: 16px;
+}
+
+@media (max-width: 768px) {
+  .gd-image-with-text-content,
+  .gd-image-with-text-content.gd-image-right,
+  .gd-image-with-text-placeholder,
+  .gd-image-with-text-placeholder.gd-image-right {
+    flex-direction: column;
+  }
+
+  .gd-image-with-text-image,
+  .gd-image-with-text-placeholder-image {
+    flex: none;
+    max-width: 100%;
+  }
+}
+</style>
+
+{{#with config}}
+  {{#let
+    tag=(default ghostPageTag "#image-with-text")
+    imagePos=(default imagePosition "left")
+    showHead=(default showHeader true)
+    headAlign=(default headerAlignment "center")
+    ratio=(default aspectRatio "default")
+    radius=(default imageBorderRadius 0)
+    contWidth=(default containerWidth "default")
+    imgWidth=(default imageWidth "1/2")
+    textAlign=(default textAlignment "middle")
+    headSize=(default headingSize "normal")
+    gapVal=(default gap 32)
+    imageReverseClass=(classIf (eq imagePos "right") "gd-image-right" "")
+    containerClass=(classIf (eq contWidth "narrow") "gd-container-narrow" (classIf (eq contWidth "full") "gd-container-full" ""))
+    headerAlignClass=(classIf (eq headAlign "left") "gd-header-left" (classIf (eq headAlign "right") "gd-header-right" "gd-header-center"))
+    imageWidthCss=(classIf (eq imgWidth "2/3") "66.666%" (classIf (eq imgWidth "3/4") "75%" "50%"))
+    textAlignCss=(classIf (eq textAlign "top") "flex-start" (classIf (eq textAlign "bottom") "flex-end" "center"))
+    headingSizeCss=(classIf (eq headSize "small") "1.5rem" (classIf (eq headSize "large") "2.5rem" (classIf (eq headSize "x-large") "3rem" "2rem")))
+    aspectRatioCss=(classIf (eq ratio "1:1") "1 / 1" (classIf (eq ratio "3:4") "3 / 4" (classIf (eq ratio "4:3") "4 / 3" (classIf (eq ratio "16:9") "16 / 9" (classIf (eq ratio "2:3") "2 / 3" "")))))
+  }}
+
+<section
+  class="gh-image-with-text gh-outer {{containerClass}}"
+  data-ghost-tag="{{tag}}"
+  data-section-type="image-with-text"
+>
+  <div class="{{#unless (eq contWidth 'full')}}gh-inner{{/unless}}">
+    {{!-- Placeholder state --}}
+    <div
+      class="gd-image-with-text-placeholder {{imageReverseClass}}"
+      style="align-items: {{textAlignCss}};"
+      role="status"
+      aria-live="polite"
+    >
+      <div
+        class="gd-image-with-text-placeholder-image"
+        style="flex: 0 0 {{imageWidthCss}}; max-width: {{imageWidthCss}}; border-radius: {{radius}}px;{{#if aspectRatioCss}} aspect-ratio: {{aspectRatioCss}}; object-fit: cover;{{else}} height: 300px;{{/if}}"
+      ></div>
+      <div class="gd-image-with-text-placeholder-content">
+        {{#if showHead}}
+          <header class="gh-article-header gd-ghost-placeholder-header {{headerAlignClass}}">
+            <h1 class="gh-article-title is-title" style="font-size: {{headingSizeCss}};">Page title</h1>
+          </header>
+        {{/if}}
+        <p class="gd-image-with-text-placeholder-copy">
+          Add the tag <code>{{tag}}</code> to a published page. The featured image, page title, excerpt, and any button cards will appear here.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+  {{/let}}
+{{/with}}

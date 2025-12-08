@@ -3,7 +3,7 @@ import * as Separator from '@radix-ui/react-separator'
 import * as ToggleGroup from '@radix-ui/react-toggle-group'
 import { AlignLeft, AlignCenter, AlignRight, Info, AlignStartVertical, AlignCenterVertical, AlignEndVertical } from 'lucide-react'
 
-import type { ImageWithTextSectionConfig } from '@defalt/sections/definitions/definitions'
+import type { ImageWithTextSectionConfig } from '@defalt/sections/engine'
 import {
   SliderField,
   ToggleSwitch,

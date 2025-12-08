@@ -4,9 +4,10 @@
  * Provides authentication state and methods throughout the app
  */
 
-import { useMemo, type ReactNode } from 'react'
+import { useMemo, useCallback, type ReactNode } from 'react'
 import { AuthContext, type AuthStatus, type AuthUser } from './AuthContext.shared'
 import { useMember } from '../../src/context/MemberContext'
+import { apiPath } from '@defalt/utils/api/apiPath'
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const { member, isLoading, isAuthenticated, login, logout } = useMember()
@@ -25,7 +26,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       ? 'authenticated'
       : 'unauthenticated'
 
-  const refreshCsrfToken = async () => null
+  const refreshCsrfToken = useCallback(async (): Promise<string | null> => {
+    try {
+      const response = await fetch(apiPath('/api/auth/csrf'), {
+        method: 'GET',
+        credentials: 'include'
+      })
+      if (!response.ok) {
+        console.error('Failed to fetch CSRF token:', response.status)
+        return null
+      }
+      const data = await response.json()
+      return data.token ?? null
+    } catch (error) {
+      console.error('Error fetching CSRF token:', error)
+      return null
+    }
+  }, [])
 
   const handleSignOut = async () => {
     logout()

@@ -1,6 +1,5 @@
 import { logError } from '../logging/errorLogger.js'
-import { getSectionDefinition } from '@defalt/sections/definitions/definitions'
-import type { SectionConfigSchema, HeroSectionConfig } from '@defalt/sections/definitions/definitions'
+import { getSectionDefinition, type SectionConfigSchema, type HeroSectionConfig } from '@defalt/sections/engine'
 import { normalizeHeroSectionId } from './configStateDefaults'
 import { sanitizeHexColor } from '@defalt/utils/security/sanitizers'
 

@@ -13,12 +13,6 @@ import {
   applyHeaderCustomizations,
   type HeaderCustomizationOptions,
 } from './headerCustomization'
-import {
-  DEFAULT_ANNOUNCEMENT_BAR_CONFIG,
-  DEFAULT_ANNOUNCEMENT_CONTENT_CONFIG,
-  type AnnouncementBarConfig,
-  type AnnouncementContentConfig
-} from '@defalt/utils/config/themeConfig'
 import { sanitizeCustomCss } from '@defalt/utils/security/sanitizers'
 
 const BASE_PATH = (import.meta.env.VITE_BASE_PATH ?? '/').replace(/\/$/, '')
@@ -1316,8 +1310,7 @@ type InjectPreviewOptions = {
   templateOrder: string[]
   footerOrder: string[]
   headerOptions: HeaderCustomizationOptions
-  announcementBarConfig: AnnouncementBarConfig
-  announcementContentConfig: AnnouncementContentConfig
+  announcementBarHtml?: string
   selectedSectionId?: string | null
   sectionIds?: string[]
   onSelectSection?: (sectionId: string) => void
@@ -1433,25 +1426,57 @@ export function syncTemplateSections(doc: Document, sections: Array<{ id: string
     const selector = getCustomSectionSelector(section.id)
     const template = doc.createElement('template')
     template.innerHTML = section.html
-    const newElement = template.content.firstElementChild as HTMLElement | null
 
-    if (!newElement) {
+    // HBS templates may have <style> tags followed by <section> tags
+    // We need to handle both: inject styles into head, and section into viewport
+    const children = Array.from(template.content.children)
+    let sectionElement: HTMLElement | null = null
+    const styleElements: HTMLStyleElement[] = []
+
+    for (const child of children) {
+      if (child.tagName === 'STYLE') {
+        styleElements.push(child as HTMLStyleElement)
+      } else if (child.tagName === 'SECTION' || child.classList?.contains('gh-outer')) {
+        sectionElement = child as HTMLElement
+      }
+    }
+
+    // If no explicit section found, use first non-style element
+    if (!sectionElement) {
+      sectionElement = children.find(c => c.tagName !== 'STYLE') as HTMLElement | null
+    }
+
+    if (!sectionElement) {
       return
     }
 
-    newElement.setAttribute('data-section-id', section.id)
-    newElement.dataset.sectionType = 'custom'
-    newElement.dataset.sectionHidden = section.hidden ? 'true' : 'false'
-    newElement.setAttribute('aria-hidden', section.hidden ? 'true' : 'false')
+    // Inject style elements into document head with section-specific IDs
+    const existingStyleId = `section-style-${section.id}`
+    const existingStyle = doc.getElementById(existingStyleId)
+    if (existingStyle) {
+      existingStyle.remove()
+    }
+
+    if (styleElements.length > 0) {
+      const combinedStyle = doc.createElement('style')
+      combinedStyle.id = existingStyleId
+      combinedStyle.textContent = styleElements.map(s => s.textContent).join('\n')
+      doc.head.appendChild(combinedStyle)
+    }
+
+    sectionElement.setAttribute('data-section-id', section.id)
+    sectionElement.dataset.sectionType = 'custom'
+    sectionElement.dataset.sectionHidden = section.hidden ? 'true' : 'false'
+    sectionElement.setAttribute('aria-hidden', section.hidden ? 'true' : 'false')
 
     const existing = viewport.querySelector<HTMLElement>(selector)
     if (existing) {
-      existing.replaceWith(newElement)
+      existing.replaceWith(sectionElement)
     } else if (footerAnchor) {
       // Insert before footer so AI sections appear between main and footer
-      viewport.insertBefore(newElement, footerAnchor)
+      viewport.insertBefore(sectionElement, footerAnchor)
     } else {
-      viewport.appendChild(newElement)
+      viewport.appendChild(sectionElement)
     }
   })
 }
@@ -1942,7 +1967,7 @@ export function injectHtmlIntoIframe(
     setupPortalPreview(doc)
     setupPreviewNavigation(doc, options.onNavigate)
     applyHeaderCustomizations(doc, options.headerOptions)
-    applyAnnouncementBarCustomizations(doc, options.announcementBarConfig, options.announcementContentConfig)
+    syncAnnouncementBar(doc, options.announcementBarHtml ?? '')
     if (options.sectionIds && options.sectionIds.length && options.onSelectSection) {
       setupSectionSelection(doc, options.sectionIds, options.onSelectSection)
     }
@@ -2020,87 +2045,54 @@ export function injectHtmlIntoIframe(
   }
 }
 
-const ANNOUNCEMENT_BAR_CLASSES = [
-  'gh-inner',
-  'announcement-bar--size-small',
-  'announcement-bar--size-large',
-  'announcement-bar--size-x-large',
-  'announcement-bar--weight-light',
-  'announcement-bar--weight-bold',
-  'announcement-bar--spacing-tight',
-  'announcement-bar--spacing-wide',
-  'announcement-bar--uppercase',
-  'announcement-bar--underline-links'
-]
+/**
+ * Sync announcement bar using engine-rendered HTML
+ * Replaces the existing announcement bar DOM element with newly rendered content
+ */
+export function syncAnnouncementBar(doc: Document, html: string) {
+  if (!html) return
 
-export function applyAnnouncementBarCustomizations(
-  doc: Document,
-  barConfig?: AnnouncementBarConfig,
-  contentConfig?: AnnouncementContentConfig
-) {
-  const normalizedBar = barConfig ?? DEFAULT_ANNOUNCEMENT_BAR_CONFIG
-  const normalizedContent = contentConfig ?? DEFAULT_ANNOUNCEMENT_CONTENT_CONFIG
-  const bar = doc.querySelector<HTMLElement>('.announcement-bar')
-  if (!bar) {
-    return
-  }
-  const previewCopy = doc.querySelector<HTMLElement>('.announcement-bar__preview-copy')
-  if (previewCopy) {
-    const previewText = normalizedContent.previewText?.trim().length
-      ? normalizedContent.previewText.trim()
-      : DEFAULT_ANNOUNCEMENT_CONTENT_CONFIG.previewText
-    previewCopy.innerHTML = renderPreviewTextWithHashtags(previewText)
-  }
-  ANNOUNCEMENT_BAR_CLASSES.forEach((className) => bar.classList.remove(className))
+  const existingBar = doc.querySelector<HTMLElement>('.announcement-bar')
+  if (!existingBar) return
 
-  if (normalizedContent.typographySize === 'small') {
-    bar.classList.add('announcement-bar--size-small')
-  } else if (normalizedContent.typographySize === 'large') {
-    bar.classList.add('announcement-bar--size-large')
-  } else if (normalizedContent.typographySize === 'x-large') {
-    bar.classList.add('announcement-bar--size-x-large')
+  // Parse the new HTML
+  const template = doc.createElement('template')
+  template.innerHTML = html
+
+  // Extract style and section elements
+  const children = Array.from(template.content.children)
+  let newSection: HTMLElement | null = null
+  const styleElements: HTMLStyleElement[] = []
+
+  for (const child of children) {
+    if (child.tagName === 'STYLE') {
+      styleElements.push(child as HTMLStyleElement)
+    } else if (child.tagName === 'SECTION' || child.classList?.contains('announcement-bar')) {
+      newSection = child as HTMLElement
+    }
   }
 
-  if (normalizedContent.typographyWeight === 'light') {
-    bar.classList.add('announcement-bar--weight-light')
-  } else if (normalizedContent.typographyWeight === 'bold') {
-    bar.classList.add('announcement-bar--weight-bold')
+  if (!newSection) {
+    newSection = children.find(c => c.tagName !== 'STYLE') as HTMLElement | null
   }
 
-  if (normalizedContent.typographySpacing === 'tight') {
-    bar.classList.add('announcement-bar--spacing-tight')
-  } else if (normalizedContent.typographySpacing === 'wide') {
-    bar.classList.add('announcement-bar--spacing-wide')
+  if (!newSection) return
+
+  // Inject styles into head (with unique ID to prevent duplicates)
+  const styleId = 'section-style-announcement-bar'
+  const existingStyle = doc.getElementById(styleId)
+  if (existingStyle) {
+    existingStyle.remove()
+  }
+  if (styleElements.length > 0) {
+    const combinedStyle = doc.createElement('style')
+    combinedStyle.id = styleId
+    combinedStyle.textContent = styleElements.map(s => s.textContent).join('\n')
+    doc.head.appendChild(combinedStyle)
   }
 
-  if (normalizedContent.typographyCase === 'uppercase') {
-    bar.classList.add('announcement-bar--uppercase')
-  }
-  bar.classList.toggle('announcement-bar--underline-links', normalizedContent.underlineLinks === true)
-  bar.classList.toggle('gh-inner', normalizedBar.width === 'narrow')
-
-  bar.style.setProperty('--announcement-bar-padding-top', `${normalizedBar.paddingTop}px`)
-  bar.style.setProperty('--announcement-bar-padding-bottom', `${normalizedBar.paddingBottom}px`)
-  bar.style.setProperty('--announcement-bar-background-color', normalizedBar.backgroundColor)
-  bar.style.setProperty('--announcement-bar-text-color', normalizedBar.textColor)
-  bar.style.setProperty('--announcement-bar-divider-thickness', `${normalizedBar.dividerThickness}px`)
-
-}
-
-function escapeHtmlBasic(value: string) {
-  return value
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;')
-}
-
-function renderPreviewTextWithHashtags(value: string) {
-  const escaped = escapeHtmlBasic(value)
-  return escaped.replace(/(^|\s)(#([\w-]+))/g, (_, prefix, tag, slug) => {
-    return `${prefix}<a href="#" class="announcement-bar__preview-link" data-preview-tag="${slug}">${tag}</a>`
-  })
+  // Replace the existing bar with the new one
+  existingBar.replaceWith(newSection)
 }
 
 // Portal mock helpers

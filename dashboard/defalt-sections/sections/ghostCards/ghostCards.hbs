@@ -1,0 +1,196 @@
+{{!--
+  Ghost Cards Section Template
+
+  A three-card grid for displaying Ghost pages or manual content.
+  Falls back to placeholder when no content is available.
+
+  Context variables:
+  - config: Section configuration object
+  - padding: { top, bottom, left, right } padding values
+  - pages: Ghost pages data (optional)
+--}}
+
+<style>
+.gd-ghost-cards-section {
+  --gd-ghost-cards-padding-top: {{default config.paddingTop 32}}px;
+  --gd-ghost-cards-padding-bottom: {{default config.paddingBottom 32}}px;
+  --gd-ghost-cards-padding-left: {{default config.paddingLeft 0}}px;
+  --gd-ghost-cards-padding-right: {{default config.paddingRight 0}}px;
+  --gd-ghost-cards-background: {{default config.backgroundColor '#ffffff'}};
+  --gd-ghost-cards-text: {{default config.textColor '#151515'}};
+  --gd-ghost-cards-card-background: {{default config.cardBackgroundColor '#ffffff'}};
+  --gd-ghost-cards-card-border: {{default config.cardBorderColor '#e6e6e6'}};
+  --gd-ghost-cards-button-color: {{default config.buttonColor '#151515'}};
+  background-color: var(--gd-ghost-cards-background);
+  color: var(--gd-ghost-cards-text);
+}
+
+.gd-ghost-cards-inner {
+  padding-top: var(--gd-ghost-cards-padding-top);
+  padding-bottom: var(--gd-ghost-cards-padding-bottom);
+  padding-left: var(--gd-ghost-cards-padding-left);
+  padding-right: var(--gd-ghost-cards-padding-right);
+}
+
+.gd-ghost-cards-hide-header .gh-article-header {
+  display: none;
+}
+
+.gd-ghost-cards-header-left .gh-article-header { text-align: left; }
+.gd-ghost-cards-header-right .gh-article-header { text-align: right; }
+.gd-ghost-cards-header-center .gh-article-header { text-align: center; }
+
+.gd-ghost-title-small .gh-article-header .gh-article-title {
+  font-size: calc(2.4rem * var(--factor, 1));
+}
+.gd-ghost-title-normal .gh-article-header .gh-article-title {
+  font-size: calc(clamp(2.8rem, 1.36vw + 2.25rem, 4rem) * var(--factor, 1));
+}
+.gd-ghost-title-large .gh-article-header .gh-article-title {
+  font-size: calc(clamp(3rem, 1.82vw + 2.27rem, 4.6rem) * var(--factor, 1));
+}
+
+.gd-ghost-cards-placeholder {
+  border: 1px dashed #d4d4d4;
+  border-radius: 12px;
+  padding: 24px;
+  background-color: #fafafa;
+  text-align: center;
+  color: #6b7280;
+}
+
+.gd-ghost-cards-placeholder-title {
+  margin-bottom: 8px;
+  font-weight: 600;
+  color: #151515;
+}
+
+.gd-ghost-cards-placeholder code {
+  display: inline-flex;
+  padding: 2px 6px;
+  margin: 0 2px;
+  border-radius: 4px;
+  background-color: #ffffff;
+  border: 1px solid #e0e0e0;
+  font-size: 12px;
+}
+
+.gd-ghost-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+}
+
+.gd-ghost-card {
+  background-color: var(--gd-ghost-cards-card-background);
+  border: 1px solid var(--gd-ghost-cards-card-border);
+  border-radius: 12px;
+  padding: 24px;
+}
+
+.gd-ghost-card-title {
+  margin: 0 0 12px;
+  font-weight: 600;
+}
+
+.gd-ghost-card-description {
+  margin: 0 0 16px;
+  opacity: 0.8;
+}
+
+.gd-ghost-card-button {
+  display: inline-flex;
+  padding: 8px 16px;
+  background-color: var(--gd-ghost-cards-button-color);
+  color: #ffffff;
+  border-radius: 6px;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.gd-ghost-placeholder-header {
+  margin-bottom: 24px;
+  opacity: 0.5;
+}
+
+.gd-ghost-cards-intro {
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+.gd-ghost-cards-title {
+  margin: 0 0 8px;
+  font-size: 2rem;
+  font-weight: 700;
+}
+
+.gd-ghost-cards-subtitle {
+  margin: 0;
+  opacity: 0.7;
+}
+</style>
+
+{{#with config}}
+  {{#let
+    showHeader=(default showHeader false)
+    alignmentClass=(classIf (eq headerAlignment "left") "gd-ghost-cards-header-left" (classIf (eq headerAlignment "right") "gd-ghost-cards-header-right" "gd-ghost-cards-header-center"))
+    titleSizeClass=(classIf (eq titleSize "small") "gd-ghost-title-small" (classIf (eq titleSize "large") "gd-ghost-title-large" "gd-ghost-title-normal"))
+    hideHeaderClass=(classIf (not showHeader) "gd-ghost-cards-hide-header" "")
+    resolvedTag=(default ghostPageTag "#ghost-card")
+  }}
+
+<section
+  class="gd-ghost-cards-section gh-outer {{hideHeaderClass}} {{alignmentClass}} {{titleSizeClass}}"
+  data-section-type="ghost-cards"
+>
+  <div class="gh-inner">
+    <div class="gd-ghost-cards-inner">
+      {{!-- Section header --}}
+      {{#if showHeader}}
+        {{#if (or heading subheading)}}
+          <div class="gd-ghost-cards-intro">
+            {{#if heading}}
+              <h2 class="gd-ghost-cards-title">{{heading}}</h2>
+            {{/if}}
+            {{#if subheading}}
+              <p class="gd-ghost-cards-subtitle">{{subheading}}</p>
+            {{/if}}
+          </div>
+        {{/if}}
+      {{/if}}
+
+      {{!-- Cards grid or placeholder --}}
+      {{#if (hasContent cards "title" "description" "buttonText")}}
+        <div class="gd-ghost-cards-grid">
+          {{#each cards}}
+            {{#if (or title description buttonText)}}
+              <article class="gd-ghost-card">
+                <div class="gd-ghost-card-body">
+                  {{#if title}}
+                    <h3 class="gd-ghost-card-title">{{title}}</h3>
+                  {{/if}}
+                  {{#if description}}
+                    <p class="gd-ghost-card-description">{{description}}</p>
+                  {{/if}}
+                  {{#if buttonText}}
+                    <a href="{{default buttonHref '#'}}" class="gd-ghost-card-button">{{buttonText}}</a>
+                  {{/if}}
+                </div>
+              </article>
+            {{/if}}
+          {{/each}}
+        </div>
+      {{else}}
+        <div class="gd-ghost-cards-placeholder" role="status" aria-live="polite">
+          <p class="gd-ghost-cards-placeholder-title">Waiting for tagged pages</p>
+          <p class="gd-ghost-cards-placeholder-copy">
+            Add the tag <code>{{resolvedTag}}</code> to a published page. To hide this section, add <code>#cards-hide</code> to that same page.
+          </p>
+        </div>
+      {{/if}}
+    </div>
+  </div>
+</section>
+
+  {{/let}}
+{{/with}}

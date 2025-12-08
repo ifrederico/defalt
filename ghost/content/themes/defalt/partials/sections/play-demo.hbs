@@ -20,12 +20,25 @@ Usage: {{> "sections/play-demo"}}
         --play-accent: var(--ghost-accent-color, #000);
         --play-canvas-bg: #fff;
         --play-item-hover: #f3f4f6;
+        --play-input-bg: #fff;
         --play-radius: 8px;
         --play-heading-font: inherit;
         --play-body-font: inherit;
 
         padding-top: 40px;
         padding-bottom: 40px;
+    }
+
+    /* Dark mode overrides */
+    html[data-theme="dark"] .gd-play-section {
+        --play-bg: #1a1a1a;
+        --play-sidebar-bg: #242424;
+        --play-border: #333;
+        --play-text: #e5e5e5;
+        --play-text-muted: #999;
+        --play-canvas-bg: #1a1a1a;
+        --play-item-hover: #333;
+        --play-input-bg: #333;
     }
 
     .gd-play-section .gh-inner {
@@ -840,7 +853,8 @@ Usage: {{> "sections/play-demo"}}
     /* ===== SECTION HOVER HIGHLIGHTING ===== */
     .gd-play-page-header,
     .gd-play-page-hero,
-    .gd-play-page-cards {
+    .gd-play-page-cards,
+    .gd-play-page-ai-section {
         transition: box-shadow 0.2s ease;
         cursor: pointer;
     }
@@ -848,9 +862,11 @@ Usage: {{> "sections/play-demo"}}
     .gd-play-page-header:hover,
     .gd-play-page-hero:hover,
     .gd-play-page-cards:hover,
+    .gd-play-page-ai-section:hover,
     .gd-play-page-header.is-highlighted,
     .gd-play-page-hero.is-highlighted,
-    .gd-play-page-cards.is-highlighted {
+    .gd-play-page-cards.is-highlighted,
+    .gd-play-page-ai-section.is-highlighted {
         box-shadow: inset 0 0 0 1px #28c840;
     }
 
@@ -1066,7 +1082,7 @@ Usage: {{> "sections/play-demo"}}
         padding: 10px;
         border: none;
         border-radius: 7px;
-        background: #fff;
+        background: var(--play-input-bg);
         font-size: 1.2rem;
         color: var(--play-text);
         resize: none;
@@ -1088,8 +1104,14 @@ Usage: {{> "sections/play-demo"}}
         padding: 10px;
         border-radius: 8px;
         background: #1a1a2e;
-        max-height: 180px;
+        max-height: 250px;
         overflow-y: auto;
+        scrollbar-width: none; /* Firefox */
+        -ms-overflow-style: none; /* IE/Edge */
+    }
+
+    .gd-play-ai-stream::-webkit-scrollbar {
+        display: none; /* Chrome/Safari/Opera */
     }
 
     .gd-play-ai-stream.is-active {
@@ -1134,13 +1156,7 @@ Usage: {{> "sections/play-demo"}}
 
     /* Typing cursor animation */
     .gd-play-ai-cursor {
-        display: inline-block;
-        width: 2px;
-        height: 1.2em;
-        background: var(--play-text);
-        margin-left: 1px;
         animation: gd-ai-blink 0.8s infinite;
-        vertical-align: text-bottom;
     }
 
     @keyframes gd-ai-blink {
@@ -1233,16 +1249,22 @@ Usage: {{> "sections/play-demo"}}
     }
 
     .gd-play-ai-drawer-item {
+        display: none;
         background: linear-gradient(135deg, rgba(160, 203, 255, 0.1), rgba(244, 194, 255, 0.1));
         border: 1px solid rgba(198, 173, 255, 0.3);
+    }
+
+    .gd-play-ai-drawer-item.is-visible {
+        display: flex;
     }
 
     .gd-play-ai-drawer-item:hover {
         background: linear-gradient(135deg, rgba(160, 203, 255, 0.2), rgba(244, 194, 255, 0.2));
     }
 
-    .gd-play-ai-drawer-item svg {
+    .gd-play-ai-drawer-item > svg:first-child {
         stroke: url(#gd-ai-nav-gradient-active);
+        flex-shrink: 0;
     }
 
     /* AI Edit Panel padding slider */
@@ -1322,6 +1344,31 @@ Usage: {{> "sections/play-demo"}}
                 {{!-- ===== RAIL BAR ===== --}}
                 <div class="gd-play-rail">
                     <div class="gd-play-nav">
+                        <div class="gd-play-nav-item gd-play-ai-nav is-active" data-panel="ai" title="AI Generate">
+                            {{!-- Sparkles icon (Lucide) --}}
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="2"
+                                stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+                                <path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/>
+                                <path d="M20 3v4"/>
+                                <path d="M22 5h-4"/>
+                                <path d="M4 17v2"/>
+                                <path d="M5 18H3"/>
+                            </svg>
+                            {{!-- SVG gradient definitions --}}
+                            <svg width="0" height="0" style="position: absolute;">
+                                <defs>
+                                    <linearGradient id="gd-ai-nav-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                                        <stop offset="0%" stop-color="#a0cbff" />
+                                        <stop offset="50%" stop-color="#c6adff" />
+                                        <stop offset="100%" stop-color="#f4c2ff" />
+                                    </linearGradient>
+                                    <linearGradient id="gd-ai-nav-gradient-active" x1="0%" y1="0%" x2="100%" y2="100%">
+                                        <stop offset="0%" stop-color="#7c3aed" />
+                                        <stop offset="100%" stop-color="#c026d3" />
+                                    </linearGradient>
+                                </defs>
+                            </svg>
+                        </div>
                         <div class="gd-play-nav-item" data-panel="sections" title="Sections">
                             {{!-- Layout icon (Lucide) --}}
                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="2"
@@ -1350,31 +1397,6 @@ Usage: {{> "sections/play-demo"}}
                                 <path
                                     d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" />
                                 <circle cx="12" cy="12" r="3" />
-                            </svg>
-                        </div>
-                        <div class="gd-play-nav-item gd-play-ai-nav is-active" data-panel="ai" title="AI Generate">
-                            {{!-- Sparkles icon (Lucide) --}}
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="2"
-                                stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
-                                <path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/>
-                                <path d="M20 3v4"/>
-                                <path d="M22 5h-4"/>
-                                <path d="M4 17v2"/>
-                                <path d="M5 18H3"/>
-                            </svg>
-                            {{!-- SVG gradient definitions --}}
-                            <svg width="0" height="0" style="position: absolute;">
-                                <defs>
-                                    <linearGradient id="gd-ai-nav-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                                        <stop offset="0%" stop-color="#a0cbff" />
-                                        <stop offset="50%" stop-color="#c6adff" />
-                                        <stop offset="100%" stop-color="#f4c2ff" />
-                                    </linearGradient>
-                                    <linearGradient id="gd-ai-nav-gradient-active" x1="0%" y1="0%" x2="100%" y2="100%">
-                                        <stop offset="0%" stop-color="#7c3aed" />
-                                        <stop offset="100%" stop-color="#c026d3" />
-                                    </linearGradient>
-                                </defs>
                             </svg>
                         </div>
                     </div>
@@ -1432,6 +1454,17 @@ Usage: {{> "sections/play-demo"}}
                                         </svg>
                                         Hero
                                     </div>
+                                    <div class="gd-play-drawer-item gd-play-ai-drawer-item gd-play-editable" draggable="true"
+                                        data-edit="ai-testimonials" data-target="ai-section" id="gd-ai-drawer-item">
+                                        {{!-- Sparkles icon for AI (Lucide) --}}
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                                            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                            stroke-linecap="round" stroke-linejoin="round">
+                                            <path
+                                                d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z" />
+                                        </svg>
+                                        Testimonials
+                                    </div>
                                     <div class="gd-play-drawer-item gd-play-editable" draggable="true"
                                         data-edit="ghost-cards" data-target="cards">
                                         {{!-- Ghost icon (Lucide) --}}
@@ -1476,25 +1509,6 @@ Usage: {{> "sections/play-demo"}}
                                                 d="M12 2a8 8 0 0 0-8 8v12l3-3 2.5 2.5L12 19l2.5 2.5L17 19l3 3V10a8 8 0 0 0-8-8z" />
                                         </svg>
                                         Ghost Cards
-                                    </div>
-                                </div>
-                            </div>
-
-                            {{!-- AI Generated Section (hidden until demo completes) --}}
-                            <div class="gd-play-drawer-group gd-play-ai-drawer-group" id="gd-ai-drawer-group">
-                                <div class="gd-play-drawer-title">
-                                    <span>AI Generated</span>
-                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor"
-                                        stroke-width="2" viewBox="0 0 24 24">
-                                        <path d="m6 9 6 6 6-6" />
-                                    </svg>
-                                </div>
-                                <div class="gd-play-drawer-items">
-                                    <div class="gd-play-drawer-item gd-play-ai-drawer-item gd-play-editable" draggable="true" data-edit="ai-testimonials" data-target="ai-section" id="gd-ai-drawer-item">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                                            <path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/>
-                                        </svg>
-                                        Testimonials
                                     </div>
                                 </div>
                             </div>
@@ -1855,6 +1869,12 @@ Usage: {{> "sections/play-demo"}}
                                     <span class="gd-play-page-btn">Get Started</span>
                                 </div>
 
+                                {{!-- AI Generated Section (between hero and cards) --}}
+                                <div class="gd-play-page-ai-section" id="gd-ai-preview-section" style="padding-top: 40px; padding-bottom: 40px;">
+                                    <h3>★★★★★ Testimonials</h3>
+                                    <p>"This product changed everything!" — Happy Customer</p>
+                                </div>
+
                                 {{!-- Mock Cards --}}
                                 <div class="gd-play-page-cards">
                                     <div class="gd-play-page-card">
@@ -1878,12 +1898,6 @@ Usage: {{> "sections/play-demo"}}
                                             <p class="gd-play-page-card-text">Go live today</p>
                                         </div>
                                     </div>
-                                </div>
-
-                                {{!-- AI Generated Section (initially hidden) --}}
-                                <div class="gd-play-page-ai-section" id="gd-ai-preview-section" style="padding-top: 40px; padding-bottom: 40px;">
-                                    <h3>★★★★★ Testimonials</h3>
-                                    <p>"This product changed everything!" — Happy Customer</p>
                                 </div>
                             </div>
                         </div>
@@ -2033,7 +2047,8 @@ Usage: {{> "sections/play-demo"}}
         // Preview section mapping for sync
         var previewSectionMap = {
             'hero': '.gd-play-page-hero',
-            'cards': '.gd-play-page-cards'
+            'cards': '.gd-play-page-cards',
+            'ai-section': '#gd-ai-preview-section'
         };
         var previewPage = document.querySelector('.gd-play-page');
 
@@ -2346,6 +2361,29 @@ Usage: {{> "sections/play-demo"}}
             });
         }
 
+        // AI Testimonials edit panel functionality
+        var aiTestimonialsEditPanel = document.querySelector('.gd-play-edit-panel[data-edit-panel="ai-testimonials"]');
+        var aiTestimonialsItem = document.getElementById('gd-ai-drawer-item');
+        var aiTestimonialsBackBtn = aiTestimonialsEditPanel ? aiTestimonialsEditPanel.querySelector('.gd-play-edit-back') : null;
+
+        // Open AI testimonials edit panel
+        if (aiTestimonialsItem && aiTestimonialsEditPanel && sectionsPanel) {
+            aiTestimonialsItem.addEventListener('click', function (e) {
+                if (this.classList.contains('is-dragging')) return;
+                sectionsPanel.classList.remove('is-active');
+                aiTestimonialsEditPanel.classList.add('is-active');
+                showCtaAfterEdit();
+            });
+        }
+
+        // Back button
+        if (aiTestimonialsBackBtn && aiTestimonialsEditPanel && sectionsPanel) {
+            aiTestimonialsBackBtn.addEventListener('click', function () {
+                aiTestimonialsEditPanel.classList.remove('is-active');
+                sectionsPanel.classList.add('is-active');
+            });
+        }
+
         // ===== NEW EDIT PANELS LOGIC =====
 
         // Generic function to setup edit panel opening
@@ -2524,7 +2562,7 @@ Usage: {{> "sections/play-demo"}}
         }
 
         // Helper for hover highlighting
-        var builtInMap = { 'header': '.gd-play-page-header', 'hero': '.gd-play-page-hero', 'cards': '.gd-play-page-cards' };
+        var builtInMap = { 'header': '.gd-play-page-header', 'hero': '.gd-play-page-hero', 'cards': '.gd-play-page-cards', 'ai-section': '#gd-ai-preview-section' };
 
         function highlightPreviewSection(targetId, highlight) {
             var targetEl = builtInMap[targetId]
@@ -2670,20 +2708,21 @@ Usage: {{> "sections/play-demo"}}
         var aiSuccess = document.getElementById('gd-ai-success');
         var aiPreviewSection = document.getElementById('gd-ai-preview-section');
         var aiNavItem = document.querySelector('.gd-play-ai-nav');
-        var aiDrawerGroup = document.getElementById('gd-ai-drawer-group');
         var aiDrawerItem = document.getElementById('gd-ai-drawer-item');
         var sectionsNavItem = document.querySelector('.gd-play-nav-item[data-panel="sections"]');
         var aiDemoStarted = false;
         var aiDemoComplete = false;
 
         function resetAiDemo() {
-            if (aiInput) aiInput.textContent = '';
+            if (aiInput) {
+                aiInput.innerHTML = '';
+            }
             if (aiGenerating) aiGenerating.classList.remove('is-active');
             if (aiStream) aiStream.classList.remove('is-active');
             if (aiStreamContent) aiStreamContent.textContent = '';
             if (aiSuccess) aiSuccess.classList.remove('is-active');
             if (aiPreviewSection) aiPreviewSection.classList.remove('is-visible');
-            if (aiDrawerGroup) aiDrawerGroup.classList.remove('is-visible');
+            if (aiDrawerItem) aiDrawerItem.classList.remove('is-visible');
             aiDemoStarted = false;
             aiDemoComplete = false;
         }
@@ -2695,13 +2734,15 @@ Usage: {{> "sections/play-demo"}}
             var charIndex = 0;
             var codeIndex = 0;
 
-            // Phase 1: Type the prompt
+            // Phase 1: Type the prompt with cursor
             function typePrompt() {
                 if (charIndex < aiDemoPrompt.length) {
-                    aiInput.textContent = aiDemoPrompt.substring(0, charIndex + 1);
+                    aiInput.innerHTML = aiDemoPrompt.substring(0, charIndex + 1) + '<span class="gd-play-ai-cursor">|</span>';
                     charIndex++;
                     setTimeout(typePrompt, 50 + Math.random() * 30);
                 } else {
+                    // Remove cursor when done typing
+                    aiInput.textContent = aiDemoPrompt;
                     // Phase 2: Show generating state
                     setTimeout(function() {
                         aiGenerating.classList.add('is-active');
@@ -2727,10 +2768,9 @@ Usage: {{> "sections/play-demo"}}
                         aiPreviewSection.classList.add('is-visible');
                         aiDemoComplete = true;
 
-                        // Show AI section in drawer and switch to sections panel
+                        // Show AI section in drawer (stay on AI panel, don't auto-switch)
                         setTimeout(function() {
-                            if (aiDrawerGroup) aiDrawerGroup.classList.add('is-visible');
-                            if (sectionsNavItem) sectionsNavItem.click();
+                            if (aiDrawerItem) aiDrawerItem.classList.add('is-visible');
                         }, 800);
                     }, 200);
                 }
@@ -2742,13 +2782,18 @@ Usage: {{> "sections/play-demo"}}
         // Start AI demo when switching to AI panel
         if (aiNavItem) {
             aiNavItem.addEventListener('click', function() {
-                // Small delay to let panel switch animation complete
-                setTimeout(function() {
-                    if (!aiDemoComplete) {
-                        resetAiDemo();
-                        runAiDemo();
+                if (!aiDemoComplete && !aiDemoStarted) {
+                    // Reset first, then show cursor
+                    resetAiDemo();
+                    // Show blinking cursor
+                    if (aiInput) {
+                        aiInput.innerHTML = '<span class="gd-play-ai-cursor">|</span>';
                     }
-                }, 300);
+                    // Brief pause with cursor, then start typing
+                    setTimeout(function() {
+                        runAiDemo();
+                    }, 150);
+                }
             });
         }
 
@@ -2796,6 +2841,10 @@ Usage: {{> "sections/play-demo"}}
             var observer = new IntersectionObserver(function(entries) {
                 entries.forEach(function(entry) {
                     if (entry.isIntersecting && !aiDemoStarted && !aiDemoComplete) {
+                        // Show blinking cursor immediately while waiting
+                        if (aiInput && aiInput.innerHTML === '') {
+                            aiInput.innerHTML = '<span class="gd-play-ai-cursor">|</span>';
+                        }
                         // Start the AI demo after 3 seconds of viewing
                         setTimeout(function() {
                             if (!aiDemoStarted) {
