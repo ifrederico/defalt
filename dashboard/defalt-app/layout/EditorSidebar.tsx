@@ -314,10 +314,8 @@ export function EditorSidebar({
       className="bg-surface transition-[width] duration-300 relative border-r border-border"
       style={{ width: sidebarExpanded ? 'calc(100vw - 52px)' : '300px' }}
     >
-      <div className="h-full overflow-y-auto">
-        <div className="flex flex-col h-full py-2">
-          {content}
-        </div>
+      <div className="h-full flex flex-col py-2">
+        {content}
       </div>
       <div
         id="koenig-drag-drop-ghost-container"

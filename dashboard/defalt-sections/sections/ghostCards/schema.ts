@@ -8,10 +8,13 @@
 import { z } from 'zod'
 import type { SettingSchema, BlockSchema } from '../../engine/schemaTypes.js'
 import {
+  // Zod shapes
+  paddingShape,
   // UI presets
   alignmentSettings,
   toggleableSectionHeaderSettings,
-  ghostPageTagSettings
+  ghostPageTagSettings,
+  paddingSettings
 } from '../../engine/commonSettings.js'
 
 // =============================================================================
@@ -54,7 +57,10 @@ export const ghostCardsConfigSchema = z.object({
   textColor: z.string().default('#151515'),
   cardBackgroundColor: z.string().default('#ffffff'),
   cardBorderColor: z.string().default('#e6e6e6'),
-  buttonColor: z.string().default('#151515')
+  buttonColor: z.string().default('#151515'),
+
+  // Shared padding
+  ...paddingShape
 })
 
 export type GhostCardsSectionConfig = z.infer<typeof ghostCardsConfigSchema>
@@ -138,6 +144,9 @@ export const ghostCardsSettingsSchema: SettingSchema[] = [
   },
   ...alignmentSettings.map(s => ({ ...s, id: 'headerAlignment', label: 'Heading alignment' })),
   ...titleSizeSettings,
+
+  // Spacing
+  ...paddingSettings,
 
   // Style (Colors)
   ...ghostCardsColorSettings

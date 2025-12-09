@@ -12,10 +12,6 @@
 
 <style>
 .gd-ghost-cards-section {
-  --gd-ghost-cards-padding-top: {{default config.paddingTop 32}}px;
-  --gd-ghost-cards-padding-bottom: {{default config.paddingBottom 32}}px;
-  --gd-ghost-cards-padding-left: {{default config.paddingLeft 0}}px;
-  --gd-ghost-cards-padding-right: {{default config.paddingRight 0}}px;
   --gd-ghost-cards-background: {{default config.backgroundColor '#ffffff'}};
   --gd-ghost-cards-text: {{default config.textColor '#151515'}};
   --gd-ghost-cards-card-background: {{default config.cardBackgroundColor '#ffffff'}};
@@ -23,13 +19,6 @@
   --gd-ghost-cards-button-color: {{default config.buttonColor '#151515'}};
   background-color: var(--gd-ghost-cards-background);
   color: var(--gd-ghost-cards-text);
-}
-
-.gd-ghost-cards-inner {
-  padding-top: var(--gd-ghost-cards-padding-top);
-  padding-bottom: var(--gd-ghost-cards-padding-bottom);
-  padding-left: var(--gd-ghost-cards-padding-left);
-  padding-right: var(--gd-ghost-cards-padding-right);
 }
 
 .gd-ghost-cards-hide-header .gh-article-header {
@@ -142,6 +131,7 @@
 <section
   class="gd-ghost-cards-section gh-outer {{hideHeaderClass}} {{alignmentClass}} {{titleSizeClass}}"
   data-section-type="ghost-cards"
+  style="{{sectionStyle}}"
 >
   <div class="gh-inner">
     <div class="gd-ghost-cards-inner">

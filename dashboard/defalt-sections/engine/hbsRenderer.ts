@@ -317,18 +317,28 @@ export async function renderSection(
   try {
     const template = await fetchAndCompileTemplate(sectionId, templatePath, basePath)
 
+    // Resolve padding: prefer explicit options, fallback to config values
+    const padding: SectionPadding = options.padding ?? {
+      top: typeof config.paddingTop === 'number' ? config.paddingTop : undefined,
+      bottom: typeof config.paddingBottom === 'number' ? config.paddingBottom : undefined,
+      left: typeof config.paddingLeft === 'number' ? config.paddingLeft : undefined,
+      right: typeof config.paddingRight === 'number' ? config.paddingRight : undefined
+    }
+
     // Build render context
     const context: SectionRenderContext = {
       config,
-      padding: options.padding,
+      padding,
       pages: options.pages,
       // Spread config to top-level for easier access in templates
       ...config
     }
 
-    // Add computed styles if padding is provided
-    if (options.padding) {
-      context.sectionStyle = buildPaddingStyle(options.padding)
+    // Add computed styles from resolved padding
+    const hasPadding = padding.top !== undefined || padding.bottom !== undefined ||
+                       padding.left !== undefined || padding.right !== undefined
+    if (hasPadding) {
+      context.sectionStyle = buildPaddingStyle(padding)
     }
 
     return template(context)
@@ -357,15 +367,25 @@ export function renderSectionSync(
 
   registerSectionHelpers()
 
+  // Resolve padding: prefer explicit options, fallback to config values
+  const padding: SectionPadding = options.padding ?? {
+    top: typeof config.paddingTop === 'number' ? config.paddingTop : undefined,
+    bottom: typeof config.paddingBottom === 'number' ? config.paddingBottom : undefined,
+    left: typeof config.paddingLeft === 'number' ? config.paddingLeft : undefined,
+    right: typeof config.paddingRight === 'number' ? config.paddingRight : undefined
+  }
+
   const context: SectionRenderContext = {
     config,
-    padding: options.padding,
+    padding,
     pages: options.pages,
     ...config
   }
 
-  if (options.padding) {
-    context.sectionStyle = buildPaddingStyle(options.padding)
+  const hasPadding = padding.top !== undefined || padding.bottom !== undefined ||
+                     padding.left !== undefined || padding.right !== undefined
+  if (hasPadding) {
+    context.sectionStyle = buildPaddingStyle(padding)
   }
 
   return template(context)

@@ -3,33 +3,33 @@
      For development/debugging only - should not appear in exports. --}}
 
 <section class="gd-kitchen-sink-section" data-section-id="debug-kitchen-sink" style="
-  background-color: {{config.colorBackground}};
-  color: {{config.colorText}};
-  padding: 48px 24px;
+  background-color: #f8f9fa;
+  color: #1f2937;
+  {{sectionStyle}}
 ">
   <div style="max-width: 800px; margin: 0 auto;">
     <h2 style="
       font-size: 2rem;
       font-weight: 700;
       margin: 0 0 32px;
-      color: {{config.colorPrimary}};
+      color: #111827;
     ">
       🧪 Kitchen Sink Debug Panel
     </h2>
 
     {{!-- Text Values --}}
     <div style="margin-bottom: 32px; padding: 20px; background: rgba(0,0,0,0.03); border-radius: 12px;">
-      <h3 style="font-size: 1rem; font-weight: 600; margin: 0 0 16px; color: {{config.colorSecondary}};">
+      <h3 style="font-size: 1rem; font-weight: 600; margin: 0 0 16px; color: #4b5563;">
         Text Inputs
       </h3>
-      <p style="margin: 8px 0;"><strong>Short:</strong> {{config.textShort}}</p>
-      <p style="margin: 8px 0;"><strong>Long:</strong> {{config.textLong}}</p>
-      <p style="margin: 8px 0;"><strong>URL:</strong> <a href="{{config.textUrl}}" style="color: {{config.colorPrimary}};">{{config.textUrl}}</a></p>
+      <p style="margin: 8px 0;"><strong>Title:</strong> {{config.title}}</p>
+      <p style="margin: 8px 0;"><strong>Content:</strong> {{config.content}}</p>
+      <p style="margin: 8px 0;"><strong>URL:</strong> <a href="{{config.linkUrl}}" style="color: #2563eb;">{{config.linkUrl}}</a></p>
     </div>
 
     {{!-- Toggle Values --}}
     <div style="margin-bottom: 32px; padding: 20px; background: rgba(0,0,0,0.03); border-radius: 12px;">
-      <h3 style="font-size: 1rem; font-weight: 600; margin: 0 0 16px; color: {{config.colorSecondary}};">
+      <h3 style="font-size: 1rem; font-weight: 600; margin: 0 0 16px; color: #4b5563;">
         Boolean Toggles
       </h3>
       <p style="margin: 8px 0;">
@@ -62,7 +62,7 @@
 
     {{!-- Range Values --}}
     <div style="margin-bottom: 32px; padding: 20px; background: rgba(0,0,0,0.03); border-radius: 12px;">
-      <h3 style="font-size: 1rem; font-weight: 600; margin: 0 0 16px; color: {{config.colorSecondary}};">
+      <h3 style="font-size: 1rem; font-weight: 600; margin: 0 0 16px; color: #4b5563;">
         Range Sliders
       </h3>
       <p style="margin: 8px 0;"><strong>Padding:</strong> {{config.rangePadding}}px</p>
@@ -75,7 +75,7 @@
         margin-top: 16px;
         width: 100px;
         height: 100px;
-        background: {{config.colorAccent}};
+        background: #6366f1;
         border-radius: {{config.rangeBorderRadius}}px;
         opacity: {{config.rangeOpacity}};
       "></div>
@@ -83,7 +83,7 @@
 
     {{!-- Select Values --}}
     <div style="margin-bottom: 32px; padding: 20px; background: rgba(0,0,0,0.03); border-radius: 12px;">
-      <h3 style="font-size: 1rem; font-weight: 600; margin: 0 0 16px; color: {{config.colorSecondary}};">
+      <h3 style="font-size: 1rem; font-weight: 600; margin: 0 0 16px; color: #4b5563;">
         Select Dropdowns
       </h3>
       <p style="margin: 8px 0;"><strong>Alignment:</strong> {{config.selectAlignment}}</p>
@@ -93,7 +93,7 @@
 
     {{!-- Color Swatches --}}
     <div style="margin-bottom: 32px; padding: 20px; background: rgba(0,0,0,0.03); border-radius: 12px;">
-      <h3 style="font-size: 1rem; font-weight: 600; margin: 0 0 16px; color: {{config.colorSecondary}};">
+      <h3 style="font-size: 1rem; font-weight: 600; margin: 0 0 16px; color: #4b5563;">
         Color Pickers
       </h3>
       <div style="display: flex; gap: 12px; flex-wrap: wrap;">

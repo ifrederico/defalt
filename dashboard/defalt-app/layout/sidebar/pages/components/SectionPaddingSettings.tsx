@@ -66,9 +66,9 @@ export function SectionPaddingSettings({ sectionId, padding, margin, defaultMarg
               min={0}
               max={200}
               step={1}
+              unit="px"
               onChange={(value) => onChange('top', value)}
               onCommit={(value) => onCommit('top', value)}
-              variant="normal"
             />
           ) : (
             <>
@@ -78,9 +78,9 @@ export function SectionPaddingSettings({ sectionId, padding, margin, defaultMarg
                 min={0}
                 max={200}
                 step={1}
+                unit="px"
                 onChange={(value) => onChange('top', value)}
                 onCommit={(value) => onCommit('top', value)}
-                variant="normal"
               />
               <SliderField
                 label="Bottom"
@@ -88,9 +88,9 @@ export function SectionPaddingSettings({ sectionId, padding, margin, defaultMarg
                 min={0}
                 max={200}
                 step={1}
+                unit="px"
                 onChange={(value) => onChange('bottom', value)}
                 onCommit={(value) => onCommit('bottom', value)}
-                variant="normal"
               />
             </>
           )}
@@ -110,9 +110,9 @@ export function SectionPaddingSettings({ sectionId, padding, margin, defaultMarg
               min={0}
               max={200}
               step={1}
+              unit="px"
               onChange={(value) => onMarginChange?.('top', value)}
               onCommit={(value) => onMarginCommit?.('top', value)}
-              variant="normal"
             />
           )}
           {showMarginBottomSlider && (
@@ -122,9 +122,9 @@ export function SectionPaddingSettings({ sectionId, padding, margin, defaultMarg
               min={0}
               max={200}
               step={1}
+              unit="px"
               onChange={(value) => onMarginChange?.('bottom', value)}
               onCommit={(value) => onMarginCommit?.('bottom', value)}
-              variant="normal"
             />
           )}
         </SettingSection>

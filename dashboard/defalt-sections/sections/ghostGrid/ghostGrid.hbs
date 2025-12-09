@@ -11,10 +11,6 @@
 
 <style>
 .gd-ghost-grid-section {
-  --gd-ghost-cards-padding-top: {{default config.paddingTop 32}}px;
-  --gd-ghost-cards-padding-bottom: {{default config.paddingBottom 32}}px;
-  --gd-ghost-cards-padding-left: {{default config.paddingLeft 0}}px;
-  --gd-ghost-cards-padding-right: {{default config.paddingRight 0}}px;
   --gd-ghost-cards-background: {{default config.backgroundColor '#ffffff'}};
   --gd-ghost-cards-text: {{default config.textColor '#151515'}};
   --gd-ghost-cards-card-background: {{default config.cardBackgroundColor '#ffffff'}};
@@ -23,13 +19,6 @@
   --gd-ghost-grid-gap: {{default config.columnGap 20}}px;
   background-color: var(--gd-ghost-cards-background);
   color: var(--gd-ghost-cards-text);
-}
-
-.gd-ghost-grid-inner {
-  padding-top: var(--gd-ghost-cards-padding-top);
-  padding-bottom: var(--gd-ghost-cards-padding-bottom);
-  padding-left: var(--gd-ghost-cards-padding-left);
-  padding-right: var(--gd-ghost-cards-padding-right);
 }
 
 .gd-ghost-grid-columns {
@@ -139,6 +128,7 @@
 <section
   class="gd-ghost-grid-section gh-outer {{hideHeaderClass}} {{alignmentClass}} {{titleSizeClass}} {{stackClass}}"
   data-section-type="ghost-grid"
+  style="{{sectionStyle}}"
 >
   <div class="gh-inner">
     <div class="gd-ghost-grid-inner">

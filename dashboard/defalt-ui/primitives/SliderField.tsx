@@ -12,7 +12,6 @@ export type SliderFieldProps = {
   onCommit?: (value: number) => void
   disabled?: boolean
   labelHidden?: boolean
-  variant?: 'default' | 'normal' | 'compact'
 }
 
 export function SliderField({
@@ -25,8 +24,7 @@ export function SliderField({
   onChange,
   onCommit,
   disabled = false,
-  labelHidden = false,
-  variant = 'default'
+  labelHidden = false
 }: SliderFieldProps) {
   const clampedValue = Math.min(Math.max(value, min), max)
   const labelId = useId()
@@ -67,56 +65,49 @@ export function SliderField({
   }, [disabled, min, max, onChange, onCommit])
 
   return (
-    <div className="space-y-2">
-      <div className="flex w-full items-center gap-3">
-        {!labelHidden ? (
-          <label
-            id={labelId}
-            className={`font-md text-left min-w-[96px] flex-shrink-0 ${disabled ? 'text-placeholder' : 'text-secondary'}`}
-          >
-            {label}
-          </label>
-        ) : null}
-        <div className="ml-auto flex flex-shrink-0 items-center gap-3 text-sm">
-          <Slider.Root
-            className={`relative flex h-4 select-none items-center data-[disabled]:opacity-40 data-[disabled]:cursor-not-allowed ${
-              variant === 'compact'
-                ? 'w-16 flex-none'
-                : variant === 'normal'
-                ? 'w-[6rem] flex-none'
-                : 'min-w-[140px] flex-1'
-            }`}
-            value={[clampedValue]}
+    <div className="flex w-full items-center justify-between gap-3">
+      {!labelHidden ? (
+        <label
+          id={labelId}
+          className={`font-md text-left min-w-[60px] max-w-[70px] flex-shrink-0 truncate ${disabled ? 'text-placeholder' : 'text-foreground'}`}
+          title={label}
+        >
+          {label}
+        </label>
+      ) : null}
+      <div className="flex items-center gap-3 text-sm">
+        <Slider.Root
+          className="relative flex h-4 w-[6rem] flex-none select-none items-center data-[disabled]:opacity-40 data-[disabled]:cursor-not-allowed"
+          value={[clampedValue]}
+          min={min}
+          max={max}
+          step={step}
+          onValueChange={handleSliderChange}
+          onValueCommit={handleSliderCommit}
+          aria-label={labelHidden ? label : undefined}
+          aria-labelledby={!labelHidden ? labelId : undefined}
+          disabled={disabled}
+        >
+          <Slider.Track className="relative h-1 w-full rounded-full bg-hover data-[disabled]:bg-hover/70">
+            <Slider.Range className="absolute h-full rounded-full bg-inverse" />
+          </Slider.Track>
+          <Slider.Thumb className="block h-4 w-4 rounded-full border border-inverse bg-inverse shadow-sm transition-transform focus:outline-none focus-visible:shadow-[0_0_0_2px_rgba(48,207,67,0.25)] data-[disabled]:border-border-strong data-[disabled]:bg-hover" />
+        </Slider.Root>
+        <div className="relative flex-shrink-0 text-right font-sm">
+          <input
+            type="number"
+            value={clampedValue}
+            onChange={handleInputChange}
             min={min}
             max={max}
-            step={step}
-            onValueChange={handleSliderChange}
-            onValueCommit={handleSliderCommit}
             aria-label={labelHidden ? label : undefined}
             aria-labelledby={!labelHidden ? labelId : undefined}
+            className={`w-[4.5rem] pl-2 py-1 border border-border-strong rounded font-sm text-right bg-surface focus:outline-none focus:border-[rgb(48,207,67)] focus:shadow-[0_0_0_2px_rgba(48,207,67,0.25)] disabled:bg-subtle disabled:text-placeholder ${unit ? 'pr-7' : 'pr-2'}`}
             disabled={disabled}
-          >
-            <Slider.Track className="relative h-1 w-full rounded-full bg-hover data-[disabled]:bg-hover/70">
-              <Slider.Range className="absolute h-full rounded-full bg-inverse" />
-            </Slider.Track>
-            <Slider.Thumb className="block h-4 w-4 rounded-full border border-inverse bg-inverse shadow-sm transition-transform focus:outline-none focus-visible:ring-2 focus-visible:ring-ring data-[disabled]:border-border-strong data-[disabled]:bg-hover" />
-          </Slider.Root>
-          <div className="relative flex-shrink-0 text-right font-sm">
-            <input
-              type="number"
-              value={clampedValue}
-              onChange={handleInputChange}
-              min={min}
-              max={max}
-              aria-label={labelHidden ? label : undefined}
-              aria-labelledby={!labelHidden ? labelId : undefined}
-              className={`w-[4.5rem] pl-2 py-1 border border-border-strong rounded font-sm text-right focus:outline-none focus:ring-2 focus:ring-ring disabled:bg-subtle disabled:text-placeholder ${unit ? 'pr-7' : 'pr-2'}`}
-              disabled={disabled}
-            />
-            {unit && (
-              <span className="absolute right-2 top-1/2 -translate-y-1/2 font-sm text-placeholder pointer-events-none">{unit}</span>
-            )}
-          </div>
+          />
+          {unit && (
+            <span className="absolute right-2 top-1/2 -translate-y-1/2 font-sm text-placeholder pointer-events-none">{unit}</span>
+          )}
         </div>
       </div>
     </div>

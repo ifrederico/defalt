@@ -8,8 +8,12 @@
 import { z } from 'zod'
 import type { SettingSchema } from '../../engine/schemaTypes.js'
 import {
+  // Zod shapes
+  paddingShape,
+  // UI presets
   alignmentSettings,
-  ghostPageTagSettings
+  ghostPageTagSettings,
+  paddingSettings
 } from '../../engine/commonSettings.js'
 
 // =============================================================================
@@ -32,7 +36,10 @@ export const imageWithTextConfigSchema = z.object({
   containerWidth: z.enum(['default', 'narrow', 'full']).default('default'),
   gap: z.number().min(0).max(100).default(32),
   textAlignment: z.enum(['top', 'middle', 'bottom']).default('middle'),
-  headingSize: z.enum(['small', 'normal', 'large', 'x-large']).default('normal')
+  headingSize: z.enum(['small', 'normal', 'large', 'x-large']).default('normal'),
+
+  // Shared padding
+  ...paddingShape
 })
 
 export type ImageWithTextSectionConfig = z.infer<typeof imageWithTextConfigSchema>
@@ -196,6 +203,9 @@ export const imageWithTextSettingsSchema: SettingSchema[] = [
   ...containerWidthSettings,
   ...gapSettings,
   ...textAlignmentSettings,
+
+  // Spacing
+  ...paddingSettings,
 
   // Style - Heading settings
   {

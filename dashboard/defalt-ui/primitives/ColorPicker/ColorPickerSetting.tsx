@@ -105,7 +105,7 @@ export default function ColorPickerSetting({
   return (
     <div data-testid={dataTestId} className={disabled ? 'pointer-events-none opacity-50' : ''}>
       <div className="flex items-center gap-3">
-        <p className="font-md text-secondary whitespace-nowrap min-w-[96px] flex-shrink-0">{label}</p>
+        <p className="font-md text-foreground min-w-[60px] max-w-[120px] flex-shrink-0 truncate" title={label}>{label}</p>
         <div className="ml-auto">
           <ColorIndicator
             value={displayValue}

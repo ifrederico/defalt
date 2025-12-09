@@ -17,9 +17,10 @@ import type { SettingSchema } from '../../engine/schemaTypes.js'
 
 export const kitchenSinkConfigSchema = z.object({
   // Text Inputs
-  textShort: z.string().default('Hello World'),
-  textLong: z.string().default('Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.'),
-  textUrl: z.string().default('https://ghost.org'),
+  title: z.string().default('Page Title'),
+  content: z.string().default('Lorem ipsum dolor sit amet, consectetur adipiscing elit.'),
+  excerpt: z.string().default('A short summary of the content.'),
+  linkUrl: z.string().default('https://ghost.org'),
 
   // Boolean Toggles
   toggleOn: z.boolean().default(true),
@@ -30,6 +31,8 @@ export const kitchenSinkConfigSchema = z.object({
   rangeOpacity: z.number().min(0).max(1).default(0.8),
   rangeBorderRadius: z.number().min(0).max(96).default(12),
   rangeSmallStep: z.number().min(0).max(10).default(2.5),
+  rangeLongLabel: z.number().min(0).max(100).default(50),
+  rangeAnotherLong: z.number().min(0).max(1200).default(800),
 
   // Select Dropdowns
   selectAlignment: z.enum(['left', 'center', 'right']).default('center'),
@@ -49,8 +52,6 @@ export const kitchenSinkConfigSchema = z.object({
   colorText: z.string().default('#1F2937'),
   colorAccent: z.string().default('#F59E0B'),
 
-  // Color Background (Gradients - Pro)
-  gradientOverlay: z.string().default('linear-gradient(180deg, transparent 0%, rgba(0,0,0,0.5) 100%)')
 })
 
 export type KitchenSinkConfig = z.infer<typeof kitchenSinkConfigSchema>
@@ -74,27 +75,35 @@ export const kitchenSinkSettingsSchema: SettingSchema[] = [
   },
   {
     type: 'text',
-    id: 'textShort',
-    label: 'Short Text',
-    default: 'Hello World',
-    placeholder: 'Enter short text...',
-    info: 'A single-line text input for short content'
+    id: 'title',
+    label: 'Title',
+    default: 'Page Title',
+    placeholder: 'Enter title...',
+    info: 'Single-line text for page title'
   },
   {
     type: 'textarea',
-    id: 'textLong',
-    label: 'Long Text (Textarea)',
+    id: 'content',
+    label: 'Content',
     default: 'Lorem ipsum dolor sit amet...',
-    placeholder: 'Enter multiple lines...',
-    info: 'A multi-line text input for longer content'
+    placeholder: 'Enter content...',
+    info: 'Multi-line text pulled from content'
+  },
+  {
+    type: 'textarea',
+    id: 'excerpt',
+    label: 'Excerpt',
+    default: 'A short summary...',
+    placeholder: 'Enter excerpt...',
+    info: 'Multi-line text pulled from excerpt'
   },
   {
     type: 'url',
-    id: 'textUrl',
-    label: 'URL Input',
+    id: 'linkUrl',
+    label: 'Link URL',
     default: 'https://ghost.org',
     placeholder: 'https://...',
-    info: 'A URL input with validation'
+    info: 'URL input for links'
   },
 
   // =========================================================================
@@ -141,7 +150,7 @@ export const kitchenSinkSettingsSchema: SettingSchema[] = [
   {
     type: 'range',
     id: 'rangePadding',
-    label: 'Padding (0-200px)',
+    label: 'Padding',
     min: 0,
     max: 200,
     step: 4,
@@ -152,7 +161,7 @@ export const kitchenSinkSettingsSchema: SettingSchema[] = [
   {
     type: 'range',
     id: 'rangeOpacity',
-    label: 'Opacity (0.0-1.0)',
+    label: 'Opacity',
     min: 0,
     max: 1,
     step: 0.05,
@@ -162,7 +171,7 @@ export const kitchenSinkSettingsSchema: SettingSchema[] = [
   {
     type: 'range',
     id: 'rangeBorderRadius',
-    label: 'Border Radius (0-96px)',
+    label: 'Radius',
     min: 0,
     max: 96,
     step: 1,
@@ -173,12 +182,34 @@ export const kitchenSinkSettingsSchema: SettingSchema[] = [
   {
     type: 'range',
     id: 'rangeSmallStep',
-    label: 'Small Steps (0-10)',
+    label: 'Steps',
     min: 0,
     max: 10,
     step: 0.5,
     default: 2.5,
     info: 'Decimal slider with 0.5 step'
+  },
+  {
+    type: 'range',
+    id: 'rangeLongLabel',
+    label: 'Border Radius Maximum',
+    min: 0,
+    max: 100,
+    step: 1,
+    default: 50,
+    unit: 'px',
+    info: 'Long label to test truncation with ellipsis'
+  },
+  {
+    type: 'range',
+    id: 'rangeAnotherLong',
+    label: 'Container Width',
+    min: 0,
+    max: 1200,
+    step: 10,
+    default: 800,
+    unit: 'px',
+    info: 'Another long label test'
   },
 
   // =========================================================================
@@ -328,24 +359,4 @@ export const kitchenSinkSettingsSchema: SettingSchema[] = [
     info: 'Main hero/background image'
   },
 
-  // =========================================================================
-  // COLOR BACKGROUND (PRO)
-  // =========================================================================
-  {
-    type: 'header',
-    id: 'gradient-header',
-    label: 'Color Background (Pro)'
-  },
-  {
-    type: 'paragraph',
-    id: 'gradient-info',
-    content: 'Pro tier feature: CSS gradients for overlays and backgrounds.'
-  },
-  {
-    type: 'color_background',
-    id: 'gradientOverlay',
-    label: 'Gradient Overlay',
-    default: '#000000',
-    info: 'Supports linear-gradient() in Pro tier'
-  }
 ]

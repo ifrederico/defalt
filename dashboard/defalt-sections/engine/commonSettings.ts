@@ -22,12 +22,31 @@ import type { SettingSchema } from './schemaTypes.js'
 // =============================================================================
 
 /**
+ * Options for creating padding config schema
+ */
+type PaddingConfigOptions = {
+  min?: number
+  max?: number
+  defaultTop?: number
+  defaultBottom?: number
+}
+
+/**
+ * Create padding config schema with custom min/max/defaults
+ * @example createPaddingConfigSchema({ max: 100, defaultTop: 8, defaultBottom: 8 })
+ */
+export function createPaddingConfigSchema(options: PaddingConfigOptions = {}) {
+  const { min = 0, max = 200, defaultTop = 32, defaultBottom = 32 } = options
+  return z.object({
+    paddingTop: z.number().min(min).max(max).default(defaultTop),
+    paddingBottom: z.number().min(min).max(max).default(defaultBottom)
+  })
+}
+
+/**
  * Standard padding config schema
  */
-export const paddingConfigSchema = z.object({
-  paddingTop: z.number().min(0).max(200).default(32),
-  paddingBottom: z.number().min(0).max(200).default(32)
-})
+export const paddingConfigSchema = createPaddingConfigSchema()
 
 /**
  * Extended padding with left/right
@@ -92,36 +111,63 @@ export const widthConfigSchema = z.object({
 // =============================================================================
 
 /**
- * Standard padding settings (top/bottom)
- * Injects two range sliders for section padding control
+ * Options for creating padding settings
  */
-export const paddingSettings: SettingSchema[] = [
-  {
-    type: 'header',
-    id: 'padding-header',
-    label: 'Spacing'
-  },
-  {
-    type: 'range',
-    id: 'paddingTop',
-    label: 'Top padding',
-    min: 0,
-    max: 200,
-    step: 4,
-    default: 32,
-    unit: 'px'
-  },
-  {
-    type: 'range',
-    id: 'paddingBottom',
-    label: 'Bottom padding',
-    min: 0,
-    max: 200,
-    step: 4,
-    default: 32,
-    unit: 'px'
+type PaddingSettingsOptions = {
+  min?: number
+  max?: number
+  step?: number
+  defaultTop?: number
+  defaultBottom?: number
+  includeHeader?: boolean
+}
+
+/**
+ * Create padding settings with custom min/max/defaults
+ * @example createPaddingSettings({ max: 100, defaultTop: 8, defaultBottom: 8 })
+ */
+export function createPaddingSettings(options: PaddingSettingsOptions = {}): SettingSchema[] {
+  const { min = 0, max = 200, step = 4, defaultTop = 32, defaultBottom = 32, includeHeader = true } = options
+  const settings: SettingSchema[] = []
+
+  if (includeHeader) {
+    settings.push({
+      type: 'header',
+      id: 'padding-header',
+      label: 'Spacing'
+    })
   }
-]
+
+  settings.push(
+    {
+      type: 'range',
+      id: 'paddingTop',
+      label: 'Top padding',
+      min,
+      max,
+      step,
+      default: defaultTop,
+      unit: 'px'
+    },
+    {
+      type: 'range',
+      id: 'paddingBottom',
+      label: 'Bottom padding',
+      min,
+      max,
+      step,
+      default: defaultBottom,
+      unit: 'px'
+    }
+  )
+
+  return settings
+}
+
+/**
+ * Standard padding settings (top/bottom) - uses defaults: 0-200px, default 32px
+ */
+export const paddingSettings: SettingSchema[] = createPaddingSettings()
 
 /**
  * Unified padding setting (single control for all sides)

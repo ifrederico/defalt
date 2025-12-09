@@ -279,6 +279,40 @@ export {
 } from '../sections/announcement-bar/schema.js'
 export { announcementBarDefaults } from '../sections/announcement-bar/defaults.js'
 
+// Header section
+export {
+  type HeaderSectionConfig,
+  headerConfigSchema,
+  headerSettingsSchema
+} from '../sections/header/schema.js'
+export { headerDefaults } from '../sections/header/defaults.js'
+
+// =============================================================================
+// Theme Schema Types
+// =============================================================================
+
+export {
+  themePaddingSchema,
+  themeMarginSchema,
+  type ThemePadding,
+  type ThemeMargin,
+  type ThemeDefinition,
+  type ThemeSettingsGroup,
+  type ThemeInstance
+} from './themeSchemaTypes.js'
+
+// =============================================================================
+// Source Theme
+// =============================================================================
+
+export {
+  sourceThemeDefinition,
+  sourceThemeConfigSchema,
+  sourceThemeSettingsGroups,
+  sourceThemeDefaults,
+  type SourceThemeConfig
+} from '../themes/index.js'
+
 // =============================================================================
 // Backward Compatibility
 // =============================================================================

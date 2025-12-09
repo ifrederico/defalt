@@ -1,41 +1,21 @@
 /**
  * Hero Section Defaults
- *
- * Default configuration values for the Hero section.
- * These are used when creating a new instance of the section.
  */
 
 import type { HeroConfig } from './schema.js'
 
-/**
- * Default Hero configuration
- */
 export const heroDefaults: HeroConfig = {
-  ghostPageTag: 'hero-preview',
-  placeholder: {
-    title: '',
-    description: '',
-    buttonText: '',
-    buttonHref: ''
-  },
-  imagePosition: 'background',
+  heading: '',
+  subheading: '',
+  showButton: true,
+  buttonText: '',
+  buttonLink: '',
   contentAlignment: 'center',
   contentWidth: 'full',
-  heightMode: 'regular',
   backgroundColor: '#000000',
+  textColor: '#ffffff',
   buttonColor: '#ffffff',
-  buttonTextColor: '#151515',
-  buttonBorderRadius: 3,
-  cardBorderRadius: 24,
-  showButton: true
-}
-
-/**
- * Placeholder sample text (shown when fields are empty)
- */
-export const heroPlaceholders = {
-  title: 'Enter heading text',
-  description: 'Enter subheading text',
-  buttonText: 'Add button text',
-  buttonHref: 'https://example.com'
+  buttonTextColor: '#000000',
+  paddingTop: 64,
+  paddingBottom: 64
 }

@@ -22,7 +22,6 @@ export const SettingInputType = z.enum([
   'richtext',
   'url',
   'color',
-  'color_background',
   'checkbox',
   'range',
   'select',
@@ -90,17 +89,6 @@ export const urlSettingSchema = z.object({
  */
 export const colorSettingSchema = z.object({
   type: z.literal('color'),
-  id: z.string(),
-  label: z.string(),
-  default: z.string().default('#000000'),
-  info: z.string().optional()
-})
-
-/**
- * Color background setting (supports gradients - Pro tier)
- */
-export const colorBackgroundSettingSchema = z.object({
-  type: z.literal('color_background'),
   id: z.string(),
   label: z.string(),
   default: z.string().default('#000000'),
@@ -210,7 +198,6 @@ export const settingSchema = z.discriminatedUnion('type', [
   richtextSettingSchema,
   urlSettingSchema,
   colorSettingSchema,
-  colorBackgroundSettingSchema,
   checkboxSettingSchema,
   rangeSettingSchema,
   selectSettingSchema,
@@ -242,7 +229,7 @@ export type BlockSchema = z.infer<typeof blockSchema>
 // Section Definition Types
 // =============================================================================
 
-export type SectionCategory = 'template'
+export type SectionCategory = 'template' | 'header'
 
 /**
  * Padding configuration for sections

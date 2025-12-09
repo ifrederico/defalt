@@ -11,8 +11,7 @@
 
 <style>
 .gh-image-with-text {
-  padding-top: {{default padding.top 32}}px;
-  padding-bottom: {{default padding.bottom 32}}px;
+  /* Padding controlled by engine via sectionStyle */
 }
 
 .gd-image-with-text-content {
@@ -151,6 +150,7 @@
   class="gh-image-with-text gh-outer {{containerClass}}"
   data-ghost-tag="{{tag}}"
   data-section-type="image-with-text"
+  style="{{sectionStyle}}"
 >
   <div class="{{#unless (eq contWidth 'full')}}gh-inner{{/unless}}">
     {{!-- Placeholder state --}}

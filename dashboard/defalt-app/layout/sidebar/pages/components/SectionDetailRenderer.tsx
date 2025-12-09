@@ -1,17 +1,11 @@
 import { useMemo, useState, useCallback, type ReactNode } from 'react'
 import type { SectionsPanelProps } from '../SectionsPanelBase'
-import type { SectionConfigSchema, GhostCardsSectionConfig, GhostGridSectionConfig, ImageWithTextSectionConfig } from '@defalt/sections/engine'
+import type { SectionConfigSchema, AnnouncementBarSectionConfig, HeaderSectionConfig, SourceThemeConfig } from '@defalt/sections/engine'
 import { getSectionDefinition } from '@defalt/sections/engine'
 import { SECTION_ID_MAP, PADDING_BLOCK_SECTIONS, CSS_DEFAULT_MARGIN } from '@defalt/utils/config/themeConfig'
 import { SchemaSectionSettings } from '../../components/SchemaSectionSettings'
-import { HeaderSectionSettings } from './HeaderSectionSettings'
+import { SchemaThemeSettings } from '../../components/SchemaThemeSettings'
 import { SectionPaddingSettings, type SectionSpacingMode } from './SectionPaddingSettings'
-import { AnnouncementBarSettings } from '@defalt/sections/header/settings/AnnouncementBarSettings'
-import { AnnouncementSettings } from '@defalt/sections/header/settings/AnnouncementSettings'
-import ImageWithTextSectionSettings from '@defalt/sections/homepage/settings/ImageWithTextSectionSettings'
-import GhostCardsSectionSettings from '@defalt/sections/homepage/settings/GhostCardsSectionSettings'
-import GhostGridSectionSettings from '@defalt/sections/homepage/settings/GhostGridSectionSettings'
-import { MainAppearanceSettings } from './MainAppearanceSettings'
 import { Copy, Check, Pencil, X, Check as CheckIcon } from 'lucide-react'
 
 export type SectionDetail = {
@@ -32,6 +26,104 @@ export function SectionDetailRenderer({ activeDetail, props }: SectionDetailRend
     ? props.aiSections?.find((s) => s.id === activeDetail.id)
     : undefined
 
+  // Build unified header config from individual props
+  const headerConfig = useMemo<HeaderSectionConfig>(() => ({
+    navigationLayout: props.navigationLayoutValue as HeaderSectionConfig['navigationLayout'],
+    stickyHeader: props.stickyHeaderValue as HeaderSectionConfig['stickyHeader'],
+    searchEnabled: props.isSearchEnabled,
+    typographyCase: props.typographyCase
+  }), [props.navigationLayoutValue, props.stickyHeaderValue, props.isSearchEnabled, props.typographyCase])
+
+  // Build announcement bar config from props (bar appearance only, content handled separately)
+  const announcementBarConfig = useMemo<AnnouncementBarSectionConfig>(() => ({
+    width: (props.announcementBarConfig.width === 'default' ? 'full' : props.announcementBarConfig.width) as AnnouncementBarSectionConfig['width'],
+    backgroundColor: props.announcementBarConfig.backgroundColor,
+    textColor: props.announcementBarConfig.textColor,
+    dividerThickness: props.announcementBarConfig.dividerThickness,
+    paddingTop: props.announcementBarConfig.paddingTop,
+    paddingBottom: props.announcementBarConfig.paddingBottom
+  }), [props.announcementBarConfig])
+
+  // Handler to update header config - dispatches to individual callbacks
+  const handleHeaderConfigUpdate = useCallback((updater: (config: SectionConfigSchema) => SectionConfigSchema) => {
+    const newConfig = updater(headerConfig as SectionConfigSchema) as HeaderSectionConfig
+
+    // Dispatch changes to individual callbacks
+    if (newConfig.navigationLayout !== headerConfig.navigationLayout) {
+      props.onNavigationLayoutChange(newConfig.navigationLayout)
+    }
+    if (newConfig.stickyHeader !== headerConfig.stickyHeader) {
+      props.onStickyHeaderChange(newConfig.stickyHeader)
+    }
+    if (newConfig.searchEnabled !== headerConfig.searchEnabled) {
+      props.onSearchToggle(newConfig.searchEnabled)
+    }
+    if (newConfig.typographyCase !== headerConfig.typographyCase) {
+      props.onTypographyCaseChange(newConfig.typographyCase)
+    }
+  }, [headerConfig, props])
+
+  // Handler to update announcement bar config (bar appearance only)
+  const handleAnnouncementBarConfigUpdate = useCallback((updater: (config: SectionConfigSchema) => SectionConfigSchema) => {
+    const newConfig = updater(announcementBarConfig as SectionConfigSchema) as AnnouncementBarSectionConfig
+
+    const hasChanged =
+      newConfig.width !== announcementBarConfig.width ||
+      newConfig.backgroundColor !== announcementBarConfig.backgroundColor ||
+      newConfig.textColor !== announcementBarConfig.textColor ||
+      newConfig.dividerThickness !== announcementBarConfig.dividerThickness ||
+      newConfig.paddingTop !== announcementBarConfig.paddingTop ||
+      newConfig.paddingBottom !== announcementBarConfig.paddingBottom
+
+    if (hasChanged) {
+      props.onAnnouncementBarConfigChange(() => ({
+        width: newConfig.width === 'full' ? 'default' : newConfig.width,
+        backgroundColor: newConfig.backgroundColor,
+        textColor: newConfig.textColor,
+        dividerThickness: newConfig.dividerThickness,
+        paddingTop: newConfig.paddingTop,
+        paddingBottom: newConfig.paddingBottom
+      }))
+    }
+  }, [announcementBarConfig, props])
+
+  // Build unified theme config from individual props (for main appearance settings)
+  const mainThemeConfig = useMemo<SourceThemeConfig>(() => ({
+    postFeedStyle: props.postFeedStyleValue as SourceThemeConfig['postFeedStyle'],
+    showImagesInFeed: props.showImagesInFeed,
+    showAuthor: props.showAuthor,
+    showPublishDate: props.showPublishDate,
+    showPublicationInfoSidebar: props.showPublicationInfoSidebar,
+    // Post settings (not editable in main appearance, but part of schema)
+    showPostMetadata: true,
+    enableDropCapsOnPosts: false,
+    showRelatedArticles: true,
+    // Padding is handled separately
+    padding: { top: 0, bottom: 0 }
+  }), [props.postFeedStyleValue, props.showImagesInFeed, props.showAuthor, props.showPublishDate, props.showPublicationInfoSidebar])
+
+  // Handler to update theme config - dispatches to individual callbacks
+  const handleMainThemeConfigUpdate = useCallback((updater: (config: SourceThemeConfig) => SourceThemeConfig) => {
+    const newConfig = updater(mainThemeConfig)
+
+    // Dispatch changes to individual callbacks
+    if (newConfig.postFeedStyle !== mainThemeConfig.postFeedStyle) {
+      props.onPostFeedStyleChange(newConfig.postFeedStyle)
+    }
+    if (newConfig.showImagesInFeed !== mainThemeConfig.showImagesInFeed) {
+      props.onShowImagesInFeedToggle(newConfig.showImagesInFeed)
+    }
+    if (newConfig.showAuthor !== mainThemeConfig.showAuthor) {
+      props.onShowAuthorToggle(newConfig.showAuthor)
+    }
+    if (newConfig.showPublishDate !== mainThemeConfig.showPublishDate) {
+      props.onShowPublishDateToggle(newConfig.showPublishDate)
+    }
+    if (newConfig.showPublicationInfoSidebar !== mainThemeConfig.showPublicationInfoSidebar) {
+      props.onShowPublicationInfoSidebarToggle(newConfig.showPublicationInfoSidebar)
+    }
+  }, [mainThemeConfig, props])
+
   return useMemo<ReactNode>(() => {
     if (!activeDetail) {
       return null
@@ -47,60 +139,45 @@ export function SectionDetailRenderer({ activeDetail, props }: SectionDetailRend
         />
       )
     }
+    // Header section - use schema engine
     if (activeDetail.id === 'header') {
-      return (
-        <HeaderSectionSettings
-          navigationLayoutValue={props.navigationLayoutValue}
-          navigationLayoutOptions={props.navigationLayoutOptions}
-          navigationLayoutError={props.navigationLayoutError}
-          onNavigationLayoutChange={props.onNavigationLayoutChange}
-          stickyHeaderValue={props.stickyHeaderValue}
-          stickyHeaderOptions={props.stickyHeaderOptions}
-          onStickyHeaderChange={props.onStickyHeaderChange}
-          isSearchEnabled={props.isSearchEnabled}
-          onSearchToggle={props.onSearchToggle}
-          typographyCase={props.typographyCase}
-          onTypographyCaseChange={props.onTypographyCaseChange}
-        />
-      )
+      const definition = getSectionDefinition('header')
+      if (definition?.settingsSchema && definition.settingsSchema.length > 0) {
+        return (
+          <SchemaSectionSettings
+            definitionId="header"
+            config={headerConfig as SectionConfigSchema}
+            padding={{ top: 0, bottom: 0 }}
+            onUpdateConfig={handleHeaderConfigUpdate}
+          />
+        )
+      }
     }
-    if (activeDetail.id === 'announcement-bar') {
-      return (
-        <AnnouncementBarSettings
-          accentColor={props.accentColor}
-          config={props.announcementBarConfig}
-          onChange={props.onAnnouncementBarConfigChange}
-          onPreview={props.onAnnouncementBarConfigPreview}
-          onCommit={props.onAnnouncementBarConfigCommit}
-        />
-      )
+    // Announcement bar section - use schema engine (consolidates bar + content settings)
+    // Both 'announcement-bar' and 'announcement' IDs route to the same consolidated settings
+    if (activeDetail.id === 'announcement-bar' || activeDetail.id === 'announcement') {
+      const definition = getSectionDefinition('announcement-bar')
+      if (definition?.settingsSchema && definition.settingsSchema.length > 0) {
+        return (
+          <SchemaSectionSettings
+            definitionId="announcement-bar"
+            config={announcementBarConfig as SectionConfigSchema}
+            padding={{ top: announcementBarConfig.paddingTop, bottom: announcementBarConfig.paddingBottom }}
+            onUpdateConfig={handleAnnouncementBarConfigUpdate}
+          />
+        )
+      }
     }
-    if (activeDetail.id === 'announcement') {
-      return (
-        <AnnouncementSettings
-          config={props.announcementContentConfig}
-          onChange={props.onAnnouncementContentConfigChange}
-        />
-      )
-    }
+    // Main appearance settings - use schema-driven theme settings
     if (activeDetail.id === 'main') {
       const padding = props.sectionPadding[activeDetail.id] ?? { top: 0, bottom: 0, left: 0, right: 0 }
       const margin = props.sectionMargins[activeDetail.id]
       return (
-        <MainAppearanceSettings
+        <SchemaThemeSettings
+          config={mainThemeConfig}
           padding={padding}
           margin={margin}
-          postFeedStyleValue={props.postFeedStyleValue}
-          postFeedStyleOptions={props.postFeedStyleOptions}
-          onPostFeedStyleChange={props.onPostFeedStyleChange}
-          showImagesInFeed={props.showImagesInFeed}
-          onShowImagesInFeedToggle={props.onShowImagesInFeedToggle}
-          showAuthor={props.showAuthor}
-          onShowAuthorToggle={props.onShowAuthorToggle}
-          showPublishDate={props.showPublishDate}
-          onShowPublishDateToggle={props.onShowPublishDateToggle}
-          showPublicationInfoSidebar={props.showPublicationInfoSidebar}
-          onShowPublicationInfoSidebarToggle={props.onShowPublicationInfoSidebarToggle}
+          onUpdateConfig={handleMainThemeConfigUpdate}
           onPaddingChange={(direction, value) => props.onSectionPaddingChange(activeDetail.id, direction, value)}
           onPaddingCommit={(direction, value) => props.onSectionPaddingCommit(activeDetail.id, direction, value)}
         />
@@ -126,66 +203,9 @@ export function SectionDetailRenderer({ activeDetail, props }: SectionDetailRend
         </SettingsPanel>
       )
     }
+    // Custom sections: use schema-driven settings for all sections with a settingsSchema
     if (activeCustomSection) {
       const sectionId = activeDetail.id
-      if (activeCustomSection.definitionId === 'ghostCards') {
-        const config = activeCustomSection.config as GhostCardsSectionConfig
-        const padding = props.sectionPadding[sectionId] ?? { top: 0, bottom: 0, left: 0, right: 0 }
-        return (
-          <GhostCardsSectionSettings
-            sectionId={sectionId}
-            config={config}
-            padding={padding}
-            onPaddingChange={(direction, value) => props.onSectionPaddingChange(sectionId, direction, value)}
-            onPaddingCommit={(direction, value) => props.onSectionPaddingCommit(sectionId, direction, value)}
-            onUpdateConfig={(updater) =>
-              props.onUpdateCustomSection(
-                sectionId,
-                (current) => updater(current as GhostCardsSectionConfig) as SectionConfigSchema
-              )
-            }
-          />
-        )
-      }
-      if (activeCustomSection.definitionId === 'ghostGrid') {
-        const config = activeCustomSection.config as GhostGridSectionConfig
-        const padding = props.sectionPadding[sectionId] ?? { top: 0, bottom: 0, left: 0, right: 0 }
-        return (
-          <GhostGridSectionSettings
-            sectionId={sectionId}
-            config={config}
-            padding={padding}
-            onPaddingChange={(direction, value) => props.onSectionPaddingChange(sectionId, direction, value)}
-            onPaddingCommit={(direction, value) => props.onSectionPaddingCommit(sectionId, direction, value)}
-            onUpdateConfig={(updater) =>
-              props.onUpdateCustomSection(
-                sectionId,
-                (current) => updater(current as GhostGridSectionConfig) as SectionConfigSchema
-              )
-            }
-          />
-        )
-      }
-      if (activeCustomSection.definitionId === 'image-with-text') {
-        const config = activeCustomSection.config as ImageWithTextSectionConfig
-        const padding = props.sectionPadding[sectionId] ?? { top: 0, bottom: 0, left: 0, right: 0 }
-        return (
-          <ImageWithTextSectionSettings
-            sectionId={sectionId}
-            config={config}
-            padding={padding}
-            onPaddingChange={(direction, value) => props.onSectionPaddingChange(sectionId, direction, value)}
-            onPaddingCommit={(direction, value) => props.onSectionPaddingCommit(sectionId, direction, value)}
-            onUpdateConfig={(updater) =>
-              props.onUpdateCustomSection(
-                sectionId,
-                (current) => updater(current as ImageWithTextSectionConfig) as SectionConfigSchema
-              )
-            }
-          />
-        )
-      }
-      // Generic fallback: use SchemaSectionSettings for any section with a settingsSchema
       const definition = getSectionDefinition(activeCustomSection.definitionId)
       if (definition?.settingsSchema && definition.settingsSchema.length > 0) {
         const config = activeCustomSection.config as SectionConfigSchema
@@ -249,7 +269,7 @@ export function SectionDetailRenderer({ activeDetail, props }: SectionDetailRend
       )
     }
     return <GenericCustomSectionNotice label={activeDetail.label} />
-  }, [activeDetail, activeCustomSection, activeAiSection, props])
+  }, [activeDetail, activeCustomSection, activeAiSection, props, headerConfig, announcementBarConfig, handleHeaderConfigUpdate, handleAnnouncementBarConfigUpdate, mainThemeConfig, handleMainThemeConfigUpdate])
 }
 
 function SettingsPanel({ children }: { children: React.ReactNode }) {

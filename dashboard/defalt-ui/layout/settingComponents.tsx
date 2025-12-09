@@ -107,13 +107,20 @@ export function SettingRow({ label, children }: SettingRowProps) {
 type InlineControlRowProps = {
   label: string
   children: ReactNode
+  labelWidth?: 'sm' | 'md' | 'lg'
 }
 
-export function InlineControlRow({ label, children }: InlineControlRowProps) {
+const LABEL_WIDTH_CLASSES = {
+  sm: 'max-w-[64px]',   // ~8 chars - for radio with many buttons
+  md: 'max-w-[120px]',  // ~14 chars - default
+  lg: 'max-w-[180px]'   // ~22 chars - for toggles with longer labels
+}
+
+export function InlineControlRow({ label, children, labelWidth = 'md' }: InlineControlRowProps) {
   return (
-    <div className="flex items-center gap-3">
-      <p className="font-md text-secondary min-w-[96px] flex-shrink-0">{label}</p>
-      <div className="ml-auto">{children}</div>
+    <div className="flex w-full items-center justify-between gap-3">
+      <p className={`font-md text-foreground min-w-[60px] flex-shrink-0 truncate ${LABEL_WIDTH_CLASSES[labelWidth]}`} title={label}>{label}</p>
+      <div className="flex-shrink-0">{children}</div>
     </div>
   )
 }

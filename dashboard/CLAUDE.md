@@ -144,7 +144,11 @@ Contexts in `defalt-app/contexts/` use base classes (`*Base.ts`) for shared logi
 - Typography: weight (light/medium/semibold/bold), style (normal/italic), size, line height, letter spacing, text transform
 - Layout: background color, text color, border width
 - Applied via `applyAnnouncementBarCustomization` in export pipeline
-- Settings panel: [AnnouncementBarSettings.tsx](defalt-sections/header/settings/AnnouncementBarSettings.tsx)
+- Uses schema engine: [announcement-bar/schema.ts](defalt-sections/sections/announcement-bar/schema.ts)
+
+**Header Section**: Navigation header with schema-driven settings:
+- Uses schema engine: [header/schema.ts](defalt-sections/sections/header/schema.ts)
+- Settings: navigation layout, sticky header, search toggle, typography case
 
 **Error Boundary**: [DashboardErrorBoundary.tsx](defalt-app/components/DashboardErrorBoundary.tsx) wraps main app with fallback UI for runtime errors. Displays error message with reload option.
 

@@ -1,187 +1,22 @@
-{{!--
-  Hero Section Template
-
-  A full-width hero banner with heading, subheading, and optional CTA button.
-  Supports customizable colors, alignment, width, and height modes.
-
-  Context variables:
-  - config: Section configuration object
-  - padding: { top, bottom } padding values
-  - pages: Ghost pages data (optional)
---}}
-
-{{!-- Inline Styles --}}
-<style>
-.gd-hero-section {
-  --gd-hero-padding-top: {{default config.paddingTop 32}}px;
-  --gd-hero-padding-bottom: {{default config.paddingBottom 32}}px;
-  --gd-hero-card-radius: {{#if (eq config.contentWidth 'full')}}0{{else}}{{default config.cardBorderRadius 24}}{{/if}}px;
-  --gd-hero-background: {{default config.backgroundColor '#000000'}};
-  --gd-hero-text-color: #ffffff;
-  --gd-hero-inner-padding-top: {{#if (eq config.heightMode 'expand')}}92{{else}}64{{/if}}px;
-  --gd-hero-inner-padding-bottom: {{#if (eq config.heightMode 'expand')}}92{{else}}64{{/if}}px;
-  --gd-hero-button-color: {{default config.buttonColor '#ffffff'}};
-  --gd-hero-button-text-color: {{default config.buttonTextColor '#151515'}};
-  --gd-hero-button-radius: {{default config.buttonBorderRadius 3}}px;
-  padding-top: var(--gd-hero-padding-top);
-  padding-bottom: var(--gd-hero-padding-bottom);
-}
-
-.gd-hero-section.gd-hero-section-regular {
-  padding-left: var(--container-gap, clamp(24px, 1.7032rem + 1.9355vw, 48px));
-  padding-right: var(--container-gap, clamp(24px, 1.7032rem + 1.9355vw, 48px));
-}
-
-.gh-hero {
-  border-radius: var(--gd-hero-card-radius, 0px);
-  overflow: hidden;
-}
-
-.gd-hero-card {
-  background-color: var(--gd-hero-background);
-  color: var(--gd-hero-text-color);
-  padding-top: var(--gd-hero-inner-padding-top);
-  padding-bottom: var(--gd-hero-inner-padding-bottom);
-  padding-left: clamp(2.5rem, 6vw, 4em);
-  padding-right: clamp(2.5rem, 6vw, 4em);
-  display: flex;
-  justify-content: center;
-  border-radius: var(--gd-hero-card-radius);
-  overflow: hidden;
-}
-
-.gd-hero-content {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-  align-items: center;
-  width: 100%;
-  margin: 0 auto;
-  text-align: center;
-}
-
-.gd-hero-content.gd-align-left {
-  align-items: flex-start;
-  text-align: left;
-}
-
-.gd-hero-content.gd-align-right {
-  align-items: flex-end;
-  text-align: right;
-}
-
-.gd-hero-content.gd-width-regular {
-  max-width: var(--container-width, 1120px);
-  padding-left: var(--container-gap, 32px);
-  padding-right: var(--container-gap, 32px);
-}
-
-.gd-hero-content.gd-width-full {
-  max-width: none;
-}
-
-.gd-hero-content.gd-width-full.gd-align-left {
-  margin-left: 0;
-  margin-right: auto;
-}
-
-.gd-hero-content.gd-width-full.gd-align-right {
-  margin-left: auto;
-  margin-right: 0;
-}
-
-.gd-hero-heading {
-  margin: 0;
-  font-family: var(--gh-font-heading, var(--font-sans));
-  font-size: calc(clamp(3rem, 1.82vw + 2.27rem, 4.6rem) * var(--factor, 1));
-  letter-spacing: -0.028em;
-  line-height: 1.1;
-  color: inherit;
-}
-
-.gd-hero-subheading {
-  margin: 12px 0 0;
-  max-width: 640px;
-  font-size: 1.8rem;
-  font-weight: 450;
-  line-height: 1.4;
-  letter-spacing: -0.014em;
-  color: inherit;
-}
-
-.gd-hero-placeholder {
-  opacity: 0.65;
-}
-
-.gd-hero-button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  height: 2.7em;
-  min-height: 46px;
-  padding: 0 1.2em;
-  border-radius: var(--gd-hero-button-radius);
-  font-size: 1.05em;
-  font-weight: 600;
-  line-height: 1em;
-  text-decoration: none;
-  letter-spacing: 0.2px;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-  background-color: var(--gd-hero-button-color);
-  color: var(--gd-hero-button-text-color);
-  margin-top: 2em;
-}
-
-.gd-hero-button:hover {
-  opacity: 0.85;
-}
-</style>
-
-{{!-- Computed values --}}
-{{#with config}}
-  {{!-- Determine display values with fallbacks --}}
-  {{#let
-    displayTitle=(default placeholder.title "Enter heading text")
-    displayDescription=(default placeholder.description "Enter subheading text")
-    displayButtonText=(default placeholder.buttonText "Add button text")
-    displayButtonHref=(default placeholder.buttonHref "https://example.com")
-    hasCustomTitle=(and placeholder.title (neq placeholder.title ""))
-    hasCustomDescription=(and placeholder.description (neq placeholder.description ""))
-    hasCustomButton=(and placeholder.buttonText (neq placeholder.buttonText ""))
-    alignmentClass=(classIf (eq contentAlignment "left") "gd-align-left" (classIf (eq contentAlignment "right") "gd-align-right" "gd-align-center"))
-    widthClass=(classIf (eq contentWidth "regular") "gd-width-regular" "gd-width-full")
-    sectionClass=(classIf (eq contentWidth "regular") "gd-hero-section-regular" "")
-  }}
+{{!-- Hero Section --}}
 
 <section
-  class="gd-hero-section {{sectionClass}} gh-hero"
-  data-section-id="{{default ghostPageTag 'hero-preview'}}"
+  class="hero{{#if (eq contentAlignment 'left')}} hero--left{{/if}}{{#if (eq contentAlignment 'right')}} hero--right{{/if}}{{#if (eq contentWidth 'regular')}} hero--narrow{{/if}}"
+  style="{{sectionStyle}}"
 >
-  <div class="gd-hero-card">
-    <div class="gd-hero-content {{alignmentClass}} {{widthClass}}">
-      {{!-- Heading --}}
-      <h2 class="gd-hero-heading{{classIf (not hasCustomTitle) " gd-hero-placeholder" ""}}">
-        <span style="white-space: pre-wrap;">{{displayTitle}}</span>
-      </h2>
-
-      {{!-- Subheading --}}
-      <p class="gd-hero-subheading{{classIf (not hasCustomDescription) " gd-hero-placeholder" ""}}">
-        <span style="white-space: pre-wrap;">{{displayDescription}}</span>
-      </p>
-
-      {{!-- Button --}}
-      {{#if showButton}}
-        <a
-          href="{{displayButtonHref}}"
-          class="gd-hero-button{{classIf (not hasCustomButton) " gd-hero-placeholder" ""}}"
-        >
-          {{displayButtonText}}
-        </a>
-      {{/if}}
-    </div>
+  <div class="hero__content">
+    <h2 class="hero__heading">
+      {{#if heading}}{{heading}}{{else}}Enter heading text{{/if}}
+    </h2>
+    {{#if subheading}}
+      <p class="hero__subheading">{{subheading}}</p>
+    {{else}}
+      <p class="hero__subheading hero__placeholder">Enter subheading text</p>
+    {{/if}}
+    {{#if showButton}}
+      <a href="{{#if buttonLink}}{{buttonLink}}{{else}}#{{/if}}" class="hero__button">
+        {{#if buttonText}}{{buttonText}}{{else}}Add button text{{/if}}
+      </a>
+    {{/if}}
   </div>
 </section>
-
-  {{/let}}
-{{/with}}
