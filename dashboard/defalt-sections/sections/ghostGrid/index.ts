@@ -17,6 +17,7 @@ export const definition: SectionDefinition<typeof ghostGridConfigSchema> = {
   description: 'Two-column grid for Ghost pages',
   category: 'template',
   defaultVisibility: true,
+  defaultPadding: { top: 48, bottom: 48 },
   configSchema: ghostGridConfigSchema,
   settingsSchema: ghostGridSettingsSchema,
   blocksSchema: ghostGridBlocksSchema,

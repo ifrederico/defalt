@@ -16,6 +16,7 @@ export const definition: SectionDefinition<typeof imageWithTextConfigSchema> = {
   description: 'Image alongside text content',
   category: 'template',
   defaultVisibility: true,
+  defaultPadding: { top: 48, bottom: 48 },
   configSchema: imageWithTextConfigSchema,
   settingsSchema: imageWithTextSettingsSchema,
   blocksSchema: undefined,

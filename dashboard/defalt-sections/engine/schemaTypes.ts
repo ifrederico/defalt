@@ -140,6 +140,7 @@ export const selectSettingSchema = z.object({
 
 /**
  * Radio button group setting (visual layout selection)
+ * Supports optional icons from lucide-react (referenced by name)
  */
 export const radioSettingSchema = z.object({
   type: z.literal('radio'),
@@ -149,9 +150,13 @@ export const radioSettingSchema = z.object({
   options: z.array(
     z.object({
       label: z.string(),
-      value: z.string()
+      value: z.string(),
+      /** Lucide icon name (e.g., 'AlignLeft', 'AlignCenter') */
+      icon: z.string().optional()
     })
   ),
+  /** When true, only show icons (labels shown as tooltips) */
+  iconOnly: z.boolean().optional(),
   info: z.string().optional()
 })
 

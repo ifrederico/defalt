@@ -90,19 +90,34 @@ export function SectionDetailRenderer({ activeDetail, props }: SectionDetailRend
     }
   }, [announcementBarConfig, props])
 
-  // Build announcement content config from props (text only)
+  // Build announcement content config from props
   const announcementConfig = useMemo<AnnouncementSectionConfig>(() => ({
-    text: props.announcementContentConfig.previewText
-  }), [props.announcementContentConfig.previewText])
+    text: props.announcementContentConfig.previewText,
+    size: props.announcementContentConfig.typographySize,
+    weight: props.announcementContentConfig.typographyWeight,
+    spacing: props.announcementContentConfig.typographySpacing,
+    case: props.announcementContentConfig.typographyCase
+  }), [props.announcementContentConfig.previewText, props.announcementContentConfig.typographySize, props.announcementContentConfig.typographyWeight, props.announcementContentConfig.typographySpacing, props.announcementContentConfig.typographyCase])
 
-  // Handler to update announcement content config (text only)
+  // Handler to update announcement content config
   const handleAnnouncementConfigUpdate = useCallback((updater: (config: SectionConfigSchema) => SectionConfigSchema) => {
     const newConfig = updater(announcementConfig as SectionConfigSchema) as AnnouncementSectionConfig
 
-    if (newConfig.text !== announcementConfig.text) {
+    const hasChanged =
+      newConfig.text !== announcementConfig.text ||
+      newConfig.size !== announcementConfig.size ||
+      newConfig.weight !== announcementConfig.weight ||
+      newConfig.spacing !== announcementConfig.spacing ||
+      newConfig.case !== announcementConfig.case
+
+    if (hasChanged) {
       props.onAnnouncementContentConfigChange((prev) => ({
         ...prev,
-        previewText: newConfig.text
+        previewText: newConfig.text,
+        typographySize: newConfig.size,
+        typographyWeight: newConfig.weight,
+        typographySpacing: newConfig.spacing,
+        typographyCase: newConfig.case
       }))
     }
   }, [announcementConfig, props])

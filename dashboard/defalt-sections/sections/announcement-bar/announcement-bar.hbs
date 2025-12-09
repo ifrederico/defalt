@@ -6,6 +6,10 @@
   color: var(--announcement-bar-text-color);
   border-bottom: var(--announcement-bar-divider-thickness) solid var(--announcement-bar-divider-color);
   text-align: center;
+  font-size: var(--announcement-bar-font-size);
+  font-weight: var(--announcement-bar-font-weight);
+  letter-spacing: var(--announcement-bar-letter-spacing);
+  text-transform: var(--announcement-bar-text-transform);
 }
 
 .announcement-bar--narrow .announcement-bar__content {
@@ -32,6 +36,10 @@
     --announcement-bar-text-color: {{textColor}};
     --announcement-bar-divider-thickness: {{dividerThickness}}px;
     --announcement-bar-divider-color: {{dividerColor}};
+    --announcement-bar-font-size: {{#if (eq typographySize 'small')}}1.2rem{{else if (eq typographySize 'large')}}1.6rem{{else if (eq typographySize 'x-large')}}1.8rem{{else}}1.4rem{{/if}};
+    --announcement-bar-font-weight: {{#if (eq typographyWeight 'light')}}300{{else if (eq typographyWeight 'bold')}}700{{else}}500{{/if}};
+    --announcement-bar-letter-spacing: {{#if (eq typographySpacing 'tight')}}-0.02em{{else if (eq typographySpacing 'wide')}}0.05em{{else}}0{{/if}};
+    --announcement-bar-text-transform: {{#if (eq typographyCase 'uppercase')}}uppercase{{else}}none{{/if}};
   "
 >
   <div class="announcement-bar__content">

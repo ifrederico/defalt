@@ -1,8 +1,16 @@
 import { useMemo } from 'react'
 import * as ToggleGroup from '@radix-ui/react-toggle-group'
 import * as Separator from '@radix-ui/react-separator'
+import { CaseSensitive, CaseUpper, type LucideIcon } from 'lucide-react'
 import { getSectionDefinition, type SectionConfigSchema, type SectionSettingSchema } from '@defalt/sections/engine'
 import { SliderField, ToggleSwitch, SettingSection, ColorPickerSetting, Dropdown, InlineControlRow } from '@defalt/ui'
+
+// Icon name to component mapping for radio buttons
+// Add icons here as needed when sections reference them
+const ICON_MAP: Record<string, LucideIcon> = {
+  CaseSensitive,
+  CaseUpper
+}
 
 // Group settings by header - each header starts a new group
 type SettingGroup = {
@@ -83,7 +91,7 @@ function renderSettingInput(
       return (
         <textarea
           className={`${baseClasses} min-h-[80px]`}
-          placeholder={setting.placeholder || 'Enter content...'}
+          placeholder="Enter content..."
           value={typeof value === 'string' ? value : ''}
           onChange={(e) => onChange(e.target.value)}
         />
@@ -138,7 +146,9 @@ function renderSettingInput(
           />
         </InlineControlRow>
       )
-    case 'radio':
+    case 'radio': {
+      const hasIcons = setting.options.some((opt) => opt.icon)
+      const iconOnly = setting.iconOnly && hasIcons
       return (
         <InlineControlRow label={setting.label} labelWidth="sm">
           <ToggleGroup.Root
@@ -148,19 +158,26 @@ function renderSettingInput(
             className="inline-flex items-center gap-0.5 rounded-md bg-subtle p-0.5"
             aria-label={setting.label}
           >
-            {setting.options.map((opt) => (
-              <ToggleGroup.Item
-                key={opt.value}
-                value={opt.value}
-                title={opt.label}
-                className="flex items-center justify-center rounded px-3 py-1.5 font-md text-foreground transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ring data-[state=on]:bg-surface data-[state=on]:text-foreground data-[state=on]:shadow-sm data-[state=off]:hover:bg-subtle/80"
-              >
-                <span className="max-w-[64px] truncate">{opt.label}</span>
-              </ToggleGroup.Item>
-            ))}
+            {setting.options.map((opt) => {
+              const IconComponent = opt.icon ? ICON_MAP[opt.icon] : null
+              return (
+                <ToggleGroup.Item
+                  key={opt.value}
+                  value={opt.value}
+                  title={opt.label}
+                  className={`flex items-center justify-center rounded transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ring data-[state=on]:bg-surface data-[state=on]:text-foreground data-[state=on]:shadow-sm data-[state=off]:hover:bg-subtle/80 ${
+                    iconOnly ? 'p-2' : 'px-3 py-1.5'
+                  }`}
+                >
+                  {IconComponent && <IconComponent size={16} className={iconOnly ? '' : 'mr-1.5'} />}
+                  {!iconOnly && <span className="max-w-[64px] truncate font-md text-foreground">{opt.label}</span>}
+                </ToggleGroup.Item>
+              )
+            })}
           </ToggleGroup.Root>
         </InlineControlRow>
       )
+    }
     case 'image_picker':
       // TODO: Add drag-drop image upload with preview
       // <div className="border-2 border-dashed border-border rounded-md p-4 text-center hover:border-border-strong transition-colors cursor-pointer">
@@ -316,7 +333,7 @@ export function SchemaSectionSettings({
                   </div>
                   {block.settings.map((setting) => (
                     <div key={setting.id} className="space-y-1.5">
-                      {setting.type !== 'header' && setting.type !== 'paragraph' && setting.type !== 'color' && setting.type !== 'color_background' && setting.type !== 'checkbox' && setting.type !== 'range' && (
+                      {setting.type !== 'header' && setting.type !== 'paragraph' && setting.type !== 'color' && setting.type !== 'checkbox' && setting.type !== 'range' && setting.type !== 'select' && setting.type !== 'radio' && (
                         <label className="font-md text-secondary block">{setting.label}</label>
                       )}
                       {renderSettingInput(setting, item?.[setting.id], (next) => handleBlockChange(block.type, idx, setting.id, next))}

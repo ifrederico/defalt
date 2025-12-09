@@ -26,8 +26,8 @@ export type PageLayoutSetting = 'narrow' | 'normal'
 
 export type AnnouncementBarWidthSetting = 'default' | 'narrow'
 export type AnnouncementBarTypographySize = 'small' | 'normal' | 'large' | 'x-large'
-export type AnnouncementBarTypographyWeight = 'light' | 'normal' | 'bold'
-export type AnnouncementBarTypographySpacing = 'tight' | 'normal' | 'wide'
+export type AnnouncementBarTypographyWeight = 'light' | 'default' | 'bold'
+export type AnnouncementBarTypographySpacing = 'tight' | 'regular' | 'wide'
 export type AnnouncementBarTypographyCase = 'default' | 'uppercase'
 
 export interface AnnouncementBarConfig {
@@ -63,8 +63,8 @@ export const DEFAULT_ANNOUNCEMENT_CONTENT_CONFIG: AnnouncementContentConfig = {
   previewText: 'Tag #announcement-bar to a published Ghost page.',
   underlineLinks: false,
   typographySize: 'normal',
-  typographyWeight: 'normal',
-  typographySpacing: 'normal',
+  typographyWeight: 'default',
+  typographySpacing: 'regular',
   typographyCase: 'default'
 }
 
@@ -404,16 +404,13 @@ export const normalizeAnnouncementContentConfig = (
     return null
   }
   const parseWeight = (input: unknown): AnnouncementBarTypographyWeight | null => {
-    if (input === 'light' || input === 'normal' || input === 'bold') {
+    if (input === 'light' || input === 'default' || input === 'bold') {
       return input
-    }
-    if (input === 'default') {
-      return 'normal'
     }
     return null
   }
   const parseSpacing = (input: unknown): AnnouncementBarTypographySpacing | null => {
-    if (input === 'tight' || input === 'normal' || input === 'wide') {
+    if (input === 'tight' || input === 'regular' || input === 'wide') {
       return input
     }
     return null
