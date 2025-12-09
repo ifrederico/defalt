@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import { getSectionDefinition, type SectionConfigSchema, type SectionSettingSchema } from '@defalt/sections/engine'
-import { SliderField, ToggleSwitch, SettingSection, ColorControl, Dropdown } from '@defalt/ui'
+import { SliderField, ToggleSwitch, SettingSection, ColorControl, Dropdown, InlineControlRow } from '@defalt/ui'
 
 type SchemaSectionSettingsProps = {
   definitionId: string
@@ -67,11 +67,13 @@ function renderSettingInput(
       )
     case 'checkbox':
       return (
-        <ToggleSwitch
-          checked={value === true}
-          onChange={(checked) => onChange(checked)}
-          ariaLabel={setting.label}
-        />
+        <InlineControlRow label={setting.label}>
+          <ToggleSwitch
+            checked={value === true}
+            onChange={(checked) => onChange(checked)}
+            ariaLabel={setting.label}
+          />
+        </InlineControlRow>
       )
     case 'range':
       return (
@@ -256,7 +258,7 @@ export function SchemaSectionSettings({
               const currentValue = configRecord[setting.id]
               return (
                 <div key={setting.id} className="space-y-1">
-                  {setting.type !== 'header' && setting.type !== 'paragraph' && setting.type !== 'color' && setting.type !== 'color_background' && (
+                  {setting.type !== 'header' && setting.type !== 'paragraph' && setting.type !== 'color' && setting.type !== 'color_background' && setting.type !== 'checkbox' && (
                     <label className="font-sm text-secondary block">{setting.label}</label>
                   )}
                   {renderSettingInput(setting, currentValue, (next) => handleFieldChange(setting.id, next))}
