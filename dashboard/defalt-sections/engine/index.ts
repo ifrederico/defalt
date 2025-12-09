@@ -279,6 +279,14 @@ export {
 } from '../sections/announcement-bar/schema.js'
 export { announcementBarDefaults } from '../sections/announcement-bar/defaults.js'
 
+// Announcement section (content text)
+export {
+  type AnnouncementSectionConfig,
+  announcementConfigSchema,
+  announcementSettingsSchema
+} from '../sections/announcement/schema.js'
+export { announcementDefaults } from '../sections/announcement/defaults.js'
+
 // Header section
 export {
   type HeaderSectionConfig,

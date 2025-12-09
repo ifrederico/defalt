@@ -35,6 +35,7 @@ export interface AnnouncementBarConfig {
   backgroundColor: string
   textColor: string
   dividerThickness: number
+  dividerColor: string
   paddingTop: number
   paddingBottom: number
 }
@@ -53,6 +54,7 @@ export const DEFAULT_ANNOUNCEMENT_BAR_CONFIG: AnnouncementBarConfig = {
   backgroundColor: '#AC1E3E',
   textColor: '#ffffff',
   dividerThickness: 0,
+  dividerColor: '#e5e7eb',
   paddingTop: 8,
   paddingBottom: 8
 }
@@ -376,6 +378,7 @@ export const normalizeAnnouncementBarConfig = (value: unknown, fallback: Announc
     backgroundColor: sanitizeHexColorValue(raw.backgroundColor, fallback.backgroundColor),
     textColor: sanitizeHexColorValue(raw.textColor, fallback.textColor),
     dividerThickness,
+    dividerColor: sanitizeHexColorValue(raw.dividerColor, fallback.dividerColor),
     paddingTop,
     paddingBottom
   }

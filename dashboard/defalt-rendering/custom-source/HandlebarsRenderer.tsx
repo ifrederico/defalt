@@ -297,6 +297,7 @@ export function HandlebarsRenderer({
     paddingTop: sanitizedAnnouncementBarConfig.paddingTop,
     paddingBottom: sanitizedAnnouncementBarConfig.paddingBottom,
     dividerThickness: sanitizedAnnouncementBarConfig.dividerThickness,
+    dividerColor: sanitizedAnnouncementBarConfig.dividerColor,
     typographySize: sanitizedAnnouncementContentConfig.typographySize,
     typographyWeight: sanitizedAnnouncementContentConfig.typographyWeight,
     typographySpacing: sanitizedAnnouncementContentConfig.typographySpacing,

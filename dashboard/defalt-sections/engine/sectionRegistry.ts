@@ -65,9 +65,9 @@ function loadSectionDefinitions(): RegisteredSection[] {
     const definition = module.definition
 
     // Validate definition has required fields
-    if (!definition.id || !definition.templatePath) {
+    if (!definition.id) {
       console.warn(
-        `[sectionRegistry] Section "${sectionId}" missing required fields (id, templatePath)`
+        `[sectionRegistry] Section "${sectionId}" missing required field (id)`
       )
       continue
     }

@@ -1,27 +1,18 @@
 /**
  * Ghost Cards Section Definition
- *
- * Display a three-card grid for featured posts or offers.
- * Fetches content from Ghost pages by tag or uses manual cards.
  */
 
 import type { SectionDefinition } from '../../engine/schemaTypes.js'
-import {
-  ghostCardsConfigSchema,
-  ghostCardsSettingsSchema,
-  ghostCardsBlocksSchema,
-  type GhostCardsSectionConfig
-} from './schema.js'
+import { ghostCardsConfigSchema, ghostCardsSettingsSchema, ghostCardsBlocksSchema, type GhostCardsSectionConfig } from './schema.js'
 import { ghostCardsDefaults } from './defaults.js'
 
 export const definition: SectionDefinition<typeof ghostCardsConfigSchema> = {
   id: 'ghostCards',
-  label: 'Ghost cards',
-  description: 'Display a three-card grid for featured posts or offers.',
+  label: 'Cards',
+  description: 'A grid of content cards',
   category: 'template',
   defaultVisibility: true,
-  defaultPadding: { top: 32, bottom: 32, left: 0, right: 0 },
-  usesUnifiedPadding: false,
+  defaultPadding: { top: 48, bottom: 48 },
   configSchema: ghostCardsConfigSchema,
   settingsSchema: ghostCardsSettingsSchema,
   blocksSchema: ghostCardsBlocksSchema,

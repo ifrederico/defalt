@@ -1,6 +1,6 @@
 import { useMemo, useState, useCallback, type ReactNode } from 'react'
 import type { SectionsPanelProps } from '../SectionsPanelBase'
-import type { SectionConfigSchema, AnnouncementBarSectionConfig, HeaderSectionConfig, SourceThemeConfig } from '@defalt/sections/engine'
+import type { SectionConfigSchema, AnnouncementBarSectionConfig, AnnouncementSectionConfig, HeaderSectionConfig, SourceThemeConfig } from '@defalt/sections/engine'
 import { getSectionDefinition } from '@defalt/sections/engine'
 import { SECTION_ID_MAP, PADDING_BLOCK_SECTIONS, CSS_DEFAULT_MARGIN } from '@defalt/utils/config/themeConfig'
 import { SchemaSectionSettings } from '../../components/SchemaSectionSettings'
@@ -40,6 +40,7 @@ export function SectionDetailRenderer({ activeDetail, props }: SectionDetailRend
     backgroundColor: props.announcementBarConfig.backgroundColor,
     textColor: props.announcementBarConfig.textColor,
     dividerThickness: props.announcementBarConfig.dividerThickness,
+    dividerColor: props.announcementBarConfig.dividerColor,
     paddingTop: props.announcementBarConfig.paddingTop,
     paddingBottom: props.announcementBarConfig.paddingBottom
   }), [props.announcementBarConfig])
@@ -72,6 +73,7 @@ export function SectionDetailRenderer({ activeDetail, props }: SectionDetailRend
       newConfig.backgroundColor !== announcementBarConfig.backgroundColor ||
       newConfig.textColor !== announcementBarConfig.textColor ||
       newConfig.dividerThickness !== announcementBarConfig.dividerThickness ||
+      newConfig.dividerColor !== announcementBarConfig.dividerColor ||
       newConfig.paddingTop !== announcementBarConfig.paddingTop ||
       newConfig.paddingBottom !== announcementBarConfig.paddingBottom
 
@@ -81,11 +83,29 @@ export function SectionDetailRenderer({ activeDetail, props }: SectionDetailRend
         backgroundColor: newConfig.backgroundColor,
         textColor: newConfig.textColor,
         dividerThickness: newConfig.dividerThickness,
+        dividerColor: newConfig.dividerColor,
         paddingTop: newConfig.paddingTop,
         paddingBottom: newConfig.paddingBottom
       }))
     }
   }, [announcementBarConfig, props])
+
+  // Build announcement content config from props (text only)
+  const announcementConfig = useMemo<AnnouncementSectionConfig>(() => ({
+    text: props.announcementContentConfig.previewText
+  }), [props.announcementContentConfig.previewText])
+
+  // Handler to update announcement content config (text only)
+  const handleAnnouncementConfigUpdate = useCallback((updater: (config: SectionConfigSchema) => SectionConfigSchema) => {
+    const newConfig = updater(announcementConfig as SectionConfigSchema) as AnnouncementSectionConfig
+
+    if (newConfig.text !== announcementConfig.text) {
+      props.onAnnouncementContentConfigChange((prev) => ({
+        ...prev,
+        previewText: newConfig.text
+      }))
+    }
+  }, [announcementConfig, props])
 
   // Build unified theme config from individual props (for main appearance settings)
   const mainThemeConfig = useMemo<SourceThemeConfig>(() => ({
@@ -153,9 +173,8 @@ export function SectionDetailRenderer({ activeDetail, props }: SectionDetailRend
         )
       }
     }
-    // Announcement bar section - use schema engine (consolidates bar + content settings)
-    // Both 'announcement-bar' and 'announcement' IDs route to the same consolidated settings
-    if (activeDetail.id === 'announcement-bar' || activeDetail.id === 'announcement') {
+    // Announcement bar section - container appearance settings
+    if (activeDetail.id === 'announcement-bar') {
       const definition = getSectionDefinition('announcement-bar')
       if (definition?.settingsSchema && definition.settingsSchema.length > 0) {
         return (
@@ -164,6 +183,20 @@ export function SectionDetailRenderer({ activeDetail, props }: SectionDetailRend
             config={announcementBarConfig as SectionConfigSchema}
             padding={{ top: announcementBarConfig.paddingTop, bottom: announcementBarConfig.paddingBottom }}
             onUpdateConfig={handleAnnouncementBarConfigUpdate}
+          />
+        )
+      }
+    }
+    // Announcement section - text content
+    if (activeDetail.id === 'announcement') {
+      const definition = getSectionDefinition('announcement')
+      if (definition?.settingsSchema && definition.settingsSchema.length > 0) {
+        return (
+          <SchemaSectionSettings
+            definitionId="announcement"
+            config={announcementConfig as SectionConfigSchema}
+            padding={{ top: 0, bottom: 0 }}
+            onUpdateConfig={handleAnnouncementConfigUpdate}
           />
         )
       }
@@ -269,7 +302,7 @@ export function SectionDetailRenderer({ activeDetail, props }: SectionDetailRend
       )
     }
     return <GenericCustomSectionNotice label={activeDetail.label} />
-  }, [activeDetail, activeCustomSection, activeAiSection, props, headerConfig, announcementBarConfig, handleHeaderConfigUpdate, handleAnnouncementBarConfigUpdate, mainThemeConfig, handleMainThemeConfigUpdate])
+  }, [activeDetail, activeCustomSection, activeAiSection, props, headerConfig, announcementBarConfig, announcementConfig, handleHeaderConfigUpdate, handleAnnouncementBarConfigUpdate, handleAnnouncementConfigUpdate, mainThemeConfig, handleMainThemeConfigUpdate])
 }
 
 function SettingsPanel({ children }: { children: React.ReactNode }) {

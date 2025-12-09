@@ -1,164 +1,48 @@
 /**
  * Ghost Cards Section Schema
- *
- * A three-card grid for displaying Ghost pages or manual content.
- * Uses shared presets from the engine for common fields.
  */
 
 import { z } from 'zod'
 import type { SettingSchema, BlockSchema } from '../../engine/schemaTypes.js'
-import {
-  // Zod shapes
-  paddingShape,
-  // UI presets
-  alignmentSettings,
-  toggleableSectionHeaderSettings,
-  ghostPageTagSettings,
-  paddingSettings
-} from '../../engine/commonSettings.js'
 
-// =============================================================================
-// Zod Config Schema
-// =============================================================================
-
-/**
- * Individual card config
- */
-const cardConfigSchema = z.object({
+// Card schema
+const cardSchema = z.object({
   title: z.string().default(''),
   description: z.string().default(''),
   buttonText: z.string().default(''),
-  buttonHref: z.string().default('')
+  buttonLink: z.string().default('')
 })
 
-export type GhostCardsCardConfig = z.infer<typeof cardConfigSchema>
+export type GhostCardsCard = z.infer<typeof cardSchema>
 
-/**
- * Full Ghost Cards config schema
- */
+// Zod config schema
 export const ghostCardsConfigSchema = z.object({
-  // Ghost integration
-  ghostPageTag: z.string().default('#ghost-card'),
+  // Cards
+  cards: z.array(cardSchema).default([]),
 
-  // Section header
-  heading: z.string().default(''),
-  subheading: z.string().default(''),
-  showHeader: z.boolean().default(true),
-
-  // Header styling
-  headerAlignment: z.enum(['left', 'center', 'right']).default('center'),
-  titleSize: z.enum(['small', 'normal', 'large']).default('normal'),
-
-  // Cards array (for manual content)
-  cards: z.array(cardConfigSchema).default([]),
-
-  // Colors (section-specific, not using shared because of custom fields)
+  // Colors
   backgroundColor: z.string().default('#ffffff'),
   textColor: z.string().default('#151515'),
-  cardBackgroundColor: z.string().default('#ffffff'),
-  cardBorderColor: z.string().default('#e6e6e6'),
-  buttonColor: z.string().default('#151515'),
 
-  // Shared padding
-  ...paddingShape
+  // Padding
+  paddingTop: z.number().min(0).max(200).default(48),
+  paddingBottom: z.number().min(0).max(200).default(48)
 })
 
 export type GhostCardsSectionConfig = z.infer<typeof ghostCardsConfigSchema>
 
-// =============================================================================
-// UI Settings Schema
-// =============================================================================
-
-/**
- * Title size setting
- */
-const titleSizeSettings: SettingSchema[] = [
-  {
-    type: 'select',
-    id: 'titleSize',
-    label: 'Heading size',
-    default: 'normal',
-    options: [
-      { label: 'Small', value: 'small' },
-      { label: 'Normal', value: 'normal' },
-      { label: 'Large', value: 'large' }
-    ]
-  }
-]
-
-/**
- * Ghost Cards specific color settings
- */
-const ghostCardsColorSettings: SettingSchema[] = [
-  {
-    type: 'header',
-    id: 'colors-header',
-    label: 'Colors'
-  },
-  {
-    type: 'color',
-    id: 'backgroundColor',
-    label: 'Background',
-    default: '#ffffff'
-  },
-  {
-    type: 'color',
-    id: 'textColor',
-    label: 'Text color',
-    default: '#151515'
-  },
-  {
-    type: 'color',
-    id: 'cardBackgroundColor',
-    label: 'Card background',
-    default: '#ffffff'
-  },
-  {
-    type: 'color',
-    id: 'cardBorderColor',
-    label: 'Card border',
-    default: '#e6e6e6'
-  },
-  {
-    type: 'color',
-    id: 'buttonColor',
-    label: 'Button color',
-    default: '#151515'
-  }
-]
-
-/**
- * Combined UI settings for Ghost Cards
- * Order: Content → Layout → Style (Colors)
- */
+// UI settings schema
 export const ghostCardsSettingsSchema: SettingSchema[] = [
-  // Content (header with toggle + Ghost tag)
-  ...toggleableSectionHeaderSettings,
-  ...ghostPageTagSettings,
+  { type: 'header', id: 'colors-header', label: 'Colors' },
+  { type: 'color', id: 'backgroundColor', label: 'Background', default: '#ffffff' },
+  { type: 'color', id: 'textColor', label: 'Text', default: '#151515' },
 
-  // Layout
-  {
-    type: 'header',
-    id: 'layout-header',
-    label: 'Layout'
-  },
-  ...alignmentSettings.map(s => ({ ...s, id: 'headerAlignment', label: 'Heading alignment' })),
-  ...titleSizeSettings,
-
-  // Spacing
-  ...paddingSettings,
-
-  // Style (Colors)
-  ...ghostCardsColorSettings
+  { type: 'header', id: 'padding-header', label: 'Padding' },
+  { type: 'range', id: 'paddingTop', label: 'Top', min: 0, max: 200, step: 4, default: 48, unit: 'px' },
+  { type: 'range', id: 'paddingBottom', label: 'Bottom', min: 0, max: 200, step: 4, default: 48, unit: 'px' }
 ]
 
-// =============================================================================
-// Blocks Schema
-// =============================================================================
-
-/**
- * Card block for manual content
- */
+// Blocks schema
 export const ghostCardsBlocksSchema: BlockSchema[] = [
   {
     type: 'card',
@@ -166,8 +50,8 @@ export const ghostCardsBlocksSchema: BlockSchema[] = [
     settings: [
       { type: 'text', id: 'title', label: 'Title', default: '' },
       { type: 'textarea', id: 'description', label: 'Description', default: '' },
-      { type: 'text', id: 'buttonText', label: 'Button label', default: '' },
-      { type: 'url', id: 'buttonHref', label: 'Button link', default: '' }
+      { type: 'text', id: 'buttonText', label: 'Button text', default: '' },
+      { type: 'url', id: 'buttonLink', label: 'Button link', default: '' }
     ]
   }
 ]

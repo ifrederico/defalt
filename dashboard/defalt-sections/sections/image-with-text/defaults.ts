@@ -7,16 +7,8 @@ import type { ImageWithTextSectionConfig } from './schema.js'
 export const imageWithTextDefaults: ImageWithTextSectionConfig = {
   ghostPageTag: '#image-with-text',
   imagePosition: 'left',
-  showHeader: true,
-  headerAlignment: 'center',
-  aspectRatio: 'default',
-  imageBorderRadius: 0,
-  containerWidth: 'default',
-  imageWidth: '1/2',
-  gap: 32,
-  textAlignment: 'middle',
-  headingSize: 'normal'
+  backgroundColor: '#ffffff',
+  textColor: '#151515',
+  paddingTop: 48,
+  paddingBottom: 48
 }
-
-export const DEFAULT_TAG = '#image-with-text'
-export const HIDE_TAG = '#image-text-hide'

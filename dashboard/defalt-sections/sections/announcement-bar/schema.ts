@@ -17,6 +17,7 @@ export const announcementBarConfigSchema = z.object({
   backgroundColor: z.string().default('#AC1E3E'),
   textColor: z.string().default('#ffffff'),
   dividerThickness: z.number().min(0).max(5).default(0),
+  dividerColor: z.string().default('#e5e7eb'),
   paddingTop: z.number().min(0).max(100).default(8),
   paddingBottom: z.number().min(0).max(100).default(8)
 })
@@ -64,6 +65,12 @@ export const announcementBarSettingsSchema: SettingSchema[] = [
     step: 1,
     default: 0,
     unit: 'px'
+  },
+  {
+    type: 'color',
+    id: 'dividerColor',
+    label: 'Divider color',
+    default: '#e5e7eb'
   },
   {
     type: 'header',

@@ -1,7 +1,5 @@
 /**
  * Ghost Grid Section Definition
- *
- * Show two Ghost pages side-by-side as feature cards.
  */
 
 import type { SectionDefinition } from '../../engine/schemaTypes.js'
@@ -15,12 +13,10 @@ import { ghostGridDefaults } from './defaults.js'
 
 export const definition: SectionDefinition<typeof ghostGridConfigSchema> = {
   id: 'ghostGrid',
-  label: 'Ghost grid',
-  description: 'Show two Ghost pages side-by-side as feature cards.',
+  label: 'Ghost Grid',
+  description: 'Two-column grid for Ghost pages',
   category: 'template',
   defaultVisibility: true,
-  defaultPadding: { top: 32, bottom: 32, left: 0, right: 0 },
-  usesUnifiedPadding: false,
   configSchema: ghostGridConfigSchema,
   settingsSchema: ghostGridSettingsSchema,
   blocksSchema: ghostGridBlocksSchema,

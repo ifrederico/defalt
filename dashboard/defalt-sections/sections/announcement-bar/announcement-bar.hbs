@@ -1,9 +1,38 @@
 {{!-- Announcement Bar Section --}}
 
+<style>
+.announcement-bar {
+  background-color: var(--announcement-bar-background-color);
+  color: var(--announcement-bar-text-color);
+  border-bottom: var(--announcement-bar-divider-thickness) solid var(--announcement-bar-divider-color);
+  text-align: center;
+}
+
+.announcement-bar--narrow .announcement-bar__content {
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+.announcement-bar__content {
+  padding: 0 16px;
+}
+
+.announcement-bar__content a {
+  color: inherit;
+  text-decoration: underline;
+}
+</style>
+
 <section
   class="announcement-bar{{#if (eq width 'narrow')}} announcement-bar--narrow{{/if}}"
   id="announcement"
-  style="{{sectionStyle}}"
+  style="
+    {{sectionStyle}};
+    --announcement-bar-background-color: {{backgroundColor}};
+    --announcement-bar-text-color: {{textColor}};
+    --announcement-bar-divider-thickness: {{dividerThickness}}px;
+    --announcement-bar-divider-color: {{dividerColor}};
+  "
 >
   <div class="announcement-bar__content">
     {{#if previewText}}

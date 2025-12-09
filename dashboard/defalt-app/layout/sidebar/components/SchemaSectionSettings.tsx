@@ -95,6 +95,7 @@ function renderSettingInput(
           value={typeof value === 'string' ? value : (typeof setting.default === 'string' ? setting.default : '#000000')}
           swatches={[
             { title: 'Accent', hex: '#AC1E3E', accent: true },
+            { title: 'Grey', hex: '#e5e7eb' },
             { title: 'Black', hex: '#000000' },
             { title: 'White', hex: '#ffffff' }
           ]}
