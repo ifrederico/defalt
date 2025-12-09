@@ -37,7 +37,7 @@ export function ColorControl({ label, value, onChange, disabled = false, allowTr
   return (
     <div className={disabled ? 'pointer-events-none opacity-60' : ''}>
       <div className="flex items-center justify-between gap-3">
-        <p className="text-xs font-medium text-secondary whitespace-nowrap">{label}</p>
+        <p className="font-md text-secondary whitespace-nowrap">{label}</p>
         <ColorIndicator
           value={normalizedValue}
           swatches={[]}

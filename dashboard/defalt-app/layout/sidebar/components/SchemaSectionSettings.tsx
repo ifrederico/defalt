@@ -1,4 +1,5 @@
 import { useMemo } from 'react'
+import * as ToggleGroup from '@radix-ui/react-toggle-group'
 import { getSectionDefinition, type SectionConfigSchema, type SectionSettingSchema } from '@defalt/sections/engine'
 import { SliderField, ToggleSwitch, SettingSection, ColorControl, Dropdown, InlineControlRow } from '@defalt/ui'
 
@@ -16,7 +17,7 @@ function renderSettingInput(
   value: unknown,
   onChange: (next: unknown) => void
 ) {
-  const baseClasses = 'w-full rounded-md border border-border px-3 py-2 font-md text-foreground placeholder:text-placeholder focus:outline-none focus-visible:ring-2 focus-visible:ring-ring'
+  const baseClasses = 'w-full rounded-md bg-subtle px-3 py-2 font-md text-foreground placeholder:text-placeholder focus:outline-none focus-visible:ring-2 focus-visible:ring-ring'
 
   switch (setting.type) {
     case 'text':
@@ -100,25 +101,23 @@ function renderSettingInput(
       )
     case 'radio':
       return (
-        <div className="flex flex-wrap gap-2">
-          {setting.options.map((opt) => {
-            const isSelected = value === opt.value
-            return (
-              <button
-                key={opt.value}
-                type="button"
-                className={`px-3 py-1.5 font-md rounded-md border transition-colors ${
-                  isSelected
-                    ? 'border-accent bg-accent/10 text-accent'
-                    : 'border-border bg-surface text-foreground hover:border-border-strong'
-                }`}
-                onClick={() => onChange(opt.value)}
-              >
-                {opt.label}
-              </button>
-            )
-          })}
-        </div>
+        <ToggleGroup.Root
+          type="single"
+          value={typeof value === 'string' ? value : ''}
+          onValueChange={(next) => next && onChange(next)}
+          className="inline-flex items-center gap-0.5 rounded-md bg-subtle p-0.5"
+          aria-label={setting.label}
+        >
+          {setting.options.map((opt) => (
+            <ToggleGroup.Item
+              key={opt.value}
+              value={opt.value}
+              className="flex items-center justify-center rounded px-3 py-1.5 font-md text-secondary transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ring data-[state=on]:bg-surface data-[state=on]:text-foreground data-[state=on]:shadow-sm data-[state=off]:hover:text-foreground"
+            >
+              {opt.label}
+            </ToggleGroup.Item>
+          ))}
+        </ToggleGroup.Root>
       )
     case 'image_picker':
       return (
@@ -174,9 +173,9 @@ function renderSettingInput(
         </div>
       )
     case 'header':
-      return <h4 className="font-sm font-semibold text-foreground">{setting.label}</h4>
+      return <h4 className="font-md font-semibold text-foreground pt-2 first:pt-0">{setting.label}</h4>
     case 'paragraph':
-      return <p className="font-sm text-secondary">{setting.content}</p>
+      return <p className="font-md text-muted leading-relaxed">{setting.content}</p>
     default:
       return null
   }
@@ -250,16 +249,16 @@ export function SchemaSectionSettings({
   }
 
   return (
-    <>
+    <div className="pl-4 pr-6 pt-3 pb-5 space-y-4">
       {settings.length > 0 && (
         <SettingSection title="Settings">
           <div className="space-y-3">
             {settings.map((setting) => {
               const currentValue = configRecord[setting.id]
               return (
-                <div key={setting.id} className="space-y-1">
+                <div key={setting.id} className="space-y-1.5">
                   {setting.type !== 'header' && setting.type !== 'paragraph' && setting.type !== 'color' && setting.type !== 'color_background' && setting.type !== 'checkbox' && (
-                    <label className="font-sm text-secondary block">{setting.label}</label>
+                    <label className="font-md text-secondary block">{setting.label}</label>
                   )}
                   {renderSettingInput(setting, currentValue, (next) => handleFieldChange(setting.id, next))}
                 </div>
@@ -302,9 +301,9 @@ export function SchemaSectionSettings({
                     </button>
                   </div>
                   {block.settings.map((setting) => (
-                    <div key={setting.id} className="space-y-1">
-                      {setting.type !== 'header' && setting.type !== 'paragraph' && (
-                        <label className="font-sm text-secondary block">{setting.label}</label>
+                    <div key={setting.id} className="space-y-1.5">
+                      {setting.type !== 'header' && setting.type !== 'paragraph' && setting.type !== 'color' && setting.type !== 'color_background' && setting.type !== 'checkbox' && (
+                        <label className="font-md text-secondary block">{setting.label}</label>
                       )}
                       {renderSettingInput(setting, item?.[setting.id], (next) => handleBlockChange(block.type, idx, setting.id, next))}
                     </div>
@@ -360,6 +359,6 @@ export function SchemaSectionSettings({
           />
         </SettingSection>
       )}
-    </>
+    </div>
   )
 }
