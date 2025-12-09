@@ -16,7 +16,7 @@ function renderSettingInput(
   value: unknown,
   onChange: (next: unknown) => void
 ) {
-  const baseClasses = 'w-full rounded-md border border-border px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-border-strong'
+  const baseClasses = 'w-full rounded-md border border-border px-3 py-2 font-md text-foreground placeholder:text-placeholder focus:outline-none focus-visible:ring-2 focus-visible:ring-ring'
 
   switch (setting.type) {
     case 'text':
@@ -91,9 +91,9 @@ function renderSettingInput(
           selected={typeof value === 'string' ? value : (setting.default ?? '')}
           items={setting.options}
           onSelect={(val) => onChange(val)}
-          triggerClassName="flex h-[38px] min-w-[160px] items-center justify-between gap-1.5 rounded-md bg-subtle px-3 text-sm text-foreground transition-colors hover:bg-subtle/80 focus:outline-none focus-visible:outline-none"
+          triggerClassName="flex h-[38px] min-w-[160px] items-center justify-between gap-1.5 rounded-md bg-subtle px-3 text-md text-foreground transition-colors hover:bg-subtle/80 focus:outline-none focus-visible:outline-none"
           contentClassName="bg-surface rounded-md shadow-lg overflow-hidden min-w-[160px] z-[100]"
-          itemClassName="flex items-center gap-2 px-3 py-2 text-sm text-foreground transition-colors hover:bg-subtle"
+          itemClassName="flex items-center gap-2 px-3 py-2 text-md text-foreground transition-colors hover:bg-subtle"
         />
       )
     case 'radio':
@@ -105,7 +105,7 @@ function renderSettingInput(
               <button
                 key={opt.value}
                 type="button"
-                className={`px-3 py-1.5 text-sm rounded-md border transition-colors ${
+                className={`px-3 py-1.5 font-md rounded-md border transition-colors ${
                   isSelected
                     ? 'border-accent bg-accent/10 text-accent'
                     : 'border-border bg-surface text-foreground hover:border-border-strong'
@@ -127,7 +127,7 @@ function renderSettingInput(
                 <img src={value} alt="Preview" className="max-h-32 mx-auto rounded" />
                 <button
                   type="button"
-                  className="text-sm text-secondary hover:text-foreground"
+                  className="font-sm text-secondary hover:text-foreground"
                   onClick={() => onChange('')}
                 >
                   Remove
@@ -145,7 +145,7 @@ function renderSettingInput(
                 >
                   <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
                 </svg>
-                <p className="mt-2 text-sm text-secondary">Drop image or paste URL</p>
+                <p className="mt-2 font-sm text-secondary">Drop image or paste URL</p>
                 <p className="text-xs text-muted mt-1">PNG, JPG up to 2MB</p>
               </div>
             )}
@@ -172,9 +172,9 @@ function renderSettingInput(
         </div>
       )
     case 'header':
-      return <h4 className="text-sm font-semibold text-foreground">{setting.label}</h4>
+      return <h4 className="font-sm font-semibold text-foreground">{setting.label}</h4>
     case 'paragraph':
-      return <p className="text-sm text-secondary">{setting.content}</p>
+      return <p className="font-sm text-secondary">{setting.content}</p>
     default:
       return null
   }
@@ -196,7 +196,7 @@ export function SchemaSectionSettings({
   const definition = useMemo(() => getSectionDefinition(definitionId), [definitionId])
 
   if (!definition) {
-    return <p className="text-sm text-secondary">Unknown section: {definitionId}</p>
+    return <p className="font-sm text-secondary">Unknown section: {definitionId}</p>
   }
 
   const settings = definition.settingsSchema ?? []
@@ -257,7 +257,7 @@ export function SchemaSectionSettings({
               return (
                 <div key={setting.id} className="space-y-1">
                   {setting.type !== 'header' && setting.type !== 'paragraph' && setting.type !== 'color' && setting.type !== 'color_background' && (
-                    <label className="text-sm font-medium text-foreground block">{setting.label}</label>
+                    <label className="font-sm text-secondary block">{setting.label}</label>
                   )}
                   {renderSettingInput(setting, currentValue, (next) => handleFieldChange(setting.id, next))}
                 </div>
@@ -276,7 +276,7 @@ export function SchemaSectionSettings({
             canAdd ? (
               <button
                 type="button"
-                className="text-sm font-medium text-secondary hover:text-foreground"
+                className="font-sm font-medium text-secondary hover:text-foreground"
                 onClick={() => handleAddBlock(block.type)}
               >
                 Add
@@ -284,13 +284,13 @@ export function SchemaSectionSettings({
             ) : null
           }>
             {list.length === 0 && (
-              <p className="text-sm text-secondary">No {block.name.toLowerCase()} items yet.</p>
+              <p className="font-sm text-secondary">No {block.name.toLowerCase()} items yet.</p>
             )}
             <div className="space-y-3">
               {list.map((item, idx) => (
                 <div key={`${block.type}-${idx}`} className="rounded-md border border-border p-3 space-y-2">
                   <div className="flex items-center justify-between">
-                    <h4 className="text-sm font-semibold text-foreground">{block.name} {idx + 1}</h4>
+                    <h4 className="font-sm font-semibold text-foreground">{block.name} {idx + 1}</h4>
                     <button
                       type="button"
                       className="text-xs text-muted hover:text-foreground"
@@ -302,7 +302,7 @@ export function SchemaSectionSettings({
                   {block.settings.map((setting) => (
                     <div key={setting.id} className="space-y-1">
                       {setting.type !== 'header' && setting.type !== 'paragraph' && (
-                        <label className="text-sm font-medium text-foreground block">{setting.label}</label>
+                        <label className="font-sm text-secondary block">{setting.label}</label>
                       )}
                       {renderSettingInput(setting, item?.[setting.id], (next) => handleBlockChange(block.type, idx, setting.id, next))}
                     </div>
