@@ -226,8 +226,8 @@ function applySectionPadding(doc: Document, paddingMap: Record<string, { top: nu
         if (variableConfig) {
           element.style.setProperty(variableConfig.top, `${top}px`)
           element.style.setProperty(variableConfig.bottom, `${bottom}px`)
-          element.style.removeProperty('padding-top')
-          element.style.removeProperty('padding-bottom')
+          element.style.paddingTop = `${top}px`
+          element.style.paddingBottom = `${bottom}px`
           element.style.removeProperty('padding-block')
         } else if (isBlockMode) {
           element.style.removeProperty('padding-top')

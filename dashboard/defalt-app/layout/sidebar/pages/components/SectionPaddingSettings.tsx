@@ -61,7 +61,7 @@ export function SectionPaddingSettings({ sectionId, padding, margin, defaultMarg
         <SettingSection title="Padding">
           {isPaddingBlockSection ? (
             <SliderField
-              label="Padding block"
+              label="Block"
               value={padding.top}
               min={0}
               max={200}

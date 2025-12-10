@@ -147,7 +147,7 @@ export interface EditorState {
 
 export const CSS_DEFAULT_PADDING: Record<string, number | SectionPadding> = {
   subheader: 160,
-  main: { top: 64, bottom: 0 },
+  main: 0,
   footerBar: 28,
   footerSignup: { top: 0, bottom: 160 }
 }
@@ -157,7 +157,7 @@ export const CSS_DEFAULT_MARGIN: Record<string, SectionMargin> = {
   footerBar: { bottom: 100 }
 }
 
-export const PADDING_BLOCK_SECTIONS = new Set(['subheader', 'footerBar'])
+export const PADDING_BLOCK_SECTIONS = new Set(['subheader', 'main', 'footerBar'])
 
 export const DEFAULT_HEADER_SETTINGS: HeaderSettingsSnapshot = {
   accentColor: '#AC1E3E',
@@ -256,7 +256,7 @@ const createDefaultPageConfig = (pageKey: DocumentPageKey): PageConfig => {
       type: 'main',
       settings: {
         visible: true,
-        padding: CSS_DEFAULT_PADDING.main as SectionPadding
+        paddingBlock: CSS_DEFAULT_PADDING.main as number
       }
     }
   }

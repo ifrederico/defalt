@@ -36,7 +36,7 @@ export function SectionDetailRenderer({ activeDetail, props }: SectionDetailRend
 
   // Build announcement bar config from props (bar appearance only, content handled separately)
   const announcementBarConfig = useMemo<AnnouncementBarSectionConfig>(() => ({
-    width: (props.announcementBarConfig.width === 'default' ? 'full' : props.announcementBarConfig.width) as AnnouncementBarSectionConfig['width'],
+    width: props.announcementBarConfig.width,
     backgroundColor: props.announcementBarConfig.backgroundColor,
     textColor: props.announcementBarConfig.textColor,
     dividerThickness: props.announcementBarConfig.dividerThickness,
@@ -79,7 +79,7 @@ export function SectionDetailRenderer({ activeDetail, props }: SectionDetailRend
 
     if (hasChanged) {
       props.onAnnouncementBarConfigChange(() => ({
-        width: newConfig.width === 'full' ? 'default' : newConfig.width,
+        width: newConfig.width,
         backgroundColor: newConfig.backgroundColor,
         textColor: newConfig.textColor,
         dividerThickness: newConfig.dividerThickness,

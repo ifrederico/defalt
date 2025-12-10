@@ -5,7 +5,7 @@
 import type { AnnouncementBarSectionConfig } from './schema.js'
 
 export const announcementBarDefaults: AnnouncementBarSectionConfig = {
-  width: 'full',
+  width: 'default',
   backgroundColor: '#AC1E3E',
   textColor: '#ffffff',
   dividerThickness: 0,

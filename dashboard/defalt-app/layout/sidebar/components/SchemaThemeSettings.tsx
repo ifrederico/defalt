@@ -22,7 +22,7 @@ function renderSettingInput(
   switch (setting.type) {
     case 'checkbox':
       return (
-        <InlineControlRow label={setting.label}>
+        <InlineControlRow label={setting.label} labelWidth="lg">
           <ToggleSwitch
             checked={value === true}
             onChange={(checked) => onChange(checked)}
@@ -124,7 +124,7 @@ export function SchemaThemeSettings({
 
         <SettingSection title="Padding">
           <SliderField
-            label="Top"
+            label="Block"
             value={padding.top}
             min={0}
             max={200}
@@ -132,36 +132,6 @@ export function SchemaThemeSettings({
             unit="px"
             onChange={(value) => onPaddingChange('top', value)}
             onCommit={(value) => onPaddingCommit('top', value)}
-          />
-          <SliderField
-            label="Bottom"
-            value={padding.bottom}
-            min={0}
-            max={200}
-            step={1}
-            unit="px"
-            onChange={(value) => onPaddingChange('bottom', value)}
-            onCommit={(value) => onPaddingCommit('bottom', value)}
-          />
-          <SliderField
-            label="Left"
-            value={padding.left ?? 0}
-            min={0}
-            max={200}
-            step={1}
-            unit="px"
-            onChange={(value) => onPaddingChange('left', value)}
-            onCommit={(value) => onPaddingCommit('left', value)}
-          />
-          <SliderField
-            label="Right"
-            value={padding.right ?? 0}
-            min={0}
-            max={200}
-            step={1}
-            unit="px"
-            onChange={(value) => onPaddingChange('right', value)}
-            onCommit={(value) => onPaddingCommit('right', value)}
           />
         </SettingSection>
       </div>

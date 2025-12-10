@@ -13,7 +13,7 @@ import type { SettingSchema } from '../../engine/schemaTypes.js'
 // =============================================================================
 
 export const announcementBarConfigSchema = z.object({
-  width: z.enum(['full', 'narrow']).default('full'),
+  width: z.enum(['default', 'narrow']).default('default'),
   backgroundColor: z.string().default('#AC1E3E'),
   textColor: z.string().default('#ffffff'),
   dividerThickness: z.number().min(0).max(5).default(0),
@@ -38,9 +38,9 @@ export const announcementBarSettingsSchema: SettingSchema[] = [
     type: 'radio',
     id: 'width',
     label: 'Width',
-    default: 'full',
+    default: 'default',
     options: [
-      { label: 'Full', value: 'full' },
+      { label: 'Default', value: 'default' },
       { label: 'Narrow', value: 'narrow' }
     ]
   },

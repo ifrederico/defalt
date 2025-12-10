@@ -36,12 +36,12 @@ const appearanceSettings: SettingSchema[] = [
   {
     type: 'header',
     id: 'appearance-header',
-    label: 'Appearance'
+    label: 'Navigation'
   },
   {
     type: 'select',
     id: 'navigationLayout',
-    label: 'Navigation layout',
+    label: 'Layout',
     default: 'Logo in the middle',
     options: [
       { label: 'Logo in the middle', value: 'Logo in the middle' },
@@ -84,13 +84,14 @@ const typographySettings: SettingSchema[] = [
     label: 'Typography'
   },
   {
-    type: 'select',
+    type: 'radio',
     id: 'typographyCase',
     label: 'Case',
     default: 'default',
+    iconOnly: true,
     options: [
-      { label: 'Default', value: 'default' },
-      { label: 'Uppercase', value: 'uppercase' }
+      { label: 'Case sensitive', value: 'default', icon: 'CaseSensitive' },
+      { label: 'Uppercase', value: 'uppercase', icon: 'CaseUpper' }
     ]
   }
 ]
