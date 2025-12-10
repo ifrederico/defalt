@@ -275,32 +275,42 @@ export function generateHomeTemplate(
       const subheaderVisible = sections.subheader?.settings?.visible !== false
       if (subheaderVisible) {
         sectionSnippets.push(headerSnippet)
-        headerInserted = true
+      } else {
+        sectionSnippets.push('<div class="hidden">')
+        sectionSnippets.push(headerSnippet)
+        sectionSnippets.push('</div>')
       }
+      headerInserted = true
     } else if (key === 'featured') {
       // Featured posts section - separate toggle from subheader, only appears with Magazine style
       const featuredVisible = sections.featured?.settings?.visible !== false
+      const featuredContent = [
+        '{{#match @custom.header_style "Magazine"}}',
+        '    {{> "components/featured" showFeatured=@custom.show_featured_posts limit=4}}',
+        '{{/match}}',
+        '',
+        '{{> "components/cta"}}'
+      ]
       if (featuredVisible) {
-        sectionSnippets.push('{{#match @custom.header_style "Magazine"}}')
-        sectionSnippets.push('    {{> "components/featured" showFeatured=@custom.show_featured_posts limit=4}}')
-        sectionSnippets.push('{{/match}}')
-        sectionSnippets.push('')
-        sectionSnippets.push('{{> "components/cta"}}')
+        sectionSnippets.push(...featuredContent)
+      } else {
+        sectionSnippets.push('<div class="hidden">')
+        sectionSnippets.push(...featuredContent)
+        sectionSnippets.push('</div>')
       }
     } else if (key === 'main') {
-      // Only include main content if visible
+      // Include main content, wrapped in hidden if not visible
       const mainVisible = sections[key]?.settings?.visible !== false
+      const mainContent = '{{> "components/post-list" feed="home" postFeedStyle=@custom.post_feed_style showTitle=true showSidebar=@custom.show_publication_info_sidebar}}'
       if (mainVisible) {
-        sectionSnippets.push('{{> "components/post-list" feed="home" postFeedStyle=@custom.post_feed_style showTitle=true showSidebar=@custom.show_publication_info_sidebar}}')
+        sectionSnippets.push(mainContent)
+      } else {
+        sectionSnippets.push('<div class="hidden">')
+        sectionSnippets.push(mainContent)
+        sectionSnippets.push('</div>')
       }
     } else {
       const sectionConfig = sections[key]
-
-      // Check visibility for all sections
-      const sectionVisible = sectionConfig?.settings?.visible !== false
-      if (!sectionVisible) {
-        continue
-      }
 
       const definitionId = sectionConfig?.settings?.definitionId
       if (!definitionId || !KNOWN_SECTION_TYPES.has(definitionId)) {
@@ -309,22 +319,37 @@ export function generateHomeTemplate(
       if (definitionId === 'hero') {
         // Hero section is not exported yet (keep internal-only)
         continue
-      } else if (definitionId === 'ghostCards') {
+      }
+
+      // Check visibility - wrap in hidden div if not visible
+      const sectionVisible = sectionConfig?.settings?.visible !== false
+      let sectionPartial = ''
+
+      if (definitionId === 'ghostCards') {
         // Ghost Cards section uses defalt-ghost-cards.hbs partial (customized by applyGhostCardsCustomization)
         // Multiple instances get unique partials: defalt-ghost-cards.hbs, defalt-ghost-cards-2.hbs, etc.
         const suffix = getSectionInstanceSuffix(key, definitionId)
-        sectionSnippets.push(`{{> "sections/defalt-ghost-cards${suffix}"}}`)
+        sectionPartial = `{{> "sections/defalt-ghost-cards${suffix}"}}`
       } else if (definitionId === 'ghostGrid') {
         // Ghost Grid section uses defalt-ghost-grid.hbs partial (customized by applyGhostGridCustomization)
-        sectionSnippets.push('{{> "sections/defalt-ghost-grid"}}')
+        sectionPartial = '{{> "sections/defalt-ghost-grid"}}'
       } else if (definitionId === 'image-with-text') {
         // Image with Text section uses defalt-image-with-text.hbs partial
         // Multiple instances get unique partials: defalt-image-with-text.hbs, defalt-image-with-text-2.hbs, etc.
         const suffix = getSectionInstanceSuffix(key, definitionId)
-        sectionSnippets.push(`{{> "sections/defalt-image-with-text${suffix}"}}`)
+        sectionPartial = `{{> "sections/defalt-image-with-text${suffix}"}}`
       } else {
         // Unknown section type - all known types should be handled above
         console.warn(`[exportTheme] Unknown section type: ${definitionId}, skipping`)
+        continue
+      }
+
+      if (sectionVisible) {
+        sectionSnippets.push(sectionPartial)
+      } else {
+        sectionSnippets.push('<div class="hidden">')
+        sectionSnippets.push(sectionPartial)
+        sectionSnippets.push('</div>')
       }
     }
   }
@@ -385,17 +410,10 @@ export async function applyNavigationCustomization(themeDir: string, config: The
 
   const headerVisible = config.sections?.header?.settings?.visible !== false
 
+  // If header is hidden, wrap entire navigation content in hidden div
   if (!headerVisible) {
-    const placeholder = [
-      '{{!-- Defalt header hidden placeholder --}}',
-      '<div class="defalt-settings-placeholder" hidden>',
-      '  {{@custom.header_text}}',
-      '  {{#if @custom.background_image}}true{{/if}}',
-      '</div>',
-      ''
-    ].join('\n')
-
-    await fs.writeFile(navigationPath, placeholder, 'utf-8')
+    navigationContent = `<div class="hidden">\n${navigationContent}\n</div>`
+    await fs.writeFile(navigationPath, navigationContent, 'utf-8')
     return
   }
 
@@ -604,7 +622,7 @@ export async function applyDefaultTemplateCustomization(themeDir: string, config
   // which generates an empty partial when hidden, so no marker-based removal needed here
   const navigationVisible = headerSettings?.visible !== false
 
-  // Remove navigation block if not visible
+  // Wrap navigation block in hidden div if not visible
   if (!navigationVisible) {
     const markerStart = '{{!-- defalt-navigation-start --}}'
     const markerEnd = '{{!-- defalt-navigation-end --}}'
@@ -614,7 +632,8 @@ export async function applyDefaultTemplateCustomization(themeDir: string, config
 
     if (startIdx !== -1 && endIdx !== -1) {
       const blockEnd = endIdx + markerEnd.length
-      originalContent = originalContent.slice(0, startIdx) + originalContent.slice(blockEnd)
+      const blockContent = originalContent.slice(startIdx, blockEnd)
+      originalContent = originalContent.slice(0, startIdx) + `<div class="hidden">\n${blockContent}\n</div>` + originalContent.slice(blockEnd)
     }
   }
 
@@ -1872,31 +1891,38 @@ export async function applyFooterCustomization(themeDir: string, config: ThemeCo
   const added = new Set<FooterKey>()
 
   for (const key of resolvedOrder) {
-    if (added.has(key) || !includeMap[key]) {
-      added.add(key)
+    if (added.has(key)) {
       continue
     }
     const entry = blocks.get(key)
     if (entry) {
-      orderedBlocks.push(entry.content)
+      // Wrap in hidden div if not visible, otherwise include as-is
+      if (includeMap[key]) {
+        orderedBlocks.push(entry.content)
+      } else {
+        orderedBlocks.push(`<div class="hidden">\n${entry.content}\n</div>`)
+      }
       added.add(key)
     }
   }
 
   for (const key of markerKeys) {
-    if (added.has(key) || !includeMap[key]) {
+    if (added.has(key)) {
       continue
     }
     const entry = blocks.get(key)
     if (entry) {
-      orderedBlocks.push(entry.content)
+      // Wrap in hidden div if not visible, otherwise include as-is
+      if (includeMap[key]) {
+        orderedBlocks.push(entry.content)
+      } else {
+        orderedBlocks.push(`<div class="hidden">\n${entry.content}\n</div>`)
+      }
       added.add(key)
     }
   }
 
-  const newRegion = orderedBlocks.length > 0
-    ? orderedBlocks.join(separator)
-    : ''
+  const newRegion = orderedBlocks.join(separator)
 
   const reorderedContent = `${originalContent.slice(0, regionStart)}${newRegion}${originalContent.slice(regionEnd)}`
 
@@ -1944,35 +1970,6 @@ export async function applyFooterCustomization(themeDir: string, config: ThemeCo
   if (updatedContent !== originalContent) {
     await fs.writeFile(footerPath, updatedContent, 'utf-8')
   }
-
-  // If footer signup is excluded, remove related custom settings to avoid Ghost "unused custom setting" errors.
-  if (config.sections.footerSignup?.settings?.visible === false) {
-    try {
-      const packageJsonPath = path.join(themeDir, 'package.json')
-      const pkgRaw = await fs.readFile(packageJsonPath, 'utf-8')
-      const pkg = JSON.parse(pkgRaw) as Record<string, unknown>
-      const configNode = (pkg['config'] ?? {}) as Record<string, unknown>
-      const customNode = (configNode['custom'] ?? {}) as Record<string, unknown>
-
-      let mutated = false
-      if ('signup_heading' in customNode) {
-        delete customNode.signup_heading
-        mutated = true
-      }
-      if ('signup_subheading' in customNode) {
-        delete customNode.signup_subheading
-        mutated = true
-      }
-
-      if (mutated) {
-        configNode['custom'] = customNode
-        pkg['config'] = configNode
-        await fs.writeFile(packageJsonPath, JSON.stringify(pkg, null, 2), 'utf-8')
-      }
-    } catch (pkgError) {
-      console.error('Failed to remove signup custom fields from package.json', pkgError)
-    }
-  }
 }
 
 /**
@@ -1995,19 +1992,24 @@ export async function applyPageTemplateCustomization(themeDir: string, pageConfi
   const mainHidden = sections.main?.settings?.visible === false
   const isHidden = (key: string) => sections[key]?.settings?.visible === false
 
-  // Remove page wrapper if hidden
+  // Helper to wrap matched content in hidden div instead of removing
+  const wrapInHidden = (content: string, regex: RegExp): string => {
+    return content.replace(regex, (match) => `<div class="hidden">\n${match}\n</div>`)
+  }
+
+  // Wrap page wrapper in hidden div if hidden
   if (isHidden('page') || mainHidden) {
-    originalContent = originalContent.replace(
-      /\{\{!-- defalt-page-start --\}\}[\s\S]*?\{\{!-- defalt-page-end --\}\}/g,
-      ''
+    originalContent = wrapInHidden(
+      originalContent,
+      /\{\{!-- defalt-page-start --\}\}[\s\S]*?\{\{!-- defalt-page-end --\}\}/g
     )
   }
 
-  // Remove page content if hidden
+  // Wrap page content in hidden div if hidden
   if (isHidden('page-content') || mainHidden) {
-    originalContent = originalContent.replace(
-      /\{\{!-- defalt-page-content-start --\}\}[\s\S]*?\{\{!-- defalt-page-content-end --\}\}/g,
-      ''
+    originalContent = wrapInHidden(
+      originalContent,
+      /\{\{!-- defalt-page-content-start --\}\}[\s\S]*?\{\{!-- defalt-page-content-end --\}\}/g
     )
   }
 
@@ -2034,51 +2036,56 @@ export async function applyPostTemplateCustomization(themeDir: string, postConfi
   const mainHidden = sections.main?.settings?.visible === false
   const isHidden = (key: string) => sections[key]?.settings?.visible === false
 
-  // Remove post wrapper if hidden
+  // Helper to wrap matched content in hidden div instead of removing
+  const wrapInHidden = (content: string, regex: RegExp): string => {
+    return content.replace(regex, (match) => `<div class="hidden">\n${match}\n</div>`)
+  }
+
+  // Wrap post wrapper in hidden div if hidden
   if (isHidden('post') || mainHidden) {
-    originalContent = originalContent.replace(
-      /\{\{!-- defalt-post-start --\}\}[\s\S]*?\{\{!-- defalt-post-start-end --\}\}/g,
-      ''
+    originalContent = wrapInHidden(
+      originalContent,
+      /\{\{!-- defalt-post-start --\}\}[\s\S]*?\{\{!-- defalt-post-start-end --\}\}/g
     )
   }
 
-  // Remove post article if hidden
+  // Wrap post article in hidden div if hidden
   if (isHidden('post-article') || mainHidden) {
-    originalContent = originalContent.replace(
-      /\{\{!-- defalt-post-article-start --\}\}[\s\S]*?\{\{!-- defalt-post-article-end --\}\}/g,
-      ''
+    originalContent = wrapInHidden(
+      originalContent,
+      /\{\{!-- defalt-post-article-start --\}\}[\s\S]*?\{\{!-- defalt-post-article-end --\}\}/g
     )
   }
 
-  // Remove post article header if hidden
+  // Wrap post article header in hidden div if hidden
   if (isHidden('post-article-header') || mainHidden) {
-    originalContent = originalContent.replace(
-      /\{\{!-- defalt-post-article-header-start --\}\}[\s\S]*?\{\{!-- defalt-post-article-header-end --\}\}/g,
-      ''
+    originalContent = wrapInHidden(
+      originalContent,
+      /\{\{!-- defalt-post-article-header-start --\}\}[\s\S]*?\{\{!-- defalt-post-article-header-end --\}\}/g
     )
   }
 
-  // Remove post article tag if hidden
+  // Wrap post article tag in hidden div if hidden
   if (isHidden('post-article-tag') || mainHidden) {
-    originalContent = originalContent.replace(
-      /\{\{!-- defalt-post-article-tag-start --\}\}[\s\S]*?\{\{!-- defalt-post-article-tag-end --\}\}/g,
-      ''
+    originalContent = wrapInHidden(
+      originalContent,
+      /\{\{!-- defalt-post-article-tag-start --\}\}[\s\S]*?\{\{!-- defalt-post-article-tag-end --\}\}/g
     )
   }
 
-  // Remove post article title if hidden
+  // Wrap post article title in hidden div if hidden
   if (isHidden('post-article-title') || mainHidden) {
-    originalContent = originalContent.replace(
-      /\{\{!-- defalt-post-article-title-start --\}\}[\s\S]*?\{\{!-- defalt-post-article-title-end --\}\}/g,
-      ''
+    originalContent = wrapInHidden(
+      originalContent,
+      /\{\{!-- defalt-post-article-title-start --\}\}[\s\S]*?\{\{!-- defalt-post-article-title-end --\}\}/g
     )
   }
 
-  // Remove post article content if hidden
+  // Wrap post article content in hidden div if hidden
   if (isHidden('post-article-content') || mainHidden) {
-    originalContent = originalContent.replace(
-      /\{\{!-- defalt-post-article-content-start --\}\}[\s\S]*?\{\{!-- defalt-post-article-content-end --\}\}/g,
-      ''
+    originalContent = wrapInHidden(
+      originalContent,
+      /\{\{!-- defalt-post-article-content-start --\}\}[\s\S]*?\{\{!-- defalt-post-article-content-end --\}\}/g
     )
   }
 
