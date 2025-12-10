@@ -246,10 +246,8 @@ export type { HeroConfig as HeroSectionConfig } from '../sections/hero/schema.js
 // Ghost Cards section
 export {
   type GhostCardsSectionConfig,
-  type GhostCardsCardConfig,
   ghostCardsConfigSchema,
-  ghostCardsSettingsSchema,
-  ghostCardsBlocksSchema
+  ghostCardsSettingsSchema
 } from '../sections/ghostCards/schema.js'
 export { ghostCardsDefaults } from '../sections/ghostCards/defaults.js'
 

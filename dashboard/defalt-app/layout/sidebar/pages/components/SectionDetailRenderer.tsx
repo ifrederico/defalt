@@ -258,13 +258,15 @@ export function SectionDetailRenderer({ activeDetail, props }: SectionDetailRend
       if (definition?.settingsSchema && definition.settingsSchema.length > 0) {
         const config = activeCustomSection.config as SectionConfigSchema
         const padding = props.sectionPadding[sectionId] ?? { top: 0, bottom: 0, left: 0, right: 0 }
+        // Only show padding controls if section explicitly enables them (default: true)
+        const hasPaddingControls = definition.showPaddingControls !== false
         return (
           <SchemaSectionSettings
             definitionId={activeCustomSection.definitionId}
             config={config}
             padding={padding}
-            onPaddingChange={(direction, value) => props.onSectionPaddingChange(sectionId, direction, value)}
-            onPaddingCommit={(direction, value) => props.onSectionPaddingCommit(sectionId, direction, value)}
+            onPaddingChange={hasPaddingControls ? (direction, value) => props.onSectionPaddingChange(sectionId, direction, value) : undefined}
+            onPaddingCommit={hasPaddingControls ? (direction, value) => props.onSectionPaddingCommit(sectionId, direction, value) : undefined}
             onUpdateConfig={(updater) =>
               props.onUpdateCustomSection(sectionId, updater)
             }

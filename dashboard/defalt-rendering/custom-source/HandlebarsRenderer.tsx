@@ -45,6 +45,7 @@ import {
   renderSection,
   preloadTemplates,
   getSectionTemplatePath,
+  getSectionDefinition,
   sectionDefinitions as engineSectionDefinitions,
   type AnnouncementBarSectionConfig
 } from '@defalt/sections/engine'
@@ -230,7 +231,11 @@ export function HandlebarsRenderer({
         if (cancelled) return
 
         const templatePath = getSectionTemplatePath(section.definitionId)
-        const padding = sectionPadding[section.id]
+        // Check if section manages its own padding (showPaddingControls: false)
+        // If so, don't pass global padding - let the section's config values take over
+        const sectionDef = getSectionDefinition(section.definitionId)
+        const shouldUseGlobalPadding = sectionDef?.showPaddingControls !== false
+        const padding = shouldUseGlobalPadding ? sectionPadding[section.id] : undefined
 
         let html: string
 

@@ -281,6 +281,8 @@ export interface SectionDefinition<TConfig extends z.ZodType = z.ZodType> {
   defaultVisibility: boolean
   /** Default padding values */
   defaultPadding: SectionPadding
+  /** Whether to show padding controls in settings UI (default: true) */
+  showPaddingControls?: boolean
   /** If true, all padding values are unified */
   usesUnifiedPadding?: boolean
   /** Zod schema for config validation */

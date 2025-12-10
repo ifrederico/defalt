@@ -1,23 +1,7 @@
 {{!-- Ghost Cards Section --}}
 
 <section class="cards" style="{{sectionStyle}}">
-  <div class="cards__grid">
-    {{#if (length cards)}}
-      {{#each cards}}
-        <article class="cards__item">
-          {{#if title}}<h3 class="cards__title">{{title}}</h3>{{/if}}
-          {{#if description}}<p class="cards__description">{{description}}</p>{{/if}}
-          {{#if buttonText}}
-            <a href="{{#if buttonLink}}{{buttonLink}}{{else}}#{{/if}}" class="cards__button">
-              {{buttonText}}
-            </a>
-          {{/if}}
-        </article>
-      {{/each}}
-    {{else}}
-      <div class="cards__placeholder">
-        Add cards using the blocks panel
-      </div>
-    {{/if}}
+  <div class="cards__content">
+    Cards section
   </div>
 </section>

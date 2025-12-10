@@ -3,19 +3,20 @@
  */
 
 import type { SectionDefinition } from '../../engine/schemaTypes.js'
-import { ghostCardsConfigSchema, ghostCardsSettingsSchema, ghostCardsBlocksSchema, type GhostCardsSectionConfig } from './schema.js'
+import { ghostCardsConfigSchema, ghostCardsSettingsSchema, type GhostCardsSectionConfig } from './schema.js'
 import { ghostCardsDefaults } from './defaults.js'
 
 export const definition: SectionDefinition<typeof ghostCardsConfigSchema> = {
   id: 'ghostCards',
-  label: 'Cards',
+  label: 'Ghost Cards',
   description: 'A grid of content cards',
   category: 'template',
   defaultVisibility: true,
-  defaultPadding: { top: 48, bottom: 48 },
+  defaultPadding: { top: 0, bottom: 0 },
+  showPaddingControls: false,
   configSchema: ghostCardsConfigSchema,
   settingsSchema: ghostCardsSettingsSchema,
-  blocksSchema: ghostCardsBlocksSchema,
+  blocksSchema: undefined,
   createConfig: () => ghostCardsDefaults,
   templatePath: 'ghostCards/ghostCards.hbs'
 }

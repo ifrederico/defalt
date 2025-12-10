@@ -1,13 +1,16 @@
 import { useMemo } from 'react'
 import * as ToggleGroup from '@radix-ui/react-toggle-group'
 import * as Separator from '@radix-ui/react-separator'
-import { CaseSensitive, CaseUpper, type LucideIcon } from 'lucide-react'
+import { AlignLeft, AlignCenter, AlignRight, CaseSensitive, CaseUpper, type LucideIcon } from 'lucide-react'
 import { getSectionDefinition, type SectionConfigSchema, type SectionSettingSchema } from '@defalt/sections/engine'
 import { SliderField, ToggleSwitch, SettingSection, ColorPickerSetting, Dropdown, InlineControlRow } from '@defalt/ui'
 
 // Icon name to component mapping for radio buttons
 // Add icons here as needed when sections reference them
 const ICON_MAP: Record<string, LucideIcon> = {
+  AlignLeft,
+  AlignCenter,
+  AlignRight,
   CaseSensitive,
   CaseUpper
 }
@@ -150,7 +153,7 @@ function renderSettingInput(
       const hasIcons = setting.options.some((opt) => opt.icon)
       const iconOnly = setting.iconOnly && hasIcons
       return (
-        <InlineControlRow label={setting.label} labelWidth="sm">
+        <InlineControlRow label={setting.label}>
           <ToggleGroup.Root
             type="single"
             value={typeof value === 'string' ? value : ''}

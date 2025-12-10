@@ -3,28 +3,13 @@
  */
 
 import { z } from 'zod'
-import type { SettingSchema, BlockSchema } from '../../engine/schemaTypes.js'
-
-// Card schema
-const cardSchema = z.object({
-  title: z.string().default(''),
-  description: z.string().default(''),
-  buttonText: z.string().default(''),
-  buttonLink: z.string().default('')
-})
-
-export type GhostCardsCard = z.infer<typeof cardSchema>
+import type { SettingSchema } from '../../engine/schemaTypes.js'
 
 // Zod config schema
 export const ghostCardsConfigSchema = z.object({
-  // Cards
-  cards: z.array(cardSchema).default([]),
-
-  // Colors
-  backgroundColor: z.string().default('#ffffff'),
-  textColor: z.string().default('#151515'),
-
-  // Padding
+  pageTitle: z.boolean().default(false),
+  textAlignment: z.enum(['left', 'center', 'right']).default('left'),
+  titleSize: z.enum(['small', 'normal', 'large']).default('normal'),
   paddingTop: z.number().min(0).max(200).default(48),
   paddingBottom: z.number().min(0).max(200).default(48)
 })
@@ -33,25 +18,32 @@ export type GhostCardsSectionConfig = z.infer<typeof ghostCardsConfigSchema>
 
 // UI settings schema
 export const ghostCardsSettingsSchema: SettingSchema[] = [
-  { type: 'header', id: 'colors-header', label: 'Colors' },
-  { type: 'color', id: 'backgroundColor', label: 'Background', default: '#ffffff' },
-  { type: 'color', id: 'textColor', label: 'Text', default: '#151515' },
-
+  { type: 'header', id: 'appearance-header', label: 'Appearance' },
+  { type: 'checkbox', id: 'pageTitle', label: 'Page title', default: false },
+  {
+    type: 'radio',
+    id: 'textAlignment',
+    label: 'Text alignment',
+    default: 'left',
+    iconOnly: true,
+    options: [
+      { label: 'Left', value: 'left', icon: 'AlignLeft' },
+      { label: 'Center', value: 'center', icon: 'AlignCenter' },
+      { label: 'Right', value: 'right', icon: 'AlignRight' }
+    ]
+  },
+  {
+    type: 'select',
+    id: 'titleSize',
+    label: 'Title size',
+    default: 'normal',
+    options: [
+      { label: 'Small', value: 'small' },
+      { label: 'Normal', value: 'normal' },
+      { label: 'Large', value: 'large' }
+    ]
+  },
   { type: 'header', id: 'padding-header', label: 'Padding' },
   { type: 'range', id: 'paddingTop', label: 'Top', min: 0, max: 200, step: 4, default: 48, unit: 'px' },
   { type: 'range', id: 'paddingBottom', label: 'Bottom', min: 0, max: 200, step: 4, default: 48, unit: 'px' }
-]
-
-// Blocks schema
-export const ghostCardsBlocksSchema: BlockSchema[] = [
-  {
-    type: 'card',
-    name: 'Card',
-    settings: [
-      { type: 'text', id: 'title', label: 'Title', default: '' },
-      { type: 'textarea', id: 'description', label: 'Description', default: '' },
-      { type: 'text', id: 'buttonText', label: 'Button text', default: '' },
-      { type: 'url', id: 'buttonLink', label: 'Button link', default: '' }
-    ]
-  }
 ]
