@@ -113,9 +113,6 @@ export function AppContent() {
         if (lower === 'footer_signup' || lower === 'footer-signup') {
             return 'footerSignup'
         }
-        if (lower === 'announcement') {
-            return 'announcement'
-        }
         return sectionId
     }, [])
 
@@ -125,7 +122,7 @@ export function AppContent() {
         if (normalizedId === 'header') {
             return 'Header'
         }
-        if (normalizedId === 'announcement-bar' || normalizedId === 'announcement') {
+        if (normalizedId === 'announcement-bar') {
             return 'Announcement bar'
         }
         if (normalizedId === 'subheader') {

@@ -28,7 +28,8 @@ export const SettingInputType = z.enum([
   'radio',
   'image_picker',
   'header',
-  'paragraph'
+  'paragraph',
+  'cardList'
 ])
 
 export type SettingInputType = z.infer<typeof SettingInputType>
@@ -177,7 +178,9 @@ export const imagePickerSettingSchema = z.object({
 export const headerSettingSchema = z.object({
   type: z.literal('header'),
   id: z.string(),
-  label: z.string()
+  label: z.string(),
+  /** Optional help URL for external documentation (shown as icon in header) */
+  helpUrl: z.string().optional()
 })
 
 /**
@@ -187,6 +190,28 @@ export const paragraphSettingSchema = z.object({
   type: z.literal('paragraph'),
   id: z.string(),
   content: z.string()
+})
+
+/**
+ * Card list (display only, for showing a styled list of items with icons)
+ * Used for help/reference content like Ghost card types
+ */
+export const cardListSettingSchema = z.object({
+  type: z.literal('cardList'),
+  id: z.string(),
+  /** Optional help URL for external documentation */
+  helpUrl: z.string().optional(),
+  /** List of card items to display */
+  items: z.array(
+    z.object({
+      /** Display label */
+      label: z.string(),
+      /** Suffix text (e.g., slash command) */
+      suffix: z.string(),
+      /** Lucide icon name */
+      icon: z.string()
+    })
+  )
 })
 
 // =============================================================================
@@ -209,7 +234,8 @@ export const settingSchema = z.discriminatedUnion('type', [
   radioSettingSchema,
   imagePickerSettingSchema,
   headerSettingSchema,
-  paragraphSettingSchema
+  paragraphSettingSchema,
+  cardListSettingSchema
 ])
 
 export type SettingSchema = z.infer<typeof settingSchema>

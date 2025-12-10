@@ -21,7 +21,6 @@ export const SECTION_ID_TO_SELECTOR: Record<string, SectionSelector> = {
   // Header sections
   'header': ['#gh-navigation', '.gh-navigation'],
   'announcement-bar': '.announcement-bar',
-  'announcement': '.announcement-bar',
   // Template sections
   'subheader': TEMPLATE_SECTION_SELECTORS.subheader,
   'featured': TEMPLATE_SECTION_SELECTORS.featured,

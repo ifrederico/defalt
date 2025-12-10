@@ -45,5 +45,34 @@ export const ghostCardsSettingsSchema: SettingSchema[] = [
   },
   { type: 'header', id: 'padding-header', label: 'Padding' },
   { type: 'range', id: 'paddingTop', label: 'Top', min: 0, max: 200, step: 4, default: 48, unit: 'px' },
-  { type: 'range', id: 'paddingBottom', label: 'Bottom', min: 0, max: 200, step: 4, default: 48, unit: 'px' }
+  { type: 'range', id: 'paddingBottom', label: 'Bottom', min: 0, max: 200, step: 4, default: 48, unit: 'px' },
+  { type: 'header', id: 'primary-cards-header', label: 'Primary Cards', helpUrl: 'https://ghost.org/help/cards/' },
+  {
+    type: 'paragraph',
+    id: 'primary-cards-help',
+    content: 'Launch the dynamic card menu by clicking the + button, or type / on a new line.'
+  },
+  {
+    type: 'cardList',
+    id: 'primary-cards-list',
+    items: [
+      { label: 'Image', suffix: '/image', icon: 'Image' },
+      { label: 'Divider', suffix: '/hr', icon: 'Minus' },
+      { label: 'Button', suffix: '/button', icon: 'RectangleEllipsis' },
+      { label: 'Bookmark', suffix: '/url', icon: 'Bookmark' },
+      { label: 'Gallery', suffix: '/gallery', icon: 'Images' },
+      { label: 'Public preview', suffix: '/paywall', icon: 'Eye' },
+      { label: 'Call to action', suffix: '/cta', icon: 'MousePointer' },
+      { label: 'Callout', suffix: '/callout', icon: 'MessageSquareWarning' },
+      { label: 'Signup', suffix: '/signup', icon: 'UserPlus' },
+      { label: 'Header', suffix: '/header', icon: 'GalleryVertical' },
+      { label: 'Toggle', suffix: '/toggle', icon: 'ChevronDown' },
+      { label: 'Video', suffix: '/video', icon: 'Play' },
+      { label: 'Audio', suffix: '/audio', icon: 'Music4' },
+      { label: 'File', suffix: '/file', icon: 'Paperclip' },
+      { label: 'Product', suffix: '/product', icon: 'Star' },
+      { label: 'HTML', suffix: '/html', icon: 'Code' },
+      { label: 'Markdown', suffix: '/md', icon: 'BookOpen' }
+    ]
+  }
 ]

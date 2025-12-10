@@ -1837,11 +1837,10 @@ export function setupSectionSelection(
           return
         }
       }
-      // announcement-bar and announcement are the same element
-      // Show hover for 'announcement' (the child ID in sidebar)
+      // Show hover for announcement-bar
       if (match.id === 'announcement-bar') {
-        if (currentHoverId !== 'announcement') {
-          applyHover(match.element, 'announcement')
+        if (currentHoverId !== 'announcement-bar') {
+          applyHover(match.element, 'announcement-bar')
         }
         return
       }

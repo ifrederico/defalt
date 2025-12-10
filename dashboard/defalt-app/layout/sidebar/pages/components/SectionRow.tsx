@@ -197,14 +197,14 @@ export const SectionRow = memo(function SectionRow({
               e.stopPropagation()
               if (isAnnouncementBar) {
                 onToggleAnnouncementBar?.()
-              } else if (isFooter) {
+              } else {
                 onToggleFooter?.()
               }
             }}
             className="flex h-7 w-4 items-center justify-center shrink-0 text-secondary hover:text-foreground transition-colors"
             aria-label={
               isAnnouncementBar
-                ? (announcementBarExpanded ? 'Collapse announcement bar' : 'Expand announcement bar')
+                ? (announcementBarExpanded ? 'Collapse announcements' : 'Expand announcements')
                 : (footerExpanded ? 'Collapse footer' : 'Expand footer')
             }
           >

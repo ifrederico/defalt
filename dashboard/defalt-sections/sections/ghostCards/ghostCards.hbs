@@ -1,7 +1,98 @@
 {{!-- Ghost Cards Section --}}
 
-<section class="cards" style="{{sectionStyle}}">
-  <div class="cards__content">
-    Cards section
+<style>
+.ghost-cards {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding-left: 24px;
+  padding-right: 24px;
+}
+
+.ghost-cards__title {
+  margin: 0 0 32px 0;
+  font-weight: 700;
+  color: var(--color-darker-gray);
+}
+
+.ghost-cards__title--small { font-size: 2rem; }
+.ghost-cards__title--normal { font-size: 2.8rem; }
+.ghost-cards__title--large { font-size: 3.6rem; }
+
+.ghost-cards__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 32px;
+}
+
+.ghost-card {
+  display: flex;
+  flex-direction: column;
+  background: var(--background-color, #fff);
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid var(--color-light-gray, #e5e7eb);
+}
+
+.ghost-card__image {
+  aspect-ratio: 16 / 9;
+  background-color: #f3f4f6;
+  background-size: cover;
+  background-position: center;
+}
+
+.ghost-card__content {
+  padding: 20px;
+}
+
+.ghost-card__title {
+  margin: 0 0 8px 0;
+  font-size: 1.8rem;
+  font-weight: 600;
+  color: var(--color-darker-gray);
+}
+
+.ghost-card__excerpt {
+  margin: 0;
+  font-size: 1.5rem;
+  line-height: 1.5;
+  color: var(--color-secondary-text);
+}
+
+/* Placeholder styling - subtle indication this is preview-only */
+.ghost-cards__placeholder .ghost-card {
+  opacity: 0.7;
+}
+
+.ghost-cards__placeholder .ghost-card__image {
+  background: linear-gradient(135deg, #e5e7eb 0%, #d1d5db 100%);
+}
+</style>
+
+<section class="ghost-cards" style="{{sectionStyle}}; text-align: {{textAlignment}};">
+  {{#if pageTitle}}
+    <h2 class="ghost-cards__title ghost-cards__title--{{titleSize}}">
+      {{#if pages.[0].title}}{{pages.[0].title}}{{else}}Page Title{{/if}}
+    </h2>
+  {{/if}}
+
+  <div class="ghost-cards__grid">
+    {{!-- Real content when pages exist --}}
+    {{#if (length pages)}}
+      {{#each pages}}
+        <article class="ghost-card">
+          {{#if feature_image}}
+            <div class="ghost-card__image" style="background-image: url('{{feature_image}}');"></div>
+          {{/if}}
+          <div class="ghost-card__content">
+            {{#if title}}<h3 class="ghost-card__title">{{title}}</h3>{{/if}}
+            {{#if excerpt}}<p class="ghost-card__excerpt">{{excerpt}}</p>{{/if}}
+          </div>
+        </article>
+      {{/each}}
+    {{else}}
+      {{!-- Placeholder for preview only --}}
+      <img src="/sections/ghostCards/placeholder.jpg" alt="Ghost Cards placeholder" style="width: 100%; height: auto; border-radius: 8px;" />
+    {{/if}}
   </div>
 </section>

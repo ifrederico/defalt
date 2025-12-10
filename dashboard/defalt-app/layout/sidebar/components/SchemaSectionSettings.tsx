@@ -1,47 +1,9 @@
 import { useMemo } from 'react'
-import * as ToggleGroup from '@radix-ui/react-toggle-group'
 import * as Separator from '@radix-ui/react-separator'
-import { AlignLeft, AlignCenter, AlignRight, CaseSensitive, CaseUpper, type LucideIcon } from 'lucide-react'
-import { getSectionDefinition, type SectionConfigSchema, type SectionSettingSchema } from '@defalt/sections/engine'
-import { SliderField, ToggleSwitch, SettingSection, ColorPickerSetting, Dropdown, InlineControlRow } from '@defalt/ui'
-
-// Icon name to component mapping for radio buttons
-// Add icons here as needed when sections reference them
-const ICON_MAP: Record<string, LucideIcon> = {
-  AlignLeft,
-  AlignCenter,
-  AlignRight,
-  CaseSensitive,
-  CaseUpper
-}
-
-// Group settings by header - each header starts a new group
-type SettingGroup = {
-  title: string
-  settings: SectionSettingSchema[]
-}
-
-function groupSettingsByHeader(settings: SectionSettingSchema[]): SettingGroup[] {
-  const groups: SettingGroup[] = []
-  let currentGroup: SettingGroup | null = null
-
-  for (const setting of settings) {
-    if (setting.type === 'header') {
-      // Start a new group
-      currentGroup = { title: setting.label, settings: [] }
-      groups.push(currentGroup)
-    } else if (currentGroup) {
-      // Add to current group
-      currentGroup.settings.push(setting)
-    } else {
-      // No header yet, create unnamed group
-      currentGroup = { title: '', settings: [setting] }
-      groups.push(currentGroup)
-    }
-  }
-
-  return groups
-}
+import { ChevronUp, ChevronDown, CircleHelp } from 'lucide-react'
+import { getSectionDefinition, type SectionConfigSchema } from '@defalt/sections/engine'
+import { SliderField, SettingSection } from '@defalt/ui'
+import { groupSettingsByHeader, renderSettingInput } from './settingsRenderUtils'
 
 type SchemaSectionSettingsProps = {
   definitionId: string
@@ -50,161 +12,6 @@ type SchemaSectionSettingsProps = {
   onPaddingChange?: (direction: 'top' | 'bottom' | 'left' | 'right', value: number) => void
   onPaddingCommit?: (direction: 'top' | 'bottom' | 'left' | 'right', value: number) => void
   onUpdateConfig: (updater: (config: SectionConfigSchema) => SectionConfigSchema) => void
-}
-
-function renderSettingInput(
-  setting: SectionSettingSchema,
-  value: unknown,
-  onChange: (next: unknown) => void
-) {
-  const baseClasses = 'w-full rounded-md border border-transparent bg-subtle px-3 py-2 font-md text-foreground placeholder:text-placeholder focus:outline-none focus:bg-surface focus:border-[rgb(48,207,67)] focus:shadow-[0_0_0_2px_rgba(48,207,67,0.25)]'
-
-  switch (setting.type) {
-    case 'text':
-      return (
-        <input
-          type="text"
-          className={baseClasses}
-          placeholder={setting.placeholder || 'Enter text...'}
-          value={typeof value === 'string' ? value : ''}
-          onChange={(e) => onChange(e.target.value)}
-        />
-      )
-    case 'url':
-      return (
-        <input
-          type="url"
-          className={baseClasses}
-          placeholder={setting.placeholder || 'https://...'}
-          value={typeof value === 'string' ? value : ''}
-          onChange={(e) => onChange(e.target.value || '#')}
-        />
-      )
-    case 'textarea':
-      return (
-        <textarea
-          className={`${baseClasses} min-h-[80px]`}
-          placeholder={setting.placeholder || 'Enter content...'}
-          value={typeof value === 'string' ? value : ''}
-          onChange={(e) => onChange(e.target.value)}
-        />
-      )
-    case 'richtext':
-      // TODO: Replace with TipTap rich text editor when implementing WYSIWYG
-      return (
-        <textarea
-          className={`${baseClasses} min-h-[80px]`}
-          placeholder="Enter content..."
-          value={typeof value === 'string' ? value : ''}
-          onChange={(e) => onChange(e.target.value)}
-        />
-      )
-    case 'color':
-      return (
-        <ColorPickerSetting
-          label={setting.label}
-          value={typeof value === 'string' ? value : (typeof setting.default === 'string' ? setting.default : '#000000')}
-          swatches={[
-            { title: 'Accent', hex: '#AC1E3E', accent: true },
-            { title: 'Grey', hex: '#e5e7eb' },
-            { title: 'Black', hex: '#000000' },
-            { title: 'White', hex: '#ffffff' }
-          ]}
-          onChange={(next) => onChange(next)}
-          hasTransparentOption={false}
-        />
-      )
-    case 'checkbox':
-      return (
-        <InlineControlRow label={setting.label} labelWidth="lg">
-          <ToggleSwitch
-            checked={value === true}
-            onChange={(checked) => onChange(checked)}
-            ariaLabel={setting.label}
-          />
-        </InlineControlRow>
-      )
-    case 'range':
-      return (
-        <SliderField
-          label={setting.label}
-          value={typeof value === 'number' && Number.isFinite(value) ? value : setting.default}
-          min={setting.min}
-          max={setting.max}
-          step={setting.step}
-          unit={setting.unit}
-          onChange={(val) => onChange(val)}
-        />
-      )
-    case 'select':
-      return (
-        <InlineControlRow label={setting.label}>
-          <Dropdown
-            selected={typeof value === 'string' ? value : (setting.default ?? '')}
-            items={setting.options}
-            onSelect={(val) => onChange(val)}
-            triggerClassName="flex h-[38px] min-w-[120px] items-center justify-between gap-1.5 rounded-md bg-subtle px-3 font-md text-foreground transition-colors hover:bg-subtle/80 focus:outline-none focus-visible:outline-none"
-            contentClassName="bg-surface rounded-md shadow-lg overflow-hidden min-w-[120px] z-[100]"
-            itemClassName="flex items-center gap-2 px-3 py-2 font-md text-foreground transition-colors hover:bg-subtle"
-          />
-        </InlineControlRow>
-      )
-    case 'radio': {
-      const hasIcons = setting.options.some((opt) => opt.icon)
-      const iconOnly = setting.iconOnly && hasIcons
-      return (
-        <InlineControlRow label={setting.label}>
-          <ToggleGroup.Root
-            type="single"
-            value={typeof value === 'string' ? value : ''}
-            onValueChange={(next) => next && onChange(next)}
-            className="inline-flex items-center gap-0.5 rounded-md bg-subtle p-0.5"
-            aria-label={setting.label}
-          >
-            {setting.options.map((opt) => {
-              const IconComponent = opt.icon ? ICON_MAP[opt.icon] : null
-              return (
-                <ToggleGroup.Item
-                  key={opt.value}
-                  value={opt.value}
-                  title={opt.label}
-                  className={`flex items-center justify-center rounded transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ring data-[state=on]:bg-surface data-[state=on]:text-foreground data-[state=on]:shadow-sm data-[state=off]:hover:bg-subtle/80 ${
-                    iconOnly ? 'p-2' : 'px-3 py-1.5'
-                  }`}
-                >
-                  {IconComponent && <IconComponent size={16} className={iconOnly ? '' : 'mr-1.5'} />}
-                  {!iconOnly && <span className="max-w-[64px] truncate font-md text-foreground">{opt.label}</span>}
-                </ToggleGroup.Item>
-              )
-            })}
-          </ToggleGroup.Root>
-        </InlineControlRow>
-      )
-    }
-    case 'image_picker':
-      // TODO: Add drag-drop image upload with preview
-      // <div className="border-2 border-dashed border-border rounded-md p-4 text-center hover:border-border-strong transition-colors cursor-pointer">
-      //   {value ? <img src={value} alt="Preview" className="max-h-32 mx-auto rounded" /> : 'Drop image here'}
-      // </div>
-      return (
-        <div className="space-y-2">
-          <label className="font-md text-foreground">{setting.label}</label>
-          <input
-            type="url"
-            placeholder="https://example.com/image.jpg"
-            className={baseClasses}
-            value={typeof value === 'string' ? value : ''}
-            onChange={(e) => onChange(e.target.value)}
-          />
-        </div>
-      )
-    case 'header':
-      return <h4 className="font-md font-semibold text-foreground pt-2 first:pt-0">{setting.label}</h4>
-    case 'paragraph':
-      return <p className="font-sm text-muted leading-relaxed">{setting.content}</p>
-    default:
-      return null
-  }
 }
 
 function resolveBlockKey(blockType: string) {
@@ -272,6 +79,21 @@ export function SchemaSectionSettings({
     }))
   }
 
+  const handleMoveBlock = (blockType: string, idx: number, direction: 'up' | 'down') => {
+    const key = resolveBlockKey(blockType)
+    const list = readBlockList(key)
+    const newIdx = direction === 'up' ? idx - 1 : idx + 1
+    if (newIdx < 0 || newIdx >= list.length) return
+    // Swap items
+    const temp = list[idx]
+    list[idx] = list[newIdx]
+    list[newIdx] = temp
+    onUpdateConfig((current) => ({
+      ...current,
+      [key]: list
+    }))
+  }
+
   if (!definition) {
     return <p className="font-sm text-secondary">Unknown section: {definitionId}</p>
   }
@@ -281,7 +103,20 @@ export function SchemaSectionSettings({
       {settingGroups.map((group, groupIdx) => (
         <div key={group.title || `group-${groupIdx}`}>
           {groupIdx > 0 && <Separator.Root className="h-px bg-hover mb-4" />}
-          <SettingSection title={group.title || 'Settings'}>
+          <SettingSection
+            title={group.title || 'Settings'}
+            action={group.helpUrl ? (
+              <a
+                href={group.helpUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex h-6 w-6 items-center justify-center rounded-full text-placeholder transition-colors hover:text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                aria-label="Learn more"
+              >
+                <CircleHelp size={16} />
+              </a>
+            ) : undefined}
+          >
             <div className="space-y-4">
               {group.settings.map((setting) => {
                 const currentValue = configRecord[setting.id]
@@ -325,7 +160,31 @@ export function SchemaSectionSettings({
               {list.map((item, idx) => (
                 <div key={`${block.type}-${idx}`} className="rounded-md border border-border p-3 space-y-2">
                   <div className="flex items-center justify-between">
-                    <h4 className="font-sm font-semibold text-foreground">{block.name} {idx + 1}</h4>
+                    <div className="flex items-center gap-1">
+                      <h4 className="font-sm font-semibold text-foreground">{block.name} {idx + 1}</h4>
+                      {list.length > 1 && (
+                        <div className="flex items-center ml-1">
+                          <button
+                            type="button"
+                            className="p-0.5 text-muted hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed"
+                            onClick={() => handleMoveBlock(block.type, idx, 'up')}
+                            disabled={idx === 0}
+                            title="Move up"
+                          >
+                            <ChevronUp size={14} />
+                          </button>
+                          <button
+                            type="button"
+                            className="p-0.5 text-muted hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed"
+                            onClick={() => handleMoveBlock(block.type, idx, 'down')}
+                            disabled={idx === list.length - 1}
+                            title="Move down"
+                          >
+                            <ChevronDown size={14} />
+                          </button>
+                        </div>
+                      )}
+                    </div>
                     <button
                       type="button"
                       className="text-xs text-muted hover:text-foreground"

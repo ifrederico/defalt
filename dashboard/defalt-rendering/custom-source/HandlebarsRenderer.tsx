@@ -308,7 +308,8 @@ export function HandlebarsRenderer({
     typographySpacing: sanitizedAnnouncementContentConfig.typographySpacing,
     typographyCase: sanitizedAnnouncementContentConfig.typographyCase,
     underlineLinks: sanitizedAnnouncementContentConfig.underlineLinks,
-    previewText: sanitizedAnnouncementContentConfig.previewText
+    previewText: sanitizedAnnouncementContentConfig.previewText,
+    announcements: sanitizedAnnouncementContentConfig.announcements
   }), [sanitizedAnnouncementBarConfig, sanitizedAnnouncementContentConfig])
 
   useEffect(() => {
@@ -331,7 +332,8 @@ export function HandlebarsRenderer({
           { padding: { top: announcementBarSectionConfig.paddingTop, bottom: announcementBarSectionConfig.paddingBottom } }
         )
         if (!cancelled) {
-          setRenderedAnnouncementBar(html)
+          // Only update state if HTML actually changed to reduce flashing
+          setRenderedAnnouncementBar(prev => prev === html ? prev : html)
         }
       } catch (err) {
         console.warn('[HandlebarsRenderer] Failed to render announcement-bar:', err)
@@ -375,7 +377,7 @@ export function HandlebarsRenderer({
       return id
     }
 
-    const ids = new Set<string>(['header', 'announcement-bar', 'announcement', 'footer'])
+    const ids = new Set<string>(['header', 'announcement-bar', 'footer'])
     filteredTemplateOrder.forEach((id) => ids.add(normalizeSectionId(id)))
     footerOrder.forEach((id) => ids.add(normalizeSectionId(id)))
     renderedTemplateSections.forEach((section) => ids.add(normalizeSectionId(section.id)))

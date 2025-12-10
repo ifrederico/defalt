@@ -40,6 +40,17 @@ export interface AnnouncementBarConfig {
   paddingBottom: number
 }
 
+/** Individual announcement block */
+export interface AnnouncementBlock {
+  text: string
+  link: string
+  /** Typography settings */
+  typographySize: AnnouncementBarTypographySize
+  typographyWeight: AnnouncementBarTypographyWeight
+  typographySpacing: AnnouncementBarTypographySpacing
+  typographyCase: AnnouncementBarTypographyCase
+}
+
 export interface AnnouncementContentConfig {
   previewText: string
   underlineLinks: boolean
@@ -47,6 +58,8 @@ export interface AnnouncementContentConfig {
   typographyWeight: AnnouncementBarTypographyWeight
   typographySpacing: AnnouncementBarTypographySpacing
   typographyCase: AnnouncementBarTypographyCase
+  /** Engine V2: Block array for announcements */
+  announcements: AnnouncementBlock[]
 }
 
 export const DEFAULT_ANNOUNCEMENT_BAR_CONFIG: AnnouncementBarConfig = {
@@ -65,7 +78,10 @@ export const DEFAULT_ANNOUNCEMENT_CONTENT_CONFIG: AnnouncementContentConfig = {
   typographySize: 'normal',
   typographyWeight: 'default',
   typographySpacing: 'regular',
-  typographyCase: 'default'
+  typographyCase: 'default',
+  announcements: [
+    { text: 'Tag #announcement-bar to a published Ghost page.', link: '', typographySize: 'normal', typographyWeight: 'default', typographySpacing: 'regular', typographyCase: 'default' }
+  ]
 }
 
 export interface SectionSettings {
@@ -422,6 +438,26 @@ export const normalizeAnnouncementContentConfig = (
     return null
   }
 
+  // Parse announcements array
+  const parseAnnouncements = (input: unknown): AnnouncementBlock[] => {
+    if (!Array.isArray(input)) return fallback.announcements
+    return input.map((item): AnnouncementBlock => {
+      if (!item || typeof item !== 'object') {
+        return { text: '', link: '', typographySize: 'normal', typographyWeight: 'default', typographySpacing: 'regular', typographyCase: 'default' }
+      }
+      const obj = item as Record<string, unknown>
+      return {
+        text: typeof obj.text === 'string' ? obj.text : '',
+        link: typeof obj.link === 'string' ? obj.link : '',
+        // Typography settings with defaults
+        typographySize: parseSize(obj.typographySize) ?? 'normal',
+        typographyWeight: parseWeight(obj.typographyWeight) ?? 'default',
+        typographySpacing: parseSpacing(obj.typographySpacing) ?? 'regular',
+        typographyCase: parseCase(obj.typographyCase) ?? 'default'
+      }
+    })
+  }
+
   const previewText =
     typeof raw.previewText === 'string'
       ? raw.previewText
@@ -439,7 +475,8 @@ export const normalizeAnnouncementContentConfig = (
     typographySize: parseSize(raw.typographySize) ?? parseSize(legacy?.typographySize) ?? fallback.typographySize,
     typographyWeight: parseWeight(raw.typographyWeight) ?? parseWeight(legacy?.typographyWeight) ?? fallback.typographyWeight,
     typographySpacing: parseSpacing(raw.typographySpacing) ?? parseSpacing(legacy?.typographySpacing) ?? fallback.typographySpacing,
-    typographyCase: parseCase(raw.typographyCase) ?? parseCase(legacy?.typographyCase) ?? fallback.typographyCase
+    typographyCase: parseCase(raw.typographyCase) ?? parseCase(legacy?.typographyCase) ?? fallback.typographyCase,
+    announcements: parseAnnouncements(raw.announcements)
   }
 }
 

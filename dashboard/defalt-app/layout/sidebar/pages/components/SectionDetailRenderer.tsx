@@ -1,16 +1,24 @@
 import { useMemo, useState, useCallback, type ReactNode } from 'react'
 import type { SectionsPanelProps } from '../SectionsPanelBase'
-import type { SectionConfigSchema, AnnouncementBarSectionConfig, AnnouncementSectionConfig, HeaderSectionConfig, SourceThemeConfig } from '@defalt/sections/engine'
+import type { SectionConfigSchema, AnnouncementBarSectionConfig, HeaderSectionConfig, SourceThemeConfig } from '@defalt/sections/engine'
 import { getSectionDefinition } from '@defalt/sections/engine'
-import { SECTION_ID_MAP, PADDING_BLOCK_SECTIONS, CSS_DEFAULT_MARGIN } from '@defalt/utils/config/themeConfig'
+import { SECTION_ID_MAP, PADDING_BLOCK_SECTIONS, CSS_DEFAULT_MARGIN, type AnnouncementBlock } from '@defalt/utils/config/themeConfig'
+import { announcementBarBlocksSchema } from '@defalt/sections/engine'
 import { SchemaSectionSettings } from '../../components/SchemaSectionSettings'
+import { groupSettingsByHeader, renderSettingInput } from '../../components/settingsRenderUtils'
 import { SchemaThemeSettings } from '../../components/SchemaThemeSettings'
 import { SectionPaddingSettings, type SectionSpacingMode } from './SectionPaddingSettings'
+import * as Separator from '@radix-ui/react-separator'
 import { Copy, Check, Pencil, X, Check as CheckIcon } from 'lucide-react'
+import { SettingSection } from '@defalt/ui'
 
 export type SectionDetail = {
   id: string
   label: string
+  /** For block selection: the block type (e.g., 'announcement') */
+  blockType?: string
+  /** For block selection: the index of the block in the array */
+  blockIndex?: number
 }
 
 const SUBHEADER_MARGIN_DEFAULT = 40
@@ -34,16 +42,24 @@ export function SectionDetailRenderer({ activeDetail, props }: SectionDetailRend
     typographyCase: props.typographyCase
   }), [props.navigationLayoutValue, props.stickyHeaderValue, props.isSearchEnabled, props.typographyCase])
 
-  // Build announcement bar config from props (bar appearance only, content handled separately)
+  // Build unified announcement bar config from both bar and content props
   const announcementBarConfig = useMemo<AnnouncementBarSectionConfig>(() => ({
+    // Container settings
     width: props.announcementBarConfig.width,
     backgroundColor: props.announcementBarConfig.backgroundColor,
     textColor: props.announcementBarConfig.textColor,
     dividerThickness: props.announcementBarConfig.dividerThickness,
     dividerColor: props.announcementBarConfig.dividerColor,
     paddingTop: props.announcementBarConfig.paddingTop,
-    paddingBottom: props.announcementBarConfig.paddingBottom
-  }), [props.announcementBarConfig])
+    paddingBottom: props.announcementBarConfig.paddingBottom,
+    // Typography/Content settings
+    previewText: props.announcementContentConfig.previewText,
+    typographySize: props.announcementContentConfig.typographySize,
+    typographyWeight: props.announcementContentConfig.typographyWeight,
+    typographySpacing: props.announcementContentConfig.typographySpacing,
+    typographyCase: props.announcementContentConfig.typographyCase,
+    underlineLinks: props.announcementContentConfig.underlineLinks
+  }), [props.announcementBarConfig, props.announcementContentConfig])
 
   // Handler to update header config - dispatches to individual callbacks
   const handleHeaderConfigUpdate = useCallback((updater: (config: SectionConfigSchema) => SectionConfigSchema) => {
@@ -64,11 +80,12 @@ export function SectionDetailRenderer({ activeDetail, props }: SectionDetailRend
     }
   }, [headerConfig, props])
 
-  // Handler to update announcement bar config (bar appearance only)
+  // Handler to update unified announcement bar config - dispatches to both bar and content callbacks
   const handleAnnouncementBarConfigUpdate = useCallback((updater: (config: SectionConfigSchema) => SectionConfigSchema) => {
     const newConfig = updater(announcementBarConfig as SectionConfigSchema) as AnnouncementBarSectionConfig
 
-    const hasChanged =
+    // Check for container setting changes
+    const barChanged =
       newConfig.width !== announcementBarConfig.width ||
       newConfig.backgroundColor !== announcementBarConfig.backgroundColor ||
       newConfig.textColor !== announcementBarConfig.textColor ||
@@ -77,7 +94,17 @@ export function SectionDetailRenderer({ activeDetail, props }: SectionDetailRend
       newConfig.paddingTop !== announcementBarConfig.paddingTop ||
       newConfig.paddingBottom !== announcementBarConfig.paddingBottom
 
-    if (hasChanged) {
+    // Check for typography/content setting changes
+    const contentChanged =
+      newConfig.previewText !== announcementBarConfig.previewText ||
+      newConfig.typographySize !== announcementBarConfig.typographySize ||
+      newConfig.typographyWeight !== announcementBarConfig.typographyWeight ||
+      newConfig.typographySpacing !== announcementBarConfig.typographySpacing ||
+      newConfig.typographyCase !== announcementBarConfig.typographyCase ||
+      newConfig.underlineLinks !== announcementBarConfig.underlineLinks
+
+    // Dispatch container changes
+    if (barChanged) {
       props.onAnnouncementBarConfigChange(() => ({
         width: newConfig.width,
         backgroundColor: newConfig.backgroundColor,
@@ -88,39 +115,19 @@ export function SectionDetailRenderer({ activeDetail, props }: SectionDetailRend
         paddingBottom: newConfig.paddingBottom
       }))
     }
-  }, [announcementBarConfig, props])
 
-  // Build announcement content config from props
-  const announcementConfig = useMemo<AnnouncementSectionConfig>(() => ({
-    text: props.announcementContentConfig.previewText,
-    size: props.announcementContentConfig.typographySize,
-    weight: props.announcementContentConfig.typographyWeight,
-    spacing: props.announcementContentConfig.typographySpacing,
-    case: props.announcementContentConfig.typographyCase
-  }), [props.announcementContentConfig.previewText, props.announcementContentConfig.typographySize, props.announcementContentConfig.typographyWeight, props.announcementContentConfig.typographySpacing, props.announcementContentConfig.typographyCase])
-
-  // Handler to update announcement content config
-  const handleAnnouncementConfigUpdate = useCallback((updater: (config: SectionConfigSchema) => SectionConfigSchema) => {
-    const newConfig = updater(announcementConfig as SectionConfigSchema) as AnnouncementSectionConfig
-
-    const hasChanged =
-      newConfig.text !== announcementConfig.text ||
-      newConfig.size !== announcementConfig.size ||
-      newConfig.weight !== announcementConfig.weight ||
-      newConfig.spacing !== announcementConfig.spacing ||
-      newConfig.case !== announcementConfig.case
-
-    if (hasChanged) {
-      props.onAnnouncementContentConfigChange((prev) => ({
-        ...prev,
-        previewText: newConfig.text,
-        typographySize: newConfig.size,
-        typographyWeight: newConfig.weight,
-        typographySpacing: newConfig.spacing,
-        typographyCase: newConfig.case
+    // Dispatch typography/content changes
+    if (contentChanged) {
+      props.onAnnouncementContentConfigChange(() => ({
+        previewText: newConfig.previewText,
+        typographySize: newConfig.typographySize,
+        typographyWeight: newConfig.typographyWeight,
+        typographySpacing: newConfig.typographySpacing,
+        typographyCase: newConfig.typographyCase,
+        underlineLinks: newConfig.underlineLinks
       }))
     }
-  }, [announcementConfig, props])
+  }, [announcementBarConfig, props])
 
   // Build unified theme config from individual props (for main appearance settings)
   const mainThemeConfig = useMemo<SourceThemeConfig>(() => ({
@@ -188,8 +195,29 @@ export function SectionDetailRenderer({ activeDetail, props }: SectionDetailRend
         )
       }
     }
-    // Announcement bar section - container appearance settings
+    // Announcement bar section - handle parent vs block selection
     if (activeDetail.id === 'announcement-bar') {
+      // Block selected - show block-specific settings
+      if (activeDetail.blockIndex !== undefined) {
+        const blockIndex = activeDetail.blockIndex
+        const block = props.announcementContentConfig.announcements[blockIndex]
+        if (block) {
+          return (
+            <AnnouncementBlockSettings
+              block={block}
+              onUpdateBlock={(updatedBlock) => {
+                const newAnnouncements = [...props.announcementContentConfig.announcements]
+                newAnnouncements[blockIndex] = updatedBlock
+                props.onAnnouncementContentConfigChange(() => ({
+                  ...props.announcementContentConfig,
+                  announcements: newAnnouncements
+                }))
+              }}
+            />
+          )
+        }
+      }
+      // Parent selected - show parent settings
       const definition = getSectionDefinition('announcement-bar')
       if (definition?.settingsSchema && definition.settingsSchema.length > 0) {
         return (
@@ -198,20 +226,6 @@ export function SectionDetailRenderer({ activeDetail, props }: SectionDetailRend
             config={announcementBarConfig as SectionConfigSchema}
             padding={{ top: announcementBarConfig.paddingTop, bottom: announcementBarConfig.paddingBottom }}
             onUpdateConfig={handleAnnouncementBarConfigUpdate}
-          />
-        )
-      }
-    }
-    // Announcement section - text content
-    if (activeDetail.id === 'announcement') {
-      const definition = getSectionDefinition('announcement')
-      if (definition?.settingsSchema && definition.settingsSchema.length > 0) {
-        return (
-          <SchemaSectionSettings
-            definitionId="announcement"
-            config={announcementConfig as SectionConfigSchema}
-            padding={{ top: 0, bottom: 0 }}
-            onUpdateConfig={handleAnnouncementConfigUpdate}
           />
         )
       }
@@ -319,7 +333,7 @@ export function SectionDetailRenderer({ activeDetail, props }: SectionDetailRend
       )
     }
     return <GenericCustomSectionNotice label={activeDetail.label} />
-  }, [activeDetail, activeCustomSection, activeAiSection, props, headerConfig, announcementBarConfig, announcementConfig, handleHeaderConfigUpdate, handleAnnouncementBarConfigUpdate, handleAnnouncementConfigUpdate, mainThemeConfig, handleMainThemeConfigUpdate])
+  }, [activeDetail, activeCustomSection, activeAiSection, props, headerConfig, announcementBarConfig, handleHeaderConfigUpdate, handleAnnouncementBarConfigUpdate, mainThemeConfig, handleMainThemeConfigUpdate])
 }
 
 function SettingsPanel({ children }: { children: React.ReactNode }) {
@@ -483,6 +497,61 @@ function AiSectionSettings({
           </div>
         </div>
       </div>
+    </div>
+  )
+}
+
+// =============================================================================
+// Announcement Block Settings Component (Schema-Driven)
+// =============================================================================
+
+type AnnouncementBlockSettingsProps = {
+  block: AnnouncementBlock
+  onUpdateBlock: (block: AnnouncementBlock) => void
+}
+
+function AnnouncementBlockSettings({
+  block,
+  onUpdateBlock
+}: AnnouncementBlockSettingsProps) {
+  // Get the block schema for 'announcement' type
+  const blockSchema = announcementBarBlocksSchema.find(b => b.type === 'announcement')
+  const settings = blockSchema?.settings ?? []
+  const settingGroups = groupSettingsByHeader(settings)
+
+  const blockRecord = block as Record<string, unknown>
+
+  const handleFieldChange = (id: string, next: unknown) => {
+    onUpdateBlock({ ...block, [id]: next } as AnnouncementBlock)
+  }
+
+  // Types that render their own labels
+  const selfLabeledTypes = ['paragraph', 'color', 'checkbox', 'range', 'select', 'radio']
+
+  return (
+    <div className="pl-4 pr-6 pt-3 pb-5 space-y-4">
+      {settingGroups.map((group, groupIdx) => (
+        <div key={group.title || `group-${groupIdx}`}>
+          {groupIdx > 0 && <Separator.Root className="h-px bg-hover mb-4" />}
+          <SettingSection title={group.title || 'Settings'}>
+            <div className="space-y-4">
+              {group.settings.map((setting) => {
+                const currentValue = blockRecord[setting.id]
+                const needsLabel = !selfLabeledTypes.includes(setting.type)
+                return (
+                  <div key={setting.id} className="space-y-1.5">
+                    {needsLabel && 'label' in setting && (
+                      <label className="font-md text-secondary block">{setting.label}</label>
+                    )}
+                    {renderSettingInput(setting, currentValue, (next) => handleFieldChange(setting.id, next))}
+                  </div>
+                )
+              })}
+            </div>
+          </SettingSection>
+        </div>
+      ))}
+
     </div>
   )
 }

@@ -269,21 +269,15 @@ export {
 } from '../sections/image-with-text/schema.js'
 export { imageWithTextDefaults } from '../sections/image-with-text/defaults.js'
 
-// Announcement Bar section
+// Announcement Bar section (Engine V2: Block Architecture)
 export {
   type AnnouncementBarSectionConfig,
+  type AnnouncementBlockConfig,
   announcementBarConfigSchema,
-  announcementBarSettingsSchema
+  announcementBarSettingsSchema,
+  announcementBarBlocksSchema
 } from '../sections/announcement-bar/schema.js'
 export { announcementBarDefaults } from '../sections/announcement-bar/defaults.js'
-
-// Announcement section (content text)
-export {
-  type AnnouncementSectionConfig,
-  announcementConfigSchema,
-  announcementSettingsSchema
-} from '../sections/announcement/schema.js'
-export { announcementDefaults } from '../sections/announcement/defaults.js'
 
 // Header section
 export {
