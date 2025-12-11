@@ -5,7 +5,7 @@ import { PreviewLoadingBar } from './layout/PreviewLoadingBar'
 import { SidebarRail } from './layout/SidebarRail'
 import { EditorSidebar } from './layout/EditorSidebar'
 import { RightDetailPanel } from './layout/RightDetailPanel'
-import { SectionDetailRenderer } from './layout/sidebar/pages/components/SectionDetailRenderer'
+import { SectionDetailPanel } from './layout/sidebar/pages/components/SectionDetailPanel'
 import { PreviewErrorBoundary } from './components/ErrorBoundary'
 import { useWorkspaceContext } from './contexts/useWorkspaceContext'
 import { useThemeContext } from './contexts/useThemeContext'
@@ -20,7 +20,7 @@ export function AppContent() {
     const hoveredSectionId = useHoveredSectionId()
     const scrollToSectionId = useScrollToSectionId()
     const sidebarExpanded = useSidebarExpanded()
-    const { selectSection, setScrollToSectionId } = useUIActions()
+    const { selectSection, setScrollToSectionId, clearSelection } = useUIActions()
     const isWideScreen = useMediaQuery('(min-width: 1348px)')
     const ghostOverlayTimeoutRef = useRef<number | null>(null)
 
@@ -207,7 +207,7 @@ export function AppContent() {
         }
     }, [overlayTarget])
 
-    // Props for SectionDetailRenderer (used in RightDetailPanel at wide screens)
+    // Props for SectionDetailPanel (used in both narrow and wide screen layouts)
     const sectionsPanelProps = {
         accentColor,
         sectionVisibility,
@@ -267,10 +267,21 @@ export function AppContent() {
             <div className="flex-1 flex overflow-hidden">
                 <SidebarRail />
 
-                <EditorSidebar
-                    currentPage={currentPage}
-                    renderDetailInline={!isWideScreen}
-                />
+                {/* Narrow screen: show detail panel instead of sidebar when active */}
+                {!isWideScreen && activeDetail ? (
+                    <aside
+                        className="bg-surface transition-[width] duration-300 relative border-r border-border flex flex-col"
+                        style={{ width: sidebarExpanded ? 'calc(100vw - 52px)' : '300px' }}
+                    >
+                        <SectionDetailPanel
+                            activeDetail={activeDetail}
+                            onBack={clearSelection}
+                            props={sectionsPanelProps}
+                        />
+                    </aside>
+                ) : (
+                    <EditorSidebar currentPage={currentPage} />
+                )}
 
                 <main className={`${sidebarExpanded ? 'hidden' : 'flex-1'} bg-subtle overflow-hidden`}>
                     <div className={`h-full p-4 ${zoomScale === 1 ? 'overflow-auto' : 'overflow-hidden'}`}>
@@ -338,9 +349,15 @@ export function AppContent() {
                 </main>
 
                 {isWideScreen && (
-                    <RightDetailPanel
-                        detailContent={<SectionDetailRenderer activeDetail={activeDetail} props={sectionsPanelProps} />}
-                    />
+                    <RightDetailPanel>
+                        {activeDetail && (
+                            <SectionDetailPanel
+                                activeDetail={activeDetail}
+                                onBack={clearSelection}
+                                props={sectionsPanelProps}
+                            />
+                        )}
+                    </RightDetailPanel>
                 )}
             </div>
         </div>

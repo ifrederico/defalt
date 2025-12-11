@@ -1,24 +1,20 @@
 import type { ReactNode } from 'react'
 import { Layers } from 'lucide-react'
-import { PanelHeader } from '@defalt/ui'
-import { useActiveDetail, useUIActions } from '../stores'
 
 export type RightDetailPanelProps = {
-  detailContent: ReactNode
+  children?: ReactNode
 }
 
-export function RightDetailPanel({ detailContent }: RightDetailPanelProps) {
-  const activeDetail = useActiveDetail()
-  const { clearSelection } = useUIActions()
+/**
+ * Right panel container for section details on wide screens.
+ * This is a simple positioning wrapper - the actual content (header, tags, settings)
+ * is handled by SectionDetailPanel which is passed as children.
+ */
+export function RightDetailPanel({ children }: RightDetailPanelProps) {
   return (
     <aside className="w-[300px] bg-surface border-l border-border flex flex-col h-full">
-      {activeDetail ? (
-        <>
-          <PanelHeader title={activeDetail.label} onBack={clearSelection} />
-          <div className="flex-1 overflow-y-auto bg-surface">
-            {detailContent}
-          </div>
-        </>
+      {children ? (
+        children
       ) : (
         <div className="flex-1 flex flex-col items-center justify-center px-6 text-center">
           <div className="w-12 h-12 rounded-full bg-subtle flex items-center justify-center mb-4">

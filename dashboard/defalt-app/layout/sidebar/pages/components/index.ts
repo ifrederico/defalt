@@ -2,3 +2,4 @@ export { SectionPaddingSettings, type SectionPaddingSettingsProps, type SectionS
 export { SectionRow, type SectionRowProps } from './SectionRow'
 export { AddSectionCard, type AddSectionCardProps } from './AddSectionCard'
 export { SectionDetailRenderer, type SectionDetail, type SectionDetailRendererProps } from './SectionDetailRenderer'
+export { SectionDetailPanel, type SectionDetailPanelProps } from './SectionDetailPanel'

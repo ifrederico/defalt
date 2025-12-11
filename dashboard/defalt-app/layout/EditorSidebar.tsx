@@ -12,12 +12,10 @@ import { useActiveTab, useActiveDetail, useSidebarExpanded, useUIActions } from 
 
 export type EditorSidebarProps = {
   currentPage: 'home' | 'about' | 'post'
-  renderDetailInline?: boolean
 }
 
 export function EditorSidebar({
-  currentPage,
-  renderDetailInline = true
+  currentPage
 }: EditorSidebarProps) {
   const activeTab = useActiveTab()
   const activeDetail = useActiveDetail()
@@ -238,7 +236,6 @@ export function EditorSidebar({
         {...panelProps}
         activeDetail={activeDetail}
         onActiveDetailChange={setActiveDetail}
-        renderDetailInline={renderDetailInline}
       />
     )
   } else if (activeTab === 'settings') {

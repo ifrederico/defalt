@@ -32,11 +32,10 @@ import {
   type SectionInstance,
   type SectionConfigSchema
 } from '@defalt/sections/engine'
-import { PanelHeader, type TagConfig } from '@defalt/ui'
+import { PanelHeader } from '@defalt/ui'
 import {
   SectionRow,
   AddSectionCard,
-  SectionDetailRenderer,
   type SectionDetail
 } from './components'
 import { useHistoryInteractionBlocker } from '@defalt/app/contexts/useHistoryInteractionBlocker'
@@ -117,7 +116,6 @@ export type SectionsPanelProps = {
   // Controlled mode props (optional, for dual-sidebar layout)
   activeDetail?: SectionDetail | null
   onActiveDetailChange?: (detail: SectionDetail | null) => void
-  renderDetailInline?: boolean
 }
 
 export type SectionsPanelBaseProps = SectionsPanelProps & {
@@ -141,7 +139,6 @@ export const SectionsPanelBase = memo(function SectionsPanelBase({
   allowTemplateAdd = true,
   activeDetail: controlledActiveDetail,
   onActiveDetailChange,
-  renderDetailInline = true,
   ...props
 }: SectionsPanelBaseProps) {
   const { reorderTemplateItems, reorderFooterItems, aiSections = [], onRemoveAiSection, onReorderAiSections } = props
@@ -357,8 +354,6 @@ export const SectionsPanelBase = memo(function SectionsPanelBase({
     setActiveDetail({ id, label, blockType, blockIndex })
   }, [activeDetail, setActiveDetail])
 
-  const handleCloseDetail = useCallback(() => setActiveDetail(null), [setActiveDetail])
-
   // @dnd-kit drag end handler
   const handleDragEnd = useCallback((event: { operation: { source?: { id: string | number; data?: { group?: string; originalIndex?: number } } | null; target?: { id: string | number; data?: { originalIndex?: number } } | null } }) => {
     setIsDragging(false)
@@ -388,91 +383,10 @@ export const SectionsPanelBase = memo(function SectionsPanelBase({
     }
   }, [reorderTemplateItems, reorderFooterItems, onReorderAiSections])
 
-  // Determine if we should show detail inline (only when activeDetail exists, renderDetailInline is true)
-  const showDetailInline = activeDetail && renderDetailInline
-
-  // Look up tags for the active section from its config
-  const { activeTag, activeTags } = useMemo(() => {
-    if (!activeDetail) return { activeTag: undefined, activeTags: undefined }
-    const customSection = props.customSections[activeDetail.id]
-    if (!customSection?.config) return { activeTag: undefined, activeTags: undefined }
-
-    const config = customSection.config as Record<string, unknown>
-
-    // Check for multiple tags (tagLeft, tagRight)
-    if (typeof config.tagLeft === 'string' && typeof config.tagRight === 'string') {
-      return { activeTag: undefined, activeTags: { tagLeft: config.tagLeft, tagRight: config.tagRight } }
-    }
-
-    // Check for single tag
-    if (typeof config.tag === 'string') {
-      return { activeTag: config.tag, activeTags: undefined }
-    }
-
-    return { activeTag: undefined, activeTags: undefined }
-  }, [activeDetail, props.customSections])
-
-  // Handler to update a single tag in section config
-  const handleTagChange = useCallback((newTag: string) => {
-    if (!activeDetail) return
-    const customSection = props.customSections[activeDetail.id]
-    if (customSection) {
-      props.onUpdateCustomSection(activeDetail.id, (config) => ({
-        ...config,
-        tag: newTag
-      }))
-    }
-  }, [activeDetail, props])
-
-  // Build tags array for multiple tags
-  const tagsConfig = useMemo<TagConfig[] | undefined>(() => {
-    if (!activeTags || !activeDetail) return undefined
-    const sectionId = activeDetail.id
-    return [
-      {
-        id: 'tagLeft',
-        label: 'Left column',
-        value: activeTags.tagLeft,
-        onChange: (newTag: string) => {
-          props.onUpdateCustomSection(sectionId, (config) => ({
-            ...config,
-            tagLeft: newTag
-          }))
-        }
-      },
-      {
-        id: 'tagRight',
-        label: 'Right column',
-        value: activeTags.tagRight,
-        onChange: (newTag: string) => {
-          props.onUpdateCustomSection(sectionId, (config) => ({
-            ...config,
-            tagRight: newTag
-          }))
-        }
-      }
-    ]
-  }, [activeTags, activeDetail, props])
-
   return (
     <div className="flex h-full flex-col overflow-hidden bg-surface">
-      {showDetailInline ? (
-        <>
-          <PanelHeader
-            title={activeDetail.label}
-            onBack={handleCloseDetail}
-            tag={activeTag}
-            onTagChange={activeTag !== undefined ? handleTagChange : undefined}
-            tags={tagsConfig}
-          />
-          <div className="flex-1 overflow-y-auto bg-surface">
-            <SectionDetailRenderer activeDetail={activeDetail} props={props} />
-          </div>
-        </>
-      ) : (
-        <>
-          <PanelHeader title={panelTitle} />
-          <div className="flex-1 overflow-y-auto pl-4 pr-6 py-5">
+      <PanelHeader title={panelTitle} />
+      <div className="flex-1 overflow-y-auto pl-4 pr-6 py-5">
             <DragDropProvider
               sensors={sensors}
               onDragStart={() => setIsDragging(true)}
@@ -517,7 +431,7 @@ export const SectionsPanelBase = memo(function SectionsPanelBase({
                               footerExpanded={footerExpanded}
                               onToggleFooter={() => setFooterExpanded(!footerExpanded)}
                               isPremium={isItemPremium(item)}
-                              isSelected={!renderDetailInline && activeDetail?.id === item.id && activeDetail?.blockIndex === undefined}
+                              isSelected={activeDetail?.id === item.id && activeDetail?.blockIndex === undefined}
                               onSectionHover={setHoveredSectionId}
                               onScrollToSection={setScrollToSectionId}
                               showVisibilityToggle={item.id !== 'footer'}
@@ -540,7 +454,7 @@ export const SectionsPanelBase = memo(function SectionsPanelBase({
                                   canOpenDetail={() => true}
                                   isSubItem={true}
                                   showVisibilityToggle={false}
-                                  isSelected={!renderDetailInline && activeDetail?.id === 'announcement-bar' && activeDetail?.blockIndex === idx}
+                                  isSelected={activeDetail?.id === 'announcement-bar' && activeDetail?.blockIndex === idx}
                                   onSectionHover={setHoveredSectionId}
                                   onScrollToSection={setScrollToSectionId}
                                   onRemoveTemplateSection={props.announcementContentConfig.announcements.length > 1 ? () => {
@@ -597,7 +511,7 @@ export const SectionsPanelBase = memo(function SectionsPanelBase({
                                   onOpenDetail={handleOpenDetail}
                                   canOpenDetail={() => true}
                                   isSubItem={true}
-                                  isSelected={!renderDetailInline && activeDetail?.id === footerItem.id}
+                                  isSelected={activeDetail?.id === footerItem.id}
                                   onSectionHover={setHoveredSectionId}
                                   onScrollToSection={setScrollToSectionId}
                                 />
@@ -684,9 +598,7 @@ export const SectionsPanelBase = memo(function SectionsPanelBase({
                 }}
               </DragOverlay>
             </DragDropProvider>
-          </div>
-        </>
-      )}
+      </div>
     </div>
   )
 })
