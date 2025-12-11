@@ -4,6 +4,10 @@
 
 import { z } from 'zod'
 import type { SettingSchema } from '../../engine/schemaTypes.js'
+import { createPaddingConfigSchema, createPaddingSettings } from '../../engine/commonSettings.js'
+
+// Reusable schemas from commonSettings
+const paddingSchema = createPaddingConfigSchema({ defaultTop: 48, defaultBottom: 48 })
 
 // Zod config schema
 export const ghostGridConfigSchema = z.object({
@@ -14,10 +18,8 @@ export const ghostGridConfigSchema = z.object({
   textAlignment: z.enum(['left', 'center', 'right']).default('left'),
   titleSize: z.enum(['small', 'normal', 'large']).default('normal'),
   stackOnMobile: z.boolean().default(true),
-  gap: z.number().min(0).max(100).default(40),
-  paddingTop: z.number().min(0).max(200).default(48),
-  paddingBottom: z.number().min(0).max(200).default(48)
-})
+  gap: z.number().min(0).max(100).default(40)
+}).merge(paddingSchema)
 
 export type GhostGridSectionConfig = z.infer<typeof ghostGridConfigSchema>
 
@@ -64,9 +66,8 @@ export const ghostGridSettingsSchema: SettingSchema[] = [
   { type: 'header', id: 'layout-header', label: 'Layout' },
   { type: 'checkbox', id: 'stackOnMobile', label: 'Stack on mobile', default: true },
   { type: 'range', id: 'gap', label: 'Gap', min: 0, max: 100, step: 4, default: 40, unit: 'px' },
-  { type: 'header', id: 'padding-header', label: 'Padding' },
-  { type: 'range', id: 'paddingTop', label: 'Top', min: 0, max: 200, step: 4, default: 48, unit: 'px' },
-  { type: 'range', id: 'paddingBottom', label: 'Bottom', min: 0, max: 200, step: 4, default: 48, unit: 'px' },
+  // Padding settings from commonSettings
+  ...createPaddingSettings({ defaultTop: 48, defaultBottom: 48 }),
   { type: 'header', id: 'primary-cards-header', label: 'Primary Cards', helpUrl: 'https://ghost.org/help/cards/' },
   {
     type: 'paragraph',

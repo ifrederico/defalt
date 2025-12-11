@@ -1,15 +1,10 @@
 /**
  * Ghost Cards Section Defaults
+ *
+ * Derived from the Zod schema to ensure single source of truth.
  */
 
-import type { GhostCardsSectionConfig } from './schema.js'
+import { ghostCardsConfigSchema, type GhostCardsSectionConfig } from './schema.js'
 
-export const ghostCardsDefaults: GhostCardsSectionConfig = {
-  tag: '#cards',
-  contentWidth: '1120px',
-  pageTitle: false,
-  textAlignment: 'left',
-  titleSize: 'normal',
-  paddingTop: 48,
-  paddingBottom: 48
-}
+// Derive defaults from Zod schema - no manual duplication needed
+export const ghostCardsDefaults: GhostCardsSectionConfig = ghostCardsConfigSchema.parse({})

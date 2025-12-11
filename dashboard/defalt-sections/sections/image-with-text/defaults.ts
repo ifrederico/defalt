@@ -1,14 +1,10 @@
 /**
  * Image With Text Section Defaults
+ *
+ * Derived from the Zod schema to ensure single source of truth.
  */
 
-import type { ImageWithTextSectionConfig } from './schema.js'
+import { imageWithTextConfigSchema, type ImageWithTextSectionConfig } from './schema.js'
 
-export const imageWithTextDefaults: ImageWithTextSectionConfig = {
-  tag: '#image-text',
-  imagePosition: 'left',
-  backgroundColor: '#ffffff',
-  textColor: '#151515',
-  paddingTop: 48,
-  paddingBottom: 48
-}
+// Derive defaults from Zod schema - no manual duplication needed
+export const imageWithTextDefaults: ImageWithTextSectionConfig = imageWithTextConfigSchema.parse({})

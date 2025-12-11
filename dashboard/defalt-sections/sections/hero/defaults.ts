@@ -1,21 +1,11 @@
 /**
  * Hero Section Defaults
+ *
+ * Derived from the Zod schema to ensure single source of truth.
+ * All default values are defined in heroConfigSchema.
  */
 
-import type { HeroConfig } from './schema.js'
+import { heroConfigSchema, type HeroConfig } from './schema.js'
 
-export const heroDefaults: HeroConfig = {
-  heading: '',
-  subheading: '',
-  showButton: true,
-  buttonText: '',
-  buttonLink: '',
-  contentAlignment: 'center',
-  contentWidth: 'full',
-  backgroundColor: '#000000',
-  textColor: '#ffffff',
-  buttonColor: '#ffffff',
-  buttonTextColor: '#000000',
-  paddingTop: 64,
-  paddingBottom: 64
-}
+// Derive defaults from Zod schema - no manual duplication needed
+export const heroDefaults: HeroConfig = heroConfigSchema.parse({})

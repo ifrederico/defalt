@@ -4,6 +4,14 @@
 
 import { z } from 'zod'
 import type { SettingSchema } from '../../engine/schemaTypes.js'
+import {
+  createPaddingConfigSchema,
+  createPaddingSettings,
+  alignmentConfigSchema
+} from '../../engine/commonSettings.js'
+
+// Reusable schemas from commonSettings
+const heroPaddingSchema = createPaddingConfigSchema({ defaultTop: 64, defaultBottom: 64 })
 
 // Zod config schema
 export const heroConfigSchema = z.object({
@@ -24,12 +32,8 @@ export const heroConfigSchema = z.object({
   backgroundColor: z.string().default('#000000'),
   textColor: z.string().default('#ffffff'),
   buttonColor: z.string().default('#ffffff'),
-  buttonTextColor: z.string().default('#000000'),
-
-  // Padding
-  paddingTop: z.number().min(0).max(200).default(64),
-  paddingBottom: z.number().min(0).max(200).default(64)
-})
+  buttonTextColor: z.string().default('#000000')
+}).merge(heroPaddingSchema)
 
 export type HeroConfig = z.infer<typeof heroConfigSchema>
 
@@ -73,7 +77,6 @@ export const heroSettingsSchema: SettingSchema[] = [
   { type: 'color', id: 'buttonColor', label: 'Button', default: '#ffffff' },
   { type: 'color', id: 'buttonTextColor', label: 'Button text', default: '#000000' },
 
-  { type: 'header', id: 'padding-header', label: 'Padding' },
-  { type: 'range', id: 'paddingTop', label: 'Top', min: 0, max: 200, step: 4, default: 64, unit: 'px' },
-  { type: 'range', id: 'paddingBottom', label: 'Bottom', min: 0, max: 200, step: 4, default: 64, unit: 'px' }
+  // Padding settings from commonSettings
+  ...createPaddingSettings({ defaultTop: 64, defaultBottom: 64 })
 ]
