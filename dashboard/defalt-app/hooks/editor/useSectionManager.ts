@@ -10,14 +10,14 @@ import {
   type SectionInstance,
   type SectionConfigSchema
 } from '@defalt/sections/engine'
-import { Ghost as GhostIcon, GalleryVertical } from 'lucide-react'
-import type { LucideIcon } from 'lucide-react'
+import { SECTION_ICON_MAP } from '@defalt/utils/config/sectionIcons'
+import { sanitizeNumericValue, resolveNumericValue } from '@defalt/utils/helpers/numericHelpers'
 import {
   footerItemsDefault,
   getTemplateDefaults,
   HERO_ID_PREFIX,
   type SidebarItem
-} from '@defalt/utils/hooks/configStateDefaults'
+} from '@defalt/utils/config/configStateDefaults'
 import { logError } from '@defalt/utils/logging/errorLogger'
 import {
   ReorderCommand,
@@ -225,19 +225,9 @@ const reorderSidebarItems = (items: SidebarItem[], startIndex: number, endIndex:
   return next
 }
 
-const sanitizePadding = (value: number | undefined) => {
-  if (typeof value !== 'number' || !Number.isFinite(value)) {
-    return 0
-  }
-  return Math.max(0, value)
-}
-
-const sanitizeMarginValue = (value: number | undefined) => {
-  if (typeof value !== 'number' || !Number.isFinite(value)) {
-    return undefined
-  }
-  return Math.max(0, value)
-}
+// Use centralized utilities from numericHelpers
+const sanitizePadding = (value: number | undefined) => sanitizeNumericValue(value, 0, 0)
+const sanitizeMarginValue = (value: number | undefined) => resolveNumericValue(value, undefined, 0)
 
 export function useSectionManager({
   executeCommand,
@@ -332,10 +322,7 @@ export function useSectionManager({
 
   // Memoized values
   const templateDefinitions = useMemo(() => listDefinitionsByCategory('template'), [])
-  const definitionIconMap = useMemo<Record<string, LucideIcon>>(
-    () => ({ hero: GalleryVertical, ghostCards: GhostIcon, ghostGrid: GhostIcon }),
-    []
-  )
+  const definitionIconMap = SECTION_ICON_MAP
 
   const memoizedTemplateOrder = useMemo(
     () => templateItems.map((item) => SECTION_ID_MAP[item.id] || item.id),

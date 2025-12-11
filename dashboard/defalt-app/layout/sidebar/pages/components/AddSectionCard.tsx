@@ -3,7 +3,6 @@ import * as DropdownMenu from '@radix-ui/react-dropdown-menu'
 import type { LucideIcon } from 'lucide-react'
 import {
   CirclePlus,
-  Ghost as GhostIcon,
   Grid3x3,
   MessageSquareQuote,
   MessageCircleQuestionMark,
@@ -13,12 +12,11 @@ import {
   MapPin,
   FileText,
   Component,
-  Crown,
-  LayoutList,
-  GalleryVertical
+  Crown
 } from 'lucide-react'
 import { FloatingTooltip } from '@defalt/ui'
 import type { SectionDefinition } from '@defalt/sections/engine'
+import { resolveSectionIcon } from '@defalt/utils/config/sectionIcons'
 
 type UpcomingSection = {
   id: string
@@ -37,17 +35,6 @@ const UPCOMING_TEMPLATE_SECTIONS: UpcomingSection[] = [
   { id: 'blog-post', label: 'Blog post', icon: FileText },
   { id: 'logo-list', label: 'Logo list', icon: Component },
 ]
-
-const SECTION_ICON_MAP: Record<string, LucideIcon> = {
-  'hero': GalleryVertical,
-  'image-with-text': LayoutList,
-  'grid': Grid3x3,
-  'testimonials': MessageSquareQuote,
-  'faq': MessageCircleQuestionMark,
-  'about': SquareUserRound,
-  'ghostCards': GhostIcon,
-  'ghostGrid': GhostIcon,
-}
 
 export type AddSectionCardProps = {
   definitions: SectionDefinition[]
@@ -139,7 +126,7 @@ export function AddSectionCard({ definitions, onSelect, disabled = false }: AddS
               ) : (
                 <>
                   {filteredDefinitions.map((definition) => {
-                    const DefinitionIcon = SECTION_ICON_MAP[definition.id] || GhostIcon
+                    const DefinitionIcon = resolveSectionIcon(definition.id)
                     const isPremiumSection = definition.premium === true
                     return (
                       <DropdownMenu.Item

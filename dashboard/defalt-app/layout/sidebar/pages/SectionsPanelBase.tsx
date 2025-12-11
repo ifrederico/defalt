@@ -6,26 +6,21 @@ import {
   memo
 } from 'react'
 import * as Separator from '@radix-ui/react-separator'
-import type { LucideIcon } from 'lucide-react'
 import {
-  Ghost as GhostIcon,
-  GalleryVertical,
+  GhostIcon,
   PanelTopDashed,
-  Grid3x3,
-  MessageSquareQuote,
-  MessageCircleQuestionMark,
-  SquareUserRound,
-  LayoutList,
   GripVertical,
   PanelBottomDashed,
-  Maximize
+  Maximize,
+  Sparkles
   // CirclePlus - hidden for now, re-enable when Add Announcement is needed
 } from 'lucide-react'
 import { DragDropProvider, DragOverlay } from '@dnd-kit/react'
 import { PointerSensor } from '@dnd-kit/react'
 import { isElement } from '@dnd-kit/dom/utilities'
-import type { SidebarItem } from '@defalt/utils/hooks/configStateDefaults'
+import type { SidebarItem } from '@defalt/utils/config/configStateDefaults'
 import { type AnnouncementBarConfig, type AnnouncementContentConfig } from '@defalt/utils/config/themeConfig'
+import { resolveSectionIcon } from '@defalt/utils/config/sectionIcons'
 import {
   isPremium,
   type SectionDefinition,
@@ -40,25 +35,11 @@ import {
 } from './components'
 import { useHistoryInteractionBlocker } from '@defalt/app/contexts/useHistoryInteractionBlocker'
 import { useUIActions } from '@defalt/app/stores'
-import { Sparkles } from 'lucide-react'
-
-const GHOST_SECTION_IDS = new Set(['subheader', 'featured', 'footerbar', 'footer-signup', 'footersignup', 'main'])
 
 // IDs of upcoming sections (used to filter from addable definitions)
 const UPCOMING_SECTION_IDS = new Set([
   'grid', 'testimonials', 'faq', 'about', 'slideshow', 'metrics', 'map', 'blog-post', 'logo-list'
 ])
-
-const SECTION_ICON_MAP: Record<string, LucideIcon> = {
-  'hero': GalleryVertical,
-  'grid': Grid3x3,
-  'testimonials': MessageSquareQuote,
-  'faq': MessageCircleQuestionMark,
-  'about': SquareUserRound,
-  'image-with-text': LayoutList,
-  'ghostCards': GhostIcon,
-  'ghostGrid': GhostIcon,
-}
 
 export type SectionsPanelProps = {
   accentColor: string
@@ -145,20 +126,9 @@ export const SectionsPanelBase = memo(function SectionsPanelBase({
   const { setHoveredSectionId, setScrollToSectionId, setActiveTab } = useUIActions()
   const isControlled = controlledActiveDetail !== undefined
   const templateDefinitions = props.templateDefinitions
-  const resolveGhostSectionIcon = useCallback((item: SidebarItem) => {
+  const resolveItemIcon = useCallback((item: SidebarItem) => {
     const identifier = item.definitionId ?? item.id
-    if (!identifier) {
-      return item.icon
-    }
-    const normalized = identifier.toLowerCase()
-    if (GHOST_SECTION_IDS.has(normalized)) {
-      return GhostIcon
-    }
-    // Check SECTION_ICON_MAP for custom sections
-    if (SECTION_ICON_MAP[identifier]) {
-      return SECTION_ICON_MAP[identifier]
-    }
-    return item.icon
+    return resolveSectionIcon(identifier, item.icon)
   }, [])
 
   const isItemPremium = useCallback((item: SidebarItem): boolean => {
@@ -225,7 +195,7 @@ export const SectionsPanelBase = memo(function SectionsPanelBase({
       return {
         ...item,
         label,
-        icon: resolveGhostSectionIcon(item) ?? item.icon ?? GhostIcon,
+        icon: resolveItemIcon(item),
         originalIndex
       }
     })
@@ -240,15 +210,15 @@ export const SectionsPanelBase = memo(function SectionsPanelBase({
     }
 
     return allItems
-  }, [props.templateItems, props.headerStyleValue, resolveGhostSectionIcon])
+  }, [props.templateItems, props.headerStyleValue, resolveItemIcon])
 
   const footerChildItems = useMemo(() =>
     props.footerItems.map((item, originalIndex) => ({
       ...item,
-      icon: resolveGhostSectionIcon(item) ?? item.icon ?? GhostIcon,
+      icon: resolveItemIcon(item),
       originalIndex
     })),
-    [props.footerItems, resolveGhostSectionIcon]
+    [props.footerItems, resolveItemIcon]
   )
 
   const aiSectionItems = useMemo(() =>

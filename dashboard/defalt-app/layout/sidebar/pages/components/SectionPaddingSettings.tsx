@@ -1,6 +1,7 @@
 import * as Separator from '@radix-ui/react-separator'
 import { SliderField, SettingSection } from '@defalt/ui'
 import { SECTION_ID_MAP, PADDING_BLOCK_SECTIONS } from '@defalt/utils/config/themeConfig'
+import { resolveMarginPair } from '@defalt/utils/helpers/numericHelpers'
 
 export type SectionSpacingMode = 'auto' | 'padding-block' | 'padding' | 'margin'
 
@@ -26,24 +27,9 @@ export function SectionPaddingSettings({ sectionId, padding, margin, defaultMarg
   })()
   const showPaddingControls = resolvedMode !== 'margin'
   const isPaddingBlockSection = resolvedMode === 'padding-block'
-  const marginBottomValue = (() => {
-    if (margin && typeof margin.bottom === 'number') {
-      return margin.bottom
-    }
-    if (defaultMargin && typeof defaultMargin.bottom === 'number') {
-      return defaultMargin.bottom
-    }
-    return 0
-  })()
-  const marginTopValue = (() => {
-    if (margin && typeof margin.top === 'number') {
-      return margin.top
-    }
-    if (defaultMargin && typeof defaultMargin.top === 'number') {
-      return defaultMargin.top
-    }
-    return 0
-  })()
+  const resolvedMargin = resolveMarginPair(margin, defaultMargin)
+  const marginTopValue = resolvedMargin.top ?? 0
+  const marginBottomValue = resolvedMargin.bottom ?? 0
   const marginControlAvailable = typeof onMarginChange === 'function'
   const showMarginControls = marginControlAvailable && (
     resolvedMode === 'margin' ||

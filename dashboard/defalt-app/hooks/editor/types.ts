@@ -4,7 +4,7 @@ import type {
   AnnouncementBarConfig,
   AnnouncementContentConfig
 } from '@defalt/utils/config/themeConfig'
-import type { SidebarItem } from '@defalt/utils/hooks/configStateDefaults'
+import type { SidebarItem } from '@defalt/utils/config/configStateDefaults'
 import type { SectionInstance, SectionConfigSchema, listDefinitionsByCategory } from '@defalt/sections/engine'
 import type { LucideIcon } from 'lucide-react'
 import type { HistoryCommand } from '@defalt/utils/history/commands'

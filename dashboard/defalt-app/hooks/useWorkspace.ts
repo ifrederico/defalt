@@ -46,8 +46,9 @@ import {
   getTemplateDefaults,
   normalizeHeroSectionId,
   type SidebarItem
-} from '@defalt/utils/hooks/configStateDefaults'
-import { migrateLegacyHeroConfig } from '@defalt/utils/hooks/configStateHelpers'
+} from '@defalt/utils/config/configStateDefaults'
+import { migrateLegacyHeroConfig } from '@defalt/utils/config/configStateHelpers'
+import { sanitizeNumericValue, resolveNumericValue, resolveMarginPair } from '@defalt/utils/helpers/numericHelpers'
 import { useSaveQueue, isAbortError, throwIfAborted } from './useSaveQueue'
 import { TIMING } from '@defalt/utils/constants'
 import { apiPath } from '@defalt/utils/api/apiPath'

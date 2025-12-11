@@ -91,8 +91,8 @@ export type WorkspaceContextValue = {
   onSectionMarginCommit: (id: string, direction: 'top' | 'bottom', value: number) => void
   onUpdateCustomSection: (id: string, updater: (config: import('@defalt/sections/engine').SectionConfigSchema) => import('@defalt/sections/engine').SectionConfigSchema) => void
   sectionVisibility: Record<string, boolean>
-  templateItems: import('@defalt/utils/hooks/configStateDefaults').SidebarItem[]
-  footerItems: import('@defalt/utils/hooks/configStateDefaults').SidebarItem[]
+  templateItems: import('@defalt/utils/config/configStateDefaults').SidebarItem[]
+  footerItems: import('@defalt/utils/config/configStateDefaults').SidebarItem[]
   reorderTemplateItems: (startIndex: number, endIndex: number) => void
   reorderFooterItems: (startIndex: number, endIndex: number) => void
   toggleSectionVisibility: (id: string) => void
