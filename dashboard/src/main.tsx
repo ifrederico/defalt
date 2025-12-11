@@ -7,7 +7,7 @@ import '@fontsource/inter/700.css'
 import '../defalt-app/index.css'
 import RootApp from '../defalt-app/RootApp.tsx'
 import { RootAppErrorBoundary } from '../defalt-app/components/ErrorBoundary.tsx'
-import { MemberProvider } from './context/MemberContext.tsx'
+import { MemberProvider } from '../defalt-app/contexts/MemberContext.tsx'
 
 const rootElement = document.getElementById('root')
 if (!rootElement) {

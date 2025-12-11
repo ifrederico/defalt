@@ -13,8 +13,8 @@ import {
 } from '@defalt/utils/types/subscription'
 import { SubscriptionContext } from './SubscriptionContext.shared'
 import { logError } from '@defalt/utils/logging/errorLogger'
-import { useMember } from '../../src/context/MemberContext'
-import { isLifetimeMember } from '../../src/lib/ghost'
+import { useMember } from './MemberContext'
+import { isLifetimeMember } from '../lib/ghost'
 
 export function SubscriptionProvider({ children }: { children: ReactNode }) {
   const { member, isPaid } = useMember()

@@ -6,7 +6,7 @@
 
 import { useMemo, useCallback, type ReactNode } from 'react'
 import { AuthContext, type AuthStatus, type AuthUser } from './AuthContext.shared'
-import { useMember } from '../../src/context/MemberContext'
+import { useMember } from './MemberContext'
 import { apiPath } from '@defalt/utils/api/apiPath'
 import { logError } from '@defalt/utils/logging/errorLogger'
 
