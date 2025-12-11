@@ -80,3 +80,47 @@ export function filterPagesByTag(
     return hasRequiredTag && !hasHideTag
   })
 }
+
+/**
+ * Parse numeric suffix from a ghost-cards section ID
+ * @example parseGhostCardIdSuffix('ghost-cards') // returns 1
+ * @example parseGhostCardIdSuffix('ghost-cards-3') // returns 3
+ * @example parseGhostCardIdSuffix('other-section') // returns 0
+ */
+export function parseGhostCardIdSuffix(sectionId: string): number {
+  if (sectionId === 'ghost-cards') {
+    return 1
+  }
+  const match = sectionId.match(/^ghost-cards-(\d+)$/)
+  if (!match) {
+    return 0
+  }
+  const numeric = Number.parseInt(match[1], 10)
+  return Number.isFinite(numeric) ? numeric : 0
+}
+
+/**
+ * Parse numeric suffix from a ghost card tag value
+ * @example parseGhostCardTagSuffix('#ghost-card') // returns 1
+ * @example parseGhostCardTagSuffix('#ghost-card-2') // returns 2
+ * @example parseGhostCardTagSuffix('ghost-cards-5') // returns 5
+ * @example parseGhostCardTagSuffix('other-tag') // returns 0
+ */
+export function parseGhostCardTagSuffix(tagValue: unknown): number {
+  if (typeof tagValue !== 'string') {
+    return 0
+  }
+  const normalized = tagValue.trim().replace(/^#+/, '').toLowerCase()
+  if (!normalized) {
+    return 0
+  }
+  const match = normalized.match(/^ghost-cards?-?(\d+)?$/)
+  if (!match) {
+    return 0
+  }
+  if (!match[1]) {
+    return 1
+  }
+  const numeric = Number.parseInt(match[1], 10)
+  return Number.isFinite(numeric) ? numeric : 1
+}

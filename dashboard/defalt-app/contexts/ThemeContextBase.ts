@@ -1,4 +1,5 @@
-import { createContext } from 'react'
+import { createTypedContext } from '@defalt/utils/helpers/createTypedContext'
 import type { ThemeContextValue } from './ThemeContext.types'
 
-export const ThemeContext = createContext<ThemeContextValue | null>(null)
+// Use factory to create context and hook together
+export const [ThemeContext, useThemeContextInternal] = createTypedContext<ThemeContextValue>('Theme')

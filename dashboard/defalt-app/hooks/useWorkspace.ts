@@ -49,7 +49,7 @@ import {
 } from '@defalt/utils/config/configStateDefaults'
 import { migrateLegacyHeroConfig } from '@defalt/utils/config/configStateHelpers'
 import { sanitizeNumericValue, resolveNumericValue, resolveMarginPair } from '@defalt/utils/helpers/numericHelpers'
-import { useSaveQueue, isAbortError, throwIfAborted } from './useSaveQueue'
+import { useSaveQueue, isAbortError, throwIfAborted } from '@defalt/utils/hooks'
 import { TIMING } from '@defalt/utils/constants'
 import { apiPath } from '@defalt/utils/api/apiPath'
 import { logError, logWarning, logInfo } from '@defalt/utils/logging/errorLogger'

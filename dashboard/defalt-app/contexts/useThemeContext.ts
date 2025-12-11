@@ -1,11 +1,3 @@
-import { useContext } from 'react'
-import { ThemeContext } from './ThemeContextBase'
-import type { ThemeContextValue } from './ThemeContext.types'
-
-export function useThemeContext(): ThemeContextValue {
-  const context = useContext(ThemeContext)
-  if (!context) {
-    throw new Error('useThemeContext must be used within a ThemeProvider')
-  }
-  return context
-}
+// Re-export the hook created by the factory
+// Keeps the same public API but eliminates boilerplate
+export { useThemeContextInternal as useThemeContext } from './ThemeContextBase'

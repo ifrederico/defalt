@@ -1,4 +1,5 @@
-import { createContext } from 'react'
+import { createTypedContext } from '@defalt/utils/helpers/createTypedContext'
 import type { HistoryContextValue } from './HistoryContext.types'
 
-export const HistoryContext = createContext<HistoryContextValue | null>(null)
+// Use factory to create context and hook together
+export const [HistoryContext, useHistoryContextInternal] = createTypedContext<HistoryContextValue>('History')

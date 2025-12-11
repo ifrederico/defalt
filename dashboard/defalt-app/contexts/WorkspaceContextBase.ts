@@ -1,4 +1,5 @@
-import { createContext } from 'react'
+import { createTypedContext } from '@defalt/utils/helpers/createTypedContext'
 import type { WorkspaceContextValue } from './WorkspaceContext.types'
 
-export const WorkspaceContext = createContext<WorkspaceContextValue | null>(null)
+// Use factory to create context and hook together
+export const [WorkspaceContext, useWorkspaceContextInternal] = createTypedContext<WorkspaceContextValue>('Workspace')

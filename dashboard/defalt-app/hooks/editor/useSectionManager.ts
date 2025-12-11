@@ -10,8 +10,10 @@ import {
   type SectionInstance,
   type SectionConfigSchema
 } from '@defalt/sections/engine'
+import { parseGhostCardIdSuffix, parseGhostCardTagSuffix } from '@defalt/sections/utils/tagUtils'
 import { SECTION_ICON_MAP } from '@defalt/utils/config/sectionIcons'
 import { sanitizeNumericValue, resolveNumericValue } from '@defalt/utils/helpers/numericHelpers'
+import { deepClone } from '@defalt/utils/helpers/deepClone'
 import {
   footerItemsDefault,
   getTemplateDefaults,
@@ -60,37 +62,6 @@ const generateCustomSectionId = (definitionId: string, existingIds: Set<string>)
     suffix += 1
   }
   return attempt
-}
-
-const parseGhostCardIdSuffix = (sectionId: string) => {
-  if (sectionId === 'ghost-cards') {
-    return 1
-  }
-  const match = sectionId.match(/^ghost-cards-(\d+)$/)
-  if (!match) {
-    return 0
-  }
-  const numeric = Number.parseInt(match[1], 10)
-  return Number.isFinite(numeric) ? numeric : 0
-}
-
-const parseGhostCardTagSuffix = (tagValue: unknown) => {
-  if (typeof tagValue !== 'string') {
-    return 0
-  }
-  const normalized = tagValue.trim().replace(/^#+/, '').toLowerCase()
-  if (!normalized) {
-    return 0
-  }
-  const match = normalized.match(/^ghost-cards?-?(\d+)?$/)
-  if (!match) {
-    return 0
-  }
-  if (!match[1]) {
-    return 1
-  }
-  const numeric = Number.parseInt(match[1], 10)
-  return Number.isFinite(numeric) ? numeric : 1
 }
 
 const getNextGhostCardsSuffix = (sections: Record<string, SectionInstance>) => {
@@ -202,7 +173,7 @@ const cloneCustomSectionsState = (sections: Record<string, SectionInstance>) => 
   Object.entries(sections).forEach(([key, section]) => {
     next[key] = {
       ...section,
-      config: JSON.parse(JSON.stringify(section.config))
+      config: deepClone(section.config)
     }
   })
   return next

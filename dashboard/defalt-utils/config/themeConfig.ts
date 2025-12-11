@@ -3,6 +3,7 @@ import { logError } from '../logging/errorLogger.js'
 import { WORKSPACE_STORAGE_PREFIX } from '../constants.js'
 import { apiPath } from '../api/apiPath.js'
 import { getCachedCsrfToken, requestCsrfToken } from '../security/csrf.js'
+import { deepClone } from '../helpers/deepClone.js'
 
 export type PageType = 'home' | 'about' | 'post' | 'page'
 
@@ -206,7 +207,8 @@ type DocumentPageKey = typeof PAGE_KEY_MAP[PageType]
 
 type WorkspaceStorageGlobal = typeof globalThis & { sessionStorage?: Storage, localStorage?: Storage }
 
-const clone = <T>(value: T): T => JSON.parse(JSON.stringify(value))
+// Use the centralized deepClone utility
+const clone = deepClone
 
 // Get sessionStorage for draft (temporary, auto-saved)
 const getDraftStorage = (): Storage | null => {
