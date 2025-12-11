@@ -3,12 +3,7 @@
  */
 
 import type { SectionDefinition } from '../../engine/schemaTypes.js'
-import {
-  ghostGridConfigSchema,
-  ghostGridSettingsSchema,
-  ghostGridBlocksSchema,
-  type GhostGridSectionConfig
-} from './schema.js'
+import { ghostGridConfigSchema, ghostGridSettingsSchema, type GhostGridSectionConfig } from './schema.js'
 import { ghostGridDefaults } from './defaults.js'
 
 export const definition: SectionDefinition<typeof ghostGridConfigSchema> = {
@@ -17,10 +12,11 @@ export const definition: SectionDefinition<typeof ghostGridConfigSchema> = {
   description: 'Two-column grid for Ghost pages',
   category: 'template',
   defaultVisibility: true,
-  defaultPadding: { top: 48, bottom: 48 },
+  defaultPadding: { top: 0, bottom: 0 },
+  showPaddingControls: false,
   configSchema: ghostGridConfigSchema,
   settingsSchema: ghostGridSettingsSchema,
-  blocksSchema: ghostGridBlocksSchema,
+  blocksSchema: undefined,
   createConfig: () => ghostGridDefaults,
   templatePath: 'ghostGrid/ghostGrid.hbs'
 }

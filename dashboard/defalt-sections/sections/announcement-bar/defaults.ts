@@ -8,6 +8,9 @@
 import type { AnnouncementBarSectionConfig } from './schema.js'
 
 export const announcementBarDefaults: AnnouncementBarSectionConfig = {
+  // Ghost tag
+  tag: '#announcement',
+
   // Container settings
   width: 'default',
   backgroundColor: '#AC1E3E',

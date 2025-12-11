@@ -7,8 +7,8 @@ import type { SettingSchema } from '../../engine/schemaTypes.js'
 
 // Zod config schema
 export const imageWithTextConfigSchema = z.object({
-  // Ghost integration
-  ghostPageTag: z.string().default('#image-with-text'),
+  // Ghost tag for content filtering
+  tag: z.string().default('#image-text'),
 
   // Image settings
   imagePosition: z.enum(['left', 'right']).default('left'),
@@ -26,9 +26,6 @@ export type ImageWithTextSectionConfig = z.infer<typeof imageWithTextConfigSchem
 
 // UI settings schema
 export const imageWithTextSettingsSchema: SettingSchema[] = [
-  { type: 'header', id: 'content-header', label: 'Content' },
-  { type: 'text', id: 'ghostPageTag', label: 'Ghost page tag', default: '#image-with-text', placeholder: '#image-with-text' },
-
   { type: 'header', id: 'layout-header', label: 'Layout' },
   {
     type: 'select',

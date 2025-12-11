@@ -5,6 +5,8 @@
 import type { GhostCardsSectionConfig } from './schema.js'
 
 export const ghostCardsDefaults: GhostCardsSectionConfig = {
+  tag: '#cards',
+  contentWidth: '1120px',
   pageTitle: false,
   textAlignment: 'left',
   titleSize: 'normal',

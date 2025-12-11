@@ -5,7 +5,7 @@
 import type { ImageWithTextSectionConfig } from './schema.js'
 
 export const imageWithTextDefaults: ImageWithTextSectionConfig = {
-  ghostPageTag: '#image-with-text',
+  tag: '#image-text',
   imagePosition: 'left',
   backgroundColor: '#ffffff',
   textColor: '#151515',

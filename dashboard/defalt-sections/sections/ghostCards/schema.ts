@@ -7,6 +7,8 @@ import type { SettingSchema } from '../../engine/schemaTypes.js'
 
 // Zod config schema
 export const ghostCardsConfigSchema = z.object({
+  tag: z.string().default('#cards'),
+  contentWidth: z.enum(['720px', '960px', '1120px', '1320px', 'none']).default('1120px'),
   pageTitle: z.boolean().default(false),
   textAlignment: z.enum(['left', 'center', 'right']).default('left'),
   titleSize: z.enum(['small', 'normal', 'large']).default('normal'),
@@ -19,6 +21,19 @@ export type GhostCardsSectionConfig = z.infer<typeof ghostCardsConfigSchema>
 // UI settings schema
 export const ghostCardsSettingsSchema: SettingSchema[] = [
   { type: 'header', id: 'appearance-header', label: 'Appearance' },
+  {
+    type: 'select',
+    id: 'contentWidth',
+    label: 'Width',
+    default: '1120px',
+    options: [
+      { label: 'Narrow', value: '720px' },
+      { label: 'Medium', value: '960px' },
+      { label: 'Default', value: '1120px' },
+      { label: 'Wide', value: '1320px' },
+      { label: 'Full', value: 'none' }
+    ]
+  },
   { type: 'checkbox', id: 'pageTitle', label: 'Page title', default: false },
   {
     type: 'radio',

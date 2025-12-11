@@ -1,4 +1,4 @@
-export { PanelHeader } from './PanelHeader'
+export { PanelHeader, type TagConfig } from './PanelHeader'
 export {
   ButtonGroupSetting,
   SettingSection,

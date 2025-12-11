@@ -550,6 +550,7 @@ export function HandlebarsRenderer({
         showFeaturedPosts: showFeaturedForPreview,
       },
       announcementBarHtml: renderedAnnouncementBar,
+      announcementBarHidden: hiddenSections['announcement-bar'],
       customCss: sanitizedCustomCss,
       customSections: mergedCustomSections,
       sectionIds: onSectionSelect ? sectionIdsForPreview : undefined,
@@ -579,7 +580,7 @@ export function HandlebarsRenderer({
         subheaderStyle: subheaderStyleForPreview,
         showFeaturedPosts: showFeaturedForPreview,
       })
-      syncAnnouncementBar(doc, renderedAnnouncementBar)
+      syncAnnouncementBar(doc, renderedAnnouncementBar, hiddenSections['announcement-bar'])
       applyCustomCss(doc, sanitizedCustomCss)
     }
 
@@ -588,7 +589,7 @@ export function HandlebarsRenderer({
     } else {
       update()
     }
-  }, [stickyHeaderMode, showSearch, typographyCase, sectionPadding, sectionMargins, subheaderStyleForPreview, showFeaturedForPreview, renderedAnnouncementBar, sanitizedCustomCss])
+  }, [stickyHeaderMode, showSearch, typographyCase, sectionPadding, sectionMargins, subheaderStyleForPreview, showFeaturedForPreview, renderedAnnouncementBar, sanitizedCustomCss, hiddenSections])
 
   // Effect for incremental color/layout updates (no full iframe rewrite)
   // This prevents scroll jumps when only colors change

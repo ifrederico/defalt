@@ -32,7 +32,7 @@ import {
   type SectionInstance,
   type SectionConfigSchema
 } from '@defalt/sections/engine'
-import { PanelHeader } from '@defalt/ui'
+import { PanelHeader, type TagConfig } from '@defalt/ui'
 import {
   SectionRow,
   AddSectionCard,
@@ -391,11 +391,80 @@ export const SectionsPanelBase = memo(function SectionsPanelBase({
   // Determine if we should show detail inline (only when activeDetail exists, renderDetailInline is true)
   const showDetailInline = activeDetail && renderDetailInline
 
+  // Look up tags for the active section from its config
+  const { activeTag, activeTags } = useMemo(() => {
+    if (!activeDetail) return { activeTag: undefined, activeTags: undefined }
+    const customSection = props.customSections[activeDetail.id]
+    if (!customSection?.config) return { activeTag: undefined, activeTags: undefined }
+
+    const config = customSection.config as Record<string, unknown>
+
+    // Check for multiple tags (tagLeft, tagRight)
+    if (typeof config.tagLeft === 'string' && typeof config.tagRight === 'string') {
+      return { activeTag: undefined, activeTags: { tagLeft: config.tagLeft, tagRight: config.tagRight } }
+    }
+
+    // Check for single tag
+    if (typeof config.tag === 'string') {
+      return { activeTag: config.tag, activeTags: undefined }
+    }
+
+    return { activeTag: undefined, activeTags: undefined }
+  }, [activeDetail, props.customSections])
+
+  // Handler to update a single tag in section config
+  const handleTagChange = useCallback((newTag: string) => {
+    if (!activeDetail) return
+    const customSection = props.customSections[activeDetail.id]
+    if (customSection) {
+      props.onUpdateCustomSection(activeDetail.id, (config) => ({
+        ...config,
+        tag: newTag
+      }))
+    }
+  }, [activeDetail, props])
+
+  // Build tags array for multiple tags
+  const tagsConfig = useMemo<TagConfig[] | undefined>(() => {
+    if (!activeTags || !activeDetail) return undefined
+    const sectionId = activeDetail.id
+    return [
+      {
+        id: 'tagLeft',
+        label: 'Left column',
+        value: activeTags.tagLeft,
+        onChange: (newTag: string) => {
+          props.onUpdateCustomSection(sectionId, (config) => ({
+            ...config,
+            tagLeft: newTag
+          }))
+        }
+      },
+      {
+        id: 'tagRight',
+        label: 'Right column',
+        value: activeTags.tagRight,
+        onChange: (newTag: string) => {
+          props.onUpdateCustomSection(sectionId, (config) => ({
+            ...config,
+            tagRight: newTag
+          }))
+        }
+      }
+    ]
+  }, [activeTags, activeDetail, props])
+
   return (
     <div className="flex h-full flex-col overflow-hidden bg-surface">
       {showDetailInline ? (
         <>
-          <PanelHeader title={activeDetail.label} onBack={handleCloseDetail} />
+          <PanelHeader
+            title={activeDetail.label}
+            onBack={handleCloseDetail}
+            tag={activeTag}
+            onTagChange={activeTag !== undefined ? handleTagChange : undefined}
+            tags={tagsConfig}
+          />
           <div className="flex-1 overflow-y-auto bg-surface">
             <SectionDetailRenderer activeDetail={activeDetail} props={props} />
           </div>

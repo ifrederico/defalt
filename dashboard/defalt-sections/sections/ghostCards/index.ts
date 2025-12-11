@@ -10,6 +10,7 @@ export const definition: SectionDefinition<typeof ghostCardsConfigSchema> = {
   id: 'ghostCards',
   label: 'Ghost Cards',
   description: 'A grid of content cards',
+  tag: '#cards',
   category: 'template',
   defaultVisibility: true,
   defaultPadding: { top: 0, bottom: 0 },

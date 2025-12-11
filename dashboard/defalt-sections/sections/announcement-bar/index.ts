@@ -19,6 +19,7 @@ export const definition: SectionDefinition<typeof announcementBarConfigSchema> =
   id: 'announcement-bar',
   label: 'Announcement Bar',
   description: 'A notification bar at the top of the page',
+  tag: '#announcement',
   category: 'header',
   defaultVisibility: true,
   defaultPadding: { top: 8, bottom: 8 },

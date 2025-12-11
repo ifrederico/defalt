@@ -112,6 +112,9 @@ export const announcementBarBlocksSchema: BlockSchema[] = [
 // =============================================================================
 
 export const announcementBarConfigSchema = z.object({
+  // --- Ghost Tag ---
+  tag: z.string().default('#announcement'),
+
   // --- Container Settings ---
   width: z.enum(['default', 'narrow']).default('default'),
   backgroundColor: z.string().default('#AC1E3E'),

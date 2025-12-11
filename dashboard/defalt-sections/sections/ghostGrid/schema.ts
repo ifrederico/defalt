@@ -3,32 +3,18 @@
  */
 
 import { z } from 'zod'
-import type { SettingSchema, BlockSchema } from '../../engine/schemaTypes.js'
-
-// Card schema
-const cardSchema = z.object({
-  title: z.string().default(''),
-  description: z.string().default(''),
-  buttonText: z.string().default(''),
-  buttonLink: z.string().default('')
-})
-
-export type GhostGridCard = z.infer<typeof cardSchema>
+import type { SettingSchema } from '../../engine/schemaTypes.js'
 
 // Zod config schema
 export const ghostGridConfigSchema = z.object({
-  // Cards
-  cards: z.array(cardSchema).default([]),
-
-  // Ghost tags
-  leftColumnTag: z.string().default('#ghost-grid-1'),
-  rightColumnTag: z.string().default('#ghost-grid-2'),
-
-  // Colors
-  backgroundColor: z.string().default('#ffffff'),
-  textColor: z.string().default('#151515'),
-
-  // Padding
+  tagLeft: z.string().default('#grid-left'),
+  tagRight: z.string().default('#grid-right'),
+  contentWidth: z.enum(['720px', '960px', '1120px', '1320px', 'none']).default('1120px'),
+  pageTitle: z.boolean().default(false),
+  textAlignment: z.enum(['left', 'center', 'right']).default('left'),
+  titleSize: z.enum(['small', 'normal', 'large']).default('normal'),
+  stackOnMobile: z.boolean().default(true),
+  gap: z.number().min(0).max(100).default(40),
   paddingTop: z.number().min(0).max(200).default(48),
   paddingBottom: z.number().min(0).max(200).default(48)
 })
@@ -37,30 +23,77 @@ export type GhostGridSectionConfig = z.infer<typeof ghostGridConfigSchema>
 
 // UI settings schema
 export const ghostGridSettingsSchema: SettingSchema[] = [
-  { type: 'header', id: 'tags-header', label: 'Ghost Tags' },
-  { type: 'text', id: 'leftColumnTag', label: 'Left column tag', default: '#ghost-grid-1', placeholder: '#ghost-grid-1' },
-  { type: 'text', id: 'rightColumnTag', label: 'Right column tag', default: '#ghost-grid-2', placeholder: '#ghost-grid-2' },
-
-  { type: 'header', id: 'colors-header', label: 'Colors' },
-  { type: 'color', id: 'backgroundColor', label: 'Background', default: '#ffffff' },
-  { type: 'color', id: 'textColor', label: 'Text', default: '#151515' },
-
+  { type: 'header', id: 'appearance-header', label: 'Appearance' },
+  {
+    type: 'select',
+    id: 'contentWidth',
+    label: 'Width',
+    default: '1120px',
+    options: [
+      { label: 'Narrow', value: '720px' },
+      { label: 'Medium', value: '960px' },
+      { label: 'Default', value: '1120px' },
+      { label: 'Wide', value: '1320px' },
+      { label: 'Full', value: 'none' }
+    ]
+  },
+  { type: 'checkbox', id: 'pageTitle', label: 'Page title', default: false },
+  {
+    type: 'radio',
+    id: 'textAlignment',
+    label: 'Text alignment',
+    default: 'left',
+    iconOnly: true,
+    options: [
+      { label: 'Left', value: 'left', icon: 'AlignLeft' },
+      { label: 'Center', value: 'center', icon: 'AlignCenter' },
+      { label: 'Right', value: 'right', icon: 'AlignRight' }
+    ]
+  },
+  {
+    type: 'select',
+    id: 'titleSize',
+    label: 'Title size',
+    default: 'normal',
+    options: [
+      { label: 'Small', value: 'small' },
+      { label: 'Normal', value: 'normal' },
+      { label: 'Large', value: 'large' }
+    ]
+  },
+  { type: 'header', id: 'layout-header', label: 'Layout' },
+  { type: 'checkbox', id: 'stackOnMobile', label: 'Stack on mobile', default: true },
+  { type: 'range', id: 'gap', label: 'Gap', min: 0, max: 100, step: 4, default: 40, unit: 'px' },
   { type: 'header', id: 'padding-header', label: 'Padding' },
   { type: 'range', id: 'paddingTop', label: 'Top', min: 0, max: 200, step: 4, default: 48, unit: 'px' },
-  { type: 'range', id: 'paddingBottom', label: 'Bottom', min: 0, max: 200, step: 4, default: 48, unit: 'px' }
-]
-
-// Blocks schema
-export const ghostGridBlocksSchema: BlockSchema[] = [
+  { type: 'range', id: 'paddingBottom', label: 'Bottom', min: 0, max: 200, step: 4, default: 48, unit: 'px' },
+  { type: 'header', id: 'primary-cards-header', label: 'Primary Cards', helpUrl: 'https://ghost.org/help/cards/' },
   {
-    type: 'card',
-    name: 'Card',
-    limit: 2,
-    settings: [
-      { type: 'text', id: 'title', label: 'Title', default: '' },
-      { type: 'textarea', id: 'description', label: 'Description', default: '' },
-      { type: 'text', id: 'buttonText', label: 'Button text', default: '' },
-      { type: 'url', id: 'buttonLink', label: 'Button link', default: '' }
+    type: 'paragraph',
+    id: 'primary-cards-help',
+    content: 'Launch the dynamic card menu by clicking the + button, or type / on a new line.'
+  },
+  {
+    type: 'cardList',
+    id: 'primary-cards-list',
+    items: [
+      { label: 'Image', suffix: '/image', icon: 'Image' },
+      { label: 'Divider', suffix: '/hr', icon: 'Minus' },
+      { label: 'Button', suffix: '/button', icon: 'RectangleEllipsis' },
+      { label: 'Bookmark', suffix: '/url', icon: 'Bookmark' },
+      { label: 'Gallery', suffix: '/gallery', icon: 'Images' },
+      { label: 'Public preview', suffix: '/paywall', icon: 'Eye' },
+      { label: 'Call to action', suffix: '/cta', icon: 'MousePointer' },
+      { label: 'Callout', suffix: '/callout', icon: 'MessageSquareWarning' },
+      { label: 'Signup', suffix: '/signup', icon: 'UserPlus' },
+      { label: 'Header', suffix: '/header', icon: 'GalleryVertical' },
+      { label: 'Toggle', suffix: '/toggle', icon: 'ChevronDown' },
+      { label: 'Video', suffix: '/video', icon: 'Play' },
+      { label: 'Audio', suffix: '/audio', icon: 'Music4' },
+      { label: 'File', suffix: '/file', icon: 'Paperclip' },
+      { label: 'Product', suffix: '/product', icon: 'Star' },
+      { label: 'HTML', suffix: '/html', icon: 'Code' },
+      { label: 'Markdown', suffix: '/md', icon: 'BookOpen' }
     ]
   }
 ]

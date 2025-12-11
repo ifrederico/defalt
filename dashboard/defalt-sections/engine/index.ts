@@ -254,10 +254,8 @@ export { ghostCardsDefaults } from '../sections/ghostCards/defaults.js'
 // Ghost Grid section
 export {
   type GhostGridSectionConfig,
-  type GhostGridCardConfig,
   ghostGridConfigSchema,
-  ghostGridSettingsSchema,
-  ghostGridBlocksSchema
+  ghostGridSettingsSchema
 } from '../sections/ghostGrid/schema.js'
 export { ghostGridDefaults } from '../sections/ghostGrid/defaults.js'
 

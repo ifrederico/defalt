@@ -1,25 +1,87 @@
 {{!-- Ghost Grid Section --}}
-<section class="grid" style="{{sectionStyle}}">
-  <div class="grid__columns">
-    {{#if (length cards)}}
-      {{#each cards}}
-        <article class="grid__card">
-          {{#if title}}<h3 class="grid__title">{{title}}</h3>{{/if}}
-          {{#if description}}<p class="grid__description">{{description}}</p>{{/if}}
-          {{#if buttonText}}
-            <a href="{{#if buttonLink}}{{buttonLink}}{{else}}#{{/if}}" class="grid__button">
-              {{buttonText}}
-            </a>
-          {{/if}}
-        </article>
-      {{/each}}
-    {{else}}
-      <div class="grid__placeholder">
-        <p>Left: Tag a page with <code>{{leftColumnTag}}</code></p>
+<style>
+  .gd-ghost-grid {
+    --content-width: {{contentWidth}};
+    --gd-grid-padding-top: {{paddingTop}}px;
+    --gd-grid-padding-bottom: {{paddingBottom}}px;
+
+    padding-top: var(--gd-grid-padding-top);
+    padding-bottom: var(--gd-grid-padding-bottom);
+  }
+
+  .gd-ghost-grid__inner {
+    max-width: var(--content-width);
+    margin: 0 auto;
+    padding: 0 {{#if (eq contentWidth 'none')}}0{{else}}var(--container-gap, 24px){{/if}};
+    text-align: {{textAlignment}};
+  }
+
+  .gd-ghost-grid__columns {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: {{gap}}px;
+  }
+
+  .gd-ghost-grid__column {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .gd-ghost-grid__title {
+    margin: 0 0 16px 0;
+    font-weight: 700;
+    color: var(--color-darker-gray);
+  }
+
+  .gd-ghost-grid__title--small { font-size: 2rem; }
+  .gd-ghost-grid__title--normal { font-size: 2.8rem; }
+  .gd-ghost-grid__title--large { font-size: 3.6rem; }
+
+  .gd-ghost-grid__placeholder {
+    border-radius: 8px;
+    overflow: hidden;
+  }
+
+  .gd-ghost-grid__placeholder img {
+    width: 100%;
+    height: auto;
+    display: block;
+  }
+
+  {{#if stackOnMobile}}
+  @media (max-width: 768px) {
+    .gd-ghost-grid__columns {
+      grid-template-columns: 1fr;
+    }
+  }
+  {{/if}}
+</style>
+
+<section class="gd-ghost-grid" data-section-id="{{sectionId}}">
+  <div class="gd-ghost-grid__inner">
+    <div class="gd-ghost-grid__columns">
+      {{!-- Left column --}}
+      <div class="gd-ghost-grid__column">
+        {{#if pageTitle}}
+          <h2 class="gd-ghost-grid__title gd-ghost-grid__title--{{titleSize}}">
+            {{#if pagesLeft.[0].title}}{{pagesLeft.[0].title}}{{else}}Left Title{{/if}}
+          </h2>
+        {{/if}}
+        <div class="gd-ghost-grid__placeholder">
+          <img src="/sections/placeholder.jpg" alt="Left column placeholder" />
+        </div>
       </div>
-      <div class="grid__placeholder">
-        <p>Right: Tag a page with <code>{{rightColumnTag}}</code></p>
+      {{!-- Right column --}}
+      <div class="gd-ghost-grid__column">
+        {{#if pageTitle}}
+          <h2 class="gd-ghost-grid__title gd-ghost-grid__title--{{titleSize}}">
+            {{#if pagesRight.[0].title}}{{pagesRight.[0].title}}{{else}}Right Title{{/if}}
+          </h2>
+        {{/if}}
+        <div class="gd-ghost-grid__placeholder">
+          <img src="/sections/placeholder.jpg" alt="Right column placeholder" />
+        </div>
       </div>
-    {{/if}}
+    </div>
   </div>
 </section>

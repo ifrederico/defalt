@@ -1311,6 +1311,7 @@ type InjectPreviewOptions = {
   footerOrder: string[]
   headerOptions: HeaderCustomizationOptions
   announcementBarHtml?: string
+  announcementBarHidden?: boolean
   selectedSectionId?: string | null
   sectionIds?: string[]
   onSelectSection?: (sectionId: string) => void
@@ -1966,7 +1967,7 @@ export function injectHtmlIntoIframe(
     setupPortalPreview(doc)
     setupPreviewNavigation(doc, options.onNavigate)
     applyHeaderCustomizations(doc, options.headerOptions)
-    syncAnnouncementBar(doc, options.announcementBarHtml ?? '')
+    syncAnnouncementBar(doc, options.announcementBarHtml ?? '', options.announcementBarHidden)
     if (options.sectionIds && options.sectionIds.length && options.onSelectSection) {
       setupSectionSelection(doc, options.sectionIds, options.onSelectSection)
     }
@@ -2048,11 +2049,19 @@ export function injectHtmlIntoIframe(
  * Sync announcement bar using engine-rendered HTML
  * Replaces the existing announcement bar DOM element with newly rendered content
  */
-export function syncAnnouncementBar(doc: Document, html: string) {
-  if (!html) return
-
+export function syncAnnouncementBar(doc: Document, html: string, hidden?: boolean) {
   const existingBar = doc.querySelector<HTMLElement>('.announcement-bar')
   if (!existingBar) return
+
+  // Handle visibility toggle
+  if (hidden) {
+    existingBar.style.display = 'none'
+    return
+  } else {
+    existingBar.style.display = ''
+  }
+
+  if (!html) return
 
   // Parse the new HTML
   const template = doc.createElement('template')

@@ -299,6 +299,8 @@ export interface SectionDefinition<TConfig extends z.ZodType = z.ZodType> {
   label: string
   /** Optional description */
   description?: string
+  /** Ghost tag for content filtering (e.g., '#grid' for Ghost Grid section) */
+  tag?: string
   /** Section category */
   category: SectionCategory
   /** Whether section is premium */

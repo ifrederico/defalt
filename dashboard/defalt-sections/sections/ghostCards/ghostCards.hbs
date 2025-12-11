@@ -2,11 +2,12 @@
 
 <style>
 .ghost-cards {
+  --content-width: {{contentWidth}};
+
   width: 100%;
-  max-width: 1200px;
+  max-width: var(--content-width);
   margin: 0 auto;
-  padding-left: 24px;
-  padding-right: 24px;
+  padding: 0 {{#if (eq contentWidth 'none')}}0{{else}}var(--container-gap, 24px){{/if}};
 }
 
 .ghost-cards__title {
@@ -76,9 +77,8 @@
     </h2>
   {{/if}}
 
-  <div class="ghost-cards__grid">
-    {{!-- Real content when pages exist --}}
-    {{#if (length pages)}}
+  {{#if (length pages)}}
+    <div class="ghost-cards__grid">
       {{#each pages}}
         <article class="ghost-card">
           {{#if feature_image}}
@@ -90,9 +90,9 @@
           </div>
         </article>
       {{/each}}
-    {{else}}
-      {{!-- Placeholder for preview only --}}
-      <img src="/sections/ghostCards/placeholder.jpg" alt="Ghost Cards placeholder" style="width: 100%; height: auto; border-radius: 8px;" />
-    {{/if}}
-  </div>
+    </div>
+  {{else}}
+    {{!-- Placeholder for preview only --}}
+    <img src="/sections/placeholder.jpg" alt="Ghost Cards placeholder" style="width: 100%; height: auto; border-radius: 8px;" />
+  {{/if}}
 </section>
