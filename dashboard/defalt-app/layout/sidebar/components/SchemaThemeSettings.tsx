@@ -1,8 +1,8 @@
 import { useMemo } from 'react'
 import * as Separator from '@radix-ui/react-separator'
 import { sourceThemeSettingsGroups, type SourceThemeConfig } from '@defalt/sections/engine'
-import { SliderField, ToggleSwitch, SettingSection, Dropdown, InlineControlRow } from '@defalt/ui'
-import type { SettingSchema } from '@defalt/sections/engine'
+import { SliderField, SettingSection } from '@defalt/ui'
+import { renderSettingInput } from './settingsRenderUtils'
 
 type SchemaThemeSettingsProps = {
   config: SourceThemeConfig
@@ -11,59 +11,6 @@ type SchemaThemeSettingsProps = {
   onUpdateConfig: (updater: (config: SourceThemeConfig) => SourceThemeConfig) => void
   onPaddingChange: (direction: 'top' | 'bottom' | 'left' | 'right', value: number) => void
   onPaddingCommit: (direction: 'top' | 'bottom' | 'left' | 'right', value: number) => void
-}
-
-function renderSettingInput(
-  setting: SettingSchema,
-  value: unknown,
-  onChange: (next: unknown) => void,
-  isDisabled?: boolean
-) {
-  switch (setting.type) {
-    case 'checkbox':
-      return (
-        <InlineControlRow label={setting.label} labelWidth="lg">
-          <ToggleSwitch
-            checked={value === true}
-            onChange={(checked) => onChange(checked)}
-            ariaLabel={setting.label}
-            size="small"
-            disabled={isDisabled}
-          />
-        </InlineControlRow>
-      )
-    case 'select':
-      return (
-        <InlineControlRow label={setting.label}>
-          <Dropdown
-            selected={typeof value === 'string' ? value : (setting.default ?? '')}
-            items={setting.options}
-            onSelect={(val) => onChange(val)}
-            triggerClassName="flex h-[38px] min-w-[120px] items-center justify-between gap-1.5 rounded-md bg-subtle px-3 font-md text-foreground transition-colors hover:bg-subtle/80 focus:outline-none focus-visible:outline-none"
-            contentClassName="bg-surface rounded-md shadow-lg overflow-hidden min-w-[120px] z-[100]"
-            itemClassName="flex items-center gap-2 px-3 py-2 font-md text-foreground transition-colors hover:bg-subtle"
-          />
-        </InlineControlRow>
-      )
-    case 'range':
-      return (
-        <SliderField
-          label={setting.label}
-          value={typeof value === 'number' && Number.isFinite(value) ? value : setting.default}
-          min={setting.min}
-          max={setting.max}
-          step={setting.step}
-          unit={setting.unit}
-          onChange={(val) => onChange(val)}
-        />
-      )
-    case 'header':
-      return null // Headers are handled at group level
-    case 'paragraph':
-      return <p className="font-sm text-muted leading-relaxed">{setting.content}</p>
-    default:
-      return null
-  }
 }
 
 export function SchemaThemeSettings({
@@ -112,7 +59,7 @@ export function SchemaThemeSettings({
                     setting,
                     currentValue,
                     (next) => handleFieldChange(setting.id, next),
-                    isDisabled
+                    { isDisabled, size: 'small' }
                   )}
                 </div>
               )

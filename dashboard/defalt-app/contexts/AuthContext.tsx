@@ -8,6 +8,7 @@ import { useMemo, useCallback, type ReactNode } from 'react'
 import { AuthContext, type AuthStatus, type AuthUser } from './AuthContext.shared'
 import { useMember } from '../../src/context/MemberContext'
 import { apiPath } from '@defalt/utils/api/apiPath'
+import { logError } from '@defalt/utils/logging/errorLogger'
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const { member, isLoading, isAuthenticated, login, logout } = useMember()
@@ -33,13 +34,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         credentials: 'include'
       })
       if (!response.ok) {
-        console.error('Failed to fetch CSRF token:', response.status)
+        logError(new Error(`CSRF request failed: ${response.status}`), { scope: 'AuthContext.refreshCsrfToken' })
         return null
       }
       const data = await response.json()
       return data.token ?? null
     } catch (error) {
-      console.error('Error fetching CSRF token:', error)
+      logError(error, { scope: 'AuthContext.refreshCsrfToken' })
       return null
     }
   }, [])

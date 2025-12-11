@@ -82,10 +82,8 @@ export function filterPagesByTag(
 }
 
 /**
- * Parse numeric suffix from a ghost-cards section ID
- * @example parseGhostCardIdSuffix('ghost-cards') // returns 1
- * @example parseGhostCardIdSuffix('ghost-cards-3') // returns 3
- * @example parseGhostCardIdSuffix('other-section') // returns 0
+ * Parse numeric suffix from a ghost-cards section ID.
+ * Returns 1 for 'ghost-cards', the number for 'ghost-cards-N', or 0 for non-matching IDs.
  */
 export function parseGhostCardIdSuffix(sectionId: string): number {
   if (sectionId === 'ghost-cards') {
@@ -100,11 +98,8 @@ export function parseGhostCardIdSuffix(sectionId: string): number {
 }
 
 /**
- * Parse numeric suffix from a ghost card tag value
- * @example parseGhostCardTagSuffix('#ghost-card') // returns 1
- * @example parseGhostCardTagSuffix('#ghost-card-2') // returns 2
- * @example parseGhostCardTagSuffix('ghost-cards-5') // returns 5
- * @example parseGhostCardTagSuffix('other-tag') // returns 0
+ * Parse numeric suffix from a ghost card tag value.
+ * Returns 1 for '#ghost-card', the number for '#ghost-card-N', or 0 for non-matching tags.
  */
 export function parseGhostCardTagSuffix(tagValue: unknown): number {
   if (typeof tagValue !== 'string') {

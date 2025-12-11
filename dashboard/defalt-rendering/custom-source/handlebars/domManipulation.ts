@@ -1483,16 +1483,8 @@ export function syncTemplateSections(doc: Document, sections: Array<{ id: string
 }
 
 /**
- * Reorders template sections in the rendered DOM based on the provided order.
- * Template sections: subheader (.gh-header) and main (.gh-container.is-grid)
- * This is called AFTER the HTML is injected into the iframe.
- */
-/**
  * Reorders template sections inside the preview iframe to match the
  * user-defined order from the sidebar drag-and-drop interface.
- *
- * @param doc - Document instance inside the preview iframe.
- * @param order - Array of section identifiers in their desired order.
  */
 export function reorderTemplateInDOM(doc: Document, order: string[]) {
   const viewport = doc.querySelector(TEMPLATE_CONTAINER_SELECTOR)
@@ -1596,14 +1588,7 @@ export function reorderTemplateInDOM(doc: Document, order: string[]) {
 }
 
 /**
- * Reorders footer sections in the rendered DOM based on the provided order.
- * This is called AFTER the HTML is injected into the iframe.
- */
-/**
  * Reorders footer sections in the preview to reflect editor changes.
- *
- * @param doc - Document instance inside the preview iframe.
- * @param order - Array of footer section ids (e.g., footerBar).
  */
 export function reorderFooterInDOM(doc: Document, order: string[]) {
   const footerInner =
@@ -1882,7 +1867,7 @@ export function setupSectionSelection(
 }
 
 /**
- * Injects HTML into iframe and sets up DOM manipulations
+ * Applies custom CSS to the preview iframe.
  */
 export function applyCustomCss(doc: Document, css?: string) {
   const existing = doc.getElementById(CUSTOM_CSS_STYLE_ID)
@@ -2300,14 +2285,7 @@ function createOverlayForSection(
 }
 
 /**
- * Highlights a section in the preview iframe and scrolls it into view.
- *
- * @param doc - Document instance inside the preview iframe
- * @param sectionId - The section ID to highlight (null to clear highlight)
- */
-/**
  * Scrolls to a section in the preview iframe without selecting or highlighting it.
- * Used for hover-delayed scroll from sidebar.
  */
 export function scrollToSection(doc: Document, sectionId: string | null) {
   if (!sectionId) return

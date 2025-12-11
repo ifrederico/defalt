@@ -94,11 +94,18 @@ export function groupSettingsByHeader(settings: SectionSettingSchema[]): Setting
   return groups
 }
 
+export type RenderSettingOptions = {
+  isDisabled?: boolean
+  size?: 'small' | 'default'
+}
+
 export function renderSettingInput(
   setting: SectionSettingSchema,
   value: unknown,
-  onChange: (next: unknown) => void
+  onChange: (next: unknown) => void,
+  options: RenderSettingOptions = {}
 ) {
+  const { isDisabled, size } = options
   const baseClasses = 'w-full rounded-md border border-transparent bg-subtle px-3 py-2 font-md text-foreground placeholder:text-placeholder focus:outline-none focus:bg-surface focus:border-[rgb(48,207,67)] focus:shadow-[0_0_0_2px_rgba(48,207,67,0.25)]'
 
   switch (setting.type) {
@@ -163,6 +170,8 @@ export function renderSettingInput(
             checked={value === true}
             onChange={(checked) => onChange(checked)}
             ariaLabel={setting.label}
+            size={size}
+            disabled={isDisabled}
           />
         </InlineControlRow>
       )

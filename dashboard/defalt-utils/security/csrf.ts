@@ -1,5 +1,6 @@
 import { CSRF_ENDPOINT, CSRF_TOKEN_STORAGE_KEY } from './constants.js'
 import { logError } from '../logging/errorLogger.js'
+import { isAbortError } from '../helpers/errorHelpers.js'
 
 const readStoredToken = (): string | null => {
   try {
@@ -28,14 +29,6 @@ const writeStoredToken = (token: string | null): void => {
 }
 
 export const getCachedCsrfToken = (): string | null => readStoredToken()
-
-const isAbortError = (error: unknown): boolean => {
-  if (!error || typeof error !== 'object') {
-    return false
-  }
-  const maybe = error as { name?: unknown }
-  return typeof maybe.name === 'string' && maybe.name === 'AbortError'
-}
 
 export async function requestCsrfToken(signal?: AbortSignal): Promise<string | null> {
   try {

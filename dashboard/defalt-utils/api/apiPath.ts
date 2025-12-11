@@ -3,9 +3,15 @@
  * Uses VITE_BASE_PATH to handle deployments under subpaths (e.g., /app/).
  */
 
-// Access import.meta.env safely for both browser and Node contexts
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const getEnvVar = (key: string): string => ((import.meta as any).env?.[key] ?? '') as string
+// Type definition for Vite's import.meta.env
+interface ViteImportMeta {
+  env?: Record<string, string | undefined>
+}
+
+const getEnvVar = (key: string): string => {
+  const meta = import.meta as ViteImportMeta
+  return meta.env?.[key] ?? ''
+}
 
 const BASE_PATH = getEnvVar('VITE_BASE_PATH').replace(/\/$/, '')
 
