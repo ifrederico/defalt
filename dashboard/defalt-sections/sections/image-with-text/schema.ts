@@ -4,7 +4,7 @@
 
 import { z } from 'zod'
 import type { SettingSchema } from '../../engine/schemaTypes.js'
-import { createPaddingConfigSchema, createPaddingSettings } from '../../engine/commonSettings.js'
+import { createPaddingConfigSchema } from '../../engine/commonSettings.js'
 
 // Reusable schemas from commonSettings
 const paddingSchema = createPaddingConfigSchema({ defaultTop: 48, defaultBottom: 48 })
@@ -91,5 +91,6 @@ export const imageWithTextSettingsSchema: SettingSchema[] = [
   { type: 'range', id: 'imageBorderRadius', label: 'Radius', min: 0, max: 96, step: 1, default: 0, unit: 'px' },
 
   { type: 'header', id: 'padding-header', label: 'Padding' },
-  ...createPaddingSettings({ defaultTop: 48, defaultBottom: 48, includeHeader: false })
+  { type: 'range', id: 'paddingTop', label: 'Top', min: 0, max: 200, step: 4, default: 48, unit: 'px' },
+  { type: 'range', id: 'paddingBottom', label: 'Bottom', min: 0, max: 200, step: 4, default: 48, unit: 'px' },
 ]
