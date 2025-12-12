@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import { subscribeWithSelector } from 'zustand/middleware'
+import { persist, subscribeWithSelector } from 'zustand/middleware'
 import { useShallow } from 'zustand/shallow'
 
 // Types
@@ -53,29 +53,50 @@ const initialState: UIState = {
   sidebarExpanded: false,
 }
 
-// Create store with subscribeWithSelector for fine-grained subscriptions
+// Valid tabs for migration validation
+const VALID_TABS: ActiveTab[] = ['sections', 'settings', 'code', 'ai']
+
+// Create store with persist + subscribeWithSelector for fine-grained subscriptions
 export const useUIStore = create<UIStore>()(
-  subscribeWithSelector((set) => ({
-    // Initial state
-    ...initialState,
+  persist(
+    subscribeWithSelector((set) => ({
+      // Initial state
+      ...initialState,
 
-    // Actions
-    setActiveDetail: (detail) => set({ activeDetail: detail }),
+      // Actions
+      setActiveDetail: (detail) => set({ activeDetail: detail }),
 
-    setHoveredSectionId: (id) => set({ hoveredSectionId: id }),
+      setHoveredSectionId: (id) => set({ hoveredSectionId: id }),
 
-    setScrollToSectionId: (id) => set({ scrollToSectionId: id }),
+      setScrollToSectionId: (id) => set({ scrollToSectionId: id }),
 
-    setActiveTab: (tab) => set({ activeTab: tab }),
+      setActiveTab: (tab) => set({ activeTab: tab }),
 
-    setSidebarExpanded: (expanded) => set({ sidebarExpanded: expanded }),
+      setSidebarExpanded: (expanded) => set({ sidebarExpanded: expanded }),
 
-    toggleSidebar: () => set((state) => ({ sidebarExpanded: !state.sidebarExpanded })),
+      toggleSidebar: () => set((state) => ({ sidebarExpanded: !state.sidebarExpanded })),
 
-    selectSection: (id, label) => set({ activeDetail: { id, label } }),
+      selectSection: (id, label) => set({ activeDetail: { id, label } }),
 
-    clearSelection: () => set({ activeDetail: null }),
-  }))
+      clearSelection: () => set({ activeDetail: null }),
+    })),
+    {
+      name: 'defalt-ui-preferences',
+      version: 1,
+      partialize: (state) => ({
+        sidebarExpanded: state.sidebarExpanded,
+        activeTab: state.activeTab,
+      }),
+      migrate: (persisted) => {
+        const state = persisted as Partial<Pick<UIState, 'sidebarExpanded' | 'activeTab'>>
+        // Coerce invalid activeTab to default
+        if (state.activeTab && !VALID_TABS.includes(state.activeTab)) {
+          state.activeTab = 'sections'
+        }
+        return state
+      },
+    }
+  )
 )
 
 // Selector hooks for fine-grained subscriptions

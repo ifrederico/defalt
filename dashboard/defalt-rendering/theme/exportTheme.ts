@@ -1599,12 +1599,64 @@ export async function applyImageWithTextCustomization(themeDir: string, config: 
     const paddingLeft = Math.max(0, Math.round(padding.left ?? 0))
     const paddingRight = Math.max(0, Math.round(padding.right ?? 0))
 
-    const showHeader = sectionConfig.showHeader !== false
-    const headerAlignment = sectionConfig.headerAlignment === 'left' || sectionConfig.headerAlignment === 'right'
-      ? sectionConfig.headerAlignment
-      : 'center'
-    const imagePosition = sectionConfig.imagePosition === 'right' ? 'right' : 'left'
-    const imageBorderRadius = typeof sectionConfig.imageBorderRadius === 'number' ? sectionConfig.imageBorderRadius : 0
+    const showHeader = typeof sectionConfig.pageTitle === 'boolean'
+      ? sectionConfig.pageTitle
+      : sectionConfig.showHeader !== false
+
+    const alignmentSource = sectionConfig.textAlignment ?? sectionConfig.headerAlignment
+    const headerAlignment =
+      alignmentSource === 'left' || alignmentSource === 'center' || alignmentSource === 'right'
+        ? alignmentSource
+        : 'left'
+
+    const isInverted = sectionConfig.invert === true
+    const imagePosition = isInverted
+      ? 'right'
+      : sectionConfig.imagePosition === 'right'
+        ? 'right'
+        : 'left'
+
+    const imageBorderRadiusRaw =
+      typeof sectionConfig.imageBorderRadius === 'number' ? sectionConfig.imageBorderRadius : 0
+    const imageBorderRadius = Math.max(0, Math.min(96, Math.round(imageBorderRadiusRaw)))
+
+    const contentWidth =
+      sectionConfig.contentWidth === '720px' ||
+      sectionConfig.contentWidth === '960px' ||
+      sectionConfig.contentWidth === '1120px' ||
+      sectionConfig.contentWidth === '1320px' ||
+      sectionConfig.contentWidth === 'none'
+        ? sectionConfig.contentWidth
+        : '1120px'
+
+    const imageWidthSetting =
+      sectionConfig.imageWidth === '2/3' || sectionConfig.imageWidth === '3/4'
+        ? sectionConfig.imageWidth
+        : '1/2'
+
+    const { imageColumn, textColumn } = (() => {
+      if (imageWidthSetting === '2/3') return { imageColumn: '2fr', textColumn: '1fr' }
+      if (imageWidthSetting === '3/4') return { imageColumn: '3fr', textColumn: '1fr' }
+      return { imageColumn: '1fr', textColumn: '1fr' }
+    })()
+
+    const aspectSetting =
+      sectionConfig.imageAspect === 'square' ||
+      sectionConfig.imageAspect === 'portrait' ||
+      sectionConfig.imageAspect === 'landscape' ||
+      sectionConfig.imageAspect === 'wide' ||
+      sectionConfig.imageAspect === 'tall'
+        ? sectionConfig.imageAspect
+        : 'default'
+
+    const aspectRatioValue =
+      aspectSetting === 'square' ? '1 / 1'
+      : aspectSetting === 'portrait' ? '3 / 4'
+      : aspectSetting === 'wide' ? '16 / 9'
+      : aspectSetting === 'tall' ? '9 / 16'
+      : aspectSetting === 'landscape' ? '4 / 3'
+      : null
+
     const contentAlignmentClass = headerAlignment === 'left'
       ? ' gd-align-left'
       : headerAlignment === 'right'
@@ -1620,12 +1672,14 @@ export async function applyImageWithTextCustomization(themeDir: string, config: 
     const styleBlock = [
       '<style>',
       '.gd-image-text-section {',
+      `    --container-width: ${contentWidth};`,
       `    --gd-image-text-padding-top: ${paddingTop}px;`,
       `    --gd-image-text-padding-bottom: ${paddingBottom}px;`,
       `    --gd-image-text-padding-left: ${paddingLeft}px;`,
       `    --gd-image-text-padding-right: ${paddingRight}px;`,
       '    --gd-image-text-background: #ffffff;',
       '    --gd-image-text-text-color: #151515;',
+      `    --gd-image-text-aspect: ${aspectRatioValue ?? 'auto'};`,
       `    --gd-image-text-image-radius: ${imageBorderRadius}px;`,
       '    --gd-image-text-button-color: #151515;',
       '    --gd-image-text-button-text-color: #ffffff;',
@@ -1647,9 +1701,13 @@ export async function applyImageWithTextCustomization(themeDir: string, config: 
       '',
       '.gd-image-text-content {',
       '    display: grid;',
-      '    grid-template-columns: 1fr 1fr;',
+      `    grid-template-columns: ${imageColumn} ${textColumn};`,
       '    gap: 64px;',
       '    align-items: center;',
+      '}',
+      '',
+      '.gd-image-text-content.gd-image-text-image-right {',
+      `    grid-template-columns: ${textColumn} ${imageColumn};`,
       '}',
       '',
       '.gd-image-text-content.gd-image-text-image-right .gd-image-text-image {',
@@ -1669,11 +1727,15 @@ export async function applyImageWithTextCustomization(themeDir: string, config: 
       '        grid-template-columns: 1fr;',
       '        gap: 32px;',
       '    }',
+      '    .gd-image-text-content.gd-image-text-image-right .gd-image-text-image,',
+      '    .gd-image-text-content.gd-image-text-image-right .gd-image-text-text {',
+      '        order: 0;',
+      '    }',
       '}',
       '',
       '.gd-image-text-image {',
       '    width: 100%;',
-      '    aspect-ratio: 4/3;',
+      '    aspect-ratio: var(--gd-image-text-aspect, auto);',
       '    border-radius: var(--gd-image-text-image-radius);',
       '    overflow: hidden;',
       '    background-color: rgba(0, 0, 0, 0.05);',

@@ -1,8 +1,5 @@
 import type { AnchorHTMLAttributes, ButtonHTMLAttributes, CSSProperties, ReactNode } from 'react'
-
-function cn(...values: Array<string | false | null | undefined>) {
-  return values.filter(Boolean).join(' ')
-}
+import { cn } from '../utils/cn'
 
 export type KoenigButtonProps = {
   color?: 'white' | 'grey' | 'gray' | 'black' | 'accent' | string

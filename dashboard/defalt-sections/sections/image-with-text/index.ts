@@ -18,6 +18,7 @@ export const definition: SectionDefinition<typeof imageWithTextConfigSchema> = {
   category: 'template',
   defaultVisibility: true,
   defaultPadding: { top: 48, bottom: 48 },
+  showPaddingControls: false,
   configSchema: imageWithTextConfigSchema,
   settingsSchema: imageWithTextSettingsSchema,
   blocksSchema: undefined,

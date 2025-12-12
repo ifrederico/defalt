@@ -12,6 +12,7 @@ import {
   MapPin,
   FileText,
   Component,
+  Sparkles,
   Crown
 } from 'lucide-react'
 import { FloatingTooltip, TextInput } from '@defalt/ui'
@@ -39,27 +40,38 @@ const UPCOMING_TEMPLATE_SECTIONS: UpcomingSection[] = [
 export type AddSectionCardProps = {
   definitions: SectionDefinition[]
   onSelect: (definitionId: string) => void
+  onGenerateBlock?: () => void
   disabled?: boolean
 }
 
-export function AddSectionCard({ definitions, onSelect, disabled = false }: AddSectionCardProps) {
+export function AddSectionCard({
+  definitions,
+  onSelect,
+  onGenerateBlock,
+  disabled = false
+}: AddSectionCardProps) {
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState('')
-  const hasDefinitions = definitions.length > 0
-  const isEnabled = hasDefinitions && !disabled
+  const hasGenerateBlock = Boolean(onGenerateBlock)
+  const effectiveDefinitions = disabled ? [] : definitions
+  const hasDefinitions = effectiveDefinitions.length > 0
+  const isEnabled = hasDefinitions || hasGenerateBlock
 
   const filteredDefinitions = useMemo(() => {
     const normalized = query.trim().toLowerCase()
     const list = normalized
-      ? definitions.filter((definition) =>
+      ? effectiveDefinitions.filter((definition) =>
           definition.label.toLowerCase().includes(normalized) ||
           definition.description?.toLowerCase().includes(normalized)
         )
-      : definitions
+      : effectiveDefinitions
     return list.slice().sort((a, b) => a.label.localeCompare(b.label))
-  }, [definitions, query])
+  }, [effectiveDefinitions, query])
 
   const filteredUpcomingSections = useMemo(() => {
+    if (disabled) {
+      return []
+    }
     const normalized = query.trim().toLowerCase()
     if (!normalized) {
       return UPCOMING_TEMPLATE_SECTIONS
@@ -67,9 +79,18 @@ export function AddSectionCard({ definitions, onSelect, disabled = false }: AddS
     return UPCOMING_TEMPLATE_SECTIONS.filter((section) =>
       section.label.toLowerCase().includes(normalized)
     )
-  }, [query])
+  }, [query, disabled])
+
+  const showGenerateBlock = useMemo(() => {
+    if (!hasGenerateBlock) {
+      return false
+    }
+    const normalized = query.trim().toLowerCase()
+    return !normalized || 'generate block'.includes(normalized)
+  }, [hasGenerateBlock, query])
 
   const hasAvailableEntries =
+    showGenerateBlock ||
     filteredDefinitions.length > 0 ||
     filteredUpcomingSections.length > 0
 
@@ -78,6 +99,12 @@ export function AddSectionCard({ definitions, onSelect, disabled = false }: AddS
     setOpen(false)
     setQuery('')
   }, [onSelect])
+
+  const handleGenerateBlock = useCallback(() => {
+    onGenerateBlock?.()
+    setOpen(false)
+    setQuery('')
+  }, [onGenerateBlock])
 
   useEffect(() => {
     if (!isEnabled && open) {
@@ -123,35 +150,73 @@ export function AddSectionCard({ definitions, onSelect, disabled = false }: AddS
               {!hasAvailableEntries ? (
                 <p className="px-4 py-6 font-sm text-muted">No matching sections</p>
               ) : (
-                <>
-                  {filteredDefinitions.map((definition) => {
-                    const DefinitionIcon = resolveSectionIcon(definition.id)
-                    const isPremiumSection = definition.premium === true
-                    return (
-                      <DropdownMenu.Item
-                        key={definition.id}
-                        onSelect={() => handleSelect(definition.id)}
-                        className="mx-1 flex cursor-pointer items-center gap-3 rounded-md px-3 py-1.5 font-md text-foreground hover:bg-subtle focus:bg-subtle focus:outline-none group"
-                      >
-                        <span className="flex h-8 w-8 items-center justify-center rounded-md bg-surface text-secondary">
-                          <DefinitionIcon size={16} strokeWidth={1.5} />
-                        </span>
-                        <span className="flex-1 flex items-center justify-between font-normal leading-none text-foreground min-w-0">
-                          <span className="min-w-0">{definition.label}</span>
-                          {isPremiumSection && (
-                            <span className="flex h-4 w-4 items-center justify-center rounded-full bg-amber-100 shrink-0 ml-2">
-                              <Crown size={9} strokeWidth={0} fill="currentColor" className="text-amber-600" />
-                            </span>
-                          )}
-                        </span>
-                      </DropdownMenu.Item>
-                    )
-                  })}
+	                <>
+	                  {showGenerateBlock && (
+	                    <>
+	                      <DropdownMenu.Item
+	                        onSelect={handleGenerateBlock}
+	                        className="mx-1 flex cursor-pointer items-center gap-3 rounded-md px-3 py-1.5 font-md text-foreground focus:outline-none group ai-dropdown-item"
+	                      >
+	                        <span className="flex h-8 w-8 items-center justify-center rounded-md bg-surface">
+	                          <Sparkles size={16} strokeWidth={1.5} style={{ stroke: 'url(#ai-gradient)' }} />
+	                          <svg width="0" height="0" style={{ position: 'absolute' }}>
+	                            <defs>
+	                              <linearGradient id="ai-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+	                                <stop offset="0%" stopColor="#ad5ae1" />
+	                                <stop offset="50%" stopColor="#e9618d" />
+	                                <stop offset="100%" stopColor="#fd9e5f" />
+	                              </linearGradient>
+	                            </defs>
+	                          </svg>
+	                        </span>
+	                        <span
+	                          className="flex-1 truncate text-left font-normal leading-none"
+	                          style={{
+	                            backgroundImage: 'linear-gradient(135deg, var(--color-ai-grading-1, #f76e85), var(--color-ai-grading-5, #8b10d6))',
+	                            WebkitBackgroundClip: 'text',
+	                            backgroundClip: 'text',
+	                            WebkitTextFillColor: 'transparent',
+	                          }}
+	                        >
+	                          Generate block
+	                        </span>
+	                      </DropdownMenu.Item>
 
-                  {filteredDefinitions.length > 0 &&
-                    filteredUpcomingSections.length > 0 && (
-                      <div className="mx-3 my-2 h-px bg-subtle" />
-                    )}
+	                      {(filteredDefinitions.length > 0 ||
+	                        filteredUpcomingSections.length > 0) && (
+	                        <div className="mx-3 my-2 h-px bg-subtle" />
+	                      )}
+	                    </>
+	                  )}
+
+	                  {filteredDefinitions.map((definition) => {
+	                    const DefinitionIcon = resolveSectionIcon(definition.id)
+	                    const isPremiumSection = definition.premium === true
+	                    return (
+	                      <DropdownMenu.Item
+	                        key={definition.id}
+	                        onSelect={() => handleSelect(definition.id)}
+	                        className="mx-1 flex cursor-pointer items-center gap-3 rounded-md px-3 py-1.5 font-md text-foreground hover:bg-subtle focus:bg-subtle focus:outline-none group"
+	                      >
+	                        <span className="flex h-8 w-8 items-center justify-center rounded-md bg-surface text-secondary">
+	                          <DefinitionIcon size={16} strokeWidth={1.5} />
+	                        </span>
+	                        <span className="flex-1 flex items-center justify-between font-normal leading-none text-foreground min-w-0">
+	                          <span className="min-w-0">{definition.label}</span>
+	                          {isPremiumSection && (
+	                            <span className="flex h-4 w-4 items-center justify-center rounded-full bg-amber-100 shrink-0 ml-2">
+	                              <Crown size={9} strokeWidth={0} fill="currentColor" className="text-amber-600" />
+	                            </span>
+	                          )}
+	                        </span>
+	                      </DropdownMenu.Item>
+	                    )
+	                  })}
+
+	                  {filteredDefinitions.length > 0 &&
+	                    filteredUpcomingSections.length > 0 && (
+	                      <div className="mx-3 my-2 h-px bg-subtle" />
+	                    )}
 
                   {filteredUpcomingSections.length > 0 && (
                     <>

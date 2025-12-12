@@ -338,6 +338,45 @@ input[type="number"] {
   animation: ai-glow-rotate 3s linear infinite;
 }
 
+/* AI dropdown item hover background (no border glow) */
+.ai-dropdown-item {
+  position: relative;
+}
+
+.ai-dropdown-item::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 0.375rem;
+  background: linear-gradient(
+    135deg,
+    var(--color-ai-grading-1, #f76e85),
+    var(--color-ai-grading-5, #8b10d6)
+  );
+  background-size: 160% 160%;
+  background-position: 0% 50%;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  pointer-events: none;
+}
+
+.ai-dropdown-item > * {
+  position: relative;
+  z-index: 1;
+}
+
+@keyframes ai-dropdown-wave {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 80% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.ai-dropdown-item:hover::before,
+.ai-dropdown-item[data-highlighted]::before {
+  opacity: 0.10;
+  animation: ai-dropdown-wave 3.6s ease-in-out infinite;
+}
+
 /* AI Gradient Text Animation */
 @keyframes gradient-text {
   0% {
@@ -351,4 +390,3 @@ input[type="number"] {
 .animate-gradient-text {
   animation: gradient-text 2s linear infinite;
 }
-

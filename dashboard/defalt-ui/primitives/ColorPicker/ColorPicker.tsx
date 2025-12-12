@@ -9,13 +9,10 @@ import { getAccentColor } from '@defalt/utils/color/getAccentColor'
 import { useClickOutside } from '../../hooks/useClickOutside'
 import { usePreviousFocus } from '../../hooks/usePreviousFocus'
 import { PlusIcon } from '../../icons/PlusIcon'
+import { cn } from '../../utils/cn'
 
 const RAINBOW_GRADIENT =
   'conic-gradient(hsl(360,100%,50%),hsl(315,100%,50%),hsl(270,100%,50%),hsl(225,100%,50%),hsl(180,100%,50%),hsl(135,100%,50%),hsl(90,100%,50%),hsl(45,100%,50%),hsl(0,100%,50%))'
-
-function cn(...values: Array<string | false | null | undefined>) {
-  return values.filter(Boolean).join(' ')
-}
 
 export type KoenigSwatch = {
   title: string

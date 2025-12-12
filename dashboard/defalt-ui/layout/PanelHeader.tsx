@@ -65,7 +65,7 @@ export function PanelHeader({ title, onBack, tag, onTagChange, tags }: PanelHead
   const [inputValue, setInputValue] = useState(tag || '')
 
   useEffect(() => {
-    if (tag) setInputValue(tag)
+    if (tag !== undefined) setInputValue(tag)
   }, [tag])
 
   const handleSave = useCallback(() => {

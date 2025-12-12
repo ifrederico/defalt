@@ -12,7 +12,7 @@ import {
   type SectionConfigSchema
 } from '@defalt/sections/engine'
 import { parseGhostCardIdSuffix, parseGhostCardTagSuffix } from '@defalt/sections/utils/tagUtils'
-import { SECTION_ICON_MAP } from '@defalt/utils/config/sectionIcons'
+import { SECTION_ICON_MAP, GhostIcon } from '@defalt/utils/config/sectionIcons'
 import { sanitizeNumericValue, resolveNumericValue } from '@defalt/utils/helpers/numericHelpers'
 import { deepClone } from '@defalt/utils/helpers/deepClone'
 import {

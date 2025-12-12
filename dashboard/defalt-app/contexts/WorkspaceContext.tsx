@@ -15,6 +15,7 @@ import { trackEvent } from '@defalt/utils/analytics/umami'
 import { UpgradeModal } from '../components/UpgradeModal'
 import { AppButton } from '@defalt/ui/primitives/AppButton'
 import type { StickyHeaderMode } from '@defalt/rendering/custom-source/HandlebarsRenderer'
+import { useUIActions } from '../stores'
 
 export function WorkspaceProvider({ children }: { children: ReactNode }) {
   const {
@@ -57,6 +58,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
   const isAuthenticated = !authLoading && !!user
   const { showToast } = useToast()
   const { switchPage } = useHistoryContext()
+  const { clearSelection } = useUIActions()
 
   const [currentPage, setCurrentPage] = useState<WorkspacePage>('home')
   const [isTogglingVisibility, setIsTogglingVisibility] = useState(false)
@@ -561,6 +563,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
 
   const handleConfirmReset = async () => {
     setResetDialogOpen(false)
+    clearSelection()
     await resetWorkspace()
   }
 
