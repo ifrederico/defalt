@@ -9,10 +9,11 @@ import { heroDefaults } from './defaults.js'
 export const definition: SectionDefinition<typeof heroConfigSchema> = {
   id: 'hero',
   label: 'Hero',
-  description: 'Full-width hero banner with heading and CTA',
+  description: 'Split hero with image and text/CTAs',
+  tag: '#hero',
   category: 'template',
   defaultVisibility: true,
-  defaultPadding: { top: 64, bottom: 64 },
+  defaultPadding: { top: 48, bottom: 48 },
   configSchema: heroConfigSchema,
   settingsSchema: heroSettingsSchema,
   blocksSchema: undefined,
