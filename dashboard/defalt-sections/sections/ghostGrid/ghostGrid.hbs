@@ -57,7 +57,7 @@
   {{/if}}
 </style>
 
-<section class="gd-ghost-grid" data-section-id="{{sectionId}}">
+<section class="gd-ghost-grid" style="{{#if backgroundColor}}{{#unless (eq backgroundColor 'transparent')}}background-color: {{backgroundColor}};{{/unless}}{{/if}}" data-section-id="{{sectionId}}">
   <div class="gd-ghost-grid__inner">
     <div class="gd-ghost-grid__columns">
       {{!-- Left column --}}

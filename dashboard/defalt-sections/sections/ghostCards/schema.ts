@@ -15,6 +15,7 @@ export const ghostCardsConfigSchema = z.object({
   contentWidth: z.enum(['720px', '960px', '1120px', '1320px', 'none']).default('1120px'),
   pageTitle: z.boolean().default(false),
   textAlignment: z.enum(['left', 'center', 'right']).default('left'),
+  backgroundColor: z.string().default('transparent'),
   titleSize: z.enum(['small', 'normal', 'large']).default('normal')
 }).merge(paddingSchema)
 
@@ -49,6 +50,7 @@ export const ghostCardsSettingsSchema: SettingSchema[] = [
       { label: 'Right', value: 'right', icon: 'AlignRight' }
     ]
   },
+  { type: 'color', id: 'backgroundColor', label: 'Background', default: 'transparent', allowTransparent: true },
   {
     type: 'select',
     id: 'titleSize',

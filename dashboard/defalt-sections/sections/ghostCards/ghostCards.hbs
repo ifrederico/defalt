@@ -70,7 +70,7 @@
 }
 </style>
 
-<section class="ghost-cards" style="{{sectionStyle}}; text-align: {{textAlignment}};">
+<section class="ghost-cards" style="{{sectionStyle}}; text-align: {{textAlignment}};{{#if backgroundColor}}{{#unless (eq backgroundColor 'transparent')}} background-color: {{backgroundColor}};{{/unless}}{{/if}}">
   {{#if pageTitle}}
     <h2 class="ghost-cards__title ghost-cards__title--{{titleSize}}">
       {{#if pages.[0].title}}{{pages.[0].title}}{{else}}Page Title{{/if}}

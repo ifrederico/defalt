@@ -16,6 +16,7 @@ export const ghostGridConfigSchema = z.object({
   contentWidth: z.enum(['720px', '960px', '1120px', '1320px', 'none']).default('1120px'),
   pageTitle: z.boolean().default(false),
   textAlignment: z.enum(['left', 'center', 'right']).default('left'),
+  backgroundColor: z.string().default('transparent'),
   titleSize: z.enum(['small', 'normal', 'large']).default('normal'),
   stackOnMobile: z.boolean().default(true),
   gap: z.number().min(0).max(100).default(40)
@@ -52,6 +53,7 @@ export const ghostGridSettingsSchema: SettingSchema[] = [
       { label: 'Right', value: 'right', icon: 'AlignRight' }
     ]
   },
+  { type: 'color', id: 'backgroundColor', label: 'Background', default: 'transparent', allowTransparent: true },
   {
     type: 'select',
     id: 'titleSize',
