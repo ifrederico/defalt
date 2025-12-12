@@ -157,7 +157,7 @@ export function renderSettingInput(
             { title: 'White', hex: '#ffffff' }
           ]}
           onChange={(next) => onChange(next)}
-          hasTransparentOption={false}
+          hasTransparentOption={setting.allowTransparent ?? false}
         />
       )
     case 'checkbox':

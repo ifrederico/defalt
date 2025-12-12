@@ -114,7 +114,7 @@
 
 <section
   class="gd-image-text-section gd-image-text-align-{{textAlignment}}"
-  style="{{sectionStyle}}"
+  style="{{sectionStyle}}{{#if backgroundColor}}{{#unless (eq backgroundColor 'transparent')}}background-color: {{backgroundColor}};{{/unless}}{{/if}}"
   data-section-id="{{sectionId}}"
 >
   <div class="gd-image-text-container">

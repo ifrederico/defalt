@@ -93,7 +93,9 @@ export const colorSettingSchema = z.object({
   id: z.string(),
   label: z.string(),
   default: z.string().default('#000000'),
-  info: z.string().optional()
+  info: z.string().optional(),
+  /** Whether to show a "transparent" option (default: false) */
+  allowTransparent: z.boolean().optional()
 })
 
 /**

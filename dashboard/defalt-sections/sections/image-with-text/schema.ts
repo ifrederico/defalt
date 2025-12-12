@@ -18,6 +18,7 @@ export const imageWithTextConfigSchema = z.object({
   contentWidth: z.enum(['720px', '960px', '1120px', '1320px', 'none']).default('1120px'),
   pageTitle: z.boolean().default(true),
   textAlignment: z.enum(['left', 'center', 'right']).default('left'),
+  backgroundColor: z.string().default('transparent'),
   imageAspect: z.enum(['default', 'square', 'portrait', 'landscape', 'wide', 'tall']).default('default'),
   imageBorderRadius: z.number().min(0).max(96).default(0),
 
@@ -60,6 +61,7 @@ export const imageWithTextSettingsSchema: SettingSchema[] = [
       { label: 'Right', value: 'right', icon: 'AlignRight' }
     ]
   },
+  { type: 'color', id: 'backgroundColor', label: 'Background', default: 'transparent', allowTransparent: true },
 
   { type: 'header', id: 'layout-header', label: 'Layout' },
   { type: 'checkbox', id: 'invert', label: 'Invert', default: false },
