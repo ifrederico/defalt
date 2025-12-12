@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect } from 'react'
 import { ChevronLeft, Tag, X } from 'lucide-react'
 import * as Popover from '@radix-ui/react-popover'
 import { FloatingTooltip } from '../primitives/FloatingTooltip'
+import { TextInput } from '../primitives/TextInput'
 
 export type TagConfig = {
   id: string
@@ -47,14 +48,13 @@ function MultiTagInput({ config, onSave }: { config: TagConfig; onSave: () => vo
   return (
     <div className="space-y-1">
       <label className="block font-sm text-muted">{config.label}</label>
-      <input
+      <TextInput
         type="text"
         value={inputValue}
         onChange={(e) => setInputValue(e.target.value)}
         onKeyDown={handleKeyDown}
         onBlur={handleBlur}
         placeholder="#your-tag"
-        className="w-full rounded-md border border-transparent bg-subtle px-3 py-2 font-md text-foreground placeholder:text-placeholder focus:outline-none focus:bg-surface focus:border-[rgb(48,207,67)] focus:shadow-[0_0_0_2px_rgba(48,207,67,0.25)]"
       />
     </div>
   )
@@ -194,14 +194,13 @@ export function PanelHeader({ title, onBack, tag, onTagChange, tags }: PanelHead
                       <X size={14} />
                     </button>
                   </div>
-                  <input
+                  <TextInput
                     type="text"
                     value={inputValue}
                     onChange={(e) => setInputValue(e.target.value)}
                     onKeyDown={handleKeyDown}
                     onBlur={handleSave}
                     placeholder="#your-tag"
-                    className="w-full rounded-md border border-transparent bg-subtle px-3 py-2 font-md text-foreground placeholder:text-placeholder focus:outline-none focus:bg-surface focus:border-[rgb(48,207,67)] focus:shadow-[0_0_0_2px_rgba(48,207,67,0.25)]"
                   />
                   <p className="font-sm text-muted">
                     Pages with this tag will appear in this section

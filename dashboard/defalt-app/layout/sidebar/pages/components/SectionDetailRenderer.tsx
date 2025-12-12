@@ -10,7 +10,7 @@ import { SchemaThemeSettings } from '../../components/SchemaThemeSettings'
 import { SectionPaddingSettings, type SectionSpacingMode } from './SectionPaddingSettings'
 import * as Separator from '@radix-ui/react-separator'
 import { Copy, Check, Pencil, X, Check as CheckIcon } from 'lucide-react'
-import { SettingSection } from '@defalt/ui'
+import { SettingSection, TextInput } from '@defalt/ui'
 
 export type SectionDetail = {
   id: string
@@ -427,12 +427,12 @@ function AiSectionSettings({
             <label className="block font-md font-bold text-foreground">Name</label>
             {isEditing ? (
               <div className="flex items-center gap-2">
-                <input
+                <TextInput
                   type="text"
                   value={editName}
                   onChange={(e) => setEditName(e.target.value)}
                   onKeyDown={handleKeyDown}
-                  className="flex-1 rounded-md border border-border bg-surface px-3 py-1.5 font-md text-foreground focus:border-accent focus:outline-none"
+                  className="flex-1"
                   autoFocus
                 />
                 <button

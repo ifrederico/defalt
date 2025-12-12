@@ -1,12 +1,10 @@
 /**
  * Header Section Defaults
+ *
+ * Derived from schema to ensure single source of truth.
  */
 
-import type { HeaderSectionConfig } from './schema.js'
+import { headerConfigSchema, type HeaderSectionConfig } from './schema.js'
 
-export const headerDefaults: HeaderSectionConfig = {
-  navigationLayout: 'Logo in the middle',
-  stickyHeader: 'Scroll up',
-  searchEnabled: true,
-  typographyCase: 'default'
-}
+// Derive defaults from schema - eliminates duplication
+export const headerDefaults: HeaderSectionConfig = headerConfigSchema.parse({})

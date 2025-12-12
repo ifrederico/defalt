@@ -1,6 +1,7 @@
 import { useState, useMemo, useCallback, useEffect, useRef } from 'react'
 import {
   SECTION_ID_MAP,
+  CSS_DEFAULT_PADDING,
   type SectionPadding
 } from '@defalt/utils/config/themeConfig'
 import {
@@ -46,7 +47,7 @@ const CUSTOM_SECTION_BASE_ID: Record<string, string> = {
 }
 
 const SUBHEADER_SECTION_ID = 'subheader'
-const SUBHEADER_PADDING_DEFAULT = 160
+const SUBHEADER_PADDING_DEFAULT = CSS_DEFAULT_PADDING.subheader as number
 const SUBHEADER_MARGIN_DEFAULT = 40
 const SUBHEADER_MARGIN_STYLES = new Set(['Highlight', 'Magazine'])
 const SUBHEADER_PADDING_STYLES = new Set(['Landing', 'Search'])

@@ -278,15 +278,28 @@ function applySectionMargins(doc: Document, marginMap: Record<string, { top?: nu
     selectors.forEach((selector) => {
       const elements = doc.querySelectorAll<HTMLElement>(selector)
       elements.forEach((element) => {
-        if (variableConfig?.top) {
-          element.style.setProperty(variableConfig.top, `${top}px`)
-        } else if (margins?.top !== undefined) {
+        if (margins?.top !== undefined) {
+          if (variableConfig?.top) {
+            element.style.setProperty(variableConfig.top, `${top}px`)
+          }
           element.style.marginTop = `${top}px`
+        } else {
+          if (variableConfig?.top) {
+            element.style.removeProperty(variableConfig.top)
+          }
+          element.style.removeProperty('margin-top')
         }
-        if (variableConfig?.bottom) {
-          element.style.setProperty(variableConfig.bottom, `${bottom}px`)
-        } else if (margins?.bottom !== undefined) {
+
+        if (margins?.bottom !== undefined) {
+          if (variableConfig?.bottom) {
+            element.style.setProperty(variableConfig.bottom, `${bottom}px`)
+          }
           element.style.marginBottom = `${bottom}px`
+        } else {
+          if (variableConfig?.bottom) {
+            element.style.removeProperty(variableConfig.bottom)
+          }
+          element.style.removeProperty('margin-bottom')
         }
       })
     })
@@ -302,14 +315,12 @@ function applySectionMargins(doc: Document, marginMap: Record<string, { top?: nu
       elements.forEach((element) => {
         if (variableConfig?.top) {
           element.style.removeProperty(variableConfig.top)
-        } else {
-          element.style.removeProperty('margin-top')
         }
+        element.style.removeProperty('margin-top')
         if (variableConfig?.bottom) {
           element.style.removeProperty(variableConfig.bottom)
-        } else {
-          element.style.removeProperty('margin-bottom')
         }
+        element.style.removeProperty('margin-bottom')
       })
     })
   })

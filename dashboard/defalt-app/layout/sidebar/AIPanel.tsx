@@ -2,7 +2,7 @@ import { useState, useCallback, useRef, useEffect } from 'react'
 import * as Dialog from '@radix-ui/react-dialog'
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu'
 import { Sparkles, Check, Loader2, X, Key, Infinity as InfinityIcon, Trash2, ExternalLink, ChevronLeft, Brain, ArrowUp } from 'lucide-react'
-import { AppButton, FloatingTooltip } from '@defalt/ui'
+import { AppButton, FloatingTooltip, TextInput } from '@defalt/ui'
 import { useAIGenerate, type AIModel } from '../../hooks/useAIGenerate'
 import { useToast } from '../../components/ToastContext'
 import { useWorkspaceContext } from '../../contexts/useWorkspaceContext'
@@ -269,12 +269,11 @@ ${generatedSection.css || ''}
                         Add your Anthropic API key for unlimited generations. Your key is encrypted and stored securely.
                       </p>
                       <div className="space-y-3">
-                        <input
+                        <TextInput
                           type="password"
                           value={apiKeyInput}
                           onChange={(e) => setApiKeyInput(e.target.value)}
                           placeholder="sk-ant-..."
-                          className="w-full px-3 py-2 bg-subtle border border-border rounded-md font-sm text-foreground placeholder:text-placeholder focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
                         />
                         <AppButton
                           variant="primary"

@@ -14,7 +14,7 @@ import {
   Component,
   Crown
 } from 'lucide-react'
-import { FloatingTooltip } from '@defalt/ui'
+import { FloatingTooltip, TextInput } from '@defalt/ui'
 import type { SectionDefinition } from '@defalt/sections/engine'
 import { resolveSectionIcon } from '@defalt/utils/config/sectionIcons'
 
@@ -111,12 +111,11 @@ export function AddSectionCard({ definitions, onSelect, disabled = false }: AddS
             className="w-64 rounded-md border border-border bg-surface shadow-xl"
           >
             <div className="px-3 py-3">
-              <input
+              <TextInput
                 type="text"
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
                 placeholder="Search sections"
-                className="w-full rounded-md border border-border-strong px-3 py-2 font-md text-foreground placeholder:text-placeholder shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               />
             </div>
             <div className="h-px w-full bg-hover" />

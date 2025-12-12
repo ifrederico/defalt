@@ -13,10 +13,11 @@ import { useToast } from './components/ToastContext'
 import { useMediaQuery } from '@defalt/utils/hooks'
 import type { StickyHeaderMode } from '@defalt/rendering/custom-source/handlebars/headerCustomization'
 import { LoadingState } from '@defalt/ui/primitives/LoadingState'
-import { useActiveDetail, useHoveredSectionId, useScrollToSectionId, useSidebarExpanded, useUIActions } from './stores'
+import { useActiveDetail, useActiveTab, useHoveredSectionId, useScrollToSectionId, useSidebarExpanded, useUIActions } from './stores'
 
 export function AppContent() {
     const activeDetail = useActiveDetail()
+    const activeTab = useActiveTab()
     const hoveredSectionId = useHoveredSectionId()
     const scrollToSectionId = useScrollToSectionId()
     const sidebarExpanded = useSidebarExpanded()
@@ -267,8 +268,8 @@ export function AppContent() {
             <div className="flex-1 flex overflow-hidden">
                 <SidebarRail />
 
-                {/* Narrow screen: show detail panel instead of sidebar when active */}
-                {!isWideScreen && activeDetail ? (
+                {/* Narrow screen: show detail panel only for Sections tab */}
+                {!isWideScreen && activeTab === 'sections' && activeDetail ? (
                     <aside
                         className="bg-surface transition-[width] duration-300 relative border-r border-border flex flex-col"
                         style={{ width: sidebarExpanded ? 'calc(100vw - 52px)' : '300px' }}

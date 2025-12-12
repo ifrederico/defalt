@@ -4,7 +4,7 @@ import * as DropdownMenu from '@radix-ui/react-dropdown-menu'
 import * as Separator from '@radix-ui/react-separator'
 import CodeMirror from '@uiw/react-codemirror'
 import { css } from '@codemirror/lang-css'
-import { PanelHeader, ColorPickerSetting, ToggleSwitch } from '@defalt/ui'
+import { PanelHeader, ColorPickerSetting, ToggleSwitch, TextInput } from '@defalt/ui'
 import { sanitizeHex } from '@defalt/utils/color/colorUtils'
 import { Check, ChevronDown } from 'lucide-react'
 
@@ -568,17 +568,13 @@ function TextField({ label, value, onChange, helperText, debounceDelay, disabled
   return (
     <label className={`block ${FIELD_STACK}`}>
       <span className={`${LABEL_CLASS} ${disabled ? LABEL_DISABLED_CLASS : ''}`}>{label}</span>
-      <input
+      <TextInput
         type="text"
         value={hasDebounce ? inputValue : value}
         onChange={handleChange}
         onBlur={handleBlur}
         disabled={disabled}
-        className={`w-full rounded-md border px-3 py-2 font-md shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
-          disabled
-            ? 'border-border bg-subtle text-placeholder placeholder:text-placeholder cursor-not-allowed'
-            : 'border-border-strong text-foreground placeholder:text-placeholder'
-        }`}
+        className="disabled:border-border disabled:bg-subtle disabled:text-placeholder disabled:placeholder:text-placeholder disabled:cursor-not-allowed"
       />
       {helperText ? (
         <p className={`${HELPER_CLASS} ${disabled ? HELPER_DISABLED_CLASS : ''}`}>{helperText}</p>

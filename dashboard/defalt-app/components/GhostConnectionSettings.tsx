@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { CheckCircle, XCircle, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
-import { AppButton } from '@defalt/ui/primitives/AppButton'
+import { AppButton, TextInput } from '@defalt/ui'
 import { useAuth } from '../hooks/useAuth'
 import { fetchSettings, saveSettings, clearSettings } from '@defalt/utils/api/settingsSync'
 
@@ -93,7 +93,7 @@ export function GhostConnectionSettings() {
         }
       })
       .catch(() => {
-        toast.error('Cloud sync failed', { description: 'Could not load your saved settings.' })
+        // Cloud prefill is optional; ignore failures and fall back to local/manual entry.
       })
   }, [user])
 
@@ -205,13 +205,12 @@ export function GhostConnectionSettings() {
           <label htmlFor="ghost-url" className="block text-sm font-medium text-foreground">
             Ghost URL
           </label>
-          <input
+          <TextInput
             id="ghost-url"
             type="url"
             value={url}
             onChange={handleUrlChange}
             placeholder="https://your-site.ghost.io"
-            className="w-full px-3 py-2 rounded-md border border-border bg-surface text-foreground placeholder:text-placeholder focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
           />
         </div>
 
@@ -219,13 +218,13 @@ export function GhostConnectionSettings() {
           <label htmlFor="ghost-key" className="block text-sm font-medium text-foreground">
             Content API Key
           </label>
-          <input
+          <TextInput
             id="ghost-key"
             type="text"
             value={contentKey}
             onChange={handleKeyChange}
             placeholder="abc123def456..."
-            className="w-full px-3 py-2 rounded-md border border-border bg-surface text-foreground placeholder:text-placeholder focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary font-mono text-sm"
+            className="font-mono text-sm"
           />
           <p className="text-xs text-secondary">
             Found in Ghost Admin → Settings → Integrations → Add custom integration
