@@ -29,6 +29,7 @@ import {
   syncAnnouncementBars,
   syncTemplateSections,
   updateColorVariables,
+  setupSectionSelection,
 } from './handlebars/domManipulation'
 import { applyHeaderCustomizations, type StickyHeaderMode } from './handlebars/headerCustomization'
 import {
@@ -151,6 +152,7 @@ export function HandlebarsRenderer({
   const iframeRef = useRef<HTMLIFrameElement>(null)
   const templateOrderRef = useRef(templateOrder)
   const footerOrderRef = useRef(footerOrder)
+  const sectionSelectionCleanupRef = useRef<(() => void) | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [renderedHtml, setRenderedHtml] = useState('')
@@ -783,6 +785,27 @@ export function HandlebarsRenderer({
     }
   }, [footerOrder])
 
+  // Effect to update section selection callback when it changes
+  // This prevents stale closures where the old callback captures outdated state
+  useEffect(() => {
+    if (!hasInjectedRef.current) return
+    const iframe = iframeRef.current
+    if (!iframe) return
+    const doc = iframe.contentDocument || iframe.contentWindow?.document
+    if (!doc || doc.readyState !== 'complete') return
+
+    // Clean up previous section selection handlers
+    if (sectionSelectionCleanupRef.current) {
+      sectionSelectionCleanupRef.current()
+      sectionSelectionCleanupRef.current = null
+    }
+
+    // Set up new section selection with updated callback
+    if (onSectionSelect && sectionIdsForPreview.length > 0) {
+      sectionSelectionCleanupRef.current = setupSectionSelection(doc, sectionIdsForPreview, onSectionSelect)
+    }
+  }, [onSectionSelect, sectionIdsForPreview])
+
   // Track previous selection to determine if we should scroll
   const prevSelectedSectionIdRef = useRef<string | null>(null)
 
@@ -872,6 +895,16 @@ export function HandlebarsRenderer({
       return () => iframe.removeEventListener('load', doScroll)
     }
   }, [scrollToSectionId, onScrollComplete])
+
+  // Cleanup section selection handlers on unmount
+  useEffect(() => {
+    return () => {
+      if (sectionSelectionCleanupRef.current) {
+        sectionSelectionCleanupRef.current()
+        sectionSelectionCleanupRef.current = null
+      }
+    }
+  }, [])
 
   return (
     <div style={{ position: 'relative', width: '100%', height: '100%' }}>
