@@ -391,6 +391,18 @@ export function useSectionManager({
         customConfig = { tag: ghostCardsMeta.tag } as SectionConfigSchema
       }
 
+      if (definitionId === 'hero') {
+        const suffix = (() => {
+          if (instanceId === HERO_ID_PREFIX) {
+            return 1
+          }
+          const match = instanceId.match(/^hero-(\d+)$/)
+          const numeric = match ? Number.parseInt(match[1], 10) : NaN
+          return Number.isFinite(numeric) ? numeric : 1
+        })()
+        customConfig = { tag: suffix === 1 ? '#hero' : `#hero-${suffix}` } as SectionConfigSchema
+      }
+
       if (definitionId === 'image-with-text') {
         const suffix = (() => {
           if (instanceId === 'image-with-text') {
