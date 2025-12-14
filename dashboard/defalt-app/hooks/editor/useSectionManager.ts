@@ -73,7 +73,7 @@ const getNextGhostCardsSuffix = (sections: Record<string, SectionInstance>) => {
     if (section.definitionId !== 'ghostCards') {
       return
     }
-    const currentTag = (section.config as { ghostPageTag?: unknown })?.ghostPageTag
+    const currentTag = (section.config as { tag?: unknown })?.tag
     maxSuffix = Math.max(
       maxSuffix,
       parseGhostCardIdSuffix(section.id),
@@ -97,7 +97,7 @@ const buildGhostCardsInstanceMeta = (
 
   return {
     instanceId,
-    ghostPageTag: suffix === 1 ? GHOST_CARD_TAG_BASE : `${GHOST_CARD_TAG_BASE}-${suffix}`
+    tag: suffix === 1 ? GHOST_CARD_TAG_BASE : `${GHOST_CARD_TAG_BASE}-${suffix}`
   }
 }
 
@@ -388,7 +388,7 @@ export function useSectionManager({
       if (definitionId === 'ghostCards') {
         const ghostCardsMeta = buildGhostCardsInstanceMeta(customSectionsRef.current, existingIds)
         instanceId = ghostCardsMeta.instanceId
-        customConfig = { ghostPageTag: ghostCardsMeta.ghostPageTag } as SectionConfigSchema
+        customConfig = { tag: ghostCardsMeta.tag } as SectionConfigSchema
       }
 
       if (definitionId === 'image-with-text') {
@@ -400,7 +400,7 @@ export function useSectionManager({
           const numeric = match ? Number.parseInt(match[1], 10) : NaN
           return Number.isFinite(numeric) ? numeric : 1
         })()
-        customConfig = { ghostPageTag: suffix === 1 ? '#image-text' : `#image-text-${suffix}` } as SectionConfigSchema
+        customConfig = { tag: suffix === 1 ? '#image-text' : `#image-text-${suffix}` } as SectionConfigSchema
       }
 
       if (definitionId === 'ghostGrid') {
@@ -721,12 +721,12 @@ export function useSectionManager({
         const record = nextConfig as Record<string, unknown>
         const next: Record<string, unknown> = { ...record }
 
-        if ('ghostPageTag' in next) {
-          const formatted = formatInternalTag(next.ghostPageTag)
+        if ('tag' in next) {
+          const formatted = formatInternalTag(next.tag)
           if (formatted) {
-            next.ghostPageTag = formatted
+            next.tag = formatted
           } else {
-            delete next.ghostPageTag
+            delete next.tag
           }
         }
 

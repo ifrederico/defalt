@@ -8,7 +8,6 @@ import {
   contentWidthPxShape,
   contentWidthPxSetting,
   createTextAlignmentSetting,
-  ghostPageTagShape,
   textAlignmentShape,
   transparentBackgroundSetting,
   transparentBackgroundShape
@@ -17,7 +16,6 @@ import {
 // Zod config schema
 export const ghostCardsConfigSchema = z.object({
   tag: z.string().default('#cards'),
-  ...ghostPageTagShape,
   ...contentWidthPxShape,
   pageTitle: z.boolean().default(false),
   ...textAlignmentShape,

@@ -86,16 +86,6 @@ export const transparentBackgroundSetting: SettingSchema = {
 }
 
 // =============================================================================
-// Ghost Page Tag
-// =============================================================================
-
-export const ghostPageTagConfigSchema = z.object({
-  ghostPageTag: z.string().optional()
-})
-
-export const ghostPageTagShape = ghostPageTagConfigSchema.shape
-
-// =============================================================================
 // Image Appearance
 // =============================================================================
 

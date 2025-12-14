@@ -87,9 +87,6 @@ export {
   transparentBackgroundShape,
   transparentBackgroundSetting,
 
-  // Ghost page tag
-  ghostPageTagShape,
-
   // Image appearance
   imageAppearanceShape,
   imageAspectSetting,

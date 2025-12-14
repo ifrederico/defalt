@@ -1,9 +1,10 @@
 import { useState, useCallback, memo, useEffect, useMemo } from 'react'
-import { PanelsTopLeft, Settings, CircleUserRound, MessageCircleQuestion, CloudCog, CloudCheck, X, RefreshCw } from 'lucide-react'
+import { PanelsTopLeft, Settings, CircleUserRound, MessageCircleQuestion, CloudCog, CloudCheck, X, RefreshCw, Tags } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import * as Dialog from '@radix-ui/react-dialog'
 import { FloatingTooltip } from '@defalt/ui'
 import { SettingsModal } from '../components/SettingsModal'
+import { TagsModal } from '../components/TagsModal'
 import { GhostConnectionSettings } from '../components/GhostConnectionSettings'
 import { useWorkspaceContext } from '../contexts/useWorkspaceContext'
 import { useActiveTab, useUIActions } from '../stores'
@@ -42,6 +43,7 @@ export function SidebarRail() {
   const { setActiveTab } = useUIActions()
   const { lastGhostFetch, refreshGhostData, ghostDataLoading, dataSource } = useWorkspaceContext()
   const [isSettingsModalOpen, setSettingsModalOpen] = useState(false)
+  const [isTagsModalOpen, setTagsModalOpen] = useState(false)
   const [isPreviewModalOpen, setPreviewModalOpen] = useState(false)
   const [isGhostConnected, setIsGhostConnected] = useState(false)
   const [tick, setTick] = useState(0)
@@ -75,6 +77,7 @@ export function SidebarRail() {
   const handleSectionsClick = useCallback(() => setActiveTab('sections'), [setActiveTab])
   const handleSettingsClick = useCallback(() => setActiveTab('settings'), [setActiveTab])
   const handleUserClick = useCallback(() => setSettingsModalOpen(true), [])
+  const handleTagsClick = useCallback(() => setTagsModalOpen(true), [])
 
   return (
     <>
@@ -91,6 +94,11 @@ export function SidebarRail() {
           label="Theme Settings"
           active={activeTab === 'settings'}
           onClick={handleSettingsClick}
+        />
+        <IconButton
+          icon={Tags}
+          label="Tags"
+          onClick={handleTagsClick}
         />
 
         <Dialog.Root open={isPreviewModalOpen} onOpenChange={setPreviewModalOpen}>
@@ -182,6 +190,7 @@ export function SidebarRail() {
     </div>
 
     <SettingsModal open={isSettingsModalOpen} onOpenChange={setSettingsModalOpen} />
+    <TagsModal open={isTagsModalOpen} onOpenChange={setTagsModalOpen} />
     </>
   )
 }

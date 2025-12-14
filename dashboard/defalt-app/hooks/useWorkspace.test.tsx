@@ -216,7 +216,7 @@ describe('useWorkspace', () => {
       expect(hook.result.current.customSections['ghost-cards']).toBeDefined()
     })
     expect(
-      (hook.result.current.customSections['ghost-cards'].config as { ghostPageTag?: string }).ghostPageTag
+      (hook.result.current.customSections['ghost-cards'].config as { tag?: string }).tag
     ).toBe('#cards')
 
     act(() => {
@@ -227,7 +227,7 @@ describe('useWorkspace', () => {
       expect(hook.result.current.customSections['ghost-cards-2']).toBeDefined()
     })
     expect(
-      (hook.result.current.customSections['ghost-cards-2'].config as { ghostPageTag?: string }).ghostPageTag
+      (hook.result.current.customSections['ghost-cards-2'].config as { tag?: string }).tag
     ).toBe('#cards-2')
 
     hook.unmount()
@@ -247,13 +247,13 @@ describe('useWorkspace', () => {
     act(() => {
       hook.result.current.updateCustomSectionConfig('ghost-cards', (config) => ({
         ...config,
-        ghostPageTag: '#ghost-card2'
+        tag: '#ghost-card2'
       }))
     })
 
     await waitFor(() => {
       expect(
-        (hook.result.current.customSections['ghost-cards'].config as { ghostPageTag?: string }).ghostPageTag
+        (hook.result.current.customSections['ghost-cards'].config as { tag?: string }).tag
       ).toBe('#cards-2')
     })
 
@@ -271,7 +271,7 @@ describe('useWorkspace', () => {
       expect(hook.result.current.customSections['image-with-text']).toBeDefined()
     })
     expect(
-      (hook.result.current.customSections['image-with-text'].config as { ghostPageTag?: string }).ghostPageTag
+      (hook.result.current.customSections['image-with-text'].config as { tag?: string }).tag
     ).toBe('#image-text')
 
     act(() => {
@@ -282,7 +282,7 @@ describe('useWorkspace', () => {
       expect(hook.result.current.customSections['image-with-text-2']).toBeDefined()
     })
     expect(
-      (hook.result.current.customSections['image-with-text-2'].config as { ghostPageTag?: string }).ghostPageTag
+      (hook.result.current.customSections['image-with-text-2'].config as { tag?: string }).tag
     ).toBe('#image-text-2')
 
     hook.unmount()

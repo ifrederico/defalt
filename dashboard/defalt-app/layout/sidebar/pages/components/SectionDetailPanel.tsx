@@ -40,6 +40,7 @@ export function SectionDetailPanel({ activeDetail, onBack, props }: SectionDetai
 
   // Handler to update a single tag in section config
   const handleTagChange = useCallback((newTag: string) => {
+    // Announcement bar uses 'tag' field
     const announcementBar = props.announcementBars.find((bar) => bar.id === activeDetail.id)
     if (announcementBar) {
       props.onAnnouncementBarConfigChange(activeDetail.id, (config) => ({
@@ -48,6 +49,7 @@ export function SectionDetailPanel({ activeDetail, onBack, props }: SectionDetai
       }))
       return
     }
+    // Custom sections use 'tag' field
     const customSection = props.customSections[activeDetail.id]
     if (customSection) {
       props.onUpdateCustomSection(activeDetail.id, (config) => ({

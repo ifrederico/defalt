@@ -383,7 +383,7 @@ export function generateHomeTemplate(
 
         const containerPaddingX = resolveContainerPaddingX(heroConfig.contentWidth)
         const backgroundColor = sanitizeHexColor(heroConfig.backgroundColor, 'transparent')
-        const internalTag = formatInternalTag(heroConfig.ghostPageTag) || resolveHeroFallbackTag(key)
+        const internalTag = formatInternalTag(heroConfig.tag) || resolveHeroFallbackTag(key)
         const tagFilter = toTagFilter(internalTag)
         const imageOnRight = heroConfig.invert === true || heroConfig.imagePosition === 'right'
         const { imageColumn, textColumn } = resolveImageColumns(heroConfig.imageWidth)
@@ -404,7 +404,7 @@ export function generateHomeTemplate(
 
 	        const containerPaddingX = resolveContainerPaddingX(cardsConfig.contentWidth)
 	        const backgroundColor = sanitizeHexColor(cardsConfig.backgroundColor, 'transparent')
-	        const internalTag = formatInternalTag(cardsConfig.ghostPageTag) || resolveGhostCardsFallbackTag(key)
+	        const internalTag = formatInternalTag(cardsConfig.tag) || resolveGhostCardsFallbackTag(key)
 	        const tagFilter = toTagFilter(internalTag)
 
 	        sectionPartial = `{{> "defalt-ghost-cards" sectionId=${JSON.stringify(key)} sectionStyle=${JSON.stringify(sectionStyle)} contentWidth=${JSON.stringify(cardsConfig.contentWidth)} containerPaddingX=${JSON.stringify(containerPaddingX)} backgroundColor=${JSON.stringify(backgroundColor)} pageTitle=${cardsConfig.pageTitle} textAlignment=${JSON.stringify(cardsConfig.textAlignment)} titleSize=${JSON.stringify(cardsConfig.titleSize)} tagFilter=${JSON.stringify(tagFilter)} internalTag=${JSON.stringify(internalTag)} }}`
@@ -441,7 +441,7 @@ export function generateHomeTemplate(
 
         const containerPaddingX = resolveContainerPaddingX(imageTextConfig.contentWidth)
         const backgroundColor = sanitizeHexColor(imageTextConfig.backgroundColor, 'transparent')
-        const internalTag = formatInternalTag(imageTextConfig.ghostPageTag) || resolveImageWithTextFallbackTag(key)
+        const internalTag = formatInternalTag(imageTextConfig.tag) || resolveImageWithTextFallbackTag(key)
         const tagFilter = toTagFilter(internalTag)
         const imageOnRight = imageTextConfig.invert === true || imageTextConfig.imagePosition === 'right'
         const { imageColumn, textColumn } = resolveImageColumns(imageTextConfig.imageWidth)
@@ -1301,9 +1301,8 @@ export async function applyHeroCustomization(themeDir: string, config: ThemeConf
 
     const innerPaddingX = contentWidth === 'none' ? '0px' : 'var(--container-gap, 24px)'
 
-    const rawTag = heroConfig.ghostPageTag ?? heroConfig.tag
     const fallbackTag = suffix ? `#hero${suffix}` : '#hero'
-    const internalTag = formatInternalTag(rawTag) || fallbackTag
+    const internalTag = formatInternalTag(heroConfig.tag) || fallbackTag
     const tagSlug = toTagSlug(internalTag)
 
     const sectionClasses: string[] = []
@@ -1514,7 +1513,7 @@ export async function applyGhostCardsCustomization(themeDir: string, config: The
 
     // Get the tag for this specific instance
     const fallbackTag = suffix ? `#ghost-card${suffix}` : '#ghost-card'
-    const internalTag = formatInternalTag(cardsConfig.ghostPageTag) || fallbackTag
+    const internalTag = formatInternalTag(cardsConfig.tag) || fallbackTag
     const slugTag = internalTag.length > 1 ? `hash-${internalTag.slice(1)}` : 'hash-ghost-card'
 
     // Style block (prepended to template content)
@@ -1933,7 +1932,7 @@ export async function applyImageWithTextCustomization(themeDir: string, config: 
 
     // Get the tag for this specific instance
     const fallbackTag = suffix ? `#image-with-text${suffix}` : '#image-with-text'
-    const internalTag = formatInternalTag(sectionConfig.ghostPageTag) || fallbackTag
+    const internalTag = formatInternalTag(sectionConfig.tag) || fallbackTag
     const slugTag = internalTag.length > 1 ? `hash-${internalTag.slice(1)}` : 'hash-image-with-text'
 
     const backgroundColor = sanitizeHexColor(

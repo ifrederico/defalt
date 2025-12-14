@@ -8,7 +8,6 @@ import {
   contentWidthPxShape,
   contentWidthPxSetting,
   createTextAlignmentSetting,
-  ghostPageTagShape,
   imageAppearanceShape,
   imageAspectSetting,
   imageBorderRadiusSetting,
@@ -24,7 +23,6 @@ import {
 export const imageWithTextConfigSchema = z.object({
   // Ghost tag for content filtering
   tag: z.string().default('#image-text'),
-  ...ghostPageTagShape,
 
   // Appearance
   ...contentWidthPxShape,

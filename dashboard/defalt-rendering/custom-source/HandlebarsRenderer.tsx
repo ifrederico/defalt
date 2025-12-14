@@ -300,7 +300,7 @@ export function HandlebarsRenderer({
             }
 
             if (section.definitionId === 'hero') {
-              const rawTag = baseConfig.ghostPageTag
+              const rawTag = baseConfig.tag
               const internalTag = formatInternalTag(rawTag) || resolveHeroFallbackTag(section.id)
               const imageOnRight = baseConfig.invert === true || baseConfig.imagePosition === 'right'
               const { imageColumn, textColumn } = resolveImageColumns(baseConfig.imageWidth)
@@ -314,7 +314,7 @@ export function HandlebarsRenderer({
             }
 
             if (section.definitionId === 'image-with-text') {
-              const rawTag = baseConfig.ghostPageTag
+              const rawTag = baseConfig.tag
               const internalTag = formatInternalTag(rawTag) || resolveImageWithTextFallbackTag(section.id)
               const imageOnRight = baseConfig.invert === true || baseConfig.imagePosition === 'right'
               const { imageColumn, textColumn } = resolveImageColumns(baseConfig.imageWidth)
@@ -328,7 +328,7 @@ export function HandlebarsRenderer({
             }
 
 	            if (section.definitionId === 'ghostCards') {
-	              const rawTag = baseConfig.ghostPageTag
+	              const rawTag = baseConfig.tag
 	              const internalTag = formatInternalTag(rawTag) || resolveGhostCardsFallbackTag(section.id)
 	              const tagFilter = toTagFilter(internalTag)
 	              renderConfig.internalTag = internalTag
