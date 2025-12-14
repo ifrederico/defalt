@@ -140,79 +140,89 @@ export function TagsModal({ open, onOpenChange }: TagsModalProps) {
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 z-40 bg-gradient-to-br from-black/20 to-black/10 backdrop-blur-[2px] data-[state=open]:animate-fadeIn data-[state=closed]:animate-fadeOut" />
-        <Dialog.Content className="fixed left-1/2 top-[10%] z-50 w-[min(480px,calc(100vw-2rem))] -translate-x-1/2 rounded-lg bg-surface shadow-xl focus:outline-none data-[state=open]:animate-contentShow">
-          <div className="flex items-center justify-between px-6 py-4 border-b border-border">
-            <Dialog.Title className="text-lg font-semibold text-foreground">
+        <Dialog.Content className="fixed left-1/2 top-[10%] z-50 w-[min(640px,calc(100vw-2rem))] -translate-x-1/2 rounded-lg bg-surface shadow-xl focus:outline-none data-[state=open]:animate-contentShow">
+          {/* Header with title and toggle */}
+          <div className="flex items-center justify-between px-6 py-4">
+            <Dialog.Title className="text-xl font-bold text-foreground">
               Tags
             </Dialog.Title>
             <Dialog.Description className="sr-only">
               View tags used by your theme and from your Ghost blog
             </Dialog.Description>
-            <Dialog.Close asChild>
-              <button
-                type="button"
-                className="w-8 h-8 rounded-md flex items-center justify-center text-secondary hover:bg-subtle transition-colors"
-                aria-label="Close"
+            <div className="flex items-center gap-3">
+              <ToggleGroup.Root
+                type="single"
+                value={view}
+                onValueChange={handleViewChange}
+                className="inline-flex items-center gap-0.5 rounded-md bg-subtle p-0.5"
+                aria-label="Tag type"
               >
-                <X size={18} />
-              </button>
-            </Dialog.Close>
+                <ToggleGroup.Item
+                  value="public"
+                  className="font-md px-3 py-1.5 rounded text-foreground transition-colors focus:outline-none data-[state=on]:bg-surface data-[state=on]:shadow-sm data-[state=off]:text-secondary data-[state=off]:hover:text-foreground"
+                >
+                  Public tags
+                </ToggleGroup.Item>
+                <ToggleGroup.Item
+                  value="internal"
+                  className="font-md px-3 py-1.5 rounded text-foreground transition-colors focus:outline-none data-[state=on]:bg-surface data-[state=on]:shadow-sm data-[state=off]:text-secondary data-[state=off]:hover:text-foreground"
+                >
+                  Internal tags
+                </ToggleGroup.Item>
+              </ToggleGroup.Root>
+              <Dialog.Close asChild>
+                <button
+                  type="button"
+                  className="w-8 h-8 rounded-md flex items-center justify-center text-secondary hover:bg-subtle transition-colors"
+                  aria-label="Close"
+                >
+                  <X size={18} />
+                </button>
+              </Dialog.Close>
+            </div>
           </div>
 
-          <div className="p-6">
-            {/* Toggle */}
-            <ToggleGroup.Root
-              type="single"
-              value={view}
-              onValueChange={handleViewChange}
-              className="inline-flex items-center gap-0.5 rounded-md bg-subtle p-0.5 mb-4"
-              aria-label="Tag type"
-            >
-              <ToggleGroup.Item
-                value="internal"
-                className="px-3 py-1.5 rounded font-md text-foreground transition-colors focus:outline-none data-[state=on]:bg-surface data-[state=on]:shadow-sm data-[state=off]:hover:bg-subtle/80"
-              >
-                Internal tags
-              </ToggleGroup.Item>
-              <ToggleGroup.Item
-                value="public"
-                className="px-3 py-1.5 rounded font-md text-foreground transition-colors focus:outline-none data-[state=on]:bg-surface data-[state=on]:shadow-sm data-[state=off]:hover:bg-subtle/80"
-              >
-                Public tags
-              </ToggleGroup.Item>
-            </ToggleGroup.Root>
-
-            {/* Content */}
-            <div className="max-h-[400px] overflow-y-auto">
-              {loading ? (
-                <div className="flex items-center justify-center py-8">
-                  <Loader2 size={24} className="animate-spin text-secondary" />
-                </div>
-              ) : error ? (
-                <div className="text-center py-8">
-                  <p className="text-error text-sm mb-2">{error}</p>
-                  <button
-                    type="button"
-                    onClick={fetchTags}
-                    className="text-sm text-secondary hover:text-foreground underline"
-                  >
-                    Retry
-                  </button>
-                </div>
-              ) : view === 'internal' ? (
-                <InternalTagsList
-                  tags={internalTags}
-                  isConnected={isConnected}
-                  hasSectionTags={sectionTags.length > 0}
-                />
-              ) : (
-                <PublicTagsList tags={publicTags} isConnected={isConnected} />
-              )}
-            </div>
+          {/* Content */}
+          <div className="max-h-[400px] overflow-y-auto">
+            {loading ? (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 size={24} className="animate-spin text-secondary" />
+              </div>
+            ) : error ? (
+              <div className="text-center py-12 px-6">
+                <p className="font-sm text-error mb-2">{error}</p>
+                <button
+                  type="button"
+                  onClick={fetchTags}
+                  className="font-sm text-secondary hover:text-foreground underline"
+                >
+                  Retry
+                </button>
+              </div>
+            ) : view === 'internal' ? (
+              <InternalTagsList
+                tags={internalTags}
+                isConnected={isConnected}
+                hasSectionTags={sectionTags.length > 0}
+              />
+            ) : (
+              <PublicTagsList tags={publicTags} isConnected={isConnected} />
+            )}
           </div>
         </Dialog.Content>
       </Dialog.Portal>
     </Dialog.Root>
+  )
+}
+
+// Column header component
+function TableHeader() {
+  return (
+    <div className="grid grid-cols-[1fr_1fr_auto] gap-4 px-6 py-3 border-b border-border sticky top-0 bg-surface">
+      <span className="font-xs text-secondary uppercase tracking-wide">Tag</span>
+      <span className="font-xs text-secondary uppercase tracking-wide">Slug</span>
+      <span className="font-xs text-secondary uppercase tracking-wide text-right min-w-[80px]">No. of posts</span>
+    </div>
   )
 }
 
@@ -228,42 +238,38 @@ function InternalTagsList({
   if (tags.length === 0) {
     if (!hasSectionTags) {
       return (
-        <p className="text-secondary text-sm py-4">
-          No internal tags. Add sections like Ghost Cards or Ghost Grid to see their required tags here.
+        <p className="font-sm text-secondary py-8 px-6 text-center">
+          No internal tags. Add sections to see their required tags.
         </p>
       )
     }
-    return <p className="text-secondary text-sm py-4">No internal tags found</p>
+    return <p className="font-sm text-secondary py-8 px-6 text-center">No internal tags found</p>
   }
 
   return (
     <div>
-      {!isConnected && hasSectionTags && (
-        <p className="text-secondary text-xs mb-3">
-          Connect to Ghost to see post counts
-        </p>
-      )}
+      <TableHeader />
       {tags.map((tag, index) => (
         <div
           key={tag.name}
-          className={`py-3 ${index < tags.length - 1 ? 'border-b border-border' : ''}`}
+          className={`grid grid-cols-[1fr_1fr_auto] gap-4 items-center px-6 py-4 ${index < tags.length - 1 ? 'border-b border-border' : ''}`}
         >
-          <div className="flex items-center justify-between">
-            <span className="font-semibold text-foreground">{tag.name}</span>
+          <span className="font-md font-bold text-foreground flex items-center justify-between gap-2">
+            <span>{tag.name}</span>
             {tag.isThemeTag && (
-              <span className="text-xs px-1.5 py-0.5 rounded bg-subtle text-secondary">
+              <span className="text-[10px] px-1.5 py-0.5 rounded bg-subtle text-secondary font-normal">
                 Theme
               </span>
             )}
-          </div>
-          <div className="text-secondary text-sm">{tag.slug}</div>
-          <div className="text-secondary text-sm">
+          </span>
+          <span className="font-sm text-secondary">{tag.slug}</span>
+          <span className="font-sm text-secondary text-right min-w-[80px]">
             {tag.postCount !== null
               ? `${tag.postCount} post${tag.postCount !== 1 ? 's' : ''}`
               : isConnected
                 ? 'Not found'
                 : '–'}
-          </div>
+          </span>
         </div>
       ))}
     </div>
@@ -279,30 +285,31 @@ function PublicTagsList({
 }) {
   if (!isConnected) {
     return (
-      <p className="text-secondary text-sm py-4">
+      <p className="font-sm text-secondary py-8 px-6 text-center">
         Connect to Ghost to view public tags
       </p>
     )
   }
 
   if (tags.length === 0) {
-    return <p className="text-secondary text-sm py-4">No public tags found</p>
+    return <p className="font-sm text-secondary py-8 px-6 text-center">No public tags found</p>
   }
 
   return (
     <div>
+      <TableHeader />
       {tags.map((tag, index) => (
         <div
           key={tag.id}
-          className={`py-3 ${index < tags.length - 1 ? 'border-b border-border' : ''}`}
+          className={`grid grid-cols-[1fr_1fr_auto] gap-4 items-center px-6 py-4 ${index < tags.length - 1 ? 'border-b border-border' : ''}`}
         >
-          <div className="font-semibold text-foreground">{tag.name}</div>
-          <div className="text-secondary text-sm">{tag.slug}</div>
-          <div className="text-secondary text-sm">
+          <span className="font-md font-bold text-foreground">{tag.name}</span>
+          <span className="font-sm text-secondary">{tag.slug}</span>
+          <span className="font-sm text-secondary text-right min-w-[80px]">
             {tag.count?.posts !== undefined
               ? `${tag.count.posts} post${tag.count.posts !== 1 ? 's' : ''}`
               : '–'}
-          </div>
+          </span>
         </div>
       ))}
     </div>
