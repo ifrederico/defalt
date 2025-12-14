@@ -11,19 +11,19 @@ import {
   DEFAULT_MAIN_SETTINGS,
   clearDraftDocument,
   clearWorkspaceStorage,
+  consumeStorageNormalizationEvent,
   persistSavedThemeDocument,
   loadEditorState,
   persistEditorState,
   SECTION_ID_MAP,
-  CONFIG_TO_ID_MAP,
-  CSS_DEFAULT_PADDING,
-  CSS_DEFAULT_MARGIN,
-  PADDING_BLOCK_SECTIONS,
-  DEFAULT_ANNOUNCEMENT_BAR_CONFIG,
-  DEFAULT_ANNOUNCEMENT_CONTENT_CONFIG,
-  type WorkspaceSnapshot,
-  type ThemeDocument,
-  type PageConfig,
+		  CONFIG_TO_ID_MAP,
+	  CSS_DEFAULT_PADDING,
+	  DEFAULT_CUSTOM_SECTION_PADDING,
+	  CSS_DEFAULT_MARGIN,
+	  PADDING_BLOCK_SECTIONS,
+	  type WorkspaceSnapshot,
+	  type ThemeDocument,
+	  type PageConfig,
   type SectionConfig,
   type SectionSettings,
   type SectionPadding,
@@ -36,8 +36,7 @@ import {
 import {
   buildSectionInstance,
   getSectionDefinition,
-  type SectionInstance,
-  type SectionConfigSchema
+  type SectionInstance
 } from '@defalt/sections/engine'
 import { Ghost as GhostIcon } from 'lucide-react'
 import {
@@ -47,8 +46,6 @@ import {
   normalizeHeroSectionId,
   type SidebarItem
 } from '@defalt/utils/config/configStateDefaults'
-import { migrateLegacyHeroConfig } from '@defalt/utils/config/configStateHelpers'
-import { sanitizeNumericValue, resolveNumericValue, resolveMarginPair } from '@defalt/utils/helpers/numericHelpers'
 import { useSaveQueue, isAbortError, throwIfAborted } from '@defalt/utils/hooks'
 import { TIMING } from '@defalt/utils/constants'
 import { apiPath } from '@defalt/utils/api/apiPath'
@@ -56,8 +53,8 @@ import { logError, logWarning, logInfo } from '@defalt/utils/logging/errorLogger
 import type { WorkspacePage, CloudSyncStatus } from '../types/workspace'
 import { useHistoryContext } from '../contexts/useHistoryContext'
 import { GlobalSettingCommand } from '@defalt/utils/history/commands'
-import { useSectionManager, useAnnouncementBar } from './editor'
-import type { ToastHandler, SectionHydrationData, AnnouncementBarHydrationData } from './editor'
+import { useSectionManager, useAnnouncementBars } from './editor'
+import type { ToastHandler, SectionHydrationData, AnnouncementBarsHydrationData } from './editor'
 
 export type { WorkspacePage }
 
@@ -154,9 +151,10 @@ export function useWorkspace({
     getHistoryPageId
   })
 
-  const announcementBar = useAnnouncementBar({
+  const announcementBarsManager = useAnnouncementBars({
     executeCommand,
-    markAsDirty
+    markAsDirty,
+    showToast
   })
 
   const templateDefaults = useMemo(() => getTemplateDefaults(currentPage), [currentPage])
@@ -193,7 +191,7 @@ export function useWorkspace({
 
       if (customInstance) {
         settings.definitionId = customInstance.definitionId
-        settings.customConfig = customInstance.config
+        settings.customConfig = customInstance.config as Record<string, unknown>
       }
 
       if (padding) {
@@ -235,18 +233,15 @@ export function useWorkspace({
   const buildHeaderConfig = useCallback((): SectionConfig => {
     const headerSnapshot = workspaceSnapshotRef.current.headerSettings ?? DEFAULT_HEADER_SETTINGS
     const headerHidden = sectionManager.sectionVisibility.header ?? false
-    const announcementBarHidden = sectionManager.sectionVisibility['announcement-bar'] ?? false
     const headerPadding = sectionManager.sectionPadding.header
 
-    const settings: SectionSettings = {
-      visible: !headerHidden,
-      stickyHeaderMode: headerSnapshot.stickyHeaderMode,
-      searchEnabled: headerSnapshot.searchEnabled,
-      typographyCase: headerSnapshot.typographyCase,
-      announcementBarVisible: !announcementBarHidden,
-      announcementBarConfig: announcementBar.announcementBarConfig,
-      announcementContentConfig: announcementBar.announcementContentConfig
-    }
+	  const settings: SectionSettings = {
+	    visible: !headerHidden,
+	    stickyHeaderMode: headerSnapshot.stickyHeaderMode,
+	    searchEnabled: headerSnapshot.searchEnabled,
+	    typographyCase: headerSnapshot.typographyCase,
+	    announcementBars: announcementBarsManager.announcementBars
+	  }
 
     if (headerPadding) {
       const { top, bottom, left, right } = headerPadding
@@ -259,7 +254,7 @@ export function useWorkspace({
       type: 'header',
       settings
     }
-  }, [announcementBar.announcementBarConfig, announcementBar.announcementContentConfig, sectionManager.sectionPadding, sectionManager.sectionVisibility])
+	  }, [announcementBarsManager.announcementBars, sectionManager.sectionPadding, sectionManager.sectionVisibility])
 
   const buildFooterConfig = useCallback((): FooterConfig => {
     const order = sectionManager.footerItems.map((item) => SECTION_ID_MAP[item.id] || item.id)
@@ -344,6 +339,7 @@ export function useWorkspace({
     const templateOrder = Array.isArray(pageConfig.order) ? pageConfig.order : []
     const newTemplateItems: SidebarItem[] = []
     const newCustomSections: Record<string, SectionInstance> = {}
+    const invalidCustomSections: string[] = []
 
     templateOrder.forEach((configKey) => {
       const rawItemId = CONFIG_TO_ID_MAP[configKey] || configKey
@@ -366,18 +362,16 @@ export function useWorkspace({
           })
           return
         }
-      }
 
-      const migratedHeroConfig = migrateLegacyHeroConfig(normalizedItemId, sectionConfig?.settings?.customConfig as SectionConfigSchema | undefined)
-      if (migratedHeroConfig) {
-        const instance = buildSectionInstance('hero', normalizedItemId, migratedHeroConfig)
-        if (instance) {
-          newCustomSections[normalizedItemId] = instance
+        const fallbackInstance = buildSectionInstance(definitionId, normalizedItemId)
+        if (fallbackInstance) {
+          invalidCustomSections.push(normalizedItemId)
+          newCustomSections[normalizedItemId] = fallbackInstance
           newTemplateItems.push({
             id: normalizedItemId,
-            label: instance.label,
-            definitionId: 'hero',
-            icon: sectionManager.definitionIconMap.hero
+            label: fallbackInstance.label,
+            definitionId,
+            icon: sectionManager.definitionIconMap[definitionId] || GhostIcon
           })
           return
         }
@@ -417,6 +411,8 @@ export function useWorkspace({
     const newPadding: Record<string, { top: number, bottom: number, left?: number, right?: number }> = {}
     const newMargins: Record<string, { top?: number, bottom?: number }> = {}
 
+    const legacyConfigPaddingSections = new Set(['hero', 'ghostCards', 'ghostGrid', 'image-with-text'])
+
     Object.entries(pageConfig.sections).forEach(([key, section]) => {
       const rawItemId = CONFIG_TO_ID_MAP[key] || key
       const stateId = normalizeHeroSectionId(rawItemId)
@@ -439,17 +435,11 @@ export function useWorkspace({
             right: typeof cssDefault.right === 'number' ? cssDefault.right : 0,
           }
         }
-        if (definition) {
-          const defPadding = definition.defaultPadding
-          return {
-            top: defPadding.top,
-            bottom: defPadding.bottom,
-            left: typeof defPadding.left === 'number' ? defPadding.left : 0,
-            right: typeof defPadding.right === 'number' ? defPadding.right : 0
-          }
-        }
-        return { top: 0, bottom: 0, left: 0, right: 0 }
-      })()
+	        if (definition) {
+	          return { ...DEFAULT_CUSTOM_SECTION_PADDING }
+	        }
+	        return { top: 0, bottom: 0, left: 0, right: 0 }
+	      })()
 
       const usesUnifiedPadding = definition?.usesUnifiedPadding ?? PADDING_BLOCK_SECTIONS.has(key)
 
@@ -480,6 +470,36 @@ export function useWorkspace({
         }
       } else {
         newPadding[stateId] = defaultPadding
+      }
+
+      if (definitionId && legacyConfigPaddingSections.has(definitionId)) {
+        const configRecord = section.settings.customConfig as Record<string, unknown> | undefined
+        const legacyTop = typeof configRecord?.paddingTop === 'number' && Number.isFinite(configRecord.paddingTop)
+          ? Math.max(0, configRecord.paddingTop)
+          : undefined
+        const legacyBottom = typeof configRecord?.paddingBottom === 'number' && Number.isFinite(configRecord.paddingBottom)
+          ? Math.max(0, configRecord.paddingBottom)
+          : undefined
+        if (legacyTop !== undefined || legacyBottom !== undefined) {
+          const existing = newPadding[stateId] ?? defaultPadding
+          newPadding[stateId] = {
+            top: legacyTop ?? existing.top,
+            bottom: legacyBottom ?? existing.bottom,
+            left: existing.left ?? 0,
+            right: existing.right ?? 0
+          }
+
+          const instance = newCustomSections[stateId]
+          const instanceConfig = instance?.config as Record<string, unknown> | undefined
+          if (instance && instanceConfig) {
+            const nextConfig = { ...instanceConfig }
+            delete nextConfig.paddingTop
+            delete nextConfig.paddingBottom
+            delete nextConfig.paddingLeft
+            delete nextConfig.paddingRight
+            newCustomSections[stateId] = { ...instance, config: nextConfig }
+          }
+        }
       }
 
       if (usesUnifiedPadding) {
@@ -612,21 +632,15 @@ export function useWorkspace({
       }
     }
 
-    const headerHidden = headerConfig.settings.visible === false
-    newVisibility.header = headerHidden
-    const announcementBarVisible = (headerConfig.settings as SectionSettings & { announcementBarVisible?: boolean }).announcementBarVisible
-    if (typeof announcementBarVisible === 'boolean') {
-      newVisibility['announcement-bar'] = !announcementBarVisible
-    }
-
-    // Hydrate announcement bar
-    const headerAnnouncementConfig = (headerConfig.settings as SectionSettings & { announcementBarConfig?: typeof DEFAULT_ANNOUNCEMENT_BAR_CONFIG }).announcementBarConfig
-    const headerAnnouncementContent = (headerConfig.settings as SectionSettings & { announcementContentConfig?: typeof DEFAULT_ANNOUNCEMENT_CONTENT_CONFIG }).announcementContentConfig
-    const announcementBarData: AnnouncementBarHydrationData = {
-      announcementBarConfig: headerAnnouncementConfig ?? { ...DEFAULT_ANNOUNCEMENT_BAR_CONFIG },
-      announcementContentConfig: headerAnnouncementContent ?? { ...DEFAULT_ANNOUNCEMENT_CONTENT_CONFIG }
-    }
-    announcementBar.hydrateAnnouncementBar(announcementBarData)
+	    const headerHidden = headerConfig.settings.visible === false
+	    newVisibility.header = headerHidden
+	
+	    // Hydrate announcement bars (header-level)
+	    const headerAnnouncementBars = (headerConfig.settings as SectionSettings).announcementBars
+	    const announcementBarsData: AnnouncementBarsHydrationData = {
+	      announcementBars: Array.isArray(headerAnnouncementBars) ? headerAnnouncementBars : []
+	    }
+	    announcementBarsManager.hydrateAnnouncementBars(announcementBarsData)
 
     const headerPadding = headerConfig.settings.padding
     if (headerPadding) {
@@ -647,10 +661,6 @@ export function useWorkspace({
           right: 0
         }
       }
-    }
-
-    if (!('announcement-bar' in newVisibility)) {
-      newVisibility['announcement-bar'] = false
     }
 
     // Hydrate section manager
@@ -674,9 +684,16 @@ export function useWorkspace({
       ...(typeof packageJsonValue === 'string' ? { packageJson: packageJsonValue } : {})
     }
     workspaceSnapshotRef.current = snapshot
+
+    if (invalidCustomSections.length > 0) {
+      const preview = invalidCustomSections.slice(0, 3).join(', ')
+      const suffix = invalidCustomSections.length > 3 ? ` +${invalidCustomSections.length - 3} more` : ''
+      showToast('Invalid saved settings', `Reset to defaults: ${preview}${suffix}`, 'error')
+    }
+
     return snapshot
     // eslint-disable-next-line react-hooks/exhaustive-deps -- stable refs from hooks
-  }, [currentPage, sectionManager.definitionIconMap, templateDefaults, templateDefaultsById, sectionManager.hydrateSection, announcementBar.hydrateAnnouncementBar])
+  }, [currentPage, sectionManager.definitionIconMap, templateDefaults, templateDefaultsById, sectionManager.hydrateSection, announcementBarsManager.hydrateAnnouncementBars, showToast])
 
   // Persistence functions
   const loadStoredState = useCallback(() => loadEditorState(currentPage), [currentPage])
@@ -718,13 +735,40 @@ export function useWorkspace({
   }, [buildPageConfig, buildHeaderConfig, buildFooterConfig, resolveWorkspaceState, currentPage, setWorkspaceSnapshot])
 
   const hydrateState = useCallback((state: EditorState) => {
-    const snapshot = hydrateFromEditorState(state)
+    const normalizationEvent = consumeStorageNormalizationEvent()
+    let snapshot: WorkspaceSnapshot
+    try {
+      snapshot = hydrateFromEditorState(state)
+    } catch (error) {
+      logError(error, { scope: 'useWorkspace.hydrateState' })
+      clearDraftDocument()
+      showToast('Workspace reset', 'Invalid draft data. Reverted to last saved.', 'error')
+
+      const recovered = loadStoredState()
+      try {
+        snapshot = hydrateFromEditorState(recovered)
+      } catch (fallbackError) {
+        logError(fallbackError, { scope: 'useWorkspace.hydrateState.fallback' })
+        clearWorkspaceStorage()
+        showToast('Workspace reset', 'Storage was corrupted. Reset to defaults.', 'error')
+        snapshot = hydrateFromEditorState(loadEditorState(currentPage))
+      }
+    }
     externalStateRef.current = {
       headerSettings: snapshot.headerSettings ?? DEFAULT_HEADER_SETTINGS,
       mainSettings: snapshot.mainSettings ?? DEFAULT_MAIN_SETTINGS,
       packageJson: snapshot.packageJson
     }
     setIsHydrated(true)
+
+    if (normalizationEvent) {
+      const sourceLabel = normalizationEvent.source === 'draft-storage' ? 'Draft' : 'Saved'
+      if (normalizationEvent.reason === 'parse') {
+        showToast('Workspace reset', `${sourceLabel} data was corrupted. Reset to defaults.`, 'error')
+      } else {
+        showToast('Workspace updated', `${sourceLabel} data normalized to current schema.`, 'info')
+      }
+    }
 
     const headerSettings = snapshot.headerSettings ?? DEFAULT_HEADER_SETTINGS
     const mainSettings = snapshot.mainSettings ?? DEFAULT_MAIN_SETTINGS
@@ -754,7 +798,7 @@ export function useWorkspace({
       setPackageJson(snapshot.packageJson)
     }
     setWorkspaceHydrated(true)
-  }, [hydrateFromEditorState, setPackageJson])
+  }, [currentPage, hydrateFromEditorState, loadStoredState, setPackageJson, showToast])
 
   const scheduleSave = useCallback(() => {
     if (!isHydrated) {
@@ -864,12 +908,11 @@ export function useWorkspace({
     sectionManager.sectionVisibility,
     sectionManager.footerItems,
     sectionManager.templateItems,
-    sectionManager.sectionPadding,
-    sectionManager.customSections,
-    announcementBar.announcementBarConfig,
-    announcementBar.announcementContentConfig,
-    scheduleSave
-  ])
+	    sectionManager.sectionPadding,
+	    sectionManager.customSections,
+	    announcementBarsManager.announcementBars,
+	    scheduleSave
+	  ])
 
   // Cleanup on unmount
   useEffect(() => {
@@ -1258,13 +1301,13 @@ export function useWorkspace({
     syncFeaturedSectionVisibility: sectionManager.syncFeaturedSectionVisibility,
     applySubheaderSpacing: sectionManager.applySubheaderSpacing,
 
-    // Announcement bar exports
-    announcementBarConfig: announcementBar.announcementBarConfig,
-    updateAnnouncementBarConfig: announcementBar.updateAnnouncementBarConfig,
-    previewAnnouncementBarConfig: announcementBar.previewAnnouncementBarConfig,
-    commitAnnouncementBarConfig: announcementBar.commitAnnouncementBarConfig,
-    announcementContentConfig: announcementBar.announcementContentConfig,
-    updateAnnouncementContentConfig: announcementBar.updateAnnouncementContentConfig,
+    // Announcement bars exports
+    announcementBars: announcementBarsManager.announcementBars,
+    addAnnouncementBar: announcementBarsManager.addAnnouncementBar,
+    removeAnnouncementBar: announcementBarsManager.removeAnnouncementBar,
+    toggleAnnouncementBarHidden: announcementBarsManager.toggleAnnouncementBarHidden,
+    updateAnnouncementBarConfig: announcementBarsManager.updateAnnouncementBarConfig,
+    updateAnnouncementContentConfig: announcementBarsManager.updateAnnouncementContentConfig,
 
     // Workspace actions
     rehydrateWorkspace,

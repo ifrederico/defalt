@@ -32,6 +32,7 @@ export type AnnouncementBarTypographySpacing = 'tight' | 'regular' | 'wide'
 export type AnnouncementBarTypographyCase = 'default' | 'uppercase'
 
 export interface AnnouncementBarConfig {
+  tag: string
   width: AnnouncementBarWidthSetting
   backgroundColor: string
   textColor: string
@@ -53,17 +54,19 @@ export interface AnnouncementBlock {
 }
 
 export interface AnnouncementContentConfig {
-  previewText: string
-  underlineLinks: boolean
-  typographySize: AnnouncementBarTypographySize
-  typographyWeight: AnnouncementBarTypographyWeight
-  typographySpacing: AnnouncementBarTypographySpacing
-  typographyCase: AnnouncementBarTypographyCase
   /** Engine V2: Block array for announcements */
   announcements: AnnouncementBlock[]
 }
 
+export interface AnnouncementBarInstance {
+  id: string
+  hidden: boolean
+  bar: AnnouncementBarConfig
+  content: AnnouncementContentConfig
+}
+
 export const DEFAULT_ANNOUNCEMENT_BAR_CONFIG: AnnouncementBarConfig = {
+  tag: '#announcement-bar',
   width: 'default',
   backgroundColor: '#AC1E3E',
   textColor: '#ffffff',
@@ -74,12 +77,6 @@ export const DEFAULT_ANNOUNCEMENT_BAR_CONFIG: AnnouncementBarConfig = {
 }
 
 export const DEFAULT_ANNOUNCEMENT_CONTENT_CONFIG: AnnouncementContentConfig = {
-  previewText: 'Tag #announcement-bar to a published Ghost page.',
-  underlineLinks: false,
-  typographySize: 'normal',
-  typographyWeight: 'default',
-  typographySpacing: 'regular',
-  typographyCase: 'default',
   announcements: [
     { text: 'Tag #announcement-bar to a published Ghost page.', link: '', typographySize: 'normal', typographyWeight: 'default', typographySpacing: 'regular', typographyCase: 'default' }
   ]
@@ -98,6 +95,7 @@ export interface SectionSettings {
   announcementBarVisible?: boolean
   announcementBarConfig?: AnnouncementBarConfig
   announcementContentConfig?: AnnouncementContentConfig
+  announcementBars?: AnnouncementBarInstance[]
   accentColor?: string
   backgroundColor?: string
   pageLayout?: PageLayoutSetting
@@ -169,6 +167,8 @@ export const CSS_DEFAULT_PADDING: Record<string, number | SectionPadding> = {
   footerSignup: { top: 0, bottom: 160 }
 }
 
+export const DEFAULT_CUSTOM_SECTION_PADDING: SectionPadding = { top: 48, bottom: 48, left: 0, right: 0 }
+
 export const CSS_DEFAULT_MARGIN: Record<string, SectionMargin> = {
   footer: { top: 172 },
   footerBar: { bottom: 100 }
@@ -195,6 +195,19 @@ const THEME_DOCUMENT_VERSION = 1
 const DEFAULT_DOCUMENT_NAME = 'defalt-theme'
 const DRAFT_STORAGE_KEY = `${WORKSPACE_STORAGE_PREFIX}:draft`
 const SAVED_STORAGE_KEY = `${WORKSPACE_STORAGE_PREFIX}:saved`
+
+type StorageNormalizationEvent = {
+  source: 'draft-storage' | 'saved-storage'
+  reason: 'schema' | 'parse'
+}
+
+let pendingStorageNormalizationEvent: StorageNormalizationEvent | null = null
+
+export const consumeStorageNormalizationEvent = (): StorageNormalizationEvent | null => {
+  const event = pendingStorageNormalizationEvent
+  pendingStorageNormalizationEvent = null
+  return event
+}
 
 const PAGE_KEY_MAP: Record<PageType, string> = {
   home: 'homepage',
@@ -242,9 +255,7 @@ const createDefaultHeaderSection = (): SectionConfig => ({
     stickyHeaderMode: DEFAULT_HEADER_SETTINGS.stickyHeaderMode,
     searchEnabled: DEFAULT_HEADER_SETTINGS.searchEnabled,
     typographyCase: DEFAULT_HEADER_SETTINGS.typographyCase,
-    announcementBarVisible: true,
-    announcementBarConfig: { ...DEFAULT_ANNOUNCEMENT_BAR_CONFIG },
-    announcementContentConfig: { ...DEFAULT_ANNOUNCEMENT_CONTENT_CONFIG }
+    announcementBars: []
   }
 })
 
@@ -385,6 +396,19 @@ export const normalizeAnnouncementBarConfig = (value: unknown, fallback: Announc
     return { ...fallback }
   }
   const raw = value as Record<string, unknown>
+  const tag = (() => {
+    if (typeof raw.tag !== 'string') {
+      return fallback.tag
+    }
+    const trimmed = raw.tag.trim()
+    if (!trimmed) {
+      return fallback.tag
+    }
+    if (trimmed.startsWith('#')) {
+      return trimmed
+    }
+    return `#${trimmed.replace(/^#+/, '')}`
+  })()
   const width = raw.width === 'narrow' ? 'narrow' : 'default'
 
   const dividerThickness = clampNumber(typeof raw.dividerThickness === 'number' ? raw.dividerThickness : 0, 0, 5)
@@ -392,6 +416,7 @@ export const normalizeAnnouncementBarConfig = (value: unknown, fallback: Announc
   const paddingBottom = clampNumber(typeof raw.paddingBottom === 'number' ? raw.paddingBottom : fallback.paddingBottom, 0, 100)
 
   return {
+    tag,
     width,
     backgroundColor: sanitizeHexColorValue(raw.backgroundColor, fallback.backgroundColor),
     textColor: sanitizeHexColorValue(raw.textColor, fallback.textColor),
@@ -440,6 +465,11 @@ export const normalizeAnnouncementContentConfig = (
     return null
   }
 
+  const legacyTypographySize = parseSize(raw.typographySize) ?? parseSize(legacy?.typographySize)
+  const legacyTypographyWeight = parseWeight(raw.typographyWeight) ?? parseWeight(legacy?.typographyWeight)
+  const legacyTypographySpacing = parseSpacing(raw.typographySpacing) ?? parseSpacing(legacy?.typographySpacing)
+  const legacyTypographyCase = parseCase(raw.typographyCase) ?? parseCase(legacy?.typographyCase)
+
   // Parse announcements array
   const parseAnnouncements = (input: unknown): AnnouncementBlock[] => {
     if (!Array.isArray(input)) return fallback.announcements
@@ -452,32 +482,15 @@ export const normalizeAnnouncementContentConfig = (
         text: typeof obj.text === 'string' ? obj.text : '',
         link: typeof obj.link === 'string' ? obj.link : '',
         // Typography settings with defaults
-        typographySize: parseSize(obj.typographySize) ?? 'normal',
-        typographyWeight: parseWeight(obj.typographyWeight) ?? 'default',
-        typographySpacing: parseSpacing(obj.typographySpacing) ?? 'regular',
-        typographyCase: parseCase(obj.typographyCase) ?? 'default'
+        typographySize: parseSize(obj.typographySize) ?? legacyTypographySize ?? 'normal',
+        typographyWeight: parseWeight(obj.typographyWeight) ?? legacyTypographyWeight ?? 'default',
+        typographySpacing: parseSpacing(obj.typographySpacing) ?? legacyTypographySpacing ?? 'regular',
+        typographyCase: parseCase(obj.typographyCase) ?? legacyTypographyCase ?? 'default'
       }
     })
   }
 
-  const previewText =
-    typeof raw.previewText === 'string'
-      ? raw.previewText
-      : typeof raw.text === 'string'
-        ? raw.text
-        : fallback.previewText
-
   return {
-    previewText,
-    underlineLinks: typeof raw.underlineLinks === 'boolean'
-      ? raw.underlineLinks
-      : typeof legacy?.underlineLinks === 'boolean'
-        ? Boolean(legacy.underlineLinks)
-        : fallback.underlineLinks,
-    typographySize: parseSize(raw.typographySize) ?? parseSize(legacy?.typographySize) ?? fallback.typographySize,
-    typographyWeight: parseWeight(raw.typographyWeight) ?? parseWeight(legacy?.typographyWeight) ?? fallback.typographyWeight,
-    typographySpacing: parseSpacing(raw.typographySpacing) ?? parseSpacing(legacy?.typographySpacing) ?? fallback.typographySpacing,
-    typographyCase: parseCase(raw.typographyCase) ?? parseCase(legacy?.typographyCase) ?? fallback.typographyCase,
     announcements: parseAnnouncements(raw.announcements)
   }
 }
@@ -492,6 +505,113 @@ export const normalizeAnnouncementContentConfig = (
 const normalizeHeaderSection = (section: SectionConfig | undefined): SectionConfig => {
   const defaults = createDefaultHeaderSection()
   const settings = (section?.settings ?? {}) as Record<string, unknown>
+  const announcementBarVisible = typeof settings.announcementBarVisible === 'boolean'
+    ? settings.announcementBarVisible
+    : undefined
+
+  const normalizeAnnouncementBars = (input: unknown): AnnouncementBarInstance[] => {
+    if (!Array.isArray(input)) {
+      return []
+    }
+
+    const usedIds = new Set<string>()
+    const defaultAnnouncement = DEFAULT_ANNOUNCEMENT_CONTENT_CONFIG.announcements[0]
+
+    const createId = (desired: string | null) => {
+      const base = desired && desired.trim().length ? desired.trim() : 'announcement-bar'
+      if (!usedIds.has(base)) {
+        usedIds.add(base)
+        return base
+      }
+      let suffix = 2
+      let next = `${base}-${suffix}`
+      while (usedIds.has(next)) {
+        suffix += 1
+        next = `${base}-${suffix}`
+      }
+      usedIds.add(next)
+      return next
+    }
+
+    return input
+      .map((raw): AnnouncementBarInstance | null => {
+        if (!raw || typeof raw !== 'object') {
+          return null
+        }
+        const obj = raw as Record<string, unknown>
+        const rawId = typeof obj.id === 'string' ? obj.id : null
+        const id = createId(rawId)
+
+        const hidden = typeof obj.hidden === 'boolean'
+          ? obj.hidden
+          : typeof obj.visible === 'boolean'
+            ? !obj.visible
+            : false
+
+        const defaultBar = { ...DEFAULT_ANNOUNCEMENT_BAR_CONFIG, tag: `#${id}` }
+        const bar = normalizeAnnouncementBarConfig(
+          (obj.bar as AnnouncementBarConfig | undefined) ?? defaultBar,
+          defaultBar
+        )
+
+        const contentRaw = obj.content as AnnouncementContentConfig | undefined
+        const contentNormalized = normalizeAnnouncementContentConfig(
+          contentRaw ?? DEFAULT_ANNOUNCEMENT_CONTENT_CONFIG,
+          DEFAULT_ANNOUNCEMENT_CONTENT_CONFIG,
+          obj.bar
+        )
+
+        const announcement =
+          contentNormalized.announcements[0] ?? defaultAnnouncement
+
+        return {
+          id,
+          hidden,
+          bar,
+          content: {
+            ...contentNormalized,
+            announcements: [announcement]
+          }
+        }
+      })
+      .filter((item): item is AnnouncementBarInstance => item !== null)
+  }
+
+  const announcementBars = (() => {
+    const normalized = normalizeAnnouncementBars(settings.announcementBars)
+    if (normalized.length > 0) {
+      return normalized
+    }
+
+    if (announcementBarVisible === undefined) {
+      return []
+    }
+
+    const legacyBar = normalizeAnnouncementBarConfig(
+      (settings.announcementBarConfig as AnnouncementBarConfig | undefined) ?? DEFAULT_ANNOUNCEMENT_BAR_CONFIG,
+      DEFAULT_ANNOUNCEMENT_BAR_CONFIG
+    )
+    const legacyContent = normalizeAnnouncementContentConfig(
+      (settings.announcementContentConfig as AnnouncementContentConfig | undefined) ?? DEFAULT_ANNOUNCEMENT_CONTENT_CONFIG,
+      DEFAULT_ANNOUNCEMENT_CONTENT_CONFIG,
+      settings.announcementBarConfig
+    )
+
+    const announcements = legacyContent.announcements.length > 0
+      ? legacyContent.announcements
+      : DEFAULT_ANNOUNCEMENT_CONTENT_CONFIG.announcements
+
+    return announcements.map((announcement, idx) => ({
+      id: idx === 0 ? 'announcement-bar' : `announcement-bar-${idx + 1}`,
+      hidden: !announcementBarVisible,
+      bar: { ...legacyBar, tag: idx === 0 ? '#announcement-bar' : `#announcement-bar-${idx + 1}` },
+      content: {
+        ...legacyContent,
+        announcements: [announcement]
+      }
+    }))
+  })()
+
   return {
     type: 'header',
     settings: {
@@ -501,16 +621,7 @@ const normalizeHeaderSection = (section: SectionConfig | undefined): SectionConf
       stickyHeaderMode: (settings.stickyHeaderMode as StickyHeaderModeSetting) ?? defaults.settings.stickyHeaderMode,
       searchEnabled: normalizeBoolean(settings.searchEnabled, defaults.settings.searchEnabled ?? true),
       typographyCase: (settings.typographyCase as HeaderTypographyCaseSetting) ?? defaults.settings.typographyCase,
-      announcementBarVisible: normalizeBoolean(settings.announcementBarVisible, defaults.settings.announcementBarVisible ?? true),
-      announcementBarConfig: normalizeAnnouncementBarConfig(
-        (settings.announcementBarConfig as AnnouncementBarConfig | undefined) ?? defaults.settings.announcementBarConfig!,
-        defaults.settings.announcementBarConfig!
-      ),
-      announcementContentConfig: normalizeAnnouncementContentConfig(
-        (settings.announcementContentConfig as AnnouncementContentConfig | undefined) ?? defaults.settings.announcementContentConfig!,
-        defaults.settings.announcementContentConfig!,
-        settings.announcementBarConfig
-      ),
+      announcementBars,
       accentColor: typeof settings.accentColor === 'string' ? settings.accentColor : defaults.settings.accentColor,
       backgroundColor: typeof settings.backgroundColor === 'string' ? settings.backgroundColor : defaults.settings.backgroundColor
     }
@@ -731,10 +842,12 @@ const readDraftDocument = (): ThemeDocument | null => {
       return normalizeThemeDocument(validated)
     }
     const normalized = normalizeThemeDocument(parsed)
+    pendingStorageNormalizationEvent = { source: 'draft-storage', reason: 'schema' }
     storage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(normalized))
     return normalized
   } catch (error) {
     logError(error, { scope: 'themeConfig.loadDraftDocument' })
+    pendingStorageNormalizationEvent = { source: 'draft-storage', reason: 'parse' }
     storage.removeItem(DRAFT_STORAGE_KEY)
     return null
   }
@@ -759,10 +872,12 @@ const readSavedDocument = (): ThemeDocument => {
       return normalizeThemeDocument(validated)
     }
     const normalized = normalizeThemeDocument(parsed)
+    pendingStorageNormalizationEvent = { source: 'saved-storage', reason: 'schema' }
     storage.setItem(SAVED_STORAGE_KEY, JSON.stringify(normalized))
     return normalized
   } catch (error) {
     logError(error, { scope: 'themeConfig.loadSavedDocument' })
+    pendingStorageNormalizationEvent = { source: 'saved-storage', reason: 'parse' }
     storage.removeItem(SAVED_STORAGE_KEY)
     return clone(DEFAULT_THEME_DOCUMENT)
   }
@@ -1062,4 +1177,3 @@ export const CONFIG_TO_ID_MAP: Record<string, string> = {
   footerBar: 'footerBar',
   footerSignup: 'footerSignup'
 }
-

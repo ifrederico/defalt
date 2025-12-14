@@ -2,8 +2,8 @@
  * Announcement Bar Section Schema
  *
  * Engine V2: Block Architecture
- * - Parent (Bar): Controls layout, colors, padding, and global typography (size, spacing)
- * - Child (Block): Controls content, link, and per-item styling (weight, color override)
+ * - Parent (Bar): Controls layout, colors, padding
+ * - Child (Block): Controls content, link, and typography
  *
  * Content can be sourced from a Ghost page tagged with #announcement-bar or configured
  * directly in the blocks.
@@ -50,7 +50,6 @@ export const announcementBarBlocksSchema: BlockSchema[] = [
         type: 'textarea',
         id: 'text',
         label: 'Text',
-        default: 'Your announcement here'
       },
       // Typography
       {
@@ -62,7 +61,6 @@ export const announcementBarBlocksSchema: BlockSchema[] = [
         type: 'select',
         id: 'typographySize',
         label: 'Size',
-        default: 'normal',
         options: [
           { label: 'Small', value: 'small' },
           { label: 'Normal', value: 'normal' },
@@ -74,7 +72,6 @@ export const announcementBarBlocksSchema: BlockSchema[] = [
         type: 'select',
         id: 'typographyWeight',
         label: 'Weight',
-        default: 'default',
         options: [
           { label: 'Light', value: 'light' },
           { label: 'Default', value: 'default' },
@@ -85,7 +82,6 @@ export const announcementBarBlocksSchema: BlockSchema[] = [
         type: 'select',
         id: 'typographySpacing',
         label: 'Spacing',
-        default: 'regular',
         options: [
           { label: 'Tight', value: 'tight' },
           { label: 'Regular', value: 'regular' },
@@ -96,7 +92,6 @@ export const announcementBarBlocksSchema: BlockSchema[] = [
         type: 'radio',
         id: 'typographyCase',
         label: 'Case',
-        default: 'default',
         iconOnly: true,
         options: [
           { label: 'Case sensitive', value: 'default', icon: 'CaseSensitive' },
@@ -124,17 +119,8 @@ export const announcementBarConfigSchema = z.object({
   paddingTop: z.number().min(0).max(100).default(8),
   paddingBottom: z.number().min(0).max(100).default(8),
 
-  // --- Global Typography (Parent controls for consistent bar height) ---
-  typographySize: z.enum(['small', 'normal', 'large', 'x-large']).default('normal'),
-  typographySpacing: z.enum(['tight', 'regular', 'wide']).default('regular'),
-  typographyCase: z.enum(['default', 'uppercase']).default('default'),
-  underlineLinks: z.boolean().default(true),
-
   // --- Blocks Array (Announcements) ---
-  announcements: z.array(announcementBlockConfigSchema).default([]),
-
-  // --- Legacy Support (deprecated, kept for migration) ---
-  previewText: z.string().optional()
+  announcements: z.array(announcementBlockConfigSchema).default([])
 })
 
 export type AnnouncementBarSectionConfig = z.infer<typeof announcementBarConfigSchema>
@@ -155,7 +141,6 @@ export const announcementBarSettingsSchema: SettingSchema[] = [
     type: 'radio',
     id: 'width',
     label: 'Width',
-    default: 'default',
     options: [
       { label: 'Default', value: 'default' },
       { label: 'Narrow', value: 'narrow' }
@@ -165,19 +150,11 @@ export const announcementBarSettingsSchema: SettingSchema[] = [
     type: 'color',
     id: 'backgroundColor',
     label: 'Background color',
-    default: '#AC1E3E'
   },
   {
     type: 'color',
     id: 'textColor',
     label: 'Text color',
-    default: '#ffffff'
-  },
-  {
-    type: 'checkbox',
-    id: 'underlineLinks',
-    label: 'Underline links',
-    default: true
   },
   {
     type: 'range',
@@ -186,14 +163,12 @@ export const announcementBarSettingsSchema: SettingSchema[] = [
     min: 0,
     max: 5,
     step: 1,
-    default: 0,
     unit: 'px'
   },
   {
     type: 'color',
     id: 'dividerColor',
     label: 'Divider color',
-    default: '#e5e7eb'
   },
 
   // --- Padding Settings ---
@@ -209,7 +184,6 @@ export const announcementBarSettingsSchema: SettingSchema[] = [
     min: 0,
     max: 100,
     step: 1,
-    default: 8,
     unit: 'px'
   },
   {
@@ -219,7 +193,6 @@ export const announcementBarSettingsSchema: SettingSchema[] = [
     min: 0,
     max: 100,
     step: 1,
-    default: 8,
     unit: 'px'
   }
 ]

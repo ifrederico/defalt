@@ -26,7 +26,7 @@ import {
   highlightHoveredSection,
   scrollToSection,
   applyCustomCss,
-  syncAnnouncementBar,
+  syncAnnouncementBars,
   syncTemplateSections,
   updateColorVariables,
 } from './handlebars/domManipulation'
@@ -36,9 +36,9 @@ import {
   DEFAULT_ANNOUNCEMENT_CONTENT_CONFIG,
   normalizeAnnouncementBarConfig,
   normalizeAnnouncementContentConfig,
-  type AnnouncementBarConfig,
-  type AnnouncementContentConfig
+  type AnnouncementBarInstance
 } from '@defalt/utils/config/themeConfig'
+import { BASE_PATH } from '@defalt/utils/env/basePath'
 import { sanitizeHexColor, sanitizeToken, sanitizeCustomCss } from '@defalt/utils/security/sanitizers'
 import type { SectionInstance } from '@defalt/sections/engine'
 import {
@@ -49,8 +49,47 @@ import {
   sectionDefinitions as engineSectionDefinitions,
   type AnnouncementBarSectionConfig
 } from '@defalt/sections/engine'
+import { formatInternalTag, toApiTagSlug, parseGhostCardIdSuffix } from '@defalt/sections/utils/tagUtils'
 
-const BASE_PATH = (import.meta.env.VITE_BASE_PATH ?? '/').replace(/\/$/, '')
+const resolveContainerPaddingX = (contentWidth: unknown) =>
+  contentWidth === 'none' ? '0px' : 'var(--container-gap, 24px)'
+
+const resolveImageColumns = (imageWidth: unknown) => {
+  if (imageWidth === '2/3') return { imageColumn: '2fr', textColumn: '1fr' }
+  if (imageWidth === '3/4') return { imageColumn: '3fr', textColumn: '1fr' }
+  return { imageColumn: '1fr', textColumn: '1fr' }
+}
+
+const resolveImageAspectRatio = (imageAspect: unknown): string => {
+  if (imageAspect === 'square') return '1 / 1'
+  if (imageAspect === 'portrait') return '3 / 4'
+  if (imageAspect === 'wide') return '16 / 9'
+  if (imageAspect === 'tall') return '9 / 16'
+  if (imageAspect === 'landscape') return '4 / 3'
+  return ''
+}
+
+const toTagFilter = (internalTag: string) => `tag:${toApiTagSlug(internalTag)}`
+
+const resolveHeroFallbackTag = (sectionId: string) => {
+  const normalized = sectionId.trim().toLowerCase()
+  const match = normalized.match(/^(?:hero-defalt|header-defalt|hero)(?:-(\d+))?$/)
+  const suffix = match?.[1]
+  return suffix ? `#hero-${suffix}` : '#hero'
+}
+
+const resolveImageWithTextFallbackTag = (sectionId: string) => {
+  const normalized = sectionId.trim().toLowerCase()
+  const match = normalized.match(/^image-with-text(?:-(\d+))?$/)
+  const suffix = match?.[1]
+  return suffix ? `#image-with-text-${suffix}` : '#image-with-text'
+}
+
+const resolveGhostCardsFallbackTag = (sectionId: string) => {
+  const suffix = parseGhostCardIdSuffix(sectionId)
+  if (suffix <= 1) return '#ghost-card'
+  return `#ghost-card-${suffix}`
+}
 
 interface HandlebarsRendererProps {
   accentColor: string
@@ -73,8 +112,7 @@ interface HandlebarsRendererProps {
   customTemplateSections?: SectionInstance[]
   aiSections?: Array<{ id: string, html: string, name?: string, hidden?: boolean }>
   customSettingsOverrides?: Record<string, unknown>
-  announcementBarConfig?: AnnouncementBarConfig
-  announcementContentConfig?: AnnouncementContentConfig
+  announcementBars?: AnnouncementBarInstance[]
   selectedSectionId?: string | null
   hoveredSectionId?: string | null
   scrollToSectionId?: string | null
@@ -103,8 +141,7 @@ export function HandlebarsRenderer({
   customTemplateSections = [],
   aiSections = [],
   customSettingsOverrides,
-  announcementBarConfig,
-  announcementContentConfig,
+  announcementBars = [],
   selectedSectionId,
   hoveredSectionId,
   scrollToSectionId,
@@ -135,14 +172,25 @@ export function HandlebarsRenderer({
     () => sanitizeCustomCss(customCss),
     [customCss]
   )
-  const sanitizedAnnouncementBarConfig = useMemo(
-    () => normalizeAnnouncementBarConfig(announcementBarConfig ?? DEFAULT_ANNOUNCEMENT_BAR_CONFIG, DEFAULT_ANNOUNCEMENT_BAR_CONFIG),
-    [announcementBarConfig]
-  )
-  const sanitizedAnnouncementContentConfig = useMemo(
-    () => normalizeAnnouncementContentConfig(announcementContentConfig ?? DEFAULT_ANNOUNCEMENT_CONTENT_CONFIG, DEFAULT_ANNOUNCEMENT_CONTENT_CONFIG),
-    [announcementContentConfig]
-  )
+  const sanitizedAnnouncementBars = useMemo(() => {
+    const fallbackAnnouncement = DEFAULT_ANNOUNCEMENT_CONTENT_CONFIG.announcements[0]
+    return announcementBars.map((entry) => {
+      const bar = normalizeAnnouncementBarConfig(entry.bar ?? DEFAULT_ANNOUNCEMENT_BAR_CONFIG, DEFAULT_ANNOUNCEMENT_BAR_CONFIG)
+      const content = normalizeAnnouncementContentConfig(entry.content ?? DEFAULT_ANNOUNCEMENT_CONTENT_CONFIG, DEFAULT_ANNOUNCEMENT_CONTENT_CONFIG, entry.bar)
+      const announcements = content.announcements.length > 0
+        ? content.announcements
+        : [fallbackAnnouncement]
+      return {
+        id: entry.id,
+        hidden: entry.hidden === true,
+        bar,
+        content: {
+          ...content,
+          announcements: announcements.slice(0, 1)
+        }
+      }
+    })
+  }, [announcementBars])
   const subheaderStyleForPreview = useMemo(() => {
     const overrideStyle = typeof customSettingsOverrides?.header_style === 'string'
       ? String(customSettingsOverrides.header_style)
@@ -198,7 +246,7 @@ export function HandlebarsRenderer({
   const [templatesReady, setTemplatesReady] = useState(false)
   useEffect(() => {
     const templates = engineSectionDefinitions
-      .filter(def => def.templatePath)
+      .filter((def): def is (typeof def & { templatePath: string }) => typeof def.templatePath === 'string' && def.templatePath.length > 0)
       .map(def => ({ sectionId: def.id, templatePath: def.templatePath }))
 
     if (templates.length === 0) {
@@ -231,10 +279,9 @@ export function HandlebarsRenderer({
         if (cancelled) return
 
         const templatePath = getSectionTemplatePath(section.definitionId)
-        // Check if section manages its own padding (showPaddingControls: false)
-        // If so, don't pass global padding - let the section's config values take over
         const sectionDef = getSectionDefinition(section.definitionId)
-        const shouldUseGlobalPadding = sectionDef?.showPaddingControls !== false
+        const paddingControls = sectionDef?.paddingControls ?? (sectionDef?.showPaddingControls === false ? 'none' : 'vertical')
+        const shouldUseGlobalPadding = paddingControls !== 'none'
         const padding = shouldUseGlobalPadding ? sectionPadding[section.id] : undefined
 
         let html: string
@@ -242,11 +289,74 @@ export function HandlebarsRenderer({
         if (templatePath) {
           // Use the new engine with HBS templates
           try {
-            html = await renderSection(
-              section.definitionId,
-              templatePath,
-              section.config as Record<string, unknown>,
-              { padding, pages: previewPages }
+            const baseConfig = section.config as Record<string, unknown>
+            const contentWidth = baseConfig.contentWidth
+            const containerPaddingX = resolveContainerPaddingX(contentWidth)
+
+            const renderConfig: Record<string, unknown> = {
+              ...baseConfig,
+              sectionId: section.id,
+              containerPaddingX
+            }
+
+            if (section.definitionId === 'hero') {
+              const rawTag = baseConfig.ghostPageTag
+              const internalTag = formatInternalTag(rawTag) || resolveHeroFallbackTag(section.id)
+              const imageOnRight = baseConfig.invert === true || baseConfig.imagePosition === 'right'
+              const { imageColumn, textColumn } = resolveImageColumns(baseConfig.imageWidth)
+              const imageAspectRatio = resolveImageAspectRatio(baseConfig.imageAspect)
+              renderConfig.internalTag = internalTag
+              renderConfig.tagFilter = toTagFilter(internalTag)
+              renderConfig.imageOnRight = imageOnRight
+              renderConfig.imageColumn = imageColumn
+              renderConfig.textColumn = textColumn
+              renderConfig.imageAspectRatio = imageAspectRatio
+            }
+
+            if (section.definitionId === 'image-with-text') {
+              const rawTag = baseConfig.ghostPageTag
+              const internalTag = formatInternalTag(rawTag) || resolveImageWithTextFallbackTag(section.id)
+              const imageOnRight = baseConfig.invert === true || baseConfig.imagePosition === 'right'
+              const { imageColumn, textColumn } = resolveImageColumns(baseConfig.imageWidth)
+              const imageAspectRatio = resolveImageAspectRatio(baseConfig.imageAspect)
+              renderConfig.internalTag = internalTag
+              renderConfig.tagFilter = toTagFilter(internalTag)
+              renderConfig.imageOnRight = imageOnRight
+              renderConfig.imageColumn = imageColumn
+              renderConfig.textColumn = textColumn
+              renderConfig.imageAspectRatio = imageAspectRatio
+            }
+
+            if (section.definitionId === 'ghostCards') {
+              const rawTag = baseConfig.ghostPageTag
+              const internalTag = formatInternalTag(rawTag) || resolveGhostCardsFallbackTag(section.id)
+              const tagFilter = toTagFilter(internalTag)
+              renderConfig.internalTag = internalTag
+              renderConfig.tagFilter = tagFilter
+              renderConfig.hideTagFilter = `tag:hash-cards-hide+${tagFilter}`
+            }
+
+	            if (section.definitionId === 'ghostGrid') {
+	              const left = formatInternalTag(baseConfig.tagLeft) || '#grid-left'
+	              const right = formatInternalTag(baseConfig.tagRight) || '#grid-right'
+	              const leftFilter = toTagFilter(left)
+	              const rightFilter = toTagFilter(right)
+              renderConfig.internalTagLeft = left
+              renderConfig.internalTagRight = right
+              renderConfig.leftTagFilter = leftFilter
+              renderConfig.rightTagFilter = rightFilter
+              renderConfig.anyTagFilter = `${leftFilter},${rightFilter}`
+	              renderConfig.hideTagFilter = `tag:hash-cards-hide+${leftFilter},tag:hash-cards-hide+${rightFilter}`
+	            }
+
+	            renderConfig.isPreview = true
+	            renderConfig.placeholderImageUrl = `${BASE_PATH}/sections/placeholder.jpg`
+
+	            html = await renderSection(
+	              section.definitionId,
+	              templatePath,
+	              renderConfig,
+	              { padding, pages: previewPages }
             )
           } catch (err) {
             console.warn(`[HandlebarsRenderer] Failed to render ${section.definitionId}:`, err)
@@ -291,61 +401,70 @@ export function HandlebarsRenderer({
     [renderedTemplateSections, aiSections, hiddenSections]
   )
 
-  // Render announcement bar using the new engine
-  const [renderedAnnouncementBar, setRenderedAnnouncementBar] = useState<string>('')
-
-  // Convert legacy configs to unified announcement bar config
-  const announcementBarSectionConfig = useMemo<AnnouncementBarSectionConfig>(() => ({
-    width: sanitizedAnnouncementBarConfig.width,
-    backgroundColor: sanitizedAnnouncementBarConfig.backgroundColor,
-    textColor: sanitizedAnnouncementBarConfig.textColor,
-    paddingTop: sanitizedAnnouncementBarConfig.paddingTop,
-    paddingBottom: sanitizedAnnouncementBarConfig.paddingBottom,
-    dividerThickness: sanitizedAnnouncementBarConfig.dividerThickness,
-    dividerColor: sanitizedAnnouncementBarConfig.dividerColor,
-    typographySize: sanitizedAnnouncementContentConfig.typographySize,
-    typographyWeight: sanitizedAnnouncementContentConfig.typographyWeight,
-    typographySpacing: sanitizedAnnouncementContentConfig.typographySpacing,
-    typographyCase: sanitizedAnnouncementContentConfig.typographyCase,
-    underlineLinks: sanitizedAnnouncementContentConfig.underlineLinks,
-    previewText: sanitizedAnnouncementContentConfig.previewText,
-    announcements: sanitizedAnnouncementContentConfig.announcements
-  }), [sanitizedAnnouncementBarConfig, sanitizedAnnouncementContentConfig])
+  const [renderedAnnouncementBars, setRenderedAnnouncementBars] = useState<Array<{ id: string; html: string; hidden: boolean }>>([])
 
   useEffect(() => {
     if (!templatesReady) return
 
     let cancelled = false
 
-    const renderAnnouncementBar = async () => {
+    const renderAnnouncementBars = async () => {
       const templatePath = getSectionTemplatePath('announcement-bar')
       if (!templatePath) {
         console.warn('[HandlebarsRenderer] No template path for announcement-bar')
+        if (!cancelled) {
+          setRenderedAnnouncementBars([])
+        }
         return
       }
 
       try {
-        const html = await renderSection(
-          'announcement-bar',
-          templatePath,
-          announcementBarSectionConfig as Record<string, unknown>,
-          { padding: { top: announcementBarSectionConfig.paddingTop, bottom: announcementBarSectionConfig.paddingBottom } }
-        )
         if (!cancelled) {
-          // Only update state if HTML actually changed to reduce flashing
-          setRenderedAnnouncementBar(prev => prev === html ? prev : html)
+          const results = await Promise.all(
+            sanitizedAnnouncementBars.map(async (bar) => {
+              const config = {
+                tag: bar.bar.tag,
+                sectionId: bar.id,
+                width: bar.bar.width,
+                backgroundColor: bar.bar.backgroundColor,
+                textColor: bar.bar.textColor,
+                paddingTop: bar.bar.paddingTop,
+                paddingBottom: bar.bar.paddingBottom,
+                dividerThickness: bar.bar.dividerThickness,
+                dividerColor: bar.bar.dividerColor,
+                announcements: bar.content.announcements
+              } satisfies AnnouncementBarSectionConfig & { sectionId: string }
+
+              try {
+                const html = await renderSection(
+                  'announcement-bar',
+                  templatePath,
+                  config as unknown as Record<string, unknown>,
+                  { padding: { top: config.paddingTop, bottom: config.paddingBottom } }
+                )
+                return { id: bar.id, html, hidden: bar.hidden }
+              } catch (err) {
+                console.warn('[HandlebarsRenderer] Failed to render announcement-bar:', err)
+                return { id: bar.id, html: '', hidden: bar.hidden }
+              }
+            })
+          )
+
+          if (!cancelled) {
+            setRenderedAnnouncementBars(results)
+          }
         }
       } catch (err) {
         console.warn('[HandlebarsRenderer] Failed to render announcement-bar:', err)
       }
     }
 
-    void renderAnnouncementBar()
+    void renderAnnouncementBars()
 
     return () => {
       cancelled = true
     }
-  }, [templatesReady, announcementBarSectionConfig])
+  }, [templatesReady, sanitizedAnnouncementBars])
 
   const resolvedHiddenSections = useMemo(() => {
     const resolved = { ...hiddenSections }
@@ -377,13 +496,14 @@ export function HandlebarsRenderer({
       return id
     }
 
-    const ids = new Set<string>(['header', 'announcement-bar', 'footer'])
+    const ids = new Set<string>(['header', 'footer'])
+    sanitizedAnnouncementBars.forEach((bar) => ids.add(normalizeSectionId(bar.id)))
     filteredTemplateOrder.forEach((id) => ids.add(normalizeSectionId(id)))
     footerOrder.forEach((id) => ids.add(normalizeSectionId(id)))
     renderedTemplateSections.forEach((section) => ids.add(normalizeSectionId(section.id)))
     aiSections.forEach((section) => ids.add(normalizeSectionId(section.id)))
     return Array.from(ids)
-  }, [filteredTemplateOrder, footerOrder, renderedTemplateSections, aiSections])
+  }, [filteredTemplateOrder, footerOrder, renderedTemplateSections, aiSections, sanitizedAnnouncementBars])
 
   // Keep refs in sync with latest values using useLayoutEffect
   // to ensure they update synchronously before inject effect runs
@@ -540,20 +660,19 @@ export function HandlebarsRenderer({
     injectHtmlIntoIframe(renderedHtml, iframeRef, {
       templateOrder: templateOrderRef.current,
       footerOrder: footerOrderRef.current,
-      headerOptions: {
-        stickyHeaderMode,
-        showSearch,
-        typographyCase,
-        sectionPadding,
-        sectionMargins,
-        subheaderStyle: subheaderStyleForPreview,
-        showFeaturedPosts: showFeaturedForPreview,
-      },
-      announcementBarHtml: renderedAnnouncementBar,
-      announcementBarHidden: hiddenSections['announcement-bar'],
-      customCss: sanitizedCustomCss,
-      customSections: mergedCustomSections,
-      sectionIds: onSectionSelect ? sectionIdsForPreview : undefined,
+	      headerOptions: {
+	        stickyHeaderMode,
+	        showSearch,
+	        typographyCase,
+	        sectionPadding,
+	        sectionMargins,
+	        subheaderStyle: subheaderStyleForPreview,
+	        showFeaturedPosts: showFeaturedForPreview,
+	      },
+	      announcementBars: renderedAnnouncementBars,
+	      customCss: sanitizedCustomCss,
+	      customSections: mergedCustomSections,
+	      sectionIds: onSectionSelect ? sectionIdsForPreview : undefined,
       onSelectSection: onSectionSelect,
       selectedSectionId: selectedSectionId ?? null,
       onNavigate,
@@ -571,25 +690,25 @@ export function HandlebarsRenderer({
 
     const win = doc.defaultView
     const update = () => {
-      applyHeaderCustomizations(doc, {
-        stickyHeaderMode,
-        showSearch,
-        typographyCase,
-        sectionPadding,
-        sectionMargins,
-        subheaderStyle: subheaderStyleForPreview,
-        showFeaturedPosts: showFeaturedForPreview,
-      })
-      syncAnnouncementBar(doc, renderedAnnouncementBar, hiddenSections['announcement-bar'])
-      applyCustomCss(doc, sanitizedCustomCss)
-    }
+	      applyHeaderCustomizations(doc, {
+	        stickyHeaderMode,
+	        showSearch,
+	        typographyCase,
+	        sectionPadding,
+	        sectionMargins,
+	        subheaderStyle: subheaderStyleForPreview,
+	        showFeaturedPosts: showFeaturedForPreview,
+	      })
+	      syncAnnouncementBars(doc, renderedAnnouncementBars)
+	      applyCustomCss(doc, sanitizedCustomCss)
+	    }
 
     if (win) {
       win.requestAnimationFrame(update)
     } else {
       update()
     }
-  }, [stickyHeaderMode, showSearch, typographyCase, sectionPadding, sectionMargins, subheaderStyleForPreview, showFeaturedForPreview, renderedAnnouncementBar, sanitizedCustomCss, hiddenSections])
+	  }, [stickyHeaderMode, showSearch, typographyCase, sectionPadding, sectionMargins, subheaderStyleForPreview, showFeaturedForPreview, renderedAnnouncementBars, sanitizedCustomCss])
 
   // Effect for incremental color/layout updates (no full iframe rewrite)
   // This prevents scroll jumps when only colors change

@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import * as Separator from '@radix-ui/react-separator'
 import { ChevronUp, ChevronDown, CircleHelp } from 'lucide-react'
-import { getSectionDefinition, type SectionConfigSchema } from '@defalt/sections/engine'
+import { getSectionDefinition, type PaddingControls, type SectionConfigSchema } from '@defalt/sections/engine'
 import { SliderField, SettingSection } from '@defalt/ui'
 import { groupSettingsByHeader, renderSettingInput } from './settingsRenderUtils'
 
@@ -11,6 +11,7 @@ type SchemaSectionSettingsProps = {
   padding: { top: number, bottom: number, left?: number, right?: number }
   onPaddingChange?: (direction: 'top' | 'bottom' | 'left' | 'right', value: number) => void
   onPaddingCommit?: (direction: 'top' | 'bottom' | 'left' | 'right', value: number) => void
+  showBlocks?: boolean
   onUpdateConfig: (updater: (config: SectionConfigSchema) => SectionConfigSchema) => void
 }
 
@@ -25,14 +26,30 @@ export function SchemaSectionSettings({
   padding,
   onPaddingChange,
   onPaddingCommit,
+  showBlocks = true,
   onUpdateConfig
 }: SchemaSectionSettingsProps) {
   const definition = useMemo(() => getSectionDefinition(definitionId), [definitionId])
+  const resolvedPaddingControls = useMemo<PaddingControls>(() => {
+    if (!definition) {
+      return 'vertical'
+    }
+    if (definition.paddingControls) {
+      return definition.paddingControls
+    }
+    return definition.showPaddingControls === false ? 'none' : 'vertical'
+  }, [definition])
 
   // Must call all hooks unconditionally before any early returns
   const settings = useMemo(() => definition?.settingsSchema ?? [], [definition])
-  const blocks = useMemo(() => definition?.blocksSchema ?? [], [definition])
+  const blocks = useMemo(() => (showBlocks ? definition?.blocksSchema ?? [] : []), [definition, showBlocks])
   const settingGroups = useMemo(() => groupSettingsByHeader(settings), [settings])
+  const shouldRenderPadding = Boolean(onPaddingChange) && resolvedPaddingControls !== 'none'
+  const paddingInsertIndex = useMemo(
+    () => settingGroups.findIndex((group) => group.title === 'Primary Cards'),
+    [settingGroups]
+  )
+  const shouldInsertPadding = shouldRenderPadding && paddingInsertIndex >= 0
 
   const configRecord = config as Record<string, unknown>
 
@@ -103,6 +120,59 @@ export function SchemaSectionSettings({
       {settingGroups.map((group, groupIdx) => (
         <div key={group.title || `group-${groupIdx}`}>
           {groupIdx > 0 && <Separator.Root className="h-px bg-hover mb-4" />}
+
+          {shouldInsertPadding && groupIdx === paddingInsertIndex && (
+            <>
+              <SettingSection title="Padding">
+                <SliderField
+                  label="Top"
+                  value={padding.top}
+                  min={0}
+                  max={200}
+                  step={1}
+                  unit="px"
+                  onChange={(value) => onPaddingChange?.('top', value)}
+                  onCommit={(value) => onPaddingCommit?.('top', value)}
+                />
+                <SliderField
+                  label="Bottom"
+                  value={padding.bottom}
+                  min={0}
+                  max={200}
+                  step={1}
+                  unit="px"
+                  onChange={(value) => onPaddingChange?.('bottom', value)}
+                  onCommit={(value) => onPaddingCommit?.('bottom', value)}
+                />
+                {resolvedPaddingControls === 'full' && (
+                  <>
+                    <SliderField
+                      label="Left"
+                      value={padding.left ?? 0}
+                      min={0}
+                      max={200}
+                      step={1}
+                      unit="px"
+                      onChange={(value) => onPaddingChange?.('left', value)}
+                      onCommit={(value) => onPaddingCommit?.('left', value)}
+                    />
+                    <SliderField
+                      label="Right"
+                      value={padding.right ?? 0}
+                      min={0}
+                      max={200}
+                      step={1}
+                      unit="px"
+                      onChange={(value) => onPaddingChange?.('right', value)}
+                      onCommit={(value) => onPaddingCommit?.('right', value)}
+                    />
+                  </>
+                )}
+              </SettingSection>
+              <Separator.Root className="h-px bg-hover mb-4" />
+            </>
+          )}
+
           <SettingSection
             title={group.title || 'Settings'}
             action={group.helpUrl ? (
@@ -195,7 +265,7 @@ export function SchemaSectionSettings({
                   </div>
                   {block.settings.map((setting) => (
                     <div key={setting.id} className="space-y-1.5">
-                      {setting.type !== 'header' && setting.type !== 'paragraph' && setting.type !== 'color' && setting.type !== 'checkbox' && setting.type !== 'range' && setting.type !== 'select' && setting.type !== 'radio' && (
+                      {setting.type !== 'header' && setting.type !== 'paragraph' && setting.type !== 'color' && setting.type !== 'checkbox' && setting.type !== 'range' && setting.type !== 'select' && setting.type !== 'radio' && setting.type !== 'cardList' && 'label' in setting && (
                         <label className="font-md text-secondary block">{setting.label}</label>
                       )}
                       {renderSettingInput(setting, item?.[setting.id], (next) => handleBlockChange(block.type, idx, setting.id, next))}
@@ -208,49 +278,58 @@ export function SchemaSectionSettings({
         )
       })}
 
-      {onPaddingChange && (
-        <SettingSection title="Padding">
-          <SliderField
-            label="Top"
-            value={padding.top}
-            min={0}
-            max={200}
-            step={1}
-            unit="px"
-            onChange={(value) => onPaddingChange('top', value)}
-            onCommit={(value) => onPaddingCommit?.('top', value)}
-          />
-          <SliderField
-            label="Bottom"
-            value={padding.bottom}
-            min={0}
-            max={200}
-            step={1}
-            unit="px"
-            onChange={(value) => onPaddingChange('bottom', value)}
-            onCommit={(value) => onPaddingCommit?.('bottom', value)}
-          />
-          <SliderField
-            label="Left"
-            value={padding.left ?? 0}
-            min={0}
-            max={200}
-            step={1}
-            unit="px"
-            onChange={(value) => onPaddingChange('left', value)}
-            onCommit={(value) => onPaddingCommit?.('left', value)}
-          />
-          <SliderField
-            label="Right"
-            value={padding.right ?? 0}
-            min={0}
-            max={200}
-            step={1}
-            unit="px"
-            onChange={(value) => onPaddingChange('right', value)}
-            onCommit={(value) => onPaddingCommit?.('right', value)}
-          />
-        </SettingSection>
+      {shouldRenderPadding && !shouldInsertPadding && (
+        <>
+          {(settingGroups.length > 0 || blocks.length > 0) && (
+            <Separator.Root className="h-px bg-hover" />
+          )}
+          <SettingSection title="Padding">
+            <SliderField
+              label="Top"
+              value={padding.top}
+              min={0}
+              max={200}
+              step={1}
+              unit="px"
+              onChange={(value) => onPaddingChange?.('top', value)}
+              onCommit={(value) => onPaddingCommit?.('top', value)}
+            />
+            <SliderField
+              label="Bottom"
+              value={padding.bottom}
+              min={0}
+              max={200}
+              step={1}
+              unit="px"
+              onChange={(value) => onPaddingChange?.('bottom', value)}
+              onCommit={(value) => onPaddingCommit?.('bottom', value)}
+            />
+            {resolvedPaddingControls === 'full' && (
+              <>
+                <SliderField
+                  label="Left"
+                  value={padding.left ?? 0}
+                  min={0}
+                  max={200}
+                  step={1}
+                  unit="px"
+                  onChange={(value) => onPaddingChange?.('left', value)}
+                  onCommit={(value) => onPaddingCommit?.('left', value)}
+                />
+                <SliderField
+                  label="Right"
+                  value={padding.right ?? 0}
+                  min={0}
+                  max={200}
+                  step={1}
+                  unit="px"
+                  onChange={(value) => onPaddingChange?.('right', value)}
+                  onCommit={(value) => onPaddingCommit?.('right', value)}
+                />
+              </>
+            )}
+          </SettingSection>
+        </>
       )}
     </div>
   )

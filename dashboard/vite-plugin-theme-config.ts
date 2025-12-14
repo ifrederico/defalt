@@ -25,11 +25,8 @@ import {
   applyFooterCustomization,
   applyDefaultTemplateCustomization,
   applyAnnouncementBarCustomization,
-  applyHeroCustomization,
+  applyCustomSectionTemplates,
   applyMainSectionCustomization,
-  applyGhostCardsCustomization,
-  applyGhostGridCustomization,
-  applyImageWithTextCustomization,
 } from './defalt-rendering/theme/exportTheme'
 import type { TemplatePartial } from './defalt-rendering/theme/exportTheme'
 import { THEME_DOCUMENT_FILENAME, normalizeThemeDocument } from './defalt-utils/config/themeConfig'
@@ -272,10 +269,6 @@ export function themeConfigPlugin(): Plugin {
         return true
       }
     })
-
-    // Remove internal-only hero partial so it never ships in export
-    const heroPartialPath = path.join(workspaceThemeDir, 'partials', 'sections', 'defalt-hero.hbs')
-    await fs.rm(heroPartialPath, { force: true })
   }
 
   return {
@@ -504,11 +497,8 @@ export function themeConfigPlugin(): Plugin {
 
               await applyDefaultTemplateCustomization(workspaceThemeDir, themeConfigForAssets)
               await applyAnnouncementBarCustomization(workspaceThemeDir, themeConfigForAssets, document)
-              await applyHeroCustomization(workspaceThemeDir, themeConfigForAssets)
               await applyMainSectionCustomization(workspaceThemeDir, themeConfigForAssets)
-              await applyGhostCardsCustomization(workspaceThemeDir, themeConfigForAssets)
-              await applyGhostGridCustomization(workspaceThemeDir, themeConfigForAssets)
-              await applyImageWithTextCustomization(workspaceThemeDir, themeConfigForAssets)
+              await applyCustomSectionTemplates(workspaceThemeDir, themeConfigForAssets)
               await applyNavigationCustomization(workspaceThemeDir, themeConfigForAssets, document)
               await applyFooterCustomization(workspaceThemeDir, themeConfigForAssets)
 

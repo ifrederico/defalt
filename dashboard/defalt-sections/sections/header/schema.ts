@@ -42,7 +42,6 @@ const appearanceSettings: SettingSchema[] = [
     type: 'select',
     id: 'navigationLayout',
     label: 'Layout',
-    default: 'Logo in the middle',
     options: [
       { label: 'Logo in the middle', value: 'Logo in the middle' },
       { label: 'Logo on the left', value: 'Logo on the left' },
@@ -54,7 +53,6 @@ const appearanceSettings: SettingSchema[] = [
     type: 'select',
     id: 'stickyHeader',
     label: 'Sticky header',
-    default: 'Scroll up',
     options: [
       { label: 'Always', value: 'Always' },
       { label: 'Scroll up', value: 'Scroll up' },
@@ -73,7 +71,6 @@ const searchSettings: SettingSchema[] = [
     type: 'checkbox',
     id: 'searchEnabled',
     label: 'Show search icon',
-    default: true
   }
 ]
 
@@ -87,7 +84,6 @@ const typographySettings: SettingSchema[] = [
     type: 'radio',
     id: 'typographyCase',
     label: 'Case',
-    default: 'default',
     iconOnly: true,
     options: [
       { label: 'Case sensitive', value: 'default', icon: 'CaseSensitive' },

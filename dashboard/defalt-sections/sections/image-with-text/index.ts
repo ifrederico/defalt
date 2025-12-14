@@ -12,13 +12,12 @@ import { imageWithTextDefaults } from './defaults.js'
 
 export const definition: SectionDefinition<typeof imageWithTextConfigSchema> = {
   id: 'image-with-text',
-  label: 'Image with Text',
+  label: 'Image with text',
   description: 'Image alongside text content',
   tag: '#image-text',
   category: 'template',
   defaultVisibility: true,
-  defaultPadding: { top: 48, bottom: 48 },
-  showPaddingControls: false,
+  paddingControls: 'vertical',
   configSchema: imageWithTextConfigSchema,
   settingsSchema: imageWithTextSettingsSchema,
   blocksSchema: undefined,

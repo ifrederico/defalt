@@ -1,6 +1,7 @@
 import Handlebars, { type HelperOptions } from 'handlebars'
 import type { PreviewPost } from '../HandlebarsRenderer.js'
 import type { PreviewData } from './dataResolvers.js'
+import { BASE_PATH } from '@defalt/utils/env/basePath'
 
 interface NavigationMenus {
   primary: Array<{ label: string; href: string; slug?: string; current?: boolean }>
@@ -168,8 +169,7 @@ export function registerGhostHelpers(
   const layoutWidth = pageLayout === 'narrow' ? '720px' : '1120px'
 
   // asset helper - use base path for Railway/production
-  const basePath = (import.meta.env.VITE_BASE_PATH ?? '/').replace(/\/$/, '')
-  const assetBase = `${basePath}/themes/source-complete/assets`
+  const assetBase = `${BASE_PATH}/themes/source-complete/assets`
 
   Handlebars.registerHelper('asset', function (path: string) {
     return `${assetBase}/${path}`
@@ -200,7 +200,7 @@ export function registerGhostHelpers(
   })
 
   // ghost_head helper (outputs meta tags)
-  // Note: kg-card styles (CTA, etc.) are embedded in PREVIEW_INLINE_STYLES in domManipulation.ts
+  // Note: Koenig card styles come from the theme screen.css loaded by domManipulation.ts
   Handlebars.registerHelper('ghost_head', function () {
     return new Handlebars.SafeString(`
       <style>
@@ -288,24 +288,40 @@ export function registerGhostHelpers(
     return item.tags.some((tag) => tag.slug === tagSlug)
   }
 
-  // Parse filter string for tag conditions (e.g., "tag:hash-ghost-card" or "tag:hash-cards-hide+tag:hash-ghost-card")
-  const parseTagFilter = (filter: string): { required: string[]; excluded: string[] } => {
-    const required: string[] = []
-    const excluded: string[] = []
+  type TagFilterClause = { required: string[]; excluded: string[] }
 
-    // Split by + for AND conditions
-    const conditions = filter.split('+')
-    for (const condition of conditions) {
-      const tagMatch = condition.match(/^tag:(.+)$/)
-      if (tagMatch) {
-        required.push(tagMatch[1])
+  // Parse filter string for tag conditions.
+  // Supports OR (comma-separated clauses) and AND (plus-separated conditions) at a basic level.
+  // Example: "tag:hash-cards-hide+tag:hash-grid-left,tag:hash-cards-hide+tag:hash-grid-right"
+  const parseTagFilter = (filter: string): TagFilterClause[] => {
+    const normalized = filter.replace(/[()]/g, '')
+    const clauses = normalized
+      .split(',')
+      .map((clause) => clause.trim())
+      .filter(Boolean)
+
+    return clauses.map((clause) => {
+      const required: string[] = []
+      const excluded: string[] = []
+      const conditions = clause
+        .split('+')
+        .map((condition) => condition.trim())
+        .filter(Boolean)
+
+      for (const condition of conditions) {
+        const tagMatch = condition.match(/^tag:(.+)$/)
+        if (tagMatch) {
+          required.push(tagMatch[1])
+          continue
+        }
+        const excludeTagMatch = condition.match(/^-tag:(.+)$/)
+        if (excludeTagMatch) {
+          excluded.push(excludeTagMatch[1])
+        }
       }
-      const excludeTagMatch = condition.match(/^-tag:(.+)$/)
-      if (excludeTagMatch) {
-        excluded.push(excludeTagMatch[1])
-      }
-    }
-    return { required, excluded }
+
+      return { required, excluded }
+    })
   }
 
   // get helper (supports posts and pages with tag filtering)
@@ -318,22 +334,19 @@ export function registerGhostHelpers(
       let pages = [...previewPages]
       const limit = Number.isFinite(parsedLimit) && parsedLimit > 0 ? parsedLimit : pages.length
 
-      // Handle tag filtering for pages
+      // Handle tag filtering for pages (Ghost filter syntax)
       if (filter && filter.includes('tag:')) {
-        const { required, excluded } = parseTagFilter(filter)
-
-        if (required.length > 0) {
-          pages = pages.filter((page) => required.every((tagSlug) => hasTag(page, tagSlug)))
-        }
-        if (excluded.length > 0) {
-          pages = pages.filter((page) => !excluded.some((tagSlug) => hasTag(page, tagSlug)))
-        }
+        const clauses = parseTagFilter(filter)
+        pages = pages.filter((page) =>
+          clauses.some(({ required, excluded }) => {
+            const hasRequired = required.every((tagSlug) => hasTag(page, tagSlug))
+            const hasExcluded = excluded.some((tagSlug) => hasTag(page, tagSlug))
+            return hasRequired && !hasExcluded
+          })
+        )
       }
 
       const resultSet = pages.slice(0, limit)
-      if (!resultSet.length) {
-        return options.inverse?.(this)
-      }
 
       const frame = Handlebars.createFrame(options.data || {})
       const invocationOptions = { data: frame } as HelperOptions & { blockParams?: unknown[] }
@@ -365,22 +378,19 @@ export function registerGhostHelpers(
         })
       }
     }
-    // Handle tag filtering for posts
+    // Handle tag filtering for posts (Ghost filter syntax)
     if (filter && filter.includes('tag:')) {
-      const { required, excluded } = parseTagFilter(filter)
-
-      if (required.length > 0) {
-        posts = posts.filter((post) => required.every((tagSlug) => hasTag(post as unknown as { tags?: Array<{ slug?: string }> }, tagSlug)))
-      }
-      if (excluded.length > 0) {
-        posts = posts.filter((post) => !excluded.some((tagSlug) => hasTag(post as unknown as { tags?: Array<{ slug?: string }> }, tagSlug)))
-      }
+      const clauses = parseTagFilter(filter)
+      posts = posts.filter((post) =>
+        clauses.some(({ required, excluded }) => {
+          const hasRequired = required.every((tagSlug) => hasTag(post as unknown as { tags?: Array<{ slug?: string }> }, tagSlug))
+          const hasExcluded = excluded.some((tagSlug) => hasTag(post as unknown as { tags?: Array<{ slug?: string }> }, tagSlug))
+          return hasRequired && !hasExcluded
+        })
+      )
     }
 
     const resultSet = posts.slice(0, limit)
-    if (!resultSet.length) {
-      return options.inverse?.(this)
-    }
 
     const frame = Handlebars.createFrame(options.data || {})
     const invocationOptions = { data: frame } as HelperOptions & { blockParams?: unknown[] }

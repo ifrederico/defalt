@@ -2,7 +2,8 @@ import type { MutableRefObject } from 'react'
 import type {
   SectionPadding,
   AnnouncementBarConfig,
-  AnnouncementContentConfig
+  AnnouncementContentConfig,
+  AnnouncementBarInstance
 } from '@defalt/utils/config/themeConfig'
 import type { SidebarItem } from '@defalt/utils/config/configStateDefaults'
 import type { SectionInstance, SectionConfigSchema, listDefinitionsByCategory } from '@defalt/sections/engine'
@@ -133,38 +134,35 @@ export interface SectionHydrationData {
   customSections: Record<string, SectionInstance>
 }
 
-// Announcement Bar Types
+// Announcement Bars Types
 
-export interface AnnouncementBarParams {
+export interface AnnouncementBarsParams {
   executeCommand: (cmd: HistoryCommand) => void
   markAsDirty: () => void
+  showToast: ToastHandler
 }
 
-export interface AnnouncementBarReturn {
+export interface AnnouncementBarsReturn {
   // State
-  announcementBarConfig: AnnouncementBarConfig
-  announcementContentConfig: AnnouncementContentConfig
+  announcementBars: AnnouncementBarInstance[]
 
   // Refs
-  announcementBarConfigRef: MutableRefObject<AnnouncementBarConfig>
-  announcementContentConfigRef: MutableRefObject<AnnouncementContentConfig>
+  announcementBarsRef: MutableRefObject<AnnouncementBarInstance[]>
 
   // Functions
-  updateAnnouncementBarConfig: (updater: (config: AnnouncementBarConfig) => AnnouncementBarConfig) => void
-  updateAnnouncementContentConfig: (updater: (config: AnnouncementContentConfig) => AnnouncementContentConfig) => void
-  // Preview/commit functions for color picker pattern
-  previewAnnouncementBarConfig: (updater: (config: AnnouncementBarConfig) => AnnouncementBarConfig) => void
-  commitAnnouncementBarConfig: () => void
+  addAnnouncementBar: () => string
+  removeAnnouncementBar: (id: string) => void
+  toggleAnnouncementBarHidden: (id: string, forceHidden?: boolean) => void
+  updateAnnouncementBarConfig: (id: string, updater: (config: AnnouncementBarConfig) => AnnouncementBarConfig) => void
+  updateAnnouncementContentConfig: (id: string, updater: (config: AnnouncementContentConfig) => AnnouncementContentConfig) => void
 
   // Hydration
-  hydrateAnnouncementBar: (data: AnnouncementBarHydrationData) => void
+  hydrateAnnouncementBars: (data: AnnouncementBarsHydrationData) => void
 
   // State setters (for hydration from outside)
-  setAnnouncementBarConfig: React.Dispatch<React.SetStateAction<AnnouncementBarConfig>>
-  setAnnouncementContentConfig: React.Dispatch<React.SetStateAction<AnnouncementContentConfig>>
+  setAnnouncementBars: React.Dispatch<React.SetStateAction<AnnouncementBarInstance[]>>
 }
 
-export interface AnnouncementBarHydrationData {
-  announcementBarConfig: AnnouncementBarConfig
-  announcementContentConfig: AnnouncementContentConfig
+export interface AnnouncementBarsHydrationData {
+  announcementBars: AnnouncementBarInstance[]
 }

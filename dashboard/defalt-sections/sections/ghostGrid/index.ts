@@ -8,12 +8,11 @@ import { ghostGridDefaults } from './defaults.js'
 
 export const definition: SectionDefinition<typeof ghostGridConfigSchema> = {
   id: 'ghostGrid',
-  label: 'Ghost Grid',
+  label: 'Ghost grid',
   description: 'Two-column grid for Ghost pages',
   category: 'template',
   defaultVisibility: true,
-  defaultPadding: { top: 0, bottom: 0 },
-  showPaddingControls: false,
+  paddingControls: 'vertical',
   configSchema: ghostGridConfigSchema,
   settingsSchema: ghostGridSettingsSchema,
   blocksSchema: undefined,

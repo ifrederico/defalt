@@ -3,7 +3,7 @@
  * Used by ghostCards, ghostGrid, and imageWithText sections
  */
 
-import type { PreviewPageData } from '../engine/index.js'
+import type { PreviewPageData } from '../engine/previewTypes.js'
 
 // Re-export the type for convenience
 export type { PreviewPageData }
@@ -41,44 +41,6 @@ export function toApiTagSlug(internalTag: string): string {
     return 'hash-' + internalTag.slice(1)
   }
   return internalTag
-}
-
-/**
- * Check if a page has a specific tag by slug
- */
-export function pageHasTag(page: PreviewPageData, tagSlug: string): boolean {
-  if (!page.tags || !Array.isArray(page.tags)) return false
-  return page.tags.some((tag: { slug?: string }) => tag.slug === tagSlug)
-}
-
-/**
- * Find the first page that has the required tag and doesn't have the hide tag
- */
-export function findPageByTag(
-  pages: PreviewPageData[],
-  tagSlug: string,
-  hideTagSlug?: string
-): PreviewPageData | undefined {
-  return pages.find((page) => {
-    const hasRequiredTag = pageHasTag(page, tagSlug)
-    const hasHideTag = hideTagSlug ? pageHasTag(page, hideTagSlug) : false
-    return hasRequiredTag && !hasHideTag
-  })
-}
-
-/**
- * Filter pages by tag, excluding pages with the hide tag
- */
-export function filterPagesByTag(
-  pages: PreviewPageData[],
-  tagSlug: string,
-  hideTagSlug?: string
-): PreviewPageData[] {
-  return pages.filter((page) => {
-    const hasRequiredTag = pageHasTag(page, tagSlug)
-    const hasHideTag = hideTagSlug ? pageHasTag(page, hideTagSlug) : false
-    return hasRequiredTag && !hasHideTag
-  })
 }
 
 /**

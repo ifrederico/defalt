@@ -14,12 +14,8 @@ export type ColorPickerSettingProps = {
   label: string
   value: string
   swatches: Swatch[]
-  /** @deprecated Use onChange instead */
-  onPickerChange?: (color: string) => void
-  /** @deprecated Use onChange instead */
-  onSwatchChange?: (color: string) => void
   /** Preview callback - fires on every color change (no history) */
-  onChange?: (color: string) => void
+  onChange: (color: string) => void
   /** Commit callback - fires when popover closes (creates history entry) */
   onCommit?: (color: string) => void
   onTogglePicker?: (expanded: boolean) => void

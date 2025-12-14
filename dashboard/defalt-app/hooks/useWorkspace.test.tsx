@@ -195,8 +195,8 @@ describe('useWorkspace', () => {
 
     await waitFor(() => {
       expect(hook.result.current.sectionPadding['ghost-cards']).toEqual({
-        top: 32,
-        bottom: 32,
+        top: 48,
+        bottom: 48,
         left: 0,
         right: 0
       })
@@ -288,9 +288,8 @@ describe('useWorkspace', () => {
     hook.unmount()
   })
 
-  it('prevents adding multiple ghost grid sections', async () => {
-    const showToast = vi.fn()
-    const hook = renderWorkspaceHook(createWorkspaceProps({ showToast }))
+  it('allows adding multiple ghost grid sections', async () => {
+    const hook = renderWorkspaceHook(createWorkspaceProps())
 
     await act(async () => {
       await hook.result.current.rehydrateWorkspace()
@@ -308,7 +307,17 @@ describe('useWorkspace', () => {
       hook.result.current.addTemplateSection('ghostGrid')
     })
 
-    expect(hook.result.current.templateItems.filter((item) => item.definitionId === 'ghostGrid')).toHaveLength(1)
+    await waitFor(() => {
+      expect(hook.result.current.templateItems.filter((item) => item.definitionId === 'ghostGrid')).toHaveLength(2)
+    })
+
+    expect(hook.result.current.customSections['ghost-grid']).toBeDefined()
+    expect(hook.result.current.customSections['ghost-grid-2']).toBeDefined()
+
+    expect((hook.result.current.customSections['ghost-grid'].config as { tagLeft?: string }).tagLeft).toBe('#grid-left')
+    expect((hook.result.current.customSections['ghost-grid'].config as { tagRight?: string }).tagRight).toBe('#grid-right')
+    expect((hook.result.current.customSections['ghost-grid-2'].config as { tagLeft?: string }).tagLeft).toBe('#grid-left-2')
+    expect((hook.result.current.customSections['ghost-grid-2'].config as { tagRight?: string }).tagRight).toBe('#grid-right-2')
 
     hook.unmount()
   })

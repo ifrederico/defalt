@@ -6,20 +6,21 @@ import {
   memo
 } from 'react'
 import * as Separator from '@radix-ui/react-separator'
+import * as DropdownMenu from '@radix-ui/react-dropdown-menu'
 import {
   GhostIcon,
   PanelTopDashed,
   GripVertical,
   PanelBottomDashed,
   Maximize,
-  Sparkles
-  // CirclePlus - hidden for now, re-enable when Add Announcement is needed
+  Sparkles,
+  CirclePlus
 } from 'lucide-react'
 import { DragDropProvider, DragOverlay } from '@dnd-kit/react'
 import { PointerSensor } from '@dnd-kit/react'
 import { isElement } from '@dnd-kit/dom/utilities'
 import type { SidebarItem } from '@defalt/utils/config/configStateDefaults'
-import { type AnnouncementBarConfig, type AnnouncementContentConfig } from '@defalt/utils/config/themeConfig'
+import { type AnnouncementBarConfig, type AnnouncementContentConfig, type AnnouncementBarInstance } from '@defalt/utils/config/themeConfig'
 import { resolveSectionIcon } from '@defalt/utils/config/sectionIcons'
 import {
   isPremium,
@@ -55,7 +56,7 @@ export type SectionsPanelProps = {
   showPublicationInfoSidebar: boolean
   onShowPublicationInfoSidebarToggle: (value: boolean) => void
   sectionVisibility: Record<string, boolean>
-  toggleSectionVisibility: (id: string) => void
+  toggleSectionVisibility: (id: string, forceHidden?: boolean, options?: { silent?: boolean }) => void
   templateItems: SidebarItem[]
   footerItems: SidebarItem[]
   templateDefinitions: SectionDefinition[]
@@ -82,12 +83,12 @@ export type SectionsPanelProps = {
   onSearchToggle: (value: boolean) => void
   typographyCase: 'default' | 'uppercase'
   onTypographyCaseChange: (value: 'default' | 'uppercase') => void
-  announcementBarConfig: AnnouncementBarConfig
-  onAnnouncementBarConfigChange: (updater: (config: AnnouncementBarConfig) => AnnouncementBarConfig) => void
-  onAnnouncementBarConfigPreview?: (updater: (config: AnnouncementBarConfig) => AnnouncementBarConfig) => void
-  onAnnouncementBarConfigCommit?: () => void
-  announcementContentConfig: AnnouncementContentConfig
-  onAnnouncementContentConfigChange: (updater: (config: AnnouncementContentConfig) => AnnouncementContentConfig) => void
+  announcementBars: AnnouncementBarInstance[]
+  onAddAnnouncementBar: () => string
+  onRemoveAnnouncementBar: (id: string) => void
+  onToggleAnnouncementBarHidden: (id: string, forceHidden?: boolean) => void
+  onAnnouncementBarConfigChange: (id: string, updater: (config: AnnouncementBarConfig) => AnnouncementBarConfig) => void
+  onAnnouncementContentConfigChange: (id: string, updater: (config: AnnouncementContentConfig) => AnnouncementContentConfig) => void
   headerStyleValue: string
   // AI-generated sections
   aiSections?: Array<{ id: string; name: string; html: string }>
@@ -122,7 +123,15 @@ export const SectionsPanelBase = memo(function SectionsPanelBase({
   onActiveDetailChange,
   ...props
 }: SectionsPanelBaseProps) {
-  const { reorderTemplateItems, reorderFooterItems, aiSections = [], onRemoveAiSection, onReorderAiSections } = props
+  const {
+    reorderTemplateItems,
+    reorderFooterItems,
+    aiSections = [],
+    onRemoveAiSection,
+    onReorderAiSections,
+    announcementBars,
+    onAddAnnouncementBar
+  } = props
   const { setHoveredSectionId, setScrollToSectionId, setActiveTab } = useUIActions()
   const isControlled = controlledActiveDetail !== undefined
   const templateDefinitions = props.templateDefinitions
@@ -151,7 +160,7 @@ export const SectionsPanelBase = memo(function SectionsPanelBase({
   }, [isControlled, onActiveDetailChange])
   const [isDragging, setIsDragging] = useState(false)
   const [footerExpanded, setFooterExpanded] = useState(true)
-  const [announcementBarExpanded, setAnnouncementBarExpanded] = useState(true)
+  const [expandedAnnouncementBars, setExpandedAnnouncementBars] = useState<Record<string, boolean>>({})
   useHistoryInteractionBlocker('sections-drag', isDragging)
 
   // Custom sensors with different constraints for mouse vs touch (Puck pattern)
@@ -232,16 +241,22 @@ export const SectionsPanelBase = memo(function SectionsPanelBase({
     [aiSections]
   )
 
-  const groups = useMemo<SectionGroupDescriptor[]>(() => {
-    const baseGroups: SectionGroupDescriptor[] = [
-      {
-        id: 'header',
-        title: 'Header',
-        items: [
-          { id: 'announcement-bar', label: 'Announcement bar', icon: PanelTopDashed },
-          { id: 'header', label: 'Header', icon: GhostIcon }
-        ],
-      },
+	  const groups = useMemo<SectionGroupDescriptor[]>(() => {
+	    const announcementBarItems: SidebarItem[] = props.announcementBars.map((bar, idx) => ({
+	      id: bar.id,
+	      label: idx === 0 ? 'Announcement bar' : `Announcement bar ${idx + 1}`,
+	      icon: PanelTopDashed
+	    }))
+
+	    const baseGroups: SectionGroupDescriptor[] = [
+	      {
+	        id: 'header',
+	        title: 'Header',
+	        items: [
+	          ...announcementBarItems,
+	          { id: 'header', label: 'Header', icon: GhostIcon }
+	        ],
+	      },
       {
         id: 'template',
         title: 'Template',
@@ -269,8 +284,8 @@ export const SectionsPanelBase = memo(function SectionsPanelBase({
       ],
     })
 
-    return baseGroups
-  }, [templateItems, aiSectionItems])
+	    return baseGroups
+	  }, [props.announcementBars, templateItems, aiSectionItems])
 
   // Lookup map for drag overlay
   const itemsById = useMemo(() => {
@@ -283,18 +298,20 @@ export const SectionsPanelBase = memo(function SectionsPanelBase({
     return map
   }, [groups, footerChildItems])
 
-  const hasGhostGrid = useMemo(
-    () => Object.values(props.customSections).some((section) => section.definitionId === 'ghostGrid'),
-    [props.customSections]
+  const addableDefinitions = useMemo(
+    () => templateDefinitions.filter((definition) => !UPCOMING_SECTION_IDS.has(definition.id)),
+    [templateDefinitions]
   )
 
-  const addableDefinitions = useMemo(
-    () => templateDefinitions.filter((definition) =>
-      (definition.id !== 'ghostGrid' || !hasGhostGrid) &&
-      !UPCOMING_SECTION_IDS.has(definition.id)
-    ),
-    [templateDefinitions, hasGhostGrid]
-  )
+  const announcementBarById = useMemo(() => {
+    const map = new Map<string, AnnouncementBarInstance>()
+    announcementBars.forEach((bar) => map.set(bar.id, bar))
+    return map
+  }, [announcementBars])
+
+  const isAnnouncementBarItem = useCallback((id: string) =>
+    id === 'announcement-bar' || id.startsWith('announcement-bar-'),
+  [])
 
   const availableSectionIds = useMemo(() => {
     const ids = new Set<string>()
@@ -323,6 +340,14 @@ export const SectionsPanelBase = memo(function SectionsPanelBase({
     }
     setActiveDetail({ id, label, blockType, blockIndex })
   }, [activeDetail, setActiveDetail])
+
+  const handleAddAnnouncementBar = useCallback(() => {
+    const id = onAddAnnouncementBar()
+    setExpandedAnnouncementBars((current) => ({
+      ...current,
+      [id]: true
+    }))
+  }, [onAddAnnouncementBar])
 
   // @dnd-kit drag end handler
   const handleDragEnd = useCallback((event: { operation: { source?: { id: string | number; data?: { group?: string; originalIndex?: number } } | null; target?: { id: string | number; data?: { originalIndex?: number } } | null } }) => {
@@ -370,126 +395,156 @@ export const SectionsPanelBase = memo(function SectionsPanelBase({
                   <h3 className="font-md font-bold text-foreground">{group.title}</h3>
                   <div className="flex flex-col gap-1">
                     <div className="space-y-0.5">
+                      {group.id === 'header' && (
+                        <DropdownMenu.Root>
+                          <DropdownMenu.Trigger asChild>
+                            <button
+                              type="button"
+                              className="group flex w-full items-center gap-1 rounded-md bg-surface px-2 py-2 font-md font-normal text-foreground transition-colors hover:bg-subtle cursor-pointer"
+                            >
+                              <span className="w-4 shrink-0" />
+                              <span className="flex h-7 w-7 items-center justify-center text-secondary">
+                                <CirclePlus size={16} strokeWidth={1.5} />
+                              </span>
+                              <span className="flex-1 truncate text-left">Add section</span>
+                            </button>
+                          </DropdownMenu.Trigger>
+                          <DropdownMenu.Portal>
+                            <DropdownMenu.Content
+                              side="right"
+                              align="start"
+                              sideOffset={6}
+                              className="w-64 rounded-md border border-border bg-surface shadow-xl"
+                            >
+	                              <div className="py-2">
+	                                <DropdownMenu.Item
+	                                  onSelect={handleAddAnnouncementBar}
+	                                  className="mx-1 flex cursor-pointer items-center gap-3 rounded-md px-3 py-1.5 font-md text-foreground hover:bg-subtle focus:bg-subtle focus:outline-none group"
+	                                >
+                                  <span className="flex h-8 w-8 items-center justify-center rounded-md bg-surface text-secondary">
+                                    <PanelTopDashed size={16} strokeWidth={1.5} />
+                                  </span>
+                                  <span className="flex-1 truncate font-normal leading-none text-foreground">Announcement bar</span>
+                                </DropdownMenu.Item>
+                              </div>
+                            </DropdownMenu.Content>
+                          </DropdownMenu.Portal>
+                        </DropdownMenu.Root>
+                      )}
                       {group.items.length === 0 ? (
                         <div className="rounded-md border border-dashed border-border-strong bg-subtle px-4 py-6 text-center font-sm text-muted">
                           No sections configured yet.
                         </div>
                       ) : (
-                        group.items.map((item) => (
-                          <div key={item.id}>
-                            <SectionRow
-                              item={item}
-                              index={item.originalIndex ?? 0}
-                              draggable={Boolean(group.allowReorder) && item.id !== 'footer'}
-                              groupType={group.id}
-                              hidden={Boolean(props.sectionVisibility[item.id])}
-                              isParentDragging={isDragging}
-                              onToggleVisibility={() => props.toggleSectionVisibility(item.id)}
-                              onOpenDetail={handleOpenDetail}
-                              canOpenDetail={() => true}
-                              onRemoveTemplateSection={
-                                group.id === 'template' && item.definitionId
-                                  ? () => props.onRemoveTemplateSection(item.id)
-                                  : group.id === 'ai' && onRemoveAiSection
-                                    ? () => onRemoveAiSection(item.id)
-                                    : undefined
-                              }
-                              isAnnouncementBar={item.id === 'announcement-bar'}
-                              announcementBarExpanded={announcementBarExpanded}
-                              onToggleAnnouncementBar={() => setAnnouncementBarExpanded(!announcementBarExpanded)}
-                              isFooter={item.id === 'footer'}
-                              footerExpanded={footerExpanded}
-                              onToggleFooter={() => setFooterExpanded(!footerExpanded)}
-                              isPremium={isItemPremium(item)}
-                              isSelected={activeDetail?.id === item.id && activeDetail?.blockIndex === undefined}
-                              onSectionHover={setHoveredSectionId}
-                              onScrollToSection={setScrollToSectionId}
-                              showVisibilityToggle={item.id !== 'footer'}
-                            />
-                          {item.id === 'announcement-bar' && announcementBarExpanded && (
-                            <div className="space-y-0.5 mt-0.5">
-                              {props.announcementContentConfig.announcements.map((_, idx) => (
-                                <SectionRow
-                                  key={`announcement-${idx}`}
-                                  item={{
-                                    id: `announcement-block-${idx}`,
-                                    label: `Announcement ${idx + 1}`,
-                                    icon: Maximize
-                                  }}
-                                  index={idx}
-                                  draggable={false}
-                                  hidden={false}
-                                  onToggleVisibility={() => {}}
-                                  onOpenDetail={() => handleOpenDetail('announcement-bar', `Announcement ${idx + 1}`, 'announcement', idx)}
-                                  canOpenDetail={() => true}
-                                  isSubItem={true}
-                                  showVisibilityToggle={false}
-                                  isSelected={activeDetail?.id === 'announcement-bar' && activeDetail?.blockIndex === idx}
-                                  onSectionHover={setHoveredSectionId}
-                                  onScrollToSection={setScrollToSectionId}
-                                  onRemoveTemplateSection={props.announcementContentConfig.announcements.length > 1 ? () => {
-                                    const newAnnouncements = props.announcementContentConfig.announcements.filter((_, i) => i !== idx)
-                                    props.onAnnouncementContentConfigChange(() => ({
-                                      ...props.announcementContentConfig,
-                                      announcements: newAnnouncements
-                                    }))
-                                  } : undefined}
-                                />
-                              ))}
-                              {/* Add Announcement button - hidden for now, can be re-enabled later
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  const newAnnouncements = [...props.announcementContentConfig.announcements, {
-                                    text: '',
-                                    link: '',
-                                    typographySize: 'normal' as const,
-                                    typographyWeight: 'default' as const,
-                                    typographySpacing: 'regular' as const,
-                                    typographyCase: 'default' as const
-                                  }]
-                                  props.onAnnouncementContentConfigChange(() => ({
-                                    ...props.announcementContentConfig,
-                                    announcements: newAnnouncements
-                                  }))
-                                }}
-                                className="flex w-full items-center rounded-md bg-surface px-2 py-2 font-md font-normal text-foreground transition-colors hover:bg-subtle"
-                              >
-                                <div className="flex flex-1 items-center gap-1 ml-6">
-                                  <span className="w-4 shrink-0" />
-                                  <span className="flex h-7 w-7 items-center justify-center text-secondary">
-                                    <CirclePlus size={16} strokeWidth={1.5} />
-                                  </span>
-                                  <span className="flex-1 truncate text-left">Add announcement</span>
+                        group.items.map((item) => {
+                          const isAnnouncementBar = isAnnouncementBarItem(item.id)
+                          const announcementBar = isAnnouncementBar ? announcementBarById.get(item.id) : undefined
+                          const announcementBarExpanded = isAnnouncementBar ? (expandedAnnouncementBars[item.id] ?? true) : false
+                          const hidden = isAnnouncementBar ? Boolean(announcementBar?.hidden) : Boolean(props.sectionVisibility[item.id])
+
+                          const onToggleVisibility = () => {
+                            if (isAnnouncementBar) {
+                              props.onToggleAnnouncementBarHidden(item.id)
+                            } else {
+                              props.toggleSectionVisibility(item.id)
+                            }
+                          }
+
+                          const onRemoveTemplateSection = (() => {
+                            if (isAnnouncementBar) {
+                              return () => props.onRemoveAnnouncementBar(item.id)
+                            }
+                            if (group.id === 'template' && item.definitionId) {
+                              return () => props.onRemoveTemplateSection(item.id)
+                            }
+                            if (group.id === 'ai' && onRemoveAiSection) {
+                              return () => onRemoveAiSection(item.id)
+                            }
+                            return undefined
+                          })()
+
+                          const onToggleAnnouncementBar = isAnnouncementBar
+                            ? () => setExpandedAnnouncementBars((current) => ({
+                              ...current,
+                              [item.id]: !(current[item.id] ?? true)
+                            }))
+                            : undefined
+
+                          return (
+                            <div key={item.id}>
+                              <SectionRow
+                                item={item}
+                                index={item.originalIndex ?? 0}
+                                draggable={Boolean(group.allowReorder) && item.id !== 'footer'}
+                                groupType={group.id}
+                                hidden={hidden}
+                                isParentDragging={isDragging}
+                                onToggleVisibility={onToggleVisibility}
+                                onOpenDetail={handleOpenDetail}
+                                canOpenDetail={() => true}
+                                onRemoveTemplateSection={onRemoveTemplateSection}
+                                isAnnouncementBar={isAnnouncementBar}
+                                announcementBarExpanded={announcementBarExpanded}
+                                onToggleAnnouncementBar={onToggleAnnouncementBar}
+                                isFooter={item.id === 'footer'}
+                                footerExpanded={footerExpanded}
+                                onToggleFooter={() => setFooterExpanded(!footerExpanded)}
+                                isPremium={isItemPremium(item)}
+                                isSelected={activeDetail?.id === item.id && activeDetail?.blockIndex === undefined}
+                                onSectionHover={setHoveredSectionId}
+                                onScrollToSection={setScrollToSectionId}
+                                showVisibilityToggle={item.id !== 'footer'}
+                              />
+                              {isAnnouncementBar && announcementBarExpanded && announcementBar && (
+                                <div className="space-y-0.5 mt-0.5">
+                                  <SectionRow
+                                    item={{
+                                      id: `${item.id}-announcement`,
+                                      label: 'Announcement 1',
+                                      icon: Maximize
+                                    }}
+                                    index={0}
+                                    draggable={false}
+                                    hidden={false}
+                                    onToggleVisibility={() => {}}
+                                    onOpenDetail={() => handleOpenDetail(item.id, 'Announcement 1', 'announcement', 0)}
+                                    canOpenDetail={() => true}
+                                    isSubItem={true}
+                                    showVisibilityToggle={false}
+                                    isSelected={activeDetail?.id === item.id && activeDetail?.blockIndex === 0}
+                                    onSectionHover={(id) => setHoveredSectionId(id ? item.id : null)}
+                                    onScrollToSection={(id) => {
+                                      void id
+                                      setScrollToSectionId(item.id)
+                                    }}
+                                  />
                                 </div>
-                              </button>
-                              */}
+                              )}
+                              {item.id === 'footer' && footerExpanded && (
+                                <div className="space-y-0.5 mt-0.5">
+                                  {footerChildItems.map((footerItem) => (
+                                    <SectionRow
+                                      key={footerItem.id}
+                                      item={footerItem}
+                                      index={footerItem.originalIndex ?? 0}
+                                      draggable={true}
+                                      groupType="footer"
+                                      isParentDragging={isDragging}
+                                      hidden={Boolean(props.sectionVisibility[footerItem.id])}
+                                      onToggleVisibility={() => props.toggleSectionVisibility(footerItem.id)}
+                                      onOpenDetail={handleOpenDetail}
+                                      canOpenDetail={() => true}
+                                      isSubItem={true}
+                                      isSelected={activeDetail?.id === footerItem.id}
+                                      onSectionHover={setHoveredSectionId}
+                                      onScrollToSection={setScrollToSectionId}
+                                    />
+                                  ))}
+                                </div>
+                              )}
                             </div>
-                          )}
-                          {item.id === 'footer' && footerExpanded && (
-                            <div className="space-y-0.5 mt-0.5">
-                              {footerChildItems.map((footerItem) => (
-                                <SectionRow
-                                  key={footerItem.id}
-                                  item={footerItem}
-                                  index={footerItem.originalIndex ?? 0}
-                                  draggable={true}
-                                  groupType="footer"
-                                  isParentDragging={isDragging}
-                                  hidden={Boolean(props.sectionVisibility[footerItem.id])}
-                                  onToggleVisibility={() => props.toggleSectionVisibility(footerItem.id)}
-                                  onOpenDetail={handleOpenDetail}
-                                  canOpenDetail={() => true}
-                                  isSubItem={true}
-                                  isSelected={activeDetail?.id === footerItem.id}
-                                  onSectionHover={setHoveredSectionId}
-                                  onScrollToSection={setScrollToSectionId}
-                                />
-                              ))}
-                            </div>
-                          )}
-                          </div>
-                        ))
+                          )
+                        })
                       )}
                     </div>
 

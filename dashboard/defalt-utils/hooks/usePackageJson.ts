@@ -1,8 +1,6 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { logError, logWarning } from '../logging/errorLogger.js'
-
-// Get base path from Vite env, strip trailing slash for concatenation
-const BASE_PATH = (import.meta.env.VITE_BASE_PATH ?? '/').replace(/\/$/, '')
+import { BASE_PATH } from '../env/basePath.js'
 
 export function usePackageJson() {
   const [packageJson, setPackageJsonState] = useState('')

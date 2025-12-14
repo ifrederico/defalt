@@ -78,11 +78,11 @@ export function AppContent() {
         reorderTemplateItems,
         reorderFooterItems,
         toggleSectionVisibility,
-        announcementBarConfig,
+        announcementBars,
+        onAddAnnouncementBar,
+        onRemoveAnnouncementBar,
+        onToggleAnnouncementBarHidden,
         onAnnouncementBarConfigChange,
-        onAnnouncementBarConfigPreview,
-        onAnnouncementBarConfigCommit,
-        announcementContentConfig,
         onAnnouncementContentConfigChange,
     } = useWorkspaceContext()
 
@@ -117,19 +117,23 @@ export function AppContent() {
         return sectionId
     }, [])
 
-    const resolveSectionLabel = useCallback((sectionId: string): string => {
-        const normalizedId = normalizeSectionId(sectionId)
+	    const resolveSectionLabel = useCallback((sectionId: string): string => {
+	        const normalizedId = normalizeSectionId(sectionId)
 
-        if (normalizedId === 'header') {
-            return 'Header'
-        }
-        if (normalizedId === 'announcement-bar') {
-            return 'Announcement bar'
-        }
-        if (normalizedId === 'subheader') {
-            const labelMap: Record<string, string> = {
-                'Landing': 'Landing',
-                'Search': 'Search',
+	        if (normalizedId === 'header') {
+	            return 'Header'
+	        }
+	        if (normalizedId === 'footer') {
+	            return 'Footer'
+	        }
+	        const announcementBarIndex = announcementBars.findIndex((bar) => bar.id === normalizedId)
+	        if (announcementBarIndex !== -1) {
+	            return announcementBarIndex === 0 ? 'Announcement bar' : `Announcement bar ${announcementBarIndex + 1}`
+	        }
+	        if (normalizedId === 'subheader') {
+	            const labelMap: Record<string, string> = {
+	                'Landing': 'Landing',
+	                'Search': 'Search',
                 'Magazine': 'Magazine',
                 'Highlight': 'Highlight',
                 'Off': 'Off',
@@ -142,18 +146,23 @@ export function AppContent() {
             return templateLabel
         }
 
-        const footerLabel = footerItems.find((item) => item.id === normalizedId)?.label
-        if (footerLabel) {
-            return footerLabel
-        }
+	        const footerLabel = footerItems.find((item) => item.id === normalizedId)?.label
+	        if (footerLabel) {
+	            return footerLabel
+	        }
 
-        const customSection = customSections[normalizedId]
-        if (customSection?.definitionId) {
-            return customSection.definitionId
-        }
+	        const aiLabel = aiSections.find((section) => section.id === normalizedId)?.name
+	        if (aiLabel) {
+	            return aiLabel
+	        }
 
-        return normalizedId
-    }, [footerItems, headerStyleValue, templateItems, customSections, normalizeSectionId])
+	        const customSection = customSections[normalizedId]
+	        if (customSection?.label) {
+	            return customSection.label
+	        }
+
+	        return normalizedId
+	    }, [aiSections, announcementBars, footerItems, headerStyleValue, templateItems, customSections, normalizeSectionId])
 
     const handlePreviewSectionSelect = useCallback((sectionId: string) => {
         const normalizedId = normalizeSectionId(sectionId)
@@ -239,11 +248,11 @@ export function AppContent() {
         onSearchToggle,
         typographyCase,
         onTypographyCaseChange,
-        announcementBarConfig,
+        announcementBars,
+        onAddAnnouncementBar,
+        onRemoveAnnouncementBar,
+        onToggleAnnouncementBarHidden,
         onAnnouncementBarConfigChange,
-        onAnnouncementBarConfigPreview,
-        onAnnouncementBarConfigCommit,
-        announcementContentConfig,
         onAnnouncementContentConfigChange,
         headerStyleValue,
         postFeedStyleValue,
@@ -336,8 +345,7 @@ export function AppContent() {
                                     customTemplateSections={customTemplateSections}
                                     aiSections={aiSections}
                                     customSettingsOverrides={customSettingsOverrides}
-                                    announcementBarConfig={announcementSettings.bar}
-                                    announcementContentConfig={announcementSettings.content}
+                                    announcementBars={announcementSettings.bars}
                                     selectedSectionId={activeDetail?.id}
                                     hoveredSectionId={hoveredSectionId}
                                     scrollToSectionId={scrollToSectionId}

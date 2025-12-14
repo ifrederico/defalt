@@ -17,7 +17,7 @@ export type SectionRowProps = {
   item: SidebarItem
   index?: number
   draggable: boolean
-  groupType?: 'header' | 'template' | 'footer'
+  groupType?: 'header' | 'template' | 'footer' | 'ai'
   hidden: boolean
   isParentDragging?: boolean
   onToggleVisibility: () => void

@@ -42,18 +42,23 @@ export type AddSectionCardProps = {
   onSelect: (definitionId: string) => void
   onGenerateBlock?: () => void
   disabled?: boolean
+  includeUpcoming?: boolean
 }
 
 export function AddSectionCard({
   definitions,
   onSelect,
   onGenerateBlock,
-  disabled = false
+  disabled = false,
+  includeUpcoming = true
 }: AddSectionCardProps) {
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState('')
   const hasGenerateBlock = Boolean(onGenerateBlock)
-  const effectiveDefinitions = disabled ? [] : definitions
+  const effectiveDefinitions = useMemo(
+    () => (disabled ? [] : definitions),
+    [disabled, definitions]
+  )
   const hasDefinitions = effectiveDefinitions.length > 0
   const isEnabled = hasDefinitions || hasGenerateBlock
 
@@ -69,7 +74,7 @@ export function AddSectionCard({
   }, [effectiveDefinitions, query])
 
   const filteredUpcomingSections = useMemo(() => {
-    if (disabled) {
+    if (!includeUpcoming || disabled) {
       return []
     }
     const normalized = query.trim().toLowerCase()
@@ -79,7 +84,7 @@ export function AddSectionCard({
     return UPCOMING_TEMPLATE_SECTIONS.filter((section) =>
       section.label.toLowerCase().includes(normalized)
     )
-  }, [query, disabled])
+  }, [query, disabled, includeUpcoming])
 
   const showGenerateBlock = useMemo(() => {
     if (!hasGenerateBlock) {

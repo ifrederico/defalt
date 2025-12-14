@@ -7,8 +7,6 @@ export default function ColorPickerSetting({
   label,
   value,
   swatches,
-  onPickerChange,
-  onSwatchChange,
   onChange,
   onCommit,
   onTogglePicker,
@@ -76,22 +74,12 @@ export default function ColorPickerSetting({
       colorValue = (accentSwatch?.hex ?? accentColor ?? value)?.toLowerCase()
     }
 
-    // Use new API if available, fall back to legacy
-    if (onChange) {
-      onChange(colorValue)
-    } else if (onSwatchChange) {
-      onSwatchChange(colorValue)
-    }
+    onChange(colorValue)
   }
 
   const handlePickerChange = (next: string) => {
     setActiveSwatch(next.toLowerCase())
-    // Use new API if available, fall back to legacy
-    if (onChange) {
-      onChange(next)
-    } else if (onPickerChange) {
-      onPickerChange(next)
-    }
+    onChange(next)
   }
 
   const handleCommit = (committedValue: string) => {

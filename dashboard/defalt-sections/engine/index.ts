@@ -12,8 +12,8 @@
  * // Importing schema types
  * import { type SectionDefinition, type SettingSchema } from '@defalt/sections/engine'
  *
- * // Using common settings
- * import { backgroundSettings, paddingSettings } from '@defalt/sections/engine'
+ * // Using common settings (shapes for Zod, settings for UI)
+ * import { contentWidthPxShape, textAlignmentShape, contentWidthPxSetting } from '@defalt/sections/engine'
  *
  * // Rendering a section
  * import { renderSection, getSectionDefinition } from '@defalt/sections/engine'
@@ -62,6 +62,7 @@ export {
   // Types
   type SettingSchema,
   type BlockSchema,
+  type PaddingControls,
   type SectionPadding,
   type SectionCategory,
   type SectionDefinition,
@@ -74,54 +75,30 @@ export {
 // =============================================================================
 
 export {
-  // Zod schema fragments for config
-  paddingConfigSchema,
-  fullPaddingConfigSchema,
-  backgroundConfigSchema,
-  textColorsConfigSchema,
-  borderRadiusConfigSchema,
-  buttonConfigSchema,
-  alignmentConfigSchema,
-  widthConfigSchema,
-  darkBackgroundConfigSchema,
-  cardBorderRadiusConfigSchema,
-  heightModeConfigSchema,
+  // Content width (pixel-based)
+  contentWidthPxShape,
+  contentWidthPxSetting,
 
-  // Zod shapes for spreading into section schemas
-  paddingShape,
-  fullPaddingShape,
-  backgroundShape,
-  textColorsShape,
-  borderRadiusShape,
-  buttonShape,
-  alignmentShape,
-  widthShape,
-  darkBackgroundShape,
-  cardBorderRadiusShape,
-  heightModeShape,
+  // Text alignment
+  textAlignmentShape,
+  createTextAlignmentSetting,
 
-  // UI Settings presets
-  paddingSettings,
-  unifiedPaddingSettings,
-  backgroundSettings,
-  darkBackgroundSettings,
-  textColorSettings,
-  fullTextColorSettings,
-  borderRadiusSettings,
-  cardBorderRadiusSettings,
-  buttonToggleSettings,
-  buttonContentSettings,
-  buttonStyleSettings,
-  fullButtonSettings,
-  alignmentSettings,
-  widthSettings,
-  layoutSettings,
-  heightModeSettings,
-  sectionHeaderSettings,
-  toggleableSectionHeaderSettings,
-  lightSchemeSettings,
-  darkSchemeSettings,
-  ghostPageTagSettings
+  // Background (transparent default)
+  transparentBackgroundShape,
+  transparentBackgroundSetting,
+
+  // Ghost page tag
+  ghostPageTagShape,
+
+  // Image appearance
+  imageAppearanceShape,
+  imageAspectSetting,
+  imageBorderRadiusSetting,
+
+  // Image layout
+  imageLayoutShape,
+  invertSetting,
+  imageWidthSetting
 } from './commonSettings.js'
 
 // =============================================================================
@@ -231,7 +208,7 @@ export {
 // Premium Config
 // =============================================================================
 
-export { isPremium, isFree, getPremiumFeatures, getFreeFeatures } from '../premiumConfig.js'
+export { isPremium, isFree, getPremiumFeatures, getFreeFeatures } from '@defalt/utils/config/premiumConfig.js'
 
 // =============================================================================
 // Section Config Types (from individual section schemas)
@@ -325,15 +302,4 @@ export type { SettingSchema as SectionSettingSchema } from './schemaTypes.js'
 export { getSectionsByCategory as listDefinitionsByCategory } from './sectionRegistry.js'
 
 // Preview page data type (used by tagUtils)
-export interface PreviewPageData {
-  id?: number | string
-  title: string
-  slug: string
-  url: string
-  feature_image?: string
-  feature_image_alt?: string
-  html?: string
-  excerpt?: string
-  custom_excerpt?: string
-  tags?: Array<{ name?: string; slug?: string; visibility?: string }>
-}
+export type { PreviewPageData } from './previewTypes.js'

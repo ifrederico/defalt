@@ -28,13 +28,6 @@ const pageConfigSchema = z.object({
   sections: z.record(z.string(), sectionConfigSchema).optional()
 }).catchall(z.unknown())
 
-export const editorStateSchema = z.object({
-  header: sectionConfigSchema,
-  footer: footerConfigSchema,
-  page: pageConfigSchema,
-  packageJson: z.string().optional()
-}).catchall(z.unknown())
-
 export const themeDocumentSchema = z.object({
   name: z.string().optional(),
   version: z.number().optional(),

@@ -13,7 +13,7 @@ export const definition: SectionDefinition<typeof heroConfigSchema> = {
   tag: '#hero',
   category: 'template',
   defaultVisibility: true,
-  defaultPadding: { top: 48, bottom: 48 },
+  paddingControls: 'vertical',
   configSchema: heroConfigSchema,
   settingsSchema: heroSettingsSchema,
   blocksSchema: undefined,

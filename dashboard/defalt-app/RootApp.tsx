@@ -8,8 +8,9 @@ import { DashboardErrorBoundary } from './components/ErrorBoundary'
 import { useAuth } from './hooks/useAuth'
 import { HistoryProvider } from './contexts/HistoryContext'
 import { AppButton } from '@defalt/ui/primitives/AppButton'
+import { BASE_PATH_WITH_TRAILING_SLASH } from '@defalt/utils/env/basePath'
 
-const BASE_PATH = (import.meta.env.VITE_BASE_PATH ?? '/').replace(/\/?$/, '/')
+const BASE_PATH = BASE_PATH_WITH_TRAILING_SLASH
 
 function stripBase(pathname: string): string {
   if (BASE_PATH !== '/' && pathname.startsWith(BASE_PATH.slice(0, -1))) {

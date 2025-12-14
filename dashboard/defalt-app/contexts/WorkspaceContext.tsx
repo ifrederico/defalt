@@ -142,18 +142,18 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     previewSectionPaddingChange,
     commitSectionPaddingChange,
     sectionMargins,
-    previewSectionMarginChange,
-    commitSectionMarginChange,
-    updateCustomSectionConfig,
-    announcementBarConfig,
-    updateAnnouncementBarConfig,
-    previewAnnouncementBarConfig,
-    commitAnnouncementBarConfig,
-    announcementContentConfig,
-    updateAnnouncementContentConfig,
-    rehydrateWorkspace,
-    syncFeaturedSectionVisibility,
-    applySubheaderSpacing,
+	    previewSectionMarginChange,
+	    commitSectionMarginChange,
+	    updateCustomSectionConfig,
+	    announcementBars,
+	    addAnnouncementBar,
+	    removeAnnouncementBar,
+	    toggleAnnouncementBarHidden,
+	    updateAnnouncementBarConfig,
+	    updateAnnouncementContentConfig,
+	    rehydrateWorkspace,
+	    syncFeaturedSectionVisibility,
+	    applySubheaderSpacing,
     pageLayout,
     memoizedTemplateOrder,
     memoizedFooterOrder,
@@ -331,8 +331,10 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
       hasAppliedSubheaderSpacingRef.current = false
       return
     }
-    const shouldRecordHistory = hasAppliedSubheaderSpacingRef.current
-    applySubheaderSpacing(headerStyleValue, { recordHistory: shouldRecordHistory })
+    if (hasAppliedSubheaderSpacingRef.current) {
+      return
+    }
+    applySubheaderSpacing(headerStyleValue, { recordHistory: false })
     hasAppliedSubheaderSpacingRef.current = true
   }, [applySubheaderSpacing, headerStyleValue, workspaceHydrated])
 
@@ -433,9 +435,8 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
   ])
 
   const announcementSettingsSummary = useMemo(() => ({
-    bar: announcementBarConfig,
-    content: announcementContentConfig,
-  }), [announcementBarConfig, announcementContentConfig])
+    bars: announcementBars,
+  }), [announcementBars])
 
   const handleSectionPaddingChange = useCallback((
     id: string,
@@ -501,16 +502,24 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     }))
   }, [commitSectionMarginChange])
 
-  const handleToggleSectionVisibility = useCallback((id: string) => {
-    const wasHidden = Boolean(sectionVisibility[id])
+  const handleToggleSectionVisibility = useCallback((
+    id: string,
+    forceHidden?: boolean,
+    options?: { silent?: boolean }
+  ) => {
+    const currentHidden = sectionVisibility[id]
+    const nextHidden = typeof forceHidden === 'boolean' ? forceHidden : !currentHidden
+    if (currentHidden === nextHidden) {
+      return
+    }
 
     // Show loading indicator
     setIsTogglingVisibility(true)
 
-    toggleSectionVisibility(id)
+    toggleSectionVisibility(id, forceHidden, options)
     trackEvent('section-changed', { action: 'toggle', sectionId: id })
     if (currentPage === 'home' && id === 'featured') {
-      const nextShowFeatured = wasHidden
+      const nextShowFeatured = !nextHidden
       if (showFeaturedPosts !== nextShowFeatured) {
         handleShowFeaturedPostsToggle(nextShowFeatured)
       }
@@ -662,13 +671,13 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     onSearchToggle: handleSearchToggle,
     typographyCase: headerTypographyCase,
     onTypographyCaseChange: handleTypographyCaseChange,
-    announcementBarConfig,
+    announcementBars,
+    onAddAnnouncementBar: addAnnouncementBar,
+    onRemoveAnnouncementBar: removeAnnouncementBar,
+    onToggleAnnouncementBarHidden: toggleAnnouncementBarHidden,
     onAnnouncementBarConfigChange: updateAnnouncementBarConfig,
-    onAnnouncementBarConfigPreview: previewAnnouncementBarConfig,
-    onAnnouncementBarConfigCommit: commitAnnouncementBarConfig,
-    announcementContentConfig,
     onAnnouncementContentConfigChange: updateAnnouncementContentConfig,
-  }), [stickyHeaderMode, stickyHeaderOptions, handleStickyHeaderChange, isHeaderSearchEnabled, handleSearchToggle, headerTypographyCase, handleTypographyCaseChange, announcementBarConfig, updateAnnouncementBarConfig, previewAnnouncementBarConfig, commitAnnouncementBarConfig, announcementContentConfig, updateAnnouncementContentConfig])
+  }), [stickyHeaderMode, stickyHeaderOptions, handleStickyHeaderChange, isHeaderSearchEnabled, handleSearchToggle, headerTypographyCase, handleTypographyCaseChange, announcementBars, addAnnouncementBar, removeAnnouncementBar, toggleAnnouncementBarHidden, updateAnnouncementBarConfig, updateAnnouncementContentConfig])
 
   const feedSettingsState = useMemo(() => ({
     pageLayout,

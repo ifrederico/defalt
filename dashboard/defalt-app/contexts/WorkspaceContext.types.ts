@@ -58,12 +58,12 @@ export type WorkspaceContextValue = {
   onSearchToggle: (value: boolean) => void
   typographyCase: 'default' | 'uppercase'
   onTypographyCaseChange: (value: 'default' | 'uppercase') => void
-  announcementBarConfig: import('@defalt/utils/config/themeConfig').AnnouncementBarConfig
-  onAnnouncementBarConfigChange: (updater: (config: import('@defalt/utils/config/themeConfig').AnnouncementBarConfig) => import('@defalt/utils/config/themeConfig').AnnouncementBarConfig) => void
-  onAnnouncementBarConfigPreview: (updater: (config: import('@defalt/utils/config/themeConfig').AnnouncementBarConfig) => import('@defalt/utils/config/themeConfig').AnnouncementBarConfig) => void
-  onAnnouncementBarConfigCommit: () => void
-  announcementContentConfig: import('@defalt/utils/config/themeConfig').AnnouncementContentConfig
-  onAnnouncementContentConfigChange: (updater: (config: import('@defalt/utils/config/themeConfig').AnnouncementContentConfig) => import('@defalt/utils/config/themeConfig').AnnouncementContentConfig) => void
+  announcementBars: import('@defalt/utils/config/themeConfig').AnnouncementBarInstance[]
+  onAddAnnouncementBar: () => string
+  onRemoveAnnouncementBar: (id: string) => void
+  onToggleAnnouncementBarHidden: (id: string, forceHidden?: boolean) => void
+  onAnnouncementBarConfigChange: (id: string, updater: (config: import('@defalt/utils/config/themeConfig').AnnouncementBarConfig) => import('@defalt/utils/config/themeConfig').AnnouncementBarConfig) => void
+  onAnnouncementContentConfigChange: (id: string, updater: (config: import('@defalt/utils/config/themeConfig').AnnouncementContentConfig) => import('@defalt/utils/config/themeConfig').AnnouncementContentConfig) => void
 
   accentColor: string
   sanitizedAccentColor: string
@@ -95,7 +95,7 @@ export type WorkspaceContextValue = {
   footerItems: import('@defalt/utils/config/configStateDefaults').SidebarItem[]
   reorderTemplateItems: (startIndex: number, endIndex: number) => void
   reorderFooterItems: (startIndex: number, endIndex: number) => void
-  toggleSectionVisibility: (id: string) => void
+  toggleSectionVisibility: (id: string, forceHidden?: boolean, options?: { silent?: boolean }) => void
 
   headerSettings: import('./ThemeContext.types').HeaderSettingsContext
   footerSettings: import('./ThemeContext.types').FooterSettingsContext

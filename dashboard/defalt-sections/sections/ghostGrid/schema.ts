@@ -4,61 +4,41 @@
 
 import { z } from 'zod'
 import type { SettingSchema } from '../../engine/schemaTypes.js'
-import { createPaddingConfigSchema, createPaddingSettings } from '../../engine/commonSettings.js'
-
-// Reusable schemas from commonSettings
-const paddingSchema = createPaddingConfigSchema({ defaultTop: 48, defaultBottom: 48 })
+import {
+  contentWidthPxShape,
+  contentWidthPxSetting,
+  createTextAlignmentSetting,
+  textAlignmentShape,
+  transparentBackgroundSetting,
+  transparentBackgroundShape
+} from '../../engine/commonSettings.js'
 
 // Zod config schema
 export const ghostGridConfigSchema = z.object({
   tagLeft: z.string().default('#grid-left'),
   tagRight: z.string().default('#grid-right'),
-  contentWidth: z.enum(['720px', '960px', '1120px', '1320px', 'none']).default('1120px'),
+  ...contentWidthPxShape,
   pageTitle: z.boolean().default(false),
-  textAlignment: z.enum(['left', 'center', 'right']).default('left'),
-  backgroundColor: z.string().default('transparent'),
+  ...textAlignmentShape,
+  ...transparentBackgroundShape,
   titleSize: z.enum(['small', 'normal', 'large']).default('normal'),
   stackOnMobile: z.boolean().default(true),
   gap: z.number().min(0).max(100).default(40)
-}).merge(paddingSchema)
+})
 
 export type GhostGridSectionConfig = z.infer<typeof ghostGridConfigSchema>
 
 // UI settings schema
 export const ghostGridSettingsSchema: SettingSchema[] = [
   { type: 'header', id: 'appearance-header', label: 'Appearance' },
-  {
-    type: 'select',
-    id: 'contentWidth',
-    label: 'Width',
-    default: '1120px',
-    options: [
-      { label: 'Narrow', value: '720px' },
-      { label: 'Medium', value: '960px' },
-      { label: 'Default', value: '1120px' },
-      { label: 'Wide', value: '1320px' },
-      { label: 'Full', value: 'none' }
-    ]
-  },
-  { type: 'checkbox', id: 'pageTitle', label: 'Page title', default: false },
-  {
-    type: 'radio',
-    id: 'textAlignment',
-    label: 'Text alignment',
-    default: 'left',
-    iconOnly: true,
-    options: [
-      { label: 'Left', value: 'left', icon: 'AlignLeft' },
-      { label: 'Center', value: 'center', icon: 'AlignCenter' },
-      { label: 'Right', value: 'right', icon: 'AlignRight' }
-    ]
-  },
-  { type: 'color', id: 'backgroundColor', label: 'Background', default: 'transparent', allowTransparent: true },
+  contentWidthPxSetting,
+  { type: 'checkbox', id: 'pageTitle', label: 'Page title' },
+  createTextAlignmentSetting('Text alignment'),
+  transparentBackgroundSetting,
   {
     type: 'select',
     id: 'titleSize',
     label: 'Title size',
-    default: 'normal',
     options: [
       { label: 'Small', value: 'small' },
       { label: 'Normal', value: 'normal' },
@@ -66,10 +46,8 @@ export const ghostGridSettingsSchema: SettingSchema[] = [
     ]
   },
   { type: 'header', id: 'layout-header', label: 'Layout' },
-  { type: 'checkbox', id: 'stackOnMobile', label: 'Stack on mobile', default: true },
-  { type: 'range', id: 'gap', label: 'Gap', min: 0, max: 100, step: 4, default: 40, unit: 'px' },
-  // Padding settings from commonSettings
-  ...createPaddingSettings({ defaultTop: 48, defaultBottom: 48 }),
+  { type: 'checkbox', id: 'stackOnMobile', label: 'Stack on mobile' },
+  { type: 'range', id: 'gap', label: 'Gap', min: 0, max: 100, step: 4, unit: 'px' },
   { type: 'header', id: 'primary-cards-header', label: 'Primary Cards', helpUrl: 'https://ghost.org/help/cards/' },
   {
     type: 'paragraph',

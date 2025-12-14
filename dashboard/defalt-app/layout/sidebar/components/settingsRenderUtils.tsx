@@ -61,6 +61,13 @@ const ICON_MAP: Record<string, LucideIcon> = {
   BookOpen
 }
 
+const DEFAULT_COLOR_SWATCHES = [
+  { title: 'Accent', hex: '#AC1E3E', accent: true },
+  { title: 'Grey', hex: '#e5e7eb' },
+  { title: 'Black', hex: '#000000' },
+  { title: 'White', hex: '#ffffff' }
+]
+
 // Group settings by header - each header starts a new group
 export type SettingGroup = {
   title: string
@@ -149,13 +156,8 @@ export function renderSettingInput(
       return (
         <ColorPickerSetting
           label={setting.label}
-          value={typeof value === 'string' ? value : (typeof setting.default === 'string' ? setting.default : '#000000')}
-          swatches={[
-            { title: 'Accent', hex: '#AC1E3E', accent: true },
-            { title: 'Grey', hex: '#e5e7eb' },
-            { title: 'Black', hex: '#000000' },
-            { title: 'White', hex: '#ffffff' }
-          ]}
+          value={typeof value === 'string' ? value : '#000000'}
+          swatches={setting.swatches && setting.swatches.length > 0 ? setting.swatches : DEFAULT_COLOR_SWATCHES}
           onChange={(next) => onChange(next)}
           hasTransparentOption={setting.allowTransparent ?? false}
         />
@@ -176,7 +178,11 @@ export function renderSettingInput(
       return (
         <SliderField
           label={setting.label}
-          value={typeof value === 'number' && Number.isFinite(value) ? value : setting.default}
+          value={
+            typeof value === 'number' && Number.isFinite(value)
+              ? value
+              : (typeof setting.default === 'number' ? setting.default : setting.min)
+          }
           min={setting.min}
           max={setting.max}
           step={setting.step}
@@ -188,7 +194,11 @@ export function renderSettingInput(
       return (
         <InlineControlRow label={setting.label}>
           <Dropdown
-            selected={typeof value === 'string' ? value : (setting.default ?? '')}
+            selected={
+              typeof value === 'string'
+                ? value
+                : (typeof setting.default === 'string' ? setting.default : (setting.options[0]?.value ?? ''))
+            }
             items={setting.options}
             onSelect={(val) => onChange(val)}
             triggerClassName="flex h-[38px] min-w-[120px] items-center justify-between gap-1.5 rounded-md bg-subtle px-3 font-md text-foreground transition-colors hover:bg-subtle/80 focus:outline-none focus-visible:outline-none"
@@ -204,7 +214,11 @@ export function renderSettingInput(
         <InlineControlRow label={setting.label}>
           <ToggleGroup.Root
             type="single"
-            value={typeof value === 'string' ? value : ''}
+            value={
+              typeof value === 'string'
+                ? value
+                : (typeof setting.default === 'string' ? setting.default : (setting.options[0]?.value ?? ''))
+            }
             onValueChange={(next) => next && onChange(next)}
             className="inline-flex items-center gap-0.5 rounded-md bg-subtle p-0.5"
             aria-label={setting.label}

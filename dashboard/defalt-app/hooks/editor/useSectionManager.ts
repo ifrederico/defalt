@@ -1,9 +1,11 @@
-import { useState, useMemo, useCallback, useEffect, useRef } from 'react'
+import { useMemo, useCallback, useEffect, useRef } from 'react'
 import {
   SECTION_ID_MAP,
   CSS_DEFAULT_PADDING,
+  DEFAULT_CUSTOM_SECTION_PADDING,
   type SectionPadding
 } from '@defalt/utils/config/themeConfig'
+import { useSyncedState } from '@defalt/utils/hooks'
 import {
   buildSectionInstance,
   getSectionDefinition,
@@ -11,7 +13,7 @@ import {
   type SectionInstance,
   type SectionConfigSchema
 } from '@defalt/sections/engine'
-import { parseGhostCardIdSuffix, parseGhostCardTagSuffix } from '@defalt/sections/utils/tagUtils'
+import { formatInternalTag, parseGhostCardIdSuffix, parseGhostCardTagSuffix } from '@defalt/sections/utils/tagUtils'
 import { SECTION_ICON_MAP, GhostIcon } from '@defalt/utils/config/sectionIcons'
 import { sanitizeNumericValue, resolveNumericValue } from '@defalt/utils/helpers/numericHelpers'
 import { deepClone } from '@defalt/utils/helpers/deepClone'
@@ -210,31 +212,19 @@ export function useSectionManager({
 }: SectionManagerParams): SectionManagerReturn {
   const currentPage = currentPageRef.current
 
-  // State
-  const [sectionVisibility, setSectionVisibility] = useState<Record<string, boolean>>({
-    'announcement-bar': false
-  })
-  const [footerItems, setFooterItems] = useState<SidebarItem[]>(footerItemsDefault)
-  const [templateItems, setTemplateItems] = useState<SidebarItem[]>(() =>
+  // State + refs (synced)
+  const [sectionVisibility, setSectionVisibility, sectionVisibilityRef] = useSyncedState<Record<string, boolean>>({})
+  const [footerItems, setFooterItems, footerItemsRef] = useSyncedState<SidebarItem[]>(footerItemsDefault)
+  const [templateItems, setTemplateItems, templateItemsRef] = useSyncedState<SidebarItem[]>(() =>
     getTemplateDefaults(currentPage)
   )
-  const [sectionPadding, setSectionPadding] = useState<
+  const [sectionPadding, setSectionPadding, sectionPaddingRef] = useSyncedState<
     Record<string, { top: number; bottom: number; left?: number; right?: number }>
   >({})
-  const [sectionMargins, setSectionMargins] = useState<
+  const [sectionMargins, setSectionMargins, sectionMarginsRef] = useSyncedState<
     Record<string, { top?: number; bottom?: number }>
   >({})
-  const [customSections, setCustomSections] = useState<Record<string, SectionInstance>>({})
-
-  // Refs
-  const footerItemsRef = useRef(footerItems)
-  const templateItemsRef = useRef(templateItems)
-  const sectionVisibilityRef = useRef(sectionVisibility)
-  const sectionPaddingRef = useRef(sectionPadding)
-  const sectionMarginsRef = useRef(sectionMargins)
-  const customSectionsRef = useRef(customSections)
-  const hasGhostGridRef = useRef(false)
-  const pendingGhostGridRef = useRef(false)
+  const [customSections, setCustomSections, customSectionsRef] = useSyncedState<Record<string, SectionInstance>>({})
   const subheaderMarginCacheRef = useRef<{ top?: number; bottom?: number } | null>(null)
   const pendingPaddingCommandsRef = useRef<
     Record<string, { previousState: Record<string, SectionPadding> }>
@@ -242,31 +232,6 @@ export function useSectionManager({
   const pendingMarginCommandsRef = useRef<
     Record<string, { previousState: Record<string, { top?: number; bottom?: number }> }>
   >({})
-
-  // Sync refs with state
-  useEffect(() => {
-    footerItemsRef.current = footerItems
-  }, [footerItems])
-
-  useEffect(() => {
-    templateItemsRef.current = templateItems
-  }, [templateItems])
-
-  useEffect(() => {
-    sectionVisibilityRef.current = sectionVisibility
-  }, [sectionVisibility])
-
-  useEffect(() => {
-    sectionPaddingRef.current = sectionPadding
-  }, [sectionPadding])
-
-  useEffect(() => {
-    sectionMarginsRef.current = sectionMargins
-  }, [sectionMargins])
-
-  useEffect(() => {
-    customSectionsRef.current = customSections
-  }, [customSections])
 
   // Clear pending commands on page change
   useEffect(() => {
@@ -280,17 +245,6 @@ export function useSectionManager({
       pendingMarginCommandsRef.current = {}
     }
   }, [])
-
-  // Track ghost grid presence
-  useEffect(() => {
-    const hasGhostGrid = Object.values(customSections).some(
-      (section) => section.definitionId === 'ghostGrid'
-    )
-    hasGhostGridRef.current = hasGhostGrid
-    if (!hasGhostGrid) {
-      pendingGhostGridRef.current = false
-    }
-  }, [customSections])
 
   // Memoized values
   const templateDefinitions = useMemo(() => listDefinitionsByCategory('template'), [])
@@ -330,12 +284,13 @@ export function useSectionManager({
         })
       )
     },
-    [executeCommand, getHistoryPageId, markAsDirty]
+    [executeCommand, getHistoryPageId, markAsDirty, sectionVisibilityRef, setSectionVisibility]
   )
 
   const toggleSectionVisibility = useCallback(
     (id: string, forceHidden?: boolean, options?: { silent?: boolean }) => {
       const prevVisibility = cloneVisibilityState(sectionVisibilityRef.current)
+
       const nextHidden = typeof forceHidden === 'boolean' ? forceHidden : !prevVisibility[id]
       if (prevVisibility[id] === nextHidden) {
         return
@@ -355,7 +310,7 @@ export function useSectionManager({
         })
       )
     },
-    [executeCommand, getHistoryPageId, markAsDirty]
+    [executeCommand, getHistoryPageId, markAsDirty, sectionVisibilityRef, setSectionVisibility]
   )
 
   const syncFeaturedSectionVisibility = useCallback(
@@ -369,7 +324,7 @@ export function useSectionManager({
       }
       setSectionVisibilityState('featured', !shouldShow, options)
     },
-    [currentPageRef, setSectionVisibilityState]
+    [currentPageRef, setSectionVisibilityState, templateItemsRef]
   )
 
   // Reorder functions
@@ -391,7 +346,7 @@ export function useSectionManager({
         })
       )
     },
-    [executeCommand, getHistoryPageId, markAsDirty]
+    [executeCommand, footerItemsRef, getHistoryPageId, markAsDirty, setFooterItems]
   )
 
   const reorderTemplateItems = useCallback(
@@ -412,7 +367,7 @@ export function useSectionManager({
         })
       )
     },
-    [executeCommand, getHistoryPageId, markAsDirty]
+    [executeCommand, getHistoryPageId, markAsDirty, setTemplateItems, templateItemsRef]
   )
 
   // Add/Remove functions
@@ -423,11 +378,6 @@ export function useSectionManager({
         logError(new Error(`Unknown section definition: ${definitionId}`), {
           scope: 'useSectionManager.addTemplateSection'
         })
-        return
-      }
-      const isGhostGrid = definitionId === 'ghostGrid'
-      if (isGhostGrid && (hasGhostGridRef.current || pendingGhostGridRef.current)) {
-        showToast('Ghost grid already added', 'Only one Ghost grid section is supported.', 'info')
         return
       }
 
@@ -441,11 +391,31 @@ export function useSectionManager({
         customConfig = { ghostPageTag: ghostCardsMeta.ghostPageTag } as SectionConfigSchema
       }
 
+      if (definitionId === 'image-with-text') {
+        customConfig = { ghostPageTag: `#${instanceId}` } as SectionConfigSchema
+      }
+
+      if (definitionId === 'ghostGrid') {
+        const suffix = (() => {
+          if (instanceId === 'ghost-grid') {
+            return 1
+          }
+          const match = instanceId.match(/^ghost-grid-(\d+)$/)
+          const numeric = match ? Number.parseInt(match[1], 10) : NaN
+          return Number.isFinite(numeric) ? numeric : 1
+        })()
+        customConfig = {
+          tagLeft: suffix === 1 ? '#grid-left' : `#grid-left-${suffix}`,
+          tagRight: suffix === 1 ? '#grid-right' : `#grid-right-${suffix}`
+        } as SectionConfigSchema
+      }
+
       const instance = buildSectionInstance(definitionId, instanceId, customConfig)
       if (!instance) {
         logError(new Error(`Failed to create section instance: ${definitionId}`), {
           scope: 'useSectionManager.addTemplateSection'
         })
+        showToast('Could not add section', 'Invalid configuration.', 'error')
         return
       }
 
@@ -468,19 +438,7 @@ export function useSectionManager({
       }
       const nextPadding = cloneSectionPaddingState(sectionPaddingRef.current)
       if (!nextPadding[instanceId]) {
-        const paddingSource = definition.defaultPadding
-        if (paddingSource) {
-          nextPadding[instanceId] = {
-            top: paddingSource.top,
-            bottom: paddingSource.bottom,
-            left: typeof paddingSource.left === 'number' ? paddingSource.left : 0,
-            right: typeof paddingSource.right === 'number' ? paddingSource.right : 0
-          }
-        }
-      }
-
-      if (isGhostGrid) {
-        pendingGhostGridRef.current = true
+        nextPadding[instanceId] = { ...DEFAULT_CUSTOM_SECTION_PADDING }
       }
 
       executeCommand(
@@ -491,27 +449,17 @@ export function useSectionManager({
             setTemplateItems(nextTemplateItems)
             setCustomSections(nextCustomSections)
             setSectionPadding(nextPadding)
-            if (isGhostGrid) {
-              hasGhostGridRef.current = true
-              pendingGhostGridRef.current = false
-            }
           },
           revertState: () => {
             setTemplateItems(prevTemplateItems)
             setCustomSections(prevCustomSections)
             setSectionPadding(prevPadding)
-            if (isGhostGrid) {
-              hasGhostGridRef.current = Object.values(prevCustomSections).some(
-                (section) => section.definitionId === 'ghostGrid'
-              )
-              pendingGhostGridRef.current = false
-            }
           },
           markDirty: markAsDirty
         })
       )
     },
-    [definitionIconMap, executeCommand, getHistoryPageId, markAsDirty, showToast]
+    [customSectionsRef, definitionIconMap, executeCommand, getHistoryPageId, markAsDirty, sectionPaddingRef, setCustomSections, setSectionPadding, setTemplateItems, showToast, templateItemsRef]
   )
 
   const removeTemplateSection = useCallback(
@@ -526,7 +474,6 @@ export function useSectionManager({
       )
       const prevCustomSections = cloneCustomSectionsState(customSectionsRef.current)
       const nextCustomSections = cloneCustomSectionsState(customSectionsRef.current)
-      const removedInstance = nextCustomSections[sectionId]
       delete nextCustomSections[sectionId]
 
       const removedItem = prevTemplateItems.find((item) => item.id === sectionId)
@@ -538,28 +485,16 @@ export function useSectionManager({
           applyState: () => {
             setTemplateItems(nextTemplateItems)
             setCustomSections(nextCustomSections)
-            if (removedInstance?.definitionId === 'ghostGrid') {
-              hasGhostGridRef.current = Object.values(nextCustomSections).some(
-                (section) => section.definitionId === 'ghostGrid'
-              )
-              pendingGhostGridRef.current = false
-            }
           },
           revertState: () => {
             setTemplateItems(prevTemplateItems)
             setCustomSections(prevCustomSections)
-            if (removedInstance?.definitionId === 'ghostGrid') {
-              hasGhostGridRef.current = Object.values(prevCustomSections).some(
-                (section) => section.definitionId === 'ghostGrid'
-              )
-              pendingGhostGridRef.current = false
-            }
           },
           markDirty: markAsDirty
         })
       )
     },
-    [executeCommand, getHistoryPageId, markAsDirty]
+    [customSectionsRef, executeCommand, getHistoryPageId, markAsDirty, setCustomSections, setTemplateItems, templateItemsRef]
   )
 
   // Padding functions
@@ -617,7 +552,7 @@ export function useSectionManager({
       )
       return { previousState, nextState }
     },
-    [executeCommand, getHistoryPageId, markAsDirty]
+    [executeCommand, getHistoryPageId, markAsDirty, sectionPaddingRef, setSectionPadding]
   )
 
   const previewSectionPaddingChange = useCallback(
@@ -629,7 +564,7 @@ export function useSectionManager({
       }
       updateSectionPadding(id, updater, { recordHistory: false })
     },
-    [updateSectionPadding]
+    [sectionPaddingRef, updateSectionPadding]
   )
 
   const commitSectionPaddingChange = useCallback(
@@ -656,7 +591,7 @@ export function useSectionManager({
         })
       )
     },
-    [executeCommand, getHistoryPageId, markAsDirty, updateSectionPadding]
+    [executeCommand, getHistoryPageId, markAsDirty, sectionPaddingRef, setSectionPadding, updateSectionPadding]
   )
 
   // Margin functions
@@ -720,7 +655,7 @@ export function useSectionManager({
       )
       return { previousState, nextState }
     },
-    [executeCommand, getHistoryPageId, markAsDirty]
+    [executeCommand, getHistoryPageId, markAsDirty, sectionMarginsRef, setSectionMargins]
   )
 
   const previewSectionMarginChange = useCallback(
@@ -732,7 +667,7 @@ export function useSectionManager({
       }
       updateSectionMargin(id, updater, { recordHistory: false })
     },
-    [updateSectionMargin]
+    [sectionMarginsRef, updateSectionMargin]
   )
 
   const commitSectionMarginChange = useCallback(
@@ -759,7 +694,7 @@ export function useSectionManager({
         })
       )
     },
-    [executeCommand, getHistoryPageId, markAsDirty, updateSectionMargin]
+    [executeCommand, getHistoryPageId, markAsDirty, sectionMarginsRef, setSectionMargins, updateSectionMargin]
   )
 
   // Custom section config
@@ -769,12 +704,45 @@ export function useSectionManager({
       if (!current) {
         return
       }
-      const nextConfig = updater(current.config)
-      if (!nextConfig) {
+      const nextConfig = updater(current.config as SectionConfigSchema)
+      if (!nextConfig || typeof nextConfig !== 'object') {
         return
       }
-      const nextInstance = buildSectionInstance(current.definitionId, current.id, nextConfig)
+
+      const normalizedConfig = (() => {
+        const record = nextConfig as Record<string, unknown>
+        const next: Record<string, unknown> = { ...record }
+
+        if ('ghostPageTag' in next) {
+          const formatted = formatInternalTag(next.ghostPageTag)
+          if (formatted) {
+            next.ghostPageTag = formatted
+          } else {
+            delete next.ghostPageTag
+          }
+        }
+
+        if (current.definitionId === 'ghostGrid') {
+          if ('tagLeft' in next) {
+            const formatted = formatInternalTag(next.tagLeft)
+            if (formatted) {
+              next.tagLeft = formatted
+            }
+          }
+          if ('tagRight' in next) {
+            const formatted = formatInternalTag(next.tagRight)
+            if (formatted) {
+              next.tagRight = formatted
+            }
+          }
+        }
+
+        return next
+      })()
+
+      const nextInstance = buildSectionInstance(current.definitionId, current.id, normalizedConfig as SectionConfigSchema)
       if (!nextInstance) {
+        showToast('Invalid settings', 'Could not apply change.', 'error')
         return
       }
 
@@ -785,16 +753,7 @@ export function useSectionManager({
       const prevPadding = cloneSectionPaddingState(sectionPaddingRef.current)
       const nextPadding = cloneSectionPaddingState(sectionPaddingRef.current)
       if (!nextPadding[id]) {
-        const definition = getSectionDefinition(current.definitionId)
-        const paddingSource = definition?.defaultPadding
-        if (paddingSource) {
-          nextPadding[id] = {
-            top: paddingSource.top,
-            bottom: paddingSource.bottom,
-            left: typeof paddingSource.left === 'number' ? paddingSource.left : 0,
-            right: typeof paddingSource.right === 'number' ? paddingSource.right : 0
-          }
-        }
+        nextPadding[id] = { ...DEFAULT_CUSTOM_SECTION_PADDING }
       }
 
       executeCommand(
@@ -813,7 +772,7 @@ export function useSectionManager({
         })
       )
     },
-    [executeCommand, getHistoryPageId, markAsDirty]
+    [customSectionsRef, executeCommand, getHistoryPageId, markAsDirty, sectionPaddingRef, setCustomSections, setSectionPadding, showToast]
   )
 
   // Subheader spacing
@@ -904,7 +863,7 @@ export function useSectionManager({
         })
       )
     },
-    [executeCommand, markAsDirty]
+    [executeCommand, markAsDirty, sectionMarginsRef, sectionPaddingRef, setSectionMargins, setSectionPadding]
   )
 
   // Hydration
@@ -915,7 +874,7 @@ export function useSectionManager({
     setTemplateItems(data.templateItems)
     setFooterItems(data.footerItems)
     setCustomSections(data.customSections)
-  }, [])
+  }, [setCustomSections, setFooterItems, setSectionMargins, setSectionPadding, setSectionVisibility, setTemplateItems])
 
   return {
     // State

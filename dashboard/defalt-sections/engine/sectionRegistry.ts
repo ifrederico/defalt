@@ -13,8 +13,9 @@
  * getSectionDefinition('hero')
  */
 
+import { z } from 'zod'
 import type { SectionDefinition, SectionInstance, SectionCategory } from './schemaTypes.js'
-import { isPremium } from '../premiumConfig.js'
+import { isPremium } from '@defalt/utils/config/premiumConfig.js'
 
 // =============================================================================
 // Types
@@ -41,6 +42,8 @@ const sectionModules = import.meta.glob<SectionModule>(
   { eager: true }
 )
 
+const templateModules = import.meta.glob('../sections/*/*.hbs', { query: '?raw', import: 'default' })
+
 /**
  * Extract section definitions from modules
  */
@@ -57,12 +60,19 @@ function loadSectionDefinitions(): RegisteredSection[] {
 
     const sectionId = match[1]
 
+    // Dev-only sections should not ship in the editor.
+    if (sectionId.startsWith('debug-')) {
+      continue
+    }
+
     if (!module.definition) {
       console.warn(`[sectionRegistry] Section "${sectionId}" missing definition export`)
       continue
     }
 
     const definition = module.definition
+
+    const warnings: string[] = []
 
     // Validate definition has required fields
     if (!definition.id) {
@@ -72,11 +82,61 @@ function loadSectionDefinitions(): RegisteredSection[] {
       continue
     }
 
+    if (!definition.label) {
+      warnings.push('missing required field (label)')
+    }
+
+    if (!definition.category) {
+      warnings.push('missing required field (category)')
+    }
+
     // Verify ID matches folder name
     if (definition.id !== sectionId) {
       console.warn(
         `[sectionRegistry] Section ID mismatch: folder "${sectionId}" vs definition "${definition.id}"`
       )
+    }
+
+    if (definition.templatePath) {
+      const templateKey = `../sections/${definition.templatePath}`
+      if (!templateModules[templateKey]) {
+        warnings.push(`templatePath not found (${definition.templatePath})`)
+      }
+    }
+
+    if (definition.configSchema && definition.settingsSchema && definition.settingsSchema.length > 0) {
+      const schemaKeys = new Set<string>()
+      const schemaDefaults: Record<string, unknown> = {}
+
+      if (definition.configSchema instanceof z.ZodObject) {
+        Object.keys(definition.configSchema.shape).forEach((key) => schemaKeys.add(key))
+        const parsed = definition.configSchema.safeParse({})
+        if (parsed.success && parsed.data && typeof parsed.data === 'object') {
+          Object.assign(schemaDefaults, parsed.data as Record<string, unknown>)
+        }
+      }
+
+      for (const setting of definition.settingsSchema) {
+        if (!('id' in setting) || typeof setting.id !== 'string') {
+          continue
+        }
+        if (setting.type === 'header' || setting.type === 'paragraph' || setting.type === 'cardList') {
+          continue
+        }
+        if (schemaKeys.size > 0 && !schemaKeys.has(setting.id)) {
+          warnings.push(`settingsSchema id "${setting.id}" missing in configSchema`)
+        }
+        if ('default' in setting && setting.default !== undefined) {
+          const expected = schemaDefaults[setting.id]
+          if (expected !== undefined && expected !== setting.default) {
+            warnings.push(`settingsSchema default mismatch for "${setting.id}"`)
+          }
+        }
+      }
+    }
+
+    if (warnings.length > 0) {
+      console.warn(`[sectionRegistry] Section "${sectionId}" validation warnings:`, warnings)
     }
 
     // Apply premium status from config
@@ -172,20 +232,30 @@ export function buildSectionInstance<T = unknown>(
   }
 
   // Get default config from definition
-  const baseConfig = definition.createConfig()
+  const baseConfig = definition.createConfig() as Record<string, unknown>
 
   // Merge with custom config
   const mergedConfig =
     customConfig && typeof customConfig === 'object'
-      ? { ...baseConfig, ...customConfig }
+      ? { ...baseConfig, ...(customConfig as Record<string, unknown>) }
       : baseConfig
+
+  // Validate + apply Zod defaults at the boundary.
+  const parsed = definition.configSchema.safeParse(mergedConfig)
+  if (!parsed.success) {
+    console.warn(
+      `[sectionRegistry] Invalid config for section "${definitionId}" instance "${instanceId}"`,
+      parsed.error.flatten().fieldErrors
+    )
+    return null
+  }
 
   return {
     id: instanceId,
     definitionId,
     label: definition.label,
     category: definition.category,
-    config: mergedConfig as T
+    config: parsed.data as T
   }
 }
 
@@ -227,7 +297,7 @@ export function debugLogSections(): void {
   console.group('[sectionRegistry] Registered Sections')
   for (const def of sectionDefinitions) {
     console.log(`- ${def.id} (${def.label})${def.premium ? ' [PREMIUM]' : ''}`)
-    console.log(`  Template: ${def.templatePath}`)
+    console.log(`  Template: ${def.templatePath ?? '(none)'}`)
     console.log(`  Settings: ${def.settingsSchema?.length ?? 0} fields`)
     console.log(`  Blocks: ${def.blocksSchema?.length ?? 0} types`)
   }

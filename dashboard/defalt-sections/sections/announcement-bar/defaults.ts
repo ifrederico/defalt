@@ -5,36 +5,21 @@
  * Includes default announcement block for immediate usability.
  */
 
-import type { AnnouncementBarSectionConfig } from './schema.js'
+import {
+  announcementBarConfigSchema,
+  announcementBlockConfigSchema,
+  type AnnouncementBarSectionConfig
+} from './schema.js'
+
+const baseDefaults = announcementBarConfigSchema.parse({})
 
 export const announcementBarDefaults: AnnouncementBarSectionConfig = {
-  // Ghost tag
-  tag: '#announcement',
-
-  // Container settings
-  width: 'default',
-  backgroundColor: '#AC1E3E',
-  textColor: '#ffffff',
-  dividerThickness: 0,
-  dividerColor: '#e5e7eb',
-  paddingTop: 8,
-  paddingBottom: 8,
-
-  // Global typography
-  typographySize: 'normal',
-  typographySpacing: 'regular',
-  typographyCase: 'default',
-  underlineLinks: true,
-
-  // Default announcement block
+  ...baseDefaults,
   announcements: [
     {
+      ...announcementBlockConfigSchema.parse({}),
       text: 'Tag #announcement-bar to a published Ghost page.',
-      link: '',
-      typographySize: 'normal',
-      typographyWeight: 'default',
-      typographySpacing: 'regular',
-      typographyCase: 'default'
+      link: ''
     }
   ]
 }

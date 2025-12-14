@@ -9,6 +9,7 @@ import {
   Undo2,
   Redo2
 } from 'lucide-react'
+import { useState } from 'react'
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu'
 import { AppButton, Dropdown } from '@defalt/ui'
 import { useWorkspaceContext } from '../contexts/useWorkspaceContext'
@@ -35,6 +36,7 @@ const pageOrder: PageType[] = ['home', 'about', 'post']
 const zoomOptions: PreviewZoom[] = [50, 75, 100, 125, 150]
 
 export function TopBar({ canDownload = true, onClearCache }: TopBarProps) {
+  const [menuOpen, setMenuOpen] = useState(false)
   const {
     currentPage,
     setCurrentPage,
@@ -213,7 +215,7 @@ export function TopBar({ canDownload = true, onClearCache }: TopBarProps) {
 
       {/* Right Section - Actions */}
       <div className="flex items-center gap-3 flex-1 justify-end">
-        <DropdownMenu.Root>
+        <DropdownMenu.Root open={menuOpen} onOpenChange={setMenuOpen}>
           <DropdownMenu.Trigger asChild>
             <button
               type="button"
@@ -269,7 +271,11 @@ export function TopBar({ canDownload = true, onClearCache }: TopBarProps) {
               <>
                 <DropdownMenu.Separator className="h-px bg-subtle my-1" />
                 <DropdownMenu.Item
-                  onSelect={openResetDialog}
+                  onSelect={(event) => {
+                    event.preventDefault()
+                    setMenuOpen(false)
+                    setTimeout(openResetDialog, 0)
+                  }}
                   className="h-9 px-2 rounded-md outline-none flex items-center gap-2 font-md text-error hover:bg-error-light data-[highlighted]:bg-error-light cursor-pointer"
                 >
                   <RotateCcw size={16} strokeWidth={1.5} />

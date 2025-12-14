@@ -8,7 +8,7 @@
  * - CSS variable injection for dynamic styling
  */
 
-import Handlebars from 'handlebars'
+import Handlebars, { type HelperOptions } from 'handlebars'
 import type { SectionPadding, RenderOptions } from './schemaTypes.js'
 
 // =============================================================================
@@ -28,6 +28,8 @@ export interface SectionRenderContext {
   padding?: SectionPadding
   /** Ghost pages data (for dynamic content sections) */
   pages?: RenderOptions['pages']
+  /** Ghost posts data (for dynamic content sections) */
+  posts?: RenderOptions['posts']
   /** Any additional context */
   [key: string]: unknown
 }
@@ -43,6 +45,7 @@ export interface RenderSectionOptions extends RenderOptions {
 
 const templateCache = new Map<string, HandlebarsTemplateDelegate>()
 const templateSourceCache = new Map<string, string>()
+const hbs = Handlebars.create()
 
 /**
  * Clear all cached templates (useful for hot reload)
@@ -74,36 +77,36 @@ export function registerSectionHelpers(): void {
   helpersRegistered = true
 
   // Conditional helpers
-  Handlebars.registerHelper('eq', (a, b) => a === b)
-  Handlebars.registerHelper('neq', (a, b) => a !== b)
-  Handlebars.registerHelper('gt', (a, b) => a > b)
-  Handlebars.registerHelper('gte', (a, b) => a >= b)
-  Handlebars.registerHelper('lt', (a, b) => a < b)
-  Handlebars.registerHelper('lte', (a, b) => a <= b)
-  Handlebars.registerHelper('and', (a, b) => a && b)
-  Handlebars.registerHelper('or', (a, b) => a || b)
-  Handlebars.registerHelper('not', (a) => !a)
+  hbs.registerHelper('eq', (a, b) => a === b)
+  hbs.registerHelper('neq', (a, b) => a !== b)
+  hbs.registerHelper('gt', (a, b) => a > b)
+  hbs.registerHelper('gte', (a, b) => a >= b)
+  hbs.registerHelper('lt', (a, b) => a < b)
+  hbs.registerHelper('lte', (a, b) => a <= b)
+  hbs.registerHelper('and', (a, b) => a && b)
+  hbs.registerHelper('or', (a, b) => a || b)
+  hbs.registerHelper('not', (a) => !a)
 
   // String helpers
-  Handlebars.registerHelper('lowercase', (str) =>
+  hbs.registerHelper('lowercase', (str) =>
     typeof str === 'string' ? str.toLowerCase() : ''
   )
-  Handlebars.registerHelper('uppercase', (str) =>
+  hbs.registerHelper('uppercase', (str) =>
     typeof str === 'string' ? str.toUpperCase() : ''
   )
-  Handlebars.registerHelper('truncate', (str, len) => {
+  hbs.registerHelper('truncate', (str, len) => {
     if (typeof str !== 'string') return ''
     const length = typeof len === 'number' ? len : 100
     return str.length > length ? str.substring(0, length) + '...' : str
   })
 
   // CSS helpers
-  Handlebars.registerHelper('cssVar', (name, value) => {
+  hbs.registerHelper('cssVar', (name, value) => {
     if (!name || value === undefined || value === null) return ''
     return `--${name}: ${value}`
   })
 
-  Handlebars.registerHelper('cssVars', function (this: Record<string, unknown>, options) {
+  hbs.registerHelper('cssVars', function (this: Record<string, unknown>, options) {
     const vars: string[] = []
     const hash = options?.hash || {}
     for (const [key, value] of Object.entries(hash)) {
@@ -115,7 +118,7 @@ export function registerSectionHelpers(): void {
   })
 
   // Style builder helper
-  Handlebars.registerHelper('buildStyle', function (this: Record<string, unknown>, options) {
+  hbs.registerHelper('buildStyle', function (this: Record<string, unknown>, options) {
     const styles: string[] = []
     const hash = options?.hash || {}
     for (const [key, value] of Object.entries(hash)) {
@@ -129,7 +132,7 @@ export function registerSectionHelpers(): void {
   })
 
   // Class builder helper
-  Handlebars.registerHelper('buildClass', function (...args) {
+  hbs.registerHelper('buildClass', function (...args) {
     const classes: string[] = []
     // Last argument is the options object
     for (let i = 0; i < args.length - 1; i++) {
@@ -142,7 +145,7 @@ export function registerSectionHelpers(): void {
   })
 
   // Conditional class helper
-  Handlebars.registerHelper('classIf', (condition, className, fallback) => {
+  hbs.registerHelper('classIf', (condition, className, fallback) => {
     if (condition) {
       return typeof className === 'string' ? className : ''
     }
@@ -150,7 +153,7 @@ export function registerSectionHelpers(): void {
   })
 
   // Default value helper
-  Handlebars.registerHelper('default', (value, defaultValue) => {
+  hbs.registerHelper('default', (value, defaultValue) => {
     if (value === undefined || value === null || value === '') {
       return defaultValue
     }
@@ -158,31 +161,31 @@ export function registerSectionHelpers(): void {
   })
 
   // JSON helper (for debugging)
-  Handlebars.registerHelper('json', (context) => {
+  hbs.registerHelper('json', (context) => {
     return JSON.stringify(context, null, 2)
   })
 
   // Math helpers
-  Handlebars.registerHelper('add', (a, b) => {
+  hbs.registerHelper('add', (a, b) => {
     const numA = typeof a === 'number' ? a : 0
     const numB = typeof b === 'number' ? b : 0
     return numA + numB
   })
 
-  Handlebars.registerHelper('subtract', (a, b) => {
+  hbs.registerHelper('subtract', (a, b) => {
     const numA = typeof a === 'number' ? a : 0
     const numB = typeof b === 'number' ? b : 0
     return numA - numB
   })
 
-  Handlebars.registerHelper('multiply', (a, b) => {
+  hbs.registerHelper('multiply', (a, b) => {
     const numA = typeof a === 'number' ? a : 0
     const numB = typeof b === 'number' ? b : 0
     return numA * numB
   })
 
   // Clamp helper
-  Handlebars.registerHelper('clamp', (value, min, max) => {
+  hbs.registerHelper('clamp', (value, min, max) => {
     const num = typeof value === 'number' ? value : 0
     const minVal = typeof min === 'number' ? min : 0
     const maxVal = typeof max === 'number' ? max : 100
@@ -190,7 +193,7 @@ export function registerSectionHelpers(): void {
   })
 
   // Unit helper (adds px, em, etc.)
-  Handlebars.registerHelper('unit', (value, unit) => {
+  hbs.registerHelper('unit', (value, unit) => {
     if (value === undefined || value === null) return ''
     const unitStr = typeof unit === 'string' ? unit : 'px'
     return `${value}${unitStr}`
@@ -198,7 +201,7 @@ export function registerSectionHelpers(): void {
 
   // Let helper - allows defining local variables in a block
   // Usage: {{#let varName=value anotherVar=otherValue}} ... {{/let}}
-  Handlebars.registerHelper('let', function (this: Record<string, unknown>, options) {
+  hbs.registerHelper('let', function (this: Record<string, unknown>, options) {
     const hash = options?.hash || {}
     // Create a new context with the hash values merged in
     const context = { ...this, ...hash }
@@ -206,14 +209,14 @@ export function registerSectionHelpers(): void {
   })
 
   // Array helpers
-  Handlebars.registerHelper('length', (arr) => {
+  hbs.registerHelper('length', (arr) => {
     if (Array.isArray(arr)) return arr.length
     return 0
   })
 
   // Check if any item in array has truthy value for specified keys
   // Usage: {{#if (hasContent cards "title" "description" "buttonText")}}
-  Handlebars.registerHelper('hasContent', (arr, ...keys) => {
+  hbs.registerHelper('hasContent', (arr, ...keys) => {
     if (!Array.isArray(arr)) return false
     // Remove the options object from keys
     const checkKeys = keys.slice(0, -1)
@@ -227,7 +230,7 @@ export function registerSectionHelpers(): void {
   })
 
   // isEmpty helper - check if value is empty (null, undefined, empty string, empty array)
-  Handlebars.registerHelper('isEmpty', (value) => {
+  hbs.registerHelper('isEmpty', (value) => {
     if (value === null || value === undefined) return true
     if (typeof value === 'string') return value.trim() === ''
     if (Array.isArray(value)) return value.length === 0
@@ -235,11 +238,157 @@ export function registerSectionHelpers(): void {
   })
 
   // isNotEmpty helper
-  Handlebars.registerHelper('isNotEmpty', (value) => {
+  hbs.registerHelper('isNotEmpty', (value) => {
     if (value === null || value === undefined) return false
     if (typeof value === 'string') return value.trim() !== ''
     if (Array.isArray(value)) return value.length > 0
     return true
+  })
+
+  // =============================================================================
+  // Ghost-like Helpers (subset)
+  // =============================================================================
+
+  type TagFilterClause = { required: string[]; excluded: string[] }
+
+  const hasTag = (item: { tags?: Array<{ slug?: string }> }, tagSlug: string): boolean => {
+    if (!item.tags || !Array.isArray(item.tags)) return false
+    return item.tags.some((tag) => tag.slug === tagSlug)
+  }
+
+  const parseTagFilter = (filter: string): TagFilterClause[] => {
+    const normalized = filter.replace(/[()]/g, '')
+    const clauses = normalized
+      .split(',')
+      .map((clause) => clause.trim())
+      .filter(Boolean)
+
+    return clauses.map((clause) => {
+      const required: string[] = []
+      const excluded: string[] = []
+      const conditions = clause
+        .split('+')
+        .map((condition) => condition.trim())
+        .filter(Boolean)
+
+      for (const condition of conditions) {
+        const tagMatch = condition.match(/^tag:(.+)$/)
+        if (tagMatch) {
+          required.push(tagMatch[1])
+          continue
+        }
+        const excludeTagMatch = condition.match(/^-tag:(.+)$/)
+        if (excludeTagMatch) {
+          excluded.push(excludeTagMatch[1])
+        }
+      }
+
+      return { required, excluded }
+    })
+  }
+
+	// get helper (supports pages/posts with basic tag filtering)
+	hbs.registerHelper('get', function (this: SectionRenderContext, resource: string, options: HelperOptions) {
+	  const baseContext =
+	    typeof this === 'object' && this !== null
+	      ? { ...(this as Record<string, unknown>) }
+	      : {}
+	  const hash = (options.hash ?? {}) as Record<string, unknown>
+	  const filter = typeof hash.filter === 'string' ? hash.filter : undefined
+	  const parsedLimit = Number(hash.limit)
+
+	  if (resource !== 'pages' && resource !== 'posts') {
+	    const frame = hbs.createFrame(options.data || {})
+	    const invocationOptions = { data: frame } as HelperOptions & { blockParams?: unknown[] }
+	    invocationOptions.blockParams = [[]]
+	    return options.fn?.({ ...baseContext, [resource]: [] } as unknown, invocationOptions)
+	  }
+
+    const source = resource === 'pages'
+      ? (Array.isArray(this.pages) ? [...this.pages] : [])
+      : (Array.isArray((this as unknown as { posts?: unknown }).posts)
+        ? [...((this as unknown as { posts?: unknown[] }).posts as unknown[])]
+        : [])
+
+    const limit = Number.isFinite(parsedLimit) && parsedLimit > 0 ? parsedLimit : source.length
+
+    let items = source as Array<{ tags?: Array<{ slug?: string }> }>
+
+    if (filter && filter.includes('tag:')) {
+      const clauses = parseTagFilter(filter)
+      items = items.filter((item) =>
+        clauses.some(({ required, excluded }) => {
+          const hasRequired = required.every((tagSlug) => hasTag(item, tagSlug))
+          const hasExcluded = excluded.some((tagSlug) => hasTag(item, tagSlug))
+          return hasRequired && !hasExcluded
+        })
+      )
+    }
+
+	  const resultSet = items.slice(0, limit)
+
+	  const frame = hbs.createFrame(options.data || {})
+	  const invocationOptions = { data: frame } as HelperOptions & { blockParams?: unknown[] }
+	  invocationOptions.blockParams = [resultSet]
+	  return options.fn?.({ ...baseContext, [resource]: resultSet } as unknown, invocationOptions)
+	})
+
+  // foreach helper (Ghost-compatible alias)
+  hbs.registerHelper('foreach', function (this: unknown, context: unknown, options: HelperOptions) {
+    if (
+      typeof context === 'object' &&
+      context !== null &&
+      'posts' in context &&
+      Array.isArray((context as { posts: unknown[] }).posts)
+    ) {
+      context = (context as { posts: unknown[] }).posts
+    }
+    if (
+      typeof context === 'object' &&
+      context !== null &&
+      'pages' in context &&
+      Array.isArray((context as { pages: unknown[] }).pages)
+    ) {
+      context = (context as { pages: unknown[] }).pages
+    }
+    if (!Array.isArray(context)) {
+      return options.inverse?.(this)
+    }
+
+    const hash = (options.hash ?? {}) as Record<string, unknown>
+    const startIndexRaw = Number(hash.from)
+    const limitRaw = Number(hash.limit)
+    const toRaw = Number(hash.to)
+
+    const startIndex = Number.isFinite(startIndexRaw) && startIndexRaw > 0 ? Math.max(0, startIndexRaw - 1) : 0
+    let endIndex = context.length
+
+    if (Number.isFinite(limitRaw) && limitRaw > 0) {
+      endIndex = Math.min(endIndex, startIndex + limitRaw)
+    }
+    if (Number.isFinite(toRaw) && toRaw > 0) {
+      endIndex = Math.min(endIndex, toRaw)
+    }
+
+    const slice = context.slice(startIndex, endIndex)
+
+    let result = ''
+    for (let i = 0; i < slice.length; i++) {
+      const originalIndex = startIndex + i
+      const data = hbs.createFrame(options.data || {})
+      ;(data as Record<string, unknown>).index = originalIndex
+      ;(data as Record<string, unknown>).number = originalIndex + 1
+      ;(data as Record<string, unknown>).first = originalIndex === 0
+      ;(data as Record<string, unknown>).last = originalIndex === context.length - 1
+      result += options.fn?.(slice[i], { data }) || ''
+    }
+    return result
+  })
+
+  // img_url helper (preview passthrough)
+  hbs.registerHelper('img_url', function (image: string) {
+    if (!image) return ''
+    return image
   })
 }
 
@@ -274,7 +423,7 @@ async function fetchAndCompileTemplate(
     templateSourceCache.set(sectionId, source)
 
     // Compile template
-    const compiled = Handlebars.compile(source)
+    const compiled = hbs.compile(source)
     templateCache.set(sectionId, compiled)
 
     return compiled
@@ -319,8 +468,8 @@ export async function renderSection(
 
     // Resolve padding: prefer explicit options, fallback to config values
     const padding: SectionPadding = options.padding ?? {
-      top: typeof config.paddingTop === 'number' ? config.paddingTop : undefined,
-      bottom: typeof config.paddingBottom === 'number' ? config.paddingBottom : undefined,
+      top: typeof config.paddingTop === 'number' ? config.paddingTop : 0,
+      bottom: typeof config.paddingBottom === 'number' ? config.paddingBottom : 0,
       left: typeof config.paddingLeft === 'number' ? config.paddingLeft : undefined,
       right: typeof config.paddingRight === 'number' ? config.paddingRight : undefined
     }
@@ -330,13 +479,17 @@ export async function renderSection(
       config,
       padding,
       pages: options.pages,
+      posts: options.posts,
       // Spread config to top-level for easier access in templates
       ...config
     }
 
     // Add computed styles from resolved padding
-    const hasPadding = padding.top !== undefined || padding.bottom !== undefined ||
-                       padding.left !== undefined || padding.right !== undefined
+    const hasPadding =
+      padding.top > 0 ||
+      padding.bottom > 0 ||
+      (padding.left ?? 0) > 0 ||
+      (padding.right ?? 0) > 0
     if (hasPadding) {
       context.sectionStyle = buildPaddingStyle(padding)
     }
@@ -369,8 +522,8 @@ export function renderSectionSync(
 
   // Resolve padding: prefer explicit options, fallback to config values
   const padding: SectionPadding = options.padding ?? {
-    top: typeof config.paddingTop === 'number' ? config.paddingTop : undefined,
-    bottom: typeof config.paddingBottom === 'number' ? config.paddingBottom : undefined,
+    top: typeof config.paddingTop === 'number' ? config.paddingTop : 0,
+    bottom: typeof config.paddingBottom === 'number' ? config.paddingBottom : 0,
     left: typeof config.paddingLeft === 'number' ? config.paddingLeft : undefined,
     right: typeof config.paddingRight === 'number' ? config.paddingRight : undefined
   }
@@ -379,11 +532,15 @@ export function renderSectionSync(
     config,
     padding,
     pages: options.pages,
+    posts: options.posts,
     ...config
   }
 
-  const hasPadding = padding.top !== undefined || padding.bottom !== undefined ||
-                     padding.left !== undefined || padding.right !== undefined
+  const hasPadding =
+    padding.top > 0 ||
+    padding.bottom > 0 ||
+    (padding.left ?? 0) > 0 ||
+    (padding.right ?? 0) > 0
   if (hasPadding) {
     context.sectionStyle = buildPaddingStyle(padding)
   }

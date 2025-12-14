@@ -12,8 +12,9 @@ export type SectionDetailPanelProps = {
 export function SectionDetailPanel({ activeDetail, onBack, props }: SectionDetailPanelProps) {
   // Look up tags for the active section from its config
   const { activeTag, activeTags, canEditSingleTag } = useMemo(() => {
-    if (activeDetail.id === 'announcement-bar') {
-      return { activeTag: '#announcement-bar', activeTags: undefined, canEditSingleTag: false }
+    const announcementBar = props.announcementBars.find((bar) => bar.id === activeDetail.id)
+    if (announcementBar) {
+      return { activeTag: announcementBar.bar.tag, activeTags: undefined, canEditSingleTag: true }
     }
 
     const customSection = props.customSections[activeDetail.id]
@@ -35,10 +36,18 @@ export function SectionDetailPanel({ activeDetail, onBack, props }: SectionDetai
     // Check for single tag
     const tagValue = typeof config.tag === 'string' ? config.tag : ''
     return { activeTag: tagValue, activeTags: undefined, canEditSingleTag: true }
-  }, [activeDetail.id, props.customSections])
+  }, [activeDetail.id, props.announcementBars, props.customSections])
 
   // Handler to update a single tag in section config
   const handleTagChange = useCallback((newTag: string) => {
+    const announcementBar = props.announcementBars.find((bar) => bar.id === activeDetail.id)
+    if (announcementBar) {
+      props.onAnnouncementBarConfigChange(activeDetail.id, (config) => ({
+        ...config,
+        tag: newTag
+      }))
+      return
+    }
     const customSection = props.customSections[activeDetail.id]
     if (customSection) {
       props.onUpdateCustomSection(activeDetail.id, (config) => ({

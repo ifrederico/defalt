@@ -97,11 +97,8 @@ import {
   applyFooterCustomization,
   applyDefaultTemplateCustomization,
   applyAnnouncementBarCustomization,
-  applyHeroCustomization,
+  applyCustomSectionTemplates,
   applyMainSectionCustomization,
-  applyGhostCardsCustomization,
-  applyGhostGridCustomization,
-  applyImageWithTextCustomization,
   applyPageTemplateCustomization,
   applyPostTemplateCustomization
 } from './defalt-rendering/theme/exportTheme.ts'
@@ -113,7 +110,7 @@ import {
 } from './defalt-utils/config/themeConfig.ts'
 import { themeExportRequestSchema, type ThemeExportRequest } from './defalt-utils/config/themeValidation.ts'
 import { canAccessSection, isPlusTier, type SubscriptionTier } from './defalt-utils/types/subscription.ts'
-import { getPremiumFeatures } from './defalt-sections/premiumConfig.ts'
+import { getPremiumFeatures } from './defalt-utils/config/premiumConfig.ts'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
@@ -133,6 +130,87 @@ interface GhostMember {
   email: string
   name: string | null
   paid: boolean
+}
+
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
+}
+
+type JsonDiffSummary = {
+  totalChanges: number
+  samplePaths: string[]
+}
+
+function diffJsonPaths(
+  before: unknown,
+  after: unknown,
+  options?: { maxDepth?: number, maxChanges?: number, maxSamples?: number }
+): JsonDiffSummary {
+  const maxDepth = options?.maxDepth ?? 6
+  const maxChanges = options?.maxChanges ?? 200
+  const maxSamples = options?.maxSamples ?? 25
+
+  const samplePaths: string[] = []
+  let totalChanges = 0
+
+  const record = (path: string) => {
+    totalChanges += 1
+    if (samplePaths.length < maxSamples) {
+      samplePaths.push(path || '<root>')
+    }
+  }
+
+  const pathJoin = (base: string, key: string) => (base ? `${base}.${key}` : key)
+
+  const visit = (a: unknown, b: unknown, path: string, depth: number) => {
+    if (totalChanges >= maxChanges) return
+    if (Object.is(a, b)) return
+
+    if (depth >= maxDepth) {
+      record(path)
+      return
+    }
+
+    if (Array.isArray(a) && Array.isArray(b)) {
+      if (a.length !== b.length) {
+        record(`${path || '<root>'}.length`)
+      }
+      const len = Math.min(a.length, b.length)
+      for (let i = 0; i < len; i += 1) {
+        visit(a[i], b[i], `${path}[${i}]`, depth + 1)
+        if (totalChanges >= maxChanges) return
+      }
+      return
+    }
+
+    if (isPlainObject(a) && isPlainObject(b)) {
+      const keys = new Set([...Object.keys(a), ...Object.keys(b)])
+      for (const key of keys) {
+        if (!(key in a)) {
+          record(`${pathJoin(path, key)} (added)`)
+          continue
+        }
+        if (!(key in b)) {
+          record(`${pathJoin(path, key)} (removed)`)
+          continue
+        }
+        visit((a as Record<string, unknown>)[key], (b as Record<string, unknown>)[key], pathJoin(path, key), depth + 1)
+        if (totalChanges >= maxChanges) return
+      }
+      return
+    }
+
+    record(path)
+  }
+
+  visit(before, after, '', 0)
+  return { totalChanges, samplePaths }
+}
+
+function normalizeThemeJsonForStorage(value: unknown): { normalized: ThemeDocument, diff: JsonDiffSummary } {
+  const normalized = normalizeThemeDocument(value)
+  const diff = diffJsonPaths(value, normalized)
+  return { normalized, diff }
 }
 
 async function getGhostMember(req: Request): Promise<GhostMember | null> {
@@ -382,7 +460,10 @@ app.get('/api/themes', async (req: Request, res: Response) => {
       'SELECT * FROM member_themes WHERE ghost_member_id = $1 ORDER BY updated_at DESC',
       [member.uuid]
     )
-    return res.json(result.rows)
+    return res.json(result.rows.map((row) => ({
+      ...row,
+      theme_json: normalizeThemeDocument(row.theme_json)
+    })))
   } catch (error) {
     console.error('Error fetching themes:', error)
     return res.status(500).json({ error: 'Failed to fetch themes' })
@@ -395,13 +476,27 @@ app.post('/api/themes', async (req: Request, res: Response) => {
     return res.status(401).json({ error: 'Unauthorized' })
   }
   const { name, description, theme_json } = req.body ?? {}
+
+  if (theme_json !== undefined && !isPlainObject(theme_json)) {
+    return res.status(400).json({ error: 'theme_json must be an object' })
+  }
+
+  const { normalized: normalizedThemeJson, diff } = normalizeThemeJsonForStorage(theme_json ?? {})
+
   try {
     const result = await pool.query<ThemeRow>(
       `INSERT INTO member_themes (ghost_member_id, name, description, theme_json, is_active)
        VALUES ($1, $2, $3, $4, true)
        RETURNING *`,
-      [member.uuid, name || 'Untitled Theme', description || null, JSON.stringify(theme_json ?? {})]
+      [member.uuid, name || 'Untitled Theme', description || null, JSON.stringify(normalizedThemeJson)]
     )
+    if (diff.totalChanges > 0) {
+      console.warn('[themes] theme_json normalized on create', {
+        themeId: result.rows[0]?.id,
+        changes: diff.totalChanges,
+        samplePaths: diff.samplePaths
+      })
+    }
     return res.status(201).json(result.rows[0])
   } catch (error) {
     console.error('Error creating theme:', error)
@@ -422,7 +517,11 @@ app.get('/api/themes/:id', async (req: Request, res: Response) => {
     if (result.rows.length === 0) {
       return res.status(404).json({ error: 'Theme not found' })
     }
-    return res.json(result.rows[0])
+    const row = result.rows[0]
+    return res.json({
+      ...row,
+      theme_json: normalizeThemeDocument(row.theme_json)
+    })
   } catch (error) {
     console.error('Error fetching theme:', error)
     return res.status(500).json({ error: 'Failed to fetch theme' })
@@ -442,6 +541,9 @@ app.put('/api/themes/:id', async (req: Request, res: Response) => {
     const values: unknown[] = []
     let paramIndex = 1
 
+    let normalizedThemeJson: ThemeDocument | undefined
+    let normalizedThemeJsonDiff: JsonDiffSummary | undefined
+
     if (name !== undefined) {
       updates.push(`name = $${paramIndex++}`)
       values.push(name)
@@ -451,8 +553,14 @@ app.put('/api/themes/:id', async (req: Request, res: Response) => {
       values.push(description)
     }
     if (theme_json !== undefined) {
+      if (!isPlainObject(theme_json)) {
+        return res.status(400).json({ error: 'theme_json must be an object' })
+      }
+      const normalized = normalizeThemeJsonForStorage(theme_json)
+      normalizedThemeJson = normalized.normalized
+      normalizedThemeJsonDiff = normalized.diff
       updates.push(`theme_json = $${paramIndex++}`)
-      values.push(JSON.stringify(theme_json))
+      values.push(JSON.stringify(normalizedThemeJson))
     }
     if (typeof is_active === 'boolean') {
       updates.push(`is_active = $${paramIndex++}`)
@@ -473,6 +581,14 @@ app.put('/api/themes/:id', async (req: Request, res: Response) => {
 
     if (result.rows.length === 0) {
       return res.status(404).json({ error: 'Theme not found' })
+    }
+
+    if (normalizedThemeJsonDiff && normalizedThemeJsonDiff.totalChanges > 0) {
+      console.warn('[themes] theme_json normalized on update', {
+        themeId: result.rows[0]?.id,
+        changes: normalizedThemeJsonDiff.totalChanges,
+        samplePaths: normalizedThemeJsonDiff.samplePaths
+      })
     }
 
     return res.json(result.rows[0])
@@ -585,9 +701,6 @@ async function syncThemeToWorkspace(
       return true
     }
   })
-
-  const heroPartialPath = path.join(workspaceThemeDir, 'partials', 'sections', 'defalt-hero.hbs')
-  await fs.rm(heroPartialPath, { force: true })
 }
 
 async function cleanupUnusedPartials(
@@ -601,6 +714,7 @@ async function cleanupUnusedPartials(
   const hasGhostCards = sections.some(s => s?.settings?.definitionId === 'ghostCards')
   const hasGhostGrid = sections.some(s => s?.settings?.definitionId === 'ghostGrid')
   const hasImageWithText = sections.some(s => s?.settings?.definitionId === 'image-with-text')
+  const hasHero = sections.some(s => s?.settings?.definitionId === 'hero')
   const hasAnnouncementBar = isAnnouncementBarEnabled(document)
 
   if (!hasGhostCards) {
@@ -611,6 +725,9 @@ async function cleanupUnusedPartials(
   }
   if (!hasImageWithText) {
     await fs.rm(path.join(partialsDir, 'defalt-image-with-text.hbs'), { force: true })
+  }
+  if (!hasHero) {
+    await fs.rm(path.join(partialsDir, 'defalt-hero.hbs'), { force: true })
   }
   if (!hasAnnouncementBar) {
     await fs.rm(path.join(partialsDir, 'announcement-bar.hbs'), { force: true })
@@ -745,11 +862,8 @@ app.post('/api/theme/export', async (req, res) => {
 
     await applyDefaultTemplateCustomization(workspaceThemeDir, themeConfigForAssets)
     await applyAnnouncementBarCustomization(workspaceThemeDir, themeConfigForAssets, document)
-    await applyHeroCustomization(workspaceThemeDir, themeConfigForAssets)
     await applyMainSectionCustomization(workspaceThemeDir, themeConfigForAssets)
-    await applyGhostCardsCustomization(workspaceThemeDir, themeConfigForAssets)
-    await applyGhostGridCustomization(workspaceThemeDir, themeConfigForAssets)
-    await applyImageWithTextCustomization(workspaceThemeDir, themeConfigForAssets)
+    await applyCustomSectionTemplates(workspaceThemeDir, themeConfigForAssets)
     await applyNavigationCustomization(workspaceThemeDir, themeConfigForAssets, document)
     await applyFooterCustomization(workspaceThemeDir, themeConfigForAssets)
     await applyPageTemplateCustomization(workspaceThemeDir, document.pages.page)

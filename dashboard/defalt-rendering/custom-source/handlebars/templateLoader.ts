@@ -1,4 +1,5 @@
 import Handlebars from 'handlebars'
+import { BASE_PATH } from '@defalt/utils/env/basePath'
 
 export const THEME_PARTIALS = [
   'sections/announcement-bar',
@@ -256,9 +257,6 @@ export function filterFooterPartial(
 
   return filtered
 }
-
-// Get base path from Vite env, strip trailing slash for concatenation
-const BASE_PATH = (import.meta.env.VITE_BASE_PATH ?? '/').replace(/\/$/, '')
 
 /**
  * Loads Handlebars templates and partials for the current page

@@ -22,10 +22,9 @@ export const definition: SectionDefinition<typeof announcementBarConfigSchema> =
   tag: '#announcement',
   category: 'header',
   defaultVisibility: true,
-  defaultPadding: { top: 8, bottom: 8 },
   configSchema: announcementBarConfigSchema,
   settingsSchema: announcementBarSettingsSchema,
-  // Note: blocksSchema omitted - announcements are handled custom in sidebar tree
+  blocksSchema: announcementBarBlocksSchema,
   createConfig: () => announcementBarDefaults,
   templatePath: 'announcement-bar/announcement-bar.hbs'
 }

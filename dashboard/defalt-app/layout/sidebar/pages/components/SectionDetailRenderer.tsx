@@ -1,6 +1,6 @@
 import { useMemo, useState, useCallback, type ReactNode } from 'react'
 import type { SectionsPanelProps } from '../SectionsPanelBase'
-import type { SectionConfigSchema, AnnouncementBarSectionConfig, HeaderSectionConfig, SourceThemeConfig } from '@defalt/sections/engine'
+import type { PaddingControls, SectionConfigSchema, AnnouncementBarSectionConfig, HeaderSectionConfig, SourceThemeConfig } from '@defalt/sections/engine'
 import { getSectionDefinition } from '@defalt/sections/engine'
 import { SECTION_ID_MAP, PADDING_BLOCK_SECTIONS, CSS_DEFAULT_MARGIN, type AnnouncementBlock } from '@defalt/utils/config/themeConfig'
 import { announcementBarBlocksSchema } from '@defalt/sections/engine'
@@ -33,6 +33,10 @@ export function SectionDetailRenderer({ activeDetail, props }: SectionDetailRend
   const activeAiSection = activeDetail
     ? props.aiSections?.find((s) => s.id === activeDetail.id)
     : undefined
+  const activeAnnouncementBar = useMemo(
+    () => (activeDetail ? props.announcementBars.find((bar) => bar.id === activeDetail.id) : undefined),
+    [activeDetail, props.announcementBars]
+  )
 
   // Build unified header config from individual props
   const headerConfig = useMemo<HeaderSectionConfig>(() => ({
@@ -42,24 +46,24 @@ export function SectionDetailRenderer({ activeDetail, props }: SectionDetailRend
     typographyCase: props.typographyCase
   }), [props.navigationLayoutValue, props.stickyHeaderValue, props.isSearchEnabled, props.typographyCase])
 
-  // Build unified announcement bar config from both bar and content props
-  const announcementBarConfig = useMemo<AnnouncementBarSectionConfig>(() => ({
-    // Container settings
-    width: props.announcementBarConfig.width,
-    backgroundColor: props.announcementBarConfig.backgroundColor,
-    textColor: props.announcementBarConfig.textColor,
-    dividerThickness: props.announcementBarConfig.dividerThickness,
-    dividerColor: props.announcementBarConfig.dividerColor,
-    paddingTop: props.announcementBarConfig.paddingTop,
-    paddingBottom: props.announcementBarConfig.paddingBottom,
-    // Typography/Content settings
-    previewText: props.announcementContentConfig.previewText,
-    typographySize: props.announcementContentConfig.typographySize,
-    typographyWeight: props.announcementContentConfig.typographyWeight,
-    typographySpacing: props.announcementContentConfig.typographySpacing,
-    typographyCase: props.announcementContentConfig.typographyCase,
-    underlineLinks: props.announcementContentConfig.underlineLinks
-  }), [props.announcementBarConfig, props.announcementContentConfig])
+  const announcementBarConfig = useMemo<AnnouncementBarSectionConfig | null>(() => {
+    if (!activeAnnouncementBar) {
+      return null
+    }
+    return {
+      tag: activeAnnouncementBar.bar.tag,
+      // Container settings
+      width: activeAnnouncementBar.bar.width,
+      backgroundColor: activeAnnouncementBar.bar.backgroundColor,
+      textColor: activeAnnouncementBar.bar.textColor,
+      dividerThickness: activeAnnouncementBar.bar.dividerThickness,
+      dividerColor: activeAnnouncementBar.bar.dividerColor,
+      paddingTop: activeAnnouncementBar.bar.paddingTop,
+      paddingBottom: activeAnnouncementBar.bar.paddingBottom,
+      // Content settings
+      announcements: activeAnnouncementBar.content.announcements
+    }
+  }, [activeAnnouncementBar])
 
   // Handler to update header config - dispatches to individual callbacks
   const handleHeaderConfigUpdate = useCallback((updater: (config: SectionConfigSchema) => SectionConfigSchema) => {
@@ -82,6 +86,10 @@ export function SectionDetailRenderer({ activeDetail, props }: SectionDetailRend
 
   // Handler to update unified announcement bar config - dispatches to both bar and content callbacks
   const handleAnnouncementBarConfigUpdate = useCallback((updater: (config: SectionConfigSchema) => SectionConfigSchema) => {
+    if (!activeAnnouncementBar || !announcementBarConfig) {
+      return
+    }
+
     const newConfig = updater(announcementBarConfig as SectionConfigSchema) as AnnouncementBarSectionConfig
 
     // Check for container setting changes
@@ -96,38 +104,30 @@ export function SectionDetailRenderer({ activeDetail, props }: SectionDetailRend
 
     // Check for typography/content setting changes
     const contentChanged =
-      newConfig.previewText !== announcementBarConfig.previewText ||
-      newConfig.typographySize !== announcementBarConfig.typographySize ||
-      newConfig.typographyWeight !== announcementBarConfig.typographyWeight ||
-      newConfig.typographySpacing !== announcementBarConfig.typographySpacing ||
-      newConfig.typographyCase !== announcementBarConfig.typographyCase ||
-      newConfig.underlineLinks !== announcementBarConfig.underlineLinks
+      JSON.stringify(newConfig.announcements) !== JSON.stringify(announcementBarConfig.announcements)
 
     // Dispatch container changes
     if (barChanged) {
-      props.onAnnouncementBarConfigChange(() => ({
-        width: newConfig.width,
-        backgroundColor: newConfig.backgroundColor,
-        textColor: newConfig.textColor,
-        dividerThickness: newConfig.dividerThickness,
-        dividerColor: newConfig.dividerColor,
-        paddingTop: newConfig.paddingTop,
-        paddingBottom: newConfig.paddingBottom
+      props.onAnnouncementBarConfigChange(activeAnnouncementBar.id, (current) => ({
+        ...current,
+        width: newConfig.width as typeof current.width,
+        backgroundColor: newConfig.backgroundColor as typeof current.backgroundColor,
+        textColor: newConfig.textColor as typeof current.textColor,
+        dividerThickness: newConfig.dividerThickness as typeof current.dividerThickness,
+        dividerColor: newConfig.dividerColor as typeof current.dividerColor,
+        paddingTop: newConfig.paddingTop as typeof current.paddingTop,
+        paddingBottom: newConfig.paddingBottom as typeof current.paddingBottom
       }))
     }
 
     // Dispatch typography/content changes
     if (contentChanged) {
-      props.onAnnouncementContentConfigChange(() => ({
-        previewText: newConfig.previewText,
-        typographySize: newConfig.typographySize,
-        typographyWeight: newConfig.typographyWeight,
-        typographySpacing: newConfig.typographySpacing,
-        typographyCase: newConfig.typographyCase,
-        underlineLinks: newConfig.underlineLinks
+      props.onAnnouncementContentConfigChange(activeAnnouncementBar.id, (current) => ({
+        ...current,
+        announcements: Array.isArray(newConfig.announcements) ? newConfig.announcements : current.announcements
       }))
     }
-  }, [announcementBarConfig, props])
+  }, [activeAnnouncementBar, announcementBarConfig, props])
 
   // Build unified theme config from individual props (for main appearance settings)
   const mainThemeConfig = useMemo<SourceThemeConfig>(() => ({
@@ -195,22 +195,20 @@ export function SectionDetailRenderer({ activeDetail, props }: SectionDetailRend
         )
       }
     }
-    // Announcement bar section - handle parent vs block selection
-    if (activeDetail.id === 'announcement-bar') {
+    // Announcement bar instance - handle parent vs block selection
+    if (activeAnnouncementBar && announcementBarConfig) {
       // Block selected - show block-specific settings
       if (activeDetail.blockIndex !== undefined) {
         const blockIndex = activeDetail.blockIndex
-        const block = props.announcementContentConfig.announcements[blockIndex]
+        const block = activeAnnouncementBar.content.announcements[blockIndex]
         if (block) {
           return (
             <AnnouncementBlockSettings
               block={block}
               onUpdateBlock={(updatedBlock) => {
-                const newAnnouncements = [...props.announcementContentConfig.announcements]
-                newAnnouncements[blockIndex] = updatedBlock
-                props.onAnnouncementContentConfigChange(() => ({
-                  ...props.announcementContentConfig,
-                  announcements: newAnnouncements
+                props.onAnnouncementContentConfigChange(activeAnnouncementBar.id, () => ({
+                  ...activeAnnouncementBar.content,
+                  announcements: [updatedBlock]
                 }))
               }}
             />
@@ -225,6 +223,7 @@ export function SectionDetailRenderer({ activeDetail, props }: SectionDetailRend
             definitionId="announcement-bar"
             config={announcementBarConfig as SectionConfigSchema}
             padding={{ top: announcementBarConfig.paddingTop, bottom: announcementBarConfig.paddingBottom }}
+            showBlocks={false}
             onUpdateConfig={handleAnnouncementBarConfigUpdate}
           />
         )
@@ -272,8 +271,8 @@ export function SectionDetailRenderer({ activeDetail, props }: SectionDetailRend
       if (definition?.settingsSchema && definition.settingsSchema.length > 0) {
         const config = activeCustomSection.config as SectionConfigSchema
         const padding = props.sectionPadding[sectionId] ?? { top: 0, bottom: 0, left: 0, right: 0 }
-        // Only show padding controls if section explicitly enables them (default: true)
-        const hasPaddingControls = definition.showPaddingControls !== false
+        const paddingControls: PaddingControls = definition.paddingControls ?? (definition.showPaddingControls === false ? 'none' : 'vertical')
+        const hasPaddingControls = paddingControls !== 'none'
         return (
           <SchemaSectionSettings
             definitionId={activeCustomSection.definitionId}
@@ -294,7 +293,6 @@ export function SectionDetailRenderer({ activeDetail, props }: SectionDetailRend
     const headerStyle = props.headerStyleValue
     const isMarginHeaderStyle = isSubheader && (headerStyle === 'Highlight' || headerStyle === 'Magazine')
     const isPaddingBlockSection = PADDING_BLOCK_SECTIONS.has(configKey)
-    const isPaddingBlockHeaderStyle = isSubheader && (headerStyle === 'Landing' || headerStyle === 'Search')
     const defaultMargin = isMarginHeaderStyle
       ? { top: SUBHEADER_MARGIN_DEFAULT, bottom: 0 }
       : CSS_DEFAULT_MARGIN[configKey]
@@ -303,9 +301,10 @@ export function SectionDetailRenderer({ activeDetail, props }: SectionDetailRend
     if (shouldRenderSpacingControls) {
       const padding = props.sectionPadding[activeDetail.id] ?? { top: 0, bottom: 0, left: 0, right: 0 }
       const margin = props.sectionMargins[activeDetail.id]
-      const spacingMode: SectionSpacingMode = isMarginHeaderStyle
+      const hasExplicitMargin = isSubheader && (margin?.top !== undefined || margin?.bottom !== undefined)
+      const spacingMode: SectionSpacingMode = hasExplicitMargin
         ? 'margin'
-        : (isPaddingBlockHeaderStyle || isPaddingBlockSection)
+        : isPaddingBlockSection
           ? 'padding-block'
           : 'auto'
       return (
@@ -333,7 +332,7 @@ export function SectionDetailRenderer({ activeDetail, props }: SectionDetailRend
       )
     }
     return <GenericCustomSectionNotice label={activeDetail.label} />
-  }, [activeDetail, activeCustomSection, activeAiSection, props, headerConfig, announcementBarConfig, handleHeaderConfigUpdate, handleAnnouncementBarConfigUpdate, mainThemeConfig, handleMainThemeConfigUpdate])
+  }, [activeDetail, activeCustomSection, activeAiSection, activeAnnouncementBar, props, headerConfig, announcementBarConfig, handleHeaderConfigUpdate, handleAnnouncementBarConfigUpdate, mainThemeConfig, handleMainThemeConfigUpdate])
 }
 
 function SettingsPanel({ children }: { children: React.ReactNode }) {
@@ -519,7 +518,7 @@ function AnnouncementBlockSettings({
   const settings = blockSchema?.settings ?? []
   const settingGroups = groupSettingsByHeader(settings)
 
-  const blockRecord = block as Record<string, unknown>
+  const blockRecord = block as unknown as Record<string, unknown>
 
   const handleFieldChange = (id: string, next: unknown) => {
     onUpdateBlock({ ...block, [id]: next } as AnnouncementBlock)

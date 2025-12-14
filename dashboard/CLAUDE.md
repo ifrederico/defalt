@@ -134,7 +134,7 @@ Contexts in `defalt-app/contexts/` use base classes (`*Base.ts`) for shared logi
 - `HistoryManager.ts` - Command pattern implementation with per-page undo/redo stacks
 - `commands.ts` - Command types and metadata
 
-**Premium Features** (`defalt-sections/premiumConfig.ts`):
+**Premium Features** (`defalt-utils/config/premiumConfig.ts`):
 - Premium sections: `hero`, `grid`, `testimonials`, `faq`, `about`, `image-with-text`
 - Free sections: `announcement-bar`, `ghostCards`, `ghostGrid`, `custom-css`
 - Use `isPremium(featureId)` / `isFree(featureId)` to check access

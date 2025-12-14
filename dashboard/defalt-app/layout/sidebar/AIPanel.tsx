@@ -470,12 +470,12 @@ ${generatedSection.css || ''}
                     onKeyDown={handleKeyDown}
                     placeholder="Describe the section you want to build"
                     className="w-full min-h-[100px] max-h-[200px] px-3 py-2 pr-12 bg-transparent rounded-[7px] text-foreground placeholder:text-placeholder resize-none focus:outline-none disabled:opacity-50"
-                    disabled={isLimitReached}
+                    disabled={Boolean(isLimitReached)}
                   />
                   <button
                     type="button"
                     onClick={handleGenerate}
-                    disabled={!prompt.trim() || isLimitReached}
+                    disabled={!prompt.trim() || Boolean(isLimitReached)}
                     className="absolute bottom-2 right-2 w-8 h-8 rounded-full flex items-center justify-center transition-all disabled:bg-hover disabled:text-muted disabled:opacity-50 disabled:cursor-not-allowed enabled:bg-primary enabled:text-white enabled:hover:opacity-80"
                     aria-label="Generate"
                   >

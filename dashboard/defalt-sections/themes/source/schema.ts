@@ -57,7 +57,6 @@ const appearanceSettings: SettingSchema[] = [
     type: 'select',
     id: 'postFeedStyle',
     label: 'Post feed style',
-    default: 'List',
     options: [
       { label: 'List', value: 'List' },
       { label: 'Grid', value: 'Grid' }
@@ -66,26 +65,22 @@ const appearanceSettings: SettingSchema[] = [
   {
     type: 'checkbox',
     id: 'showImagesInFeed',
-    label: 'Show images in feed',
-    default: true
+    label: 'Show images in feed'
   },
   {
     type: 'checkbox',
     id: 'showAuthor',
-    label: 'Show author',
-    default: true
+    label: 'Show author'
   },
   {
     type: 'checkbox',
     id: 'showPublishDate',
-    label: 'Show publish date',
-    default: true
+    label: 'Show publish date'
   },
   {
     type: 'checkbox',
     id: 'showPublicationInfoSidebar',
-    label: 'Show publication info sidebar',
-    default: false
+    label: 'Show publication info sidebar'
   }
 ]
 
@@ -98,20 +93,17 @@ const postSettings: SettingSchema[] = [
   {
     type: 'checkbox',
     id: 'showPostMetadata',
-    label: 'Show post metadata',
-    default: true
+    label: 'Show post metadata'
   },
   {
     type: 'checkbox',
     id: 'enableDropCapsOnPosts',
-    label: 'Enable drop caps on posts',
-    default: false
+    label: 'Enable drop caps on posts'
   },
   {
     type: 'checkbox',
     id: 'showRelatedArticles',
-    label: 'Show related articles',
-    default: true
+    label: 'Show related articles'
   }
 ]
 
@@ -119,26 +111,24 @@ const spacingSettings: SettingSchema[] = [
   {
     type: 'header',
     id: 'spacing-header',
-    label: 'Spacing'
+    label: 'Padding'
   },
   {
     type: 'range',
     id: 'padding.top',
-    label: 'Padding top',
+    label: 'Top',
     min: 0,
     max: 200,
     step: 1,
-    default: 0,
     unit: 'px'
   },
   {
     type: 'range',
     id: 'padding.bottom',
-    label: 'Padding bottom',
+    label: 'Bottom',
     min: 0,
     max: 200,
     step: 1,
-    default: 0,
     unit: 'px'
   }
 ]
@@ -159,7 +149,7 @@ export const sourceThemeSettingsGroups: ThemeSettingsGroup[] = [
   },
   {
     id: 'spacing',
-    title: 'Spacing',
+    title: 'Padding',
     settings: spacingSettings
   }
 ]

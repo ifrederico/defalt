@@ -3,8 +3,8 @@ import path from 'path'
 import {
   extractHeaderSettings,
   DEFAULT_ANNOUNCEMENT_BAR_CONFIG,
-  normalizeAnnouncementBarConfig,
   DEFAULT_ANNOUNCEMENT_CONTENT_CONFIG,
+  normalizeAnnouncementBarConfig,
   normalizeAnnouncementContentConfig,
   DEFAULT_HEADER_SETTINGS,
   CSS_DEFAULT_PADDING,
@@ -18,16 +18,20 @@ import type {
   ThemeDocument,
   AnnouncementBarConfig,
   AnnouncementContentConfig,
+  AnnouncementBarInstance,
+  AnnouncementBlock,
   SectionPadding,
   SectionMargin,
 } from '../../defalt-utils/config/themeConfig.js'
 // Import from individual files to avoid pulling in sectionRegistry (which uses import.meta.glob)
 // This is needed because exportTheme runs during Vite config loading
-import { sanitizeHref } from '../../defalt-sections/engine/hbsRenderer.js'
-import type { HeroSectionConfig } from '../../defalt-sections/sections/hero/schema.js'
+import { heroConfigSchema, type HeroConfig } from '../../defalt-sections/sections/hero/schema.js'
 import type { GhostCardsSectionConfig } from '../../defalt-sections/sections/ghostCards/schema.js'
 import type { GhostGridSectionConfig } from '../../defalt-sections/sections/ghostGrid/schema.js'
-import type { ImageWithTextSectionConfig } from '../../defalt-sections/sections/image-with-text/schema.js'
+import { imageWithTextConfigSchema, type ImageWithTextSectionConfig } from '../../defalt-sections/sections/image-with-text/schema.js'
+import { ghostCardsConfigSchema } from '../../defalt-sections/sections/ghostCards/schema.js'
+import { ghostGridConfigSchema } from '../../defalt-sections/sections/ghostGrid/schema.js'
+import { formatInternalTag, toApiTagSlug, parseGhostCardIdSuffix } from '../../defalt-sections/utils/tagUtils.js'
 
 // Known section types that can be exported
 const KNOWN_SECTION_TYPES = new Set(['hero', 'ghostCards', 'ghostGrid', 'image-with-text'])
@@ -49,32 +53,16 @@ function getSectionTemplatePath(sectionId: string): string | null {
 }
 
 /**
- * Read a section template from the new engine structure
- * Falls back to the old location if not found
+ * Read a section template from `defalt-sections` (single source of truth).
  */
-async function readSectionTemplate(sectionId: string, themeDir: string): Promise<string | null> {
-  // Try new location first
+async function readSectionTemplate(sectionId: string): Promise<string | null> {
   const templatePath = getSectionTemplatePath(sectionId)
-  if (templatePath) {
-    const newPath = path.join(SECTIONS_SOURCE_DIR, templatePath)
-    try {
-      return await fs.readFile(newPath, 'utf-8')
-    } catch {
-      // Fall through to old location
-    }
+  if (!templatePath) {
+    return null
   }
-
-  // Fall back to old location in theme partials
-  const sectionNameMap: Record<string, string> = {
-    'hero': 'defalt-hero',
-    'ghostCards': 'defalt-ghost-cards',
-    'ghostGrid': 'defalt-ghost-grid',
-    'image-with-text': 'defalt-image-with-text'
-  }
-  const partialName = sectionNameMap[sectionId] || `defalt-${sectionId}`
-  const oldPath = path.join(themeDir, 'partials', 'sections', `${partialName}.hbs`)
+  const fullPath = path.join(SECTIONS_SOURCE_DIR, templatePath)
   try {
-    return await fs.readFile(oldPath, 'utf-8')
+    return await fs.readFile(fullPath, 'utf-8')
   } catch {
     return null
   }
@@ -221,17 +209,77 @@ function getSectionInstanceSuffix(sectionKey: string, definitionId: string): str
   // Extract numeric suffix from section key (e.g., "ghost-cards-2" -> "-2", "image-with-text-3" -> "-3")
   // Keys like "ghost-cards" or "image-with-text" have no suffix
   const basePatterns: Record<string, RegExp> = {
+    'hero': /^(?:hero|hero-defalt|header-defalt)(?:-(\d+))?$/i,
     'ghostCards': /^ghost-cards?(-(\d+))?$/i,
     'image-with-text': /^image-with-text(-(\d+))?$/i,
   }
   const pattern = basePatterns[definitionId]
   if (pattern) {
     const match = sectionKey.match(pattern)
-    if (match && match[2]) {
-      return `-${match[2]}`
+    const numericSuffix = match?.[2] ?? match?.[1]
+    if (numericSuffix) {
+      return `-${numericSuffix}`
     }
   }
   return ''
+}
+
+function buildSectionStyle(padding: PaddingConfig): string {
+  const styles: string[] = []
+  if (padding.top > 0) {
+    styles.push(`padding-top: ${padding.top}px`)
+  }
+  if (padding.bottom > 0) {
+    styles.push(`padding-bottom: ${padding.bottom}px`)
+  }
+  if ((padding.left ?? 0) > 0) {
+    styles.push(`padding-left: ${padding.left}px`)
+  }
+  if ((padding.right ?? 0) > 0) {
+    styles.push(`padding-right: ${padding.right}px`)
+  }
+  return styles.join('; ')
+}
+
+function resolveContainerPaddingX(contentWidth: string): string {
+  return contentWidth === 'none' ? '0px' : 'var(--container-gap, 24px)'
+}
+
+function resolveImageColumns(imageWidth: string): { imageColumn: string; textColumn: string } {
+  if (imageWidth === '2/3') return { imageColumn: '2fr', textColumn: '1fr' }
+  if (imageWidth === '3/4') return { imageColumn: '3fr', textColumn: '1fr' }
+  return { imageColumn: '1fr', textColumn: '1fr' }
+}
+
+function resolveImageAspectRatio(imageAspect: string): string {
+  if (imageAspect === 'square') return '1 / 1'
+  if (imageAspect === 'portrait') return '3 / 4'
+  if (imageAspect === 'wide') return '16 / 9'
+  if (imageAspect === 'tall') return '9 / 16'
+  if (imageAspect === 'landscape') return '4 / 3'
+  return ''
+}
+
+function toTagFilter(internalTag: string): string {
+  return `tag:${toApiTagSlug(internalTag)}`
+}
+
+function resolveHeroFallbackTag(sectionKey: string): string {
+  const match = sectionKey.trim().toLowerCase().match(/^(?:hero-defalt|header-defalt|hero)(?:-(\d+))?$/)
+  const suffix = match?.[1]
+  return suffix ? `#hero-${suffix}` : '#hero'
+}
+
+function resolveImageWithTextFallbackTag(sectionKey: string): string {
+  const match = sectionKey.trim().toLowerCase().match(/^image-with-text(?:-(\d+))?$/)
+  const suffix = match?.[1]
+  return suffix ? `#image-with-text-${suffix}` : '#image-with-text'
+}
+
+function resolveGhostCardsFallbackTag(sectionKey: string): string {
+  const suffix = parseGhostCardIdSuffix(sectionKey)
+  if (suffix <= 1) return '#ghost-card'
+  return `#ghost-card-${suffix}`
 }
 
 export function generateHomeTemplate(
@@ -316,32 +364,93 @@ export function generateHomeTemplate(
       if (!definitionId || !KNOWN_SECTION_TYPES.has(definitionId)) {
         continue
       }
-      if (definitionId === 'hero') {
-        // Hero section is not exported yet (keep internal-only)
-        continue
-      }
 
       // Check visibility - wrap in hidden div if not visible
       const sectionVisible = sectionConfig?.settings?.visible !== false
       let sectionPartial = ''
 
-      if (definitionId === 'ghostCards') {
-        // Ghost Cards section uses defalt-ghost-cards.hbs partial (customized by applyGhostCardsCustomization)
-        // Multiple instances get unique partials: defalt-ghost-cards.hbs, defalt-ghost-cards-2.hbs, etc.
-        const suffix = getSectionInstanceSuffix(key, definitionId)
-        sectionPartial = `{{> "sections/defalt-ghost-cards${suffix}"}}`
+      const resolvedPadding = resolveSectionPadding(sectionConfig, { top: 48, bottom: 48, left: 0, right: 0 })
+      const sectionStyle = buildSectionStyle(resolvedPadding)
+
+      if (definitionId === 'hero') {
+        const heroConfig: HeroConfig = (() => {
+          const parsed = heroConfigSchema.safeParse(sectionConfig.settings?.customConfig ?? {})
+          if (parsed.success) {
+            return parsed.data
+          }
+          return heroConfigSchema.parse({})
+        })()
+
+        const containerPaddingX = resolveContainerPaddingX(heroConfig.contentWidth)
+        const backgroundColor = sanitizeHexColor(heroConfig.backgroundColor, 'transparent')
+        const internalTag = formatInternalTag(heroConfig.ghostPageTag) || resolveHeroFallbackTag(key)
+        const tagFilter = toTagFilter(internalTag)
+        const imageOnRight = heroConfig.invert === true || heroConfig.imagePosition === 'right'
+        const { imageColumn, textColumn } = resolveImageColumns(heroConfig.imageWidth)
+        const imageAspectRatio = resolveImageAspectRatio(heroConfig.imageAspect)
+        const imageBorderRadius = Math.max(0, Math.min(96, Math.round(heroConfig.imageBorderRadius)))
+
+        sectionPartial = `{{> "sections/defalt-hero" sectionId=${JSON.stringify(key)} sectionStyle=${JSON.stringify(sectionStyle)} contentWidth=${JSON.stringify(heroConfig.contentWidth)} containerPaddingX=${JSON.stringify(containerPaddingX)} backgroundColor=${JSON.stringify(backgroundColor)} textAlignment=${JSON.stringify(heroConfig.textAlignment)} pageTitle=${heroConfig.pageTitle} imageOnRight=${imageOnRight} imageColumn=${JSON.stringify(imageColumn)} textColumn=${JSON.stringify(textColumn)} imageAspectRatio=${JSON.stringify(imageAspectRatio)} imageBorderRadius=${imageBorderRadius} tagFilter=${JSON.stringify(tagFilter)} internalTag=${JSON.stringify(internalTag)} }}`
+      } else if (definitionId === 'ghostCards') {
+        const rawConfig = (sectionConfig.settings?.customConfig ?? {}) as Record<string, unknown>
+
+        const cardsConfig: GhostCardsSectionConfig = (() => {
+          const parsed = ghostCardsConfigSchema.safeParse(rawConfig)
+          if (parsed.success) {
+            return parsed.data
+          }
+          return ghostCardsConfigSchema.parse({})
+        })()
+
+        const containerPaddingX = resolveContainerPaddingX(cardsConfig.contentWidth)
+        const backgroundColor = sanitizeHexColor(cardsConfig.backgroundColor, 'transparent')
+        const internalTag = formatInternalTag(cardsConfig.ghostPageTag) || resolveGhostCardsFallbackTag(key)
+        const tagFilter = toTagFilter(internalTag)
+        const hideTagFilter = `tag:hash-cards-hide+${tagFilter}`
+
+        sectionPartial = `{{> "sections/defalt-ghost-cards" sectionId=${JSON.stringify(key)} sectionStyle=${JSON.stringify(sectionStyle)} contentWidth=${JSON.stringify(cardsConfig.contentWidth)} containerPaddingX=${JSON.stringify(containerPaddingX)} backgroundColor=${JSON.stringify(backgroundColor)} pageTitle=${cardsConfig.pageTitle} textAlignment=${JSON.stringify(cardsConfig.textAlignment)} titleSize=${JSON.stringify(cardsConfig.titleSize)} tagFilter=${JSON.stringify(tagFilter)} hideTagFilter=${JSON.stringify(hideTagFilter)} internalTag=${JSON.stringify(internalTag)} }}`
       } else if (definitionId === 'ghostGrid') {
-        // Ghost Grid section uses defalt-ghost-grid.hbs partial (customized by applyGhostGridCustomization)
-        sectionPartial = '{{> "sections/defalt-ghost-grid"}}'
+        const rawConfig = (sectionConfig.settings?.customConfig ?? {}) as Record<string, unknown>
+
+        const gridConfig: GhostGridSectionConfig = (() => {
+          const parsed = ghostGridConfigSchema.safeParse(rawConfig)
+          if (parsed.success) {
+            return parsed.data
+          }
+          return ghostGridConfigSchema.parse({})
+        })()
+
+        const containerPaddingX = resolveContainerPaddingX(gridConfig.contentWidth)
+        const backgroundColor = sanitizeHexColor(gridConfig.backgroundColor, 'transparent')
+        const internalTagLeft = formatInternalTag(gridConfig.tagLeft) || '#grid-left'
+        const internalTagRight = formatInternalTag(gridConfig.tagRight) || '#grid-right'
+        const leftTagFilter = toTagFilter(internalTagLeft)
+        const rightTagFilter = toTagFilter(internalTagRight)
+        const anyTagFilter = `${leftTagFilter},${rightTagFilter}`
+        const hideTagFilter = `tag:hash-cards-hide+${leftTagFilter},tag:hash-cards-hide+${rightTagFilter}`
+
+        sectionPartial = `{{> "sections/defalt-ghost-grid" sectionId=${JSON.stringify(key)} sectionStyle=${JSON.stringify(sectionStyle)} contentWidth=${JSON.stringify(gridConfig.contentWidth)} containerPaddingX=${JSON.stringify(containerPaddingX)} backgroundColor=${JSON.stringify(backgroundColor)} pageTitle=${gridConfig.pageTitle} textAlignment=${JSON.stringify(gridConfig.textAlignment)} titleSize=${JSON.stringify(gridConfig.titleSize)} stackOnMobile=${gridConfig.stackOnMobile} gap=${gridConfig.gap} leftTagFilter=${JSON.stringify(leftTagFilter)} rightTagFilter=${JSON.stringify(rightTagFilter)} anyTagFilter=${JSON.stringify(anyTagFilter)} hideTagFilter=${JSON.stringify(hideTagFilter)} internalTagLeft=${JSON.stringify(internalTagLeft)} internalTagRight=${JSON.stringify(internalTagRight)} }}`
       } else if (definitionId === 'image-with-text') {
-        // Image with Text section uses defalt-image-with-text.hbs partial
-        // Multiple instances get unique partials: defalt-image-with-text.hbs, defalt-image-with-text-2.hbs, etc.
-        const suffix = getSectionInstanceSuffix(key, definitionId)
-        sectionPartial = `{{> "sections/defalt-image-with-text${suffix}"}}`
-      } else {
-        // Unknown section type - all known types should be handled above
-        console.warn(`[exportTheme] Unknown section type: ${definitionId}, skipping`)
-        continue
+        const rawConfig = (sectionConfig.settings?.customConfig ?? {}) as Record<string, unknown>
+
+        const imageTextConfig: ImageWithTextSectionConfig = (() => {
+          const parsed = imageWithTextConfigSchema.safeParse(rawConfig)
+          if (parsed.success) {
+            return parsed.data
+          }
+          return imageWithTextConfigSchema.parse({})
+        })()
+
+        const containerPaddingX = resolveContainerPaddingX(imageTextConfig.contentWidth)
+        const backgroundColor = sanitizeHexColor(imageTextConfig.backgroundColor, 'transparent')
+        const internalTag = formatInternalTag(imageTextConfig.ghostPageTag) || resolveImageWithTextFallbackTag(key)
+        const tagFilter = toTagFilter(internalTag)
+        const imageOnRight = imageTextConfig.invert === true || imageTextConfig.imagePosition === 'right'
+        const { imageColumn, textColumn } = resolveImageColumns(imageTextConfig.imageWidth)
+        const imageAspectRatio = resolveImageAspectRatio(imageTextConfig.imageAspect)
+        const imageBorderRadius = Math.max(0, Math.min(96, Math.round(imageTextConfig.imageBorderRadius)))
+
+        sectionPartial = `{{> "sections/defalt-image-with-text" sectionId=${JSON.stringify(key)} sectionStyle=${JSON.stringify(sectionStyle)} contentWidth=${JSON.stringify(imageTextConfig.contentWidth)} containerPaddingX=${JSON.stringify(containerPaddingX)} backgroundColor=${JSON.stringify(backgroundColor)} textAlignment=${JSON.stringify(imageTextConfig.textAlignment)} pageTitle=${imageTextConfig.pageTitle} imageOnRight=${imageOnRight} imageColumn=${JSON.stringify(imageColumn)} textColumn=${JSON.stringify(textColumn)} imageAspectRatio=${JSON.stringify(imageAspectRatio)} imageBorderRadius=${imageBorderRadius} tagFilter=${JSON.stringify(tagFilter)} internalTag=${JSON.stringify(internalTag)} }}`
       }
 
       if (sectionVisible) {
@@ -654,191 +763,213 @@ export async function applyAnnouncementBarCustomization(themeDir: string, config
 
   const sections = config.sections || {}
   const headerSettings = sections.header?.settings as (SectionSettings & {
+    announcementBars?: AnnouncementBarInstance[]
     announcementBarVisible?: boolean
     announcementBarConfig?: AnnouncementBarConfig
     announcementContentConfig?: AnnouncementContentConfig
   }) | undefined
 
-  // Check visibility - support both new section-based and legacy header-based config
-  const announcementSectionVisible = sections['announcement-bar']?.settings?.visible
-  const isVisible = typeof announcementSectionVisible === 'boolean'
-    ? announcementSectionVisible
-    : headerSettings?.announcementBarVisible ?? true
+  const resolveLegacyAnnouncementBars = (): AnnouncementBarInstance[] => {
+    const legacyVisible = typeof headerSettings?.announcementBarVisible === 'boolean'
+      ? headerSettings.announcementBarVisible
+      : undefined
+    if (legacyVisible === undefined) {
+      return []
+    }
 
-  // If not visible, generate empty partial
-  if (!isVisible) {
-    await fs.writeFile(partialPath, '{{!-- Announcement Bar - Hidden by Defalt Theme Editor --}}\n', 'utf-8')
+    const legacyBar = normalizeAnnouncementBarConfig(
+      headerSettings?.announcementBarConfig ?? DEFAULT_ANNOUNCEMENT_BAR_CONFIG,
+      DEFAULT_ANNOUNCEMENT_BAR_CONFIG
+    )
+    const legacyContent = normalizeAnnouncementContentConfig(
+      headerSettings?.announcementContentConfig ?? DEFAULT_ANNOUNCEMENT_CONTENT_CONFIG,
+      DEFAULT_ANNOUNCEMENT_CONTENT_CONFIG,
+      headerSettings?.announcementBarConfig
+    )
+
+    const announcements = legacyContent.announcements.length > 0
+      ? legacyContent.announcements
+      : DEFAULT_ANNOUNCEMENT_CONTENT_CONFIG.announcements
+
+    return announcements.map((announcement, idx) => ({
+      id: idx === 0 ? 'announcement-bar' : `announcement-bar-${idx + 1}`,
+      hidden: !legacyVisible,
+      bar: { ...legacyBar },
+      content: {
+        ...legacyContent,
+        announcements: [announcement]
+      }
+    }))
+  }
+
+  const announcementBars = Array.isArray(headerSettings?.announcementBars)
+    ? headerSettings.announcementBars
+    : resolveLegacyAnnouncementBars()
+
+  const visibleBars = announcementBars.filter((bar) => bar && typeof bar === 'object' && bar.hidden !== true)
+  if (visibleBars.length === 0) {
+    await fs.writeFile(partialPath, '{{!-- Announcement Bars - Not added --}}\n', 'utf-8')
     return
   }
 
-  const normalizedConfig = normalizeAnnouncementBarConfig(
-    headerSettings?.announcementBarConfig ?? DEFAULT_ANNOUNCEMENT_BAR_CONFIG,
-    DEFAULT_ANNOUNCEMENT_BAR_CONFIG
-  )
-  const contentConfig = normalizeAnnouncementContentConfig(
-    headerSettings?.announcementContentConfig ?? DEFAULT_ANNOUNCEMENT_CONTENT_CONFIG,
-    DEFAULT_ANNOUNCEMENT_CONTENT_CONFIG,
-    headerSettings?.announcementBarConfig
-  )
-
-  // Resolve background color - use CSS variable if it matches accent
   const accentReference = (document?.accentColor ?? DEFAULT_HEADER_SETTINGS.accentColor)?.toLowerCase() ?? ''
-  const backgroundColorValue = normalizedConfig.backgroundColor.toLowerCase() === accentReference
-    ? 'var(--ghost-accent-color)'
-    : normalizedConfig.backgroundColor
+  const resolveBackgroundColor = (value: string) =>
+    value.toLowerCase() === accentReference ? 'var(--ghost-accent-color)' : value
 
-  // Build class names based on config
-  const classNames: string[] = []
-  if (contentConfig.typographySize === 'small') {
-    classNames.push('announcement-bar--size-small')
-  } else if (contentConfig.typographySize === 'large') {
-    classNames.push('announcement-bar--size-large')
-  } else if (contentConfig.typographySize === 'x-large') {
-    classNames.push('announcement-bar--size-x-large')
-  }
-  if (contentConfig.typographyWeight === 'light') {
-    classNames.push('announcement-bar--weight-light')
-  } else if (contentConfig.typographyWeight === 'bold') {
-    classNames.push('announcement-bar--weight-bold')
-  }
-  if (contentConfig.typographySpacing === 'tight') {
-    classNames.push('announcement-bar--spacing-tight')
-  } else if (contentConfig.typographySpacing === 'wide') {
-    classNames.push('announcement-bar--spacing-wide')
-  }
-  if (contentConfig.typographyCase === 'uppercase') {
-    classNames.push('announcement-bar--uppercase')
-  }
-  if (contentConfig.underlineLinks) {
-    classNames.push('announcement-bar--underline-links')
-  }
-  if (normalizedConfig.width === 'narrow') {
-    classNames.push('gh-inner')
+  const resolveTypographyStyle = (block: AnnouncementBlock) => {
+    const size = block.typographySize
+    const weight = block.typographyWeight
+    const spacing = block.typographySpacing
+    const casing = block.typographyCase
+
+    const fontSize =
+      size === 'small' ? '1.2rem' :
+        size === 'large' ? '1.6rem' :
+          size === 'x-large' ? '1.8rem' :
+            '1.4rem'
+
+    const fontWeight =
+      weight === 'light' ? '300' :
+        weight === 'bold' ? '700' :
+          '500'
+
+    const letterSpacing =
+      spacing === 'tight' ? '-0.02em' :
+        spacing === 'wide' ? '0.05em' :
+          '0'
+
+    const textTransform = casing === 'uppercase' ? 'uppercase' : 'none'
+
+    return `font-size: ${fontSize}; font-weight: ${fontWeight}; letter-spacing: ${letterSpacing}; text-transform: ${textTransform};`
   }
 
-  const classString = classNames.length > 0 ? ` ${classNames.join(' ')}` : ''
-
-  // Generate complete clean template (no markers)
-  const template = `{{!-- Announcement Bar - Generated by Defalt Theme Editor --}}
+  const styleBlock = `{{!-- Announcement Bars - Generated by Defalt Theme Editor --}}
 <style>
 .announcement-bar {
-    --announcement-bar-padding-top: ${normalizedConfig.paddingTop}px;
-    --announcement-bar-padding-bottom: ${normalizedConfig.paddingBottom}px;
-    --announcement-bar-background-color: ${backgroundColorValue};
-    --announcement-bar-text-color: ${normalizedConfig.textColor};
-    --announcement-bar-divider-thickness: ${normalizedConfig.dividerThickness}px;
-    background-color: var(--announcement-bar-background-color);
-    color: var(--announcement-bar-text-color);
-    padding-top: var(--announcement-bar-padding-top);
-    padding-bottom: var(--announcement-bar-padding-bottom);
-    text-align: center;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    position: relative;
-    border-bottom: var(--announcement-bar-divider-thickness) solid var(--color-light-gray);
+  background-color: var(--announcement-bar-background-color);
+  color: var(--announcement-bar-text-color);
+  border-bottom: var(--announcement-bar-divider-thickness) solid var(--announcement-bar-divider-color);
+  text-align: center;
 }
 
-.announcement-bar.gh-inner {
-    max-width: var(--container-width);
-    margin-left: auto;
-    margin-right: auto;
+.announcement-bar__content {
+  max-width: 1320px;
+  margin: 0 auto;
+  padding: 0 16px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 0.5em;
 }
 
-.announcement-bar__text {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    flex-wrap: wrap;
-    column-gap: 1.2rem;
-    row-gap: 0.6rem;
-    font-size: 1.4rem;
-    line-height: 1.8rem;
-    font-weight: 500;
-    letter-spacing: 0.03em;
+.announcement-bar--narrow .announcement-bar__content {
+  max-width: 960px;
 }
 
-.announcement-bar__copy {
-    display: inline-flex;
-    align-items: center;
-    white-space: pre-wrap;
+.announcement-bar__item {
+  display: inline;
 }
 
-.announcement-bar__copy a {
-    color: inherit;
-    text-decoration: none;
+.announcement-bar__link {
+  color: inherit;
+  text-decoration: none;
 }
 
-.announcement-bar--underline-links .announcement-bar__copy a {
-    text-decoration: underline;
+.announcement-bar__link:hover {
+  opacity: 0.8;
 }
 
-.announcement-bar__copy--rich {
-    display: inline-flex;
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: center;
-}
-
-.announcement-bar__copy--rich > p {
-    margin: 0;
-    display: inline;
-}
-
-.announcement-bar__copy--rich > :not(p:first-of-type) {
-    display: none !important;
-}
-
-.announcement-bar--size-small .announcement-bar__text {
-    font-size: 1.2rem;
-    line-height: 1.6rem;
-}
-
-.announcement-bar--size-large .announcement-bar__text {
-    font-size: 1.6rem;
-    line-height: 2rem;
-}
-
-.announcement-bar--size-x-large .announcement-bar__text {
-    font-size: 1.8rem;
-    line-height: 2.2rem;
-}
-
-.announcement-bar--weight-light .announcement-bar__text {
-    font-weight: 400;
-}
-
-.announcement-bar--weight-bold .announcement-bar__text {
-    font-weight: 600;
-}
-
-.announcement-bar--spacing-tight .announcement-bar__text {
-    letter-spacing: 0.01em;
-}
-
-.announcement-bar--spacing-wide .announcement-bar__text {
-    letter-spacing: 0.08em;
-}
-
-.announcement-bar--uppercase .announcement-bar__text {
-    text-transform: uppercase;
+.announcement-bar__separator {
+  opacity: 0.5;
+  margin: 0 0.25em;
 }
 </style>
-
-{{#get "pages" filter="tag:hash-announcement-bar" limit="1" include="tags" as |announcementPages|}}
-    {{#if announcementPages.[0]}}
-        <section class="announcement-bar${classString}" id="announcement" role="status" aria-live="polite">
-            <div class="announcement-bar__text" aria-label="Announcement">
-                <div class="announcement-bar__copy announcement-bar__copy--rich">
-                    {{{announcementPages.[0].html}}}
-                </div>
-            </div>
-        </section>
-    {{/if}}
-{{/get}}
 `
 
-  await fs.writeFile(partialPath, template, 'utf-8')
+  const renderedBars = visibleBars.map((bar) => {
+    const normalizedBar = normalizeAnnouncementBarConfig(bar.bar ?? DEFAULT_ANNOUNCEMENT_BAR_CONFIG, DEFAULT_ANNOUNCEMENT_BAR_CONFIG)
+    const normalizedContent = normalizeAnnouncementContentConfig(
+      bar.content ?? DEFAULT_ANNOUNCEMENT_CONTENT_CONFIG,
+      DEFAULT_ANNOUNCEMENT_CONTENT_CONFIG,
+      bar.bar
+    )
+
+    const announcements = normalizedContent.announcements.length > 0
+      ? normalizedContent.announcements.slice(0, 1)
+      : []
+
+    const className = normalizedBar.width === 'narrow'
+      ? 'announcement-bar announcement-bar--narrow'
+      : 'announcement-bar'
+
+    const style = [
+      `padding-top: ${normalizedBar.paddingTop}px`,
+      `padding-bottom: ${normalizedBar.paddingBottom}px`,
+      `--announcement-bar-background-color: ${resolveBackgroundColor(normalizedBar.backgroundColor)}`,
+      `--announcement-bar-text-color: ${normalizedBar.textColor}`,
+      `--announcement-bar-divider-thickness: ${normalizedBar.dividerThickness}px`,
+      `--announcement-bar-divider-color: ${normalizedBar.dividerColor}`,
+    ].join('; ')
+
+    const contentMarkup = (() => {
+      if (announcements.length > 0) {
+        return announcements.map((announcement, idx) => {
+          const separator = idx > 0 ? '<span class="announcement-bar__separator">·</span>' : ''
+          const safeText = escapeHandlebarsString(announcement.text ?? '')
+          const safeLink = typeof announcement.link === 'string' ? escapeHandlebarsString(announcement.link) : ''
+          const typographyStyle = resolveTypographyStyle(announcement)
+          if (safeLink) {
+            return `${separator}<a href="${safeLink}" class="announcement-bar__link announcement-bar__item" style="${typographyStyle}">${safeText}</a>`
+          }
+          return `${separator}<span class="announcement-bar__item" style="${typographyStyle}">${safeText}</span>`
+        }).join('')
+      }
+
+      return '<span class="announcement-bar__item" style="font-size: 1.4rem;">Add announcements in the sidebar.</span>'
+    })()
+
+    return `<section class="${className}" style="${style}">
+  <div class="announcement-bar__content">
+    ${contentMarkup}
+  </div>
+</section>`
+  })
+
+  await fs.writeFile(partialPath, `${styleBlock}\n${renderedBars.join('\n')}\n`, 'utf-8')
+}
+
+/**
+ * Copies custom section partials from `defalt-sections` into the exported theme.
+ * Templates are copied as-is (Ghost runs them natively).
+ */
+export async function applyCustomSectionTemplates(themeDir: string, config: ThemeConfig) {
+  const hasAny = Object.values(config.sections ?? {}).some((section) => {
+    const definitionId = section?.settings?.definitionId
+    return typeof definitionId === 'string' && KNOWN_SECTION_TYPES.has(definitionId)
+  })
+
+  if (!hasAny) {
+    return
+  }
+
+  const partialsDir = path.join(themeDir, 'partials', 'sections')
+  await fs.mkdir(partialsDir, { recursive: true })
+
+  const mappings: Array<{ id: string; filename: string }> = [
+    { id: 'hero', filename: 'defalt-hero.hbs' },
+    { id: 'ghostCards', filename: 'defalt-ghost-cards.hbs' },
+    { id: 'ghostGrid', filename: 'defalt-ghost-grid.hbs' },
+    { id: 'image-with-text', filename: 'defalt-image-with-text.hbs' }
+  ]
+
+  for (const mapping of mappings) {
+    const content = await readSectionTemplate(mapping.id)
+    if (!content) {
+      continue
+    }
+    await fs.writeFile(path.join(partialsDir, mapping.filename), content, 'utf-8')
+  }
 }
 
 /**
@@ -848,262 +979,366 @@ export async function applyAnnouncementBarCustomization(themeDir: string, config
  * @param config - Editor configuration containing section settings.
  */
 export async function applyHeroCustomization(themeDir: string, config: ThemeConfig) {
-  const partialPath = path.join(themeDir, 'partials', 'sections', 'defalt-hero.hbs')
+  const basePartialPath = path.join(themeDir, 'partials', 'sections', 'defalt-hero.hbs')
 
-  let originalContent: string
-  try {
-    originalContent = await fs.readFile(partialPath, 'utf-8')
-  } catch {
-    return
+  // Find all hero sections (supports multiple instances)
+  const allHeroSections = findAllSectionsByDefinitionId(config, 'hero')
+  if (allHeroSections.length === 0) return
+
+  await fs.mkdir(path.dirname(basePartialPath), { recursive: true })
+
+  const formatInternalTag = (input: unknown) => {
+    if (typeof input !== 'string') {
+      return ''
+    }
+    const trimmed = input.trim()
+    if (!trimmed) {
+      return ''
+    }
+    const stripped = trimmed.replace(/^#+/, '')
+    if (!stripped) {
+      return ''
+    }
+    return `#${stripped}`
   }
 
-  // Extract hero config from sections
-  const heroSection = config.sections?.hero
-  if (!heroSection) return
-
-  const heroConfig = (heroSection.settings?.customConfig ?? {}) as Partial<HeroSectionConfig> & {
-    placeholder?: Partial<HeroSectionConfig['placeholder']>
-  }
-  const padding = heroSection.settings.padding || { top: 32, bottom: 32 }
-  const placeholder = {
-    title: heroConfig.placeholder?.title ?? '',
-    description: heroConfig.placeholder?.description ?? '',
-    buttonText: heroConfig.placeholder?.buttonText ?? '',
-    buttonHref: heroConfig.placeholder?.buttonHref ?? ''
+  const toTagSlug = (internalTag: string) => {
+    const stripped = internalTag.trim().replace(/^#+/, '')
+    if (!stripped) {
+      return 'hash-hero'
+    }
+    return stripped.startsWith('hash-') ? stripped : `hash-${stripped}`
   }
 
-  const paddingTop = Math.max(0, Math.round(padding.top ?? 32))
-  const paddingBottom = Math.max(0, Math.round(padding.bottom ?? 32))
-  const backgroundColor = sanitizeHexColor(heroConfig.backgroundColor, '#000000')
-  const buttonColor = sanitizeHexColor(heroConfig.buttonColor, '#ffffff')
-  const buttonTextColor = sanitizeHexColor(heroConfig.buttonTextColor, '#151515')
-  const cardBorderRadius = Math.max(0, Math.min(96, Math.round(heroConfig.cardBorderRadius ?? 24)))
-  const heightMode = heroConfig.heightMode === 'expand' ? 'expand' : 'regular'
-  const innerPadding = heightMode === 'expand' ? 92 : 64
-  const contentAlignment = heroConfig.contentAlignment || 'center'
-  const contentWidth = heroConfig.contentWidth || 'full'
-  const showButton = heroConfig.showButton !== false
-
-  const effectiveCardBorderRadius = contentWidth === 'full' ? 0 : cardBorderRadius
-
-  // Style block (prepended to template content)
   const styleBlock = [
     '<style>',
-    '.gd-hero-section {',
-    `    --gd-hero-padding-top: ${paddingTop}px;`,
-    `    --gd-hero-padding-bottom: ${paddingBottom}px;`,
-    `    --gd-hero-card-radius: ${effectiveCardBorderRadius}px;`,
-    `    --gd-hero-background: ${backgroundColor};`,
-    '    --gd-hero-text-color: #ffffff;',
-    `    --gd-hero-inner-padding-top: ${innerPadding}px;`,
-    `    --gd-hero-inner-padding-bottom: ${innerPadding}px;`,
-    `    --gd-hero-button-color: ${buttonColor};`,
-    `    --gd-hero-button-text-color: ${buttonTextColor};`,
-    '    --gd-hero-button-radius: 3px;',
+    '.gd-hero-split {',
+    '    width: 100%;',
     '    padding-top: var(--gd-hero-padding-top);',
     '    padding-bottom: var(--gd-hero-padding-bottom);',
-    '}',
-    '',
-    '.gd-hero-section.gd-hero-section-regular {',
-    '    padding-left: var(--container-gap, clamp(24px, 1.7032rem + 1.9355vw, 48px));',
-    '    padding-right: var(--container-gap, clamp(24px, 1.7032rem + 1.9355vw, 48px));',
-    '}',
-    '',
-    '.gh-hero {',
-    '    border-radius: var(--gd-hero-card-radius, 0px);',
-    '    overflow: hidden;',
-    '}',
-    '',
-    '.gd-hero-card {',
+    '    padding-left: var(--gd-hero-padding-left);',
+    '    padding-right: var(--gd-hero-padding-right);',
     '    background-color: var(--gd-hero-background);',
-    '    color: var(--gd-hero-text-color);',
-    '    padding-top: var(--gd-hero-inner-padding-top);',
-    '    padding-bottom: var(--gd-hero-inner-padding-bottom);',
-    '    padding-left: clamp(2.5rem, 6vw, 4em);',
-    '    padding-right: clamp(2.5rem, 6vw, 4em);',
-    '    display: flex;',
-    '    justify-content: center;',
-    '    border-radius: var(--gd-hero-card-radius);',
-    '    overflow: hidden;',
     '}',
     '',
-    '.gd-hero-content {',
+    '.gd-hero-split__inner {',
+    '    max-width: var(--gd-hero-content-width);',
+    '    margin: 0 auto;',
+    '    padding: 0 var(--gd-hero-inner-padding-x);',
+    '}',
+    '',
+    '.gd-hero-split__content {',
+    '    display: grid;',
+    '    grid-template-columns: var(--gd-hero-image-column) var(--gd-hero-text-column);',
+    '    gap: clamp(32px, 5vw, 64px);',
+    '    align-items: center;',
+    '}',
+    '',
+    '.gd-hero-split__content.gd-hero-split__content--image-right {',
+    '    grid-template-columns: var(--gd-hero-text-column) var(--gd-hero-image-column);',
+    '}',
+    '',
+    '.gd-hero-split__content.gd-hero-split__content--image-right .gd-hero-split__image {',
+    '    order: 2;',
+    '}',
+    '',
+    '.gd-hero-split__content.gd-hero-split__content--image-right .gd-hero-split__text {',
+    '    order: 1;',
+    '}',
+    '',
+    '@media (max-width: 768px) {',
+    '    .gd-hero-split__content,',
+    '    .gd-hero-split__content.gd-hero-split__content--image-right {',
+    '        grid-template-columns: 1fr;',
+    '    }',
+    '    .gd-hero-split__content.gd-hero-split__content--image-right .gd-hero-split__image,',
+    '    .gd-hero-split__content.gd-hero-split__content--image-right .gd-hero-split__text {',
+    '        order: 0;',
+    '    }',
+    '}',
+    '',
+    '.gd-hero-split__image {',
+    '    width: 100%;',
+    '    aspect-ratio: var(--gd-hero-image-aspect, auto);',
+    '    border-radius: var(--gd-hero-image-radius, 0px);',
+    '    overflow: hidden;',
+    '    background-color: rgba(0, 0, 0, 0.05);',
+    '    display: flex;',
+    '    align-items: center;',
+    '    justify-content: center;',
+    '}',
+    '',
+    '.gd-hero-split__image img {',
+    '    width: 100%;',
+    '    height: 100%;',
+    '    object-fit: cover;',
+    '    display: block;',
+    '}',
+    '',
+    '.gd-hero-split__placeholder {',
+    '    width: 100%;',
+    '    height: 100%;',
+    '    min-height: 160px;',
+    '    background: linear-gradient(135deg, rgba(0,0,0,0.06), rgba(0,0,0,0.02));',
+    '}',
+    '',
+    '.gd-hero-split__text {',
     '    display: flex;',
     '    flex-direction: column;',
-    '    gap: 1.5rem;',
-    '    align-items: center;',
-    '    width: 100%;',
-    '    margin: 0 auto;',
-    '    text-align: center;',
+    '    gap: 16px;',
     '}',
     '',
-    '.gd-hero-content.gd-align-left {',
-    '    align-items: flex-start;',
-    '    text-align: left;',
-    '}',
-    '',
-    '.gd-hero-content.gd-align-right {',
-    '    align-items: flex-end;',
-    '    text-align: right;',
-    '}',
-    '',
-    '.gd-hero-content.gd-width-regular {',
-    '    max-width: var(--container-width, 1120px);',
-    '    padding-left: var(--container-gap, 32px);',
-    '    padding-right: var(--container-gap, 32px);',
-    '}',
-    '',
-    '.gd-hero-content.gd-width-full {',
-    '    max-width: none;',
-    '}',
-    '',
-    '.gd-hero-content.gd-width-full.gd-align-left {',
-    '    margin-left: 0;',
-    '    margin-right: auto;',
-    '}',
-    '',
-    '.gd-hero-content.gd-width-full.gd-align-right {',
-    '    margin-left: auto;',
-    '    margin-right: 0;',
-    '}',
-    '',
-    '.gd-hero-heading {',
+    '.gd-hero-split__heading {',
     '    margin: 0;',
     '    font-family: var(--gh-font-heading, var(--font-sans));',
     '    font-size: calc(clamp(3rem, 1.82vw + 2.27rem, 4.6rem) * var(--factor, 1));',
+    '    font-weight: 700;',
     '    letter-spacing: -0.028em;',
     '    line-height: 1.1;',
     '    color: inherit;',
     '}',
     '',
-    '.gd-hero-subheading {',
-    '    margin: 12px 0 0;',
-    '    max-width: 640px;',
+    '.gd-hero-split__description {',
+    '    margin: 0;',
     '    font-size: 1.8rem;',
-    '    font-weight: 450;',
-    '    line-height: 1.4;',
-    '    letter-spacing: -0.014em;',
+    '    line-height: 1.5;',
+    '    letter-spacing: -0.015em;',
+    '    opacity: 0.85;',
     '    color: inherit;',
     '}',
     '',
-    '.gd-hero-placeholder {',
-    '    opacity: 0.65;',
-    '}',
-    '',
-    '.gd-hero-button.gd-hero-placeholder,',
-    '.gd-hero-card .kg-button-card.gd-hero-placeholder,',
-    '.gd-hero-card .kg-button-card .kg-btn.gd-hero-placeholder {',
-    '    opacity: 0.7;',
-    '}',
-    '',
-    '.gd-hero-content-placeholder .kg-button-card,',
-    '.gd-hero-content-placeholder .kg-button-card .kg-btn {',
-    '    opacity: 0.7;',
-    '}',
-    '',
-    '.gd-hero-button {',
+    '.gd-hero-split__description code {',
     '    display: inline-flex;',
     '    align-items: center;',
-    '    justify-content: center;',
-    '    height: 2.7em;',
-    '    min-height: 46px;',
-    '    padding: 0 1.2em;',
-    '    border-radius: var(--gd-hero-button-radius);',
-    '    font-size: 1.05em;',
-    '    font-weight: 600;',
-    '    line-height: 1em;',
-    '    text-decoration: none;',
-    '    letter-spacing: 0.2px;',
-    '    white-space: nowrap;',
-    '    text-overflow: ellipsis;',
-    '    background-color: var(--gd-hero-button-color);',
-    '    color: var(--gd-hero-button-text-color);',
-    '    margin-top: 2em;',
+    '    padding: 2px 6px;',
+    '    margin: 0 2px;',
+    '    border-radius: 4px;',
+    '    background-color: #ffffff;',
+    '    border: 1px solid #e0e0e0;',
+    '    font-size: 12px;',
+    '    font-family: inherit;',
     '}',
     '',
-    '.gd-hero-button:hover {',
-    '    opacity: 0.85;',
-    '}',
-    '',
-    '.gd-hero-card .kg-button-card {',
-    '    display: inline-flex;',
+    '.gd-hero-split__ctas {',
+    '    display: flex;',
+    '    flex-wrap: wrap;',
     '    align-items: center;',
-    '    justify-content: center;',
-    '    margin-top: 2em;',
+    '    gap: 12px;',
+    '    margin-top: 8px;',
     '}',
     '',
-    '.gd-hero-card .kg-button-card .kg-btn {',
+    '.gd-hero-split__ctas > :not(.kg-button-card) {',
+    '    display: none !important;',
+    '}',
+    '',
+    '.gd-hero-split__ctas .kg-button-card {',
+    '    margin: 0;',
+    '    display: inline-flex;',
+    '}',
+    '',
+    '.gd-hero-split__ctas .kg-button-card .kg-btn {',
     '    display: inline-flex;',
     '    align-items: center;',
     '    justify-content: center;',
     '    min-height: 46px;',
     '    padding: 0 1.2em;',
-    '    border-radius: var(--gd-hero-button-radius);',
+    '    border-radius: 4px;',
     '    font-size: 1.05em;',
     '    font-weight: 600;',
     '    line-height: 1em;',
     '    letter-spacing: 0.2px;',
     '    text-decoration: none;',
     '    white-space: nowrap;',
-    '    background-color: var(--gd-hero-button-color);',
-    '    color: var(--gd-hero-button-text-color);',
+    '    background-color: var(--ghost-accent-color);',
+    '    color: #ffffff;',
     '}',
     '',
-    '.gd-hero-card .kg-button-card .kg-btn:hover {',
+    '.gd-hero-split__ctas .kg-button-card .kg-btn:hover {',
     '    opacity: 0.85;',
+    '}',
+    '',
+    '.gd-hero-split-align-left .gd-hero-split__text {',
+    '    text-align: left;',
+    '    align-items: flex-start;',
+    '}',
+    '',
+    '.gd-hero-split-align-center .gd-hero-split__text {',
+    '    text-align: center;',
+    '    align-items: center;',
+    '}',
+    '',
+    '.gd-hero-split-align-right .gd-hero-split__text {',
+    '    text-align: right;',
+    '    align-items: flex-end;',
     '}',
     '</style>'
   ].join('\n')
 
-  // Prepend style block to content
-  originalContent = styleBlock + '\n' + originalContent
+  for (const { key, section } of allHeroSections) {
+    const suffix = getSectionInstanceSuffix(key, 'hero')
+    const partialPath = suffix
+      ? path.join(themeDir, 'partials', 'sections', `defalt-hero${suffix}.hbs`)
+      : basePartialPath
 
-  // Replace section classes
-  const sectionClassInsertion = contentWidth === 'regular' ? ' gd-hero-section-regular' : ''
-  originalContent = originalContent.replace('{{!-- defalt-hero-section-classes --}}', sectionClassInsertion)
+    const heroConfig: HeroConfig = (() => {
+      const parsed = heroConfigSchema.safeParse(section.settings?.customConfig ?? {})
+      if (parsed.success) {
+        return parsed.data
+      }
+      return heroConfigSchema.parse({})
+    })()
 
-  // Replace content classes
-  const alignmentClass = contentAlignment === 'left' ? 'gd-align-left' : contentAlignment === 'right' ? 'gd-align-right' : 'gd-align-center'
-  const widthClass = contentWidth === 'regular' ? 'gd-width-regular' : 'gd-width-full'
-  const contentClassInsertion = ` ${alignmentClass} ${widthClass}`
-  originalContent = originalContent.replace('{{!-- defalt-hero-content-classes --}}', contentClassInsertion)
+    const contentWidth = heroConfig.contentWidth
+    const pageTitle = heroConfig.pageTitle
+    const headerAlignment = heroConfig.textAlignment
 
-  // Replace content
-  const titleValue = typeof placeholder.title === 'string' ? placeholder.title : ''
-  const titleTrimmed = titleValue.trim()
-  const descriptionValue = typeof placeholder.description === 'string' ? placeholder.description : ''
-  const descriptionTrimmed = descriptionValue.trim()
-  const buttonValue = typeof placeholder.buttonText === 'string' ? placeholder.buttonText : ''
-  const buttonTrimmed = buttonValue.trim()
-  const buttonHrefValue = typeof placeholder.buttonHref === 'string' ? placeholder.buttonHref : ''
-  const buttonHrefTrimmed = buttonHrefValue.trim()
+    const backgroundColor = sanitizeHexColor(
+      typeof heroConfig.backgroundColor === 'string' ? heroConfig.backgroundColor : 'transparent',
+      'transparent'
+    )
 
-  const displayTitle = titleTrimmed || 'Enter heading text'
-  const displayDescription = descriptionTrimmed || 'Enter subheading text'
-  const displayButtonText = buttonTrimmed || 'Add button text'
-  const displayButtonHref = buttonHrefTrimmed || '#'
+    const isInverted = heroConfig.invert === true
+    const imagePosition =
+      isInverted
+        ? 'right'
+        : heroConfig.imagePosition === 'right'
+          ? 'right'
+          : 'left'
 
-  const contentLines: string[] = []
-  contentLines.push(`            <h2 class="gd-hero-heading${titleTrimmed ? '' : ' gd-hero-placeholder'}"><span style="white-space: pre-wrap;">${escapeHandlebarsString(displayTitle)}</span></h2>`)
-  if (displayDescription) {
-    contentLines.push(`            <p class="gd-hero-subheading${descriptionTrimmed ? '' : ' gd-hero-placeholder'}"><span style="white-space: pre-wrap;">${escapeHandlebarsString(displayDescription)}</span></p>`)
+    const imageWidthSetting =
+      heroConfig.imageWidth === '2/3' || heroConfig.imageWidth === '3/4'
+        ? heroConfig.imageWidth
+        : '1/2'
+
+    const { imageColumn, textColumn } = (() => {
+      // Matches current hero preview behavior: "2/3" and "3/4" bias space toward text.
+      if (imageWidthSetting === '2/3') return { imageColumn: '1fr', textColumn: '2fr' }
+      if (imageWidthSetting === '3/4') return { imageColumn: '1fr', textColumn: '3fr' }
+      return { imageColumn: '1fr', textColumn: '1fr' }
+    })()
+
+    const aspectSetting =
+      heroConfig.imageAspect === 'square' ||
+      heroConfig.imageAspect === 'portrait' ||
+      heroConfig.imageAspect === 'landscape' ||
+      heroConfig.imageAspect === 'wide' ||
+      heroConfig.imageAspect === 'tall'
+        ? heroConfig.imageAspect
+        : 'default'
+
+    const imageAspect = (() => {
+      if (aspectSetting === 'square') return '1 / 1'
+      if (aspectSetting === 'portrait') return '3 / 4'
+      if (aspectSetting === 'wide') return '16 / 9'
+      if (aspectSetting === 'tall') return '9 / 16'
+      if (aspectSetting === 'landscape') return '4 / 3'
+      return 'auto'
+    })()
+
+    const imageBorderRadius = (() => {
+      const raw = typeof heroConfig.imageBorderRadius === 'number' && Number.isFinite(heroConfig.imageBorderRadius)
+        ? heroConfig.imageBorderRadius
+        : 0
+      return Math.max(0, Math.min(96, Math.round(raw)))
+    })()
+
+    const resolvedPadding = resolveSectionPadding(section, { top: 48, bottom: 48, left: 0, right: 0 })
+    const paddingTop = normalizePaddingValue(resolvedPadding.top, 48)
+    const paddingBottom = normalizePaddingValue(resolvedPadding.bottom, 48)
+    const paddingLeft = normalizePaddingValue(resolvedPadding.left, 0)
+    const paddingRight = normalizePaddingValue(resolvedPadding.right, 0)
+
+    const innerPaddingX = contentWidth === 'none' ? '0px' : 'var(--container-gap, 24px)'
+
+    const rawTag = heroConfig.ghostPageTag ?? heroConfig.tag
+    const fallbackTag = suffix ? `#hero${suffix}` : '#hero'
+    const internalTag = formatInternalTag(rawTag) || fallbackTag
+    const tagSlug = toTagSlug(internalTag)
+
+    const sectionClasses: string[] = []
+    sectionClasses.push(`gd-hero-split-align-${headerAlignment}`)
+    const sectionClassInsertion = sectionClasses.length ? ' ' + sectionClasses.join(' ') : ''
+
+    const contentClassInsertion = imagePosition === 'right' ? ' gd-hero-split__content--image-right' : ''
+
+    const inlineStyle = [
+      `--gd-hero-content-width: ${contentWidth};`,
+      `--gd-hero-inner-padding-x: ${innerPaddingX};`,
+      `--gd-hero-padding-top: ${paddingTop}px;`,
+      `--gd-hero-padding-bottom: ${paddingBottom}px;`,
+      `--gd-hero-padding-left: ${paddingLeft}px;`,
+      `--gd-hero-padding-right: ${paddingRight}px;`,
+      `--gd-hero-background: ${backgroundColor};`,
+      `--gd-hero-image-aspect: ${imageAspect};`,
+      `--gd-hero-image-radius: ${imageBorderRadius}px;`,
+      `--gd-hero-image-column: ${imageColumn};`,
+      `--gd-hero-text-column: ${textColumn};`
+    ].join(' ')
+
+    const headingHtml = pageTitle
+      ? '                            <h1 class="gd-hero-split__heading">{{title}}</h1>\n'
+      : ''
+    const placeholderHeadingHtml = pageTitle
+      ? '                    <h1 class="gd-hero-split__heading">Page title</h1>\n'
+      : ''
+
+    const template = `
+${styleBlock}
+
+{{#get "pages" filter="tag:${tagSlug}" limit="1" include="tags,authors"}}
+    {{#if pages}}
+        {{#foreach pages}}
+            <section class="gd-hero-split${sectionClassInsertion}" data-section-type="hero" data-section-id="${escapeHandlebarsString(key)}" data-page-id="{{id}}" style="${inlineStyle}">
+                <div class="gd-hero-split__inner">
+                    <div class="gd-hero-split__content{{#unless feature_image}} gd-hero-split__content--no-image{{/unless}}${contentClassInsertion}">
+                        <div class="gd-hero-split__image">
+                            {{#if feature_image}}
+                                <img src="{{img_url feature_image size="xl"}}" alt="{{#if feature_image_alt}}{{feature_image_alt}}{{else}}{{title}}{{/if}}">
+                            {{else}}
+                                <div class="gd-hero-split__placeholder" aria-hidden="true"></div>
+                            {{/if}}
+                        </div>
+                        <div class="gd-hero-split__text">
+${headingHtml}                            <p class="gd-hero-split__description">
+                                {{#if custom_excerpt}}
+                                    {{custom_excerpt}}
+                                {{else}}
+                                    {{#if excerpt}}
+                                        {{excerpt}}
+                                    {{else}}
+                                        Tag a page with <code>${internalTag}</code> to display content here.
+                                    {{/if}}
+                                {{/if}}
+                            </p>
+                            {{#if html}}
+                                <div class="gd-hero-split__ctas">
+                                    {{{html}}}
+                                </div>
+                            {{/if}}
+                        </div>
+                    </div>
+                </div>
+            </section>
+        {{/foreach}}
+    {{else}}
+        <section class="gd-hero-split${sectionClassInsertion}" data-section-type="hero" data-section-id="${escapeHandlebarsString(key)}" style="${inlineStyle}">
+            <div class="gd-hero-split__inner">
+                <div class="gd-hero-split__content${contentClassInsertion}">
+                    <div class="gd-hero-split__image">
+                        <div class="gd-hero-split__placeholder" aria-hidden="true"></div>
+                    </div>
+                    <div class="gd-hero-split__text">
+${placeholderHeadingHtml}                    <p class="gd-hero-split__description">Tag a page with <code>${internalTag}</code> to display content here.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+    {{/if}}
+{{/get}}
+`.trim() + '\n'
+
+    await fs.writeFile(partialPath, template, 'utf-8')
   }
-  if (showButton && displayButtonText) {
-    contentLines.push(`            <a href="${sanitizeHref(displayButtonHref)}" class="gd-hero-button${buttonTrimmed ? '' : ' gd-hero-placeholder'}">${escapeHandlebarsString(displayButtonText)}</a>`)
-  }
-
-  const contentHtml = contentLines.join('\n')
-  const contentStartMarker = '{{!-- defalt-hero-content-start --}}'
-  const contentEndMarker = '{{!-- defalt-hero-content-end --}}'
-  const contentStartIdx = originalContent.indexOf(contentStartMarker)
-  const contentEndIdx = originalContent.indexOf(contentEndMarker)
-  if (contentStartIdx !== -1 && contentEndIdx !== -1 && contentEndIdx > contentStartIdx) {
-    const before = originalContent.slice(0, contentStartIdx + contentStartMarker.length)
-    const after = originalContent.slice(contentEndIdx)
-    originalContent = before + '\n' + contentHtml + '\n            ' + after
-  }
-
-  await fs.writeFile(partialPath, originalContent, 'utf-8')
 }
 
 /**
@@ -1166,7 +1401,7 @@ export async function applyMainSectionCustomization(themeDir: string, config: Th
  */
 export async function applyGhostCardsCustomization(themeDir: string, config: ThemeConfig) {
   // Read from new section template location (source of truth)
-  const baseContent = await readSectionTemplate('ghostCards', themeDir)
+  const baseContent = await readSectionTemplate('ghostCards')
   if (!baseContent) {
     return
   }
@@ -1206,18 +1441,23 @@ export async function applyGhostCardsCustomization(themeDir: string, config: The
 
     let content = baseContent
 
-    const cardsConfig = ((section.settings?.customConfig ?? {}) as Partial<GhostCardsSectionConfig>)
-    const padding = section.settings.padding || { top: 32, bottom: 32, left: 0, right: 0 }
-    const showHeader = cardsConfig.showHeader !== false
-    const headerAlignment = cardsConfig.headerAlignment === 'left' || cardsConfig.headerAlignment === 'right'
-      ? cardsConfig.headerAlignment
-      : 'center'
-    const titleSize = cardsConfig.titleSize === 'small' || cardsConfig.titleSize === 'large'
-      ? cardsConfig.titleSize
-      : 'normal'
+    const rawConfig = (section.settings?.customConfig ?? {}) as Record<string, unknown>
 
-    const paddingTop = Math.max(0, Math.round(padding.top ?? 32))
-    const paddingBottom = Math.max(0, Math.round(padding.bottom ?? 32))
+    const cardsConfig: GhostCardsSectionConfig = (() => {
+      const parsed = ghostCardsConfigSchema.safeParse(rawConfig)
+      if (parsed.success) {
+        return parsed.data
+      }
+      return ghostCardsConfigSchema.parse({})
+    })()
+
+    const padding = resolveSectionPadding(section, { top: 48, bottom: 48, left: 0, right: 0 })
+    const showHeader = cardsConfig.pageTitle
+    const headerAlignment = cardsConfig.textAlignment
+    const titleSize = cardsConfig.titleSize
+
+    const paddingTop = Math.max(0, Math.round(padding.top))
+    const paddingBottom = Math.max(0, Math.round(padding.bottom))
     const paddingLeft = Math.max(0, Math.round(padding.left ?? 0))
     const paddingRight = Math.max(0, Math.round(padding.right ?? 0))
 
@@ -1370,7 +1610,7 @@ export async function applyGhostCardsCustomization(themeDir: string, config: The
 
 export async function applyGhostGridCustomization(themeDir: string, config: ThemeConfig) {
   // Read from new section template location (source of truth)
-  let originalContent = await readSectionTemplate('ghostGrid', themeDir)
+  let originalContent = await readSectionTemplate('ghostGrid')
   if (!originalContent) {
     return
   }
@@ -1379,25 +1619,25 @@ export async function applyGhostGridCustomization(themeDir: string, config: Them
   const ghostGridSection = findSectionByDefinitionId(config, 'ghostGrid')
   if (!ghostGridSection) return
 
-  const gridConfig = ((ghostGridSection.settings?.customConfig ?? {}) as Partial<GhostGridSectionConfig>)
-  const padding = ghostGridSection.settings.padding || { top: 32, bottom: 32, left: 0, right: 0 }
-  const showHeader = gridConfig.showHeader !== false
-  const headerAlignment = gridConfig.headerAlignment === 'left' || gridConfig.headerAlignment === 'right'
-    ? gridConfig.headerAlignment
-    : 'center'
-  const titleSize = gridConfig.titleSize === 'small' || gridConfig.titleSize === 'large'
-    ? gridConfig.titleSize
-    : 'normal'
-  const stackOnMobile = gridConfig.stackOnMobile !== false
-  const columnGap = (() => {
-    const numericGap = typeof gridConfig.columnGap === 'number' && Number.isFinite(gridConfig.columnGap)
-      ? gridConfig.columnGap
-      : 20
-    return Math.max(0, Math.min(100, Math.round(numericGap)))
+  const rawConfig = (ghostGridSection.settings?.customConfig ?? {}) as Record<string, unknown>
+
+  const gridConfig: GhostGridSectionConfig = (() => {
+    const parsed = ghostGridConfigSchema.safeParse(rawConfig)
+    if (parsed.success) {
+      return parsed.data
+    }
+    return ghostGridConfigSchema.parse({})
   })()
 
-  const paddingTop = Math.max(0, Math.round(padding.top ?? 32))
-  const paddingBottom = Math.max(0, Math.round(padding.bottom ?? 32))
+  const padding = resolveSectionPadding(ghostGridSection, { top: 48, bottom: 48, left: 0, right: 0 })
+  const showHeader = gridConfig.pageTitle
+  const headerAlignment = gridConfig.textAlignment
+  const titleSize = gridConfig.titleSize
+  const stackOnMobile = gridConfig.stackOnMobile
+  const columnGap = gridConfig.gap
+
+  const paddingTop = Math.max(0, Math.round(padding.top))
+  const paddingBottom = Math.max(0, Math.round(padding.bottom))
   const paddingLeft = Math.max(0, Math.round(padding.left ?? 0))
   const paddingRight = Math.max(0, Math.round(padding.right ?? 0))
 
@@ -1552,7 +1792,7 @@ export async function applyGhostGridCustomization(themeDir: string, config: Them
  */
 export async function applyImageWithTextCustomization(themeDir: string, config: ThemeConfig) {
   // Read from new section template location (source of truth)
-  const baseContent = await readSectionTemplate('image-with-text', themeDir)
+  const baseContent = await readSectionTemplate('image-with-text')
   if (!baseContent) {
     return
   }
@@ -1592,47 +1832,34 @@ export async function applyImageWithTextCustomization(themeDir: string, config: 
 
     let content = baseContent
 
-    const sectionConfig = ((section.settings?.customConfig ?? {}) as Partial<ImageWithTextSectionConfig>)
-    const padding = resolveSectionPadding(section, { top: 32, bottom: 32, left: 0, right: 0 })
-    const paddingTop = Math.max(0, Math.round(padding.top ?? 32))
-    const paddingBottom = Math.max(0, Math.round(padding.bottom ?? 32))
+    const rawConfig = (section.settings?.customConfig ?? {}) as Record<string, unknown>
+
+    const sectionConfig: ImageWithTextSectionConfig = (() => {
+      const parsed = imageWithTextConfigSchema.safeParse(rawConfig)
+      if (parsed.success) {
+        return parsed.data
+      }
+      return imageWithTextConfigSchema.parse({})
+    })()
+
+    const padding = resolveSectionPadding(section, { top: 48, bottom: 48, left: 0, right: 0 })
+    const paddingTop = Math.max(0, Math.round(padding.top))
+    const paddingBottom = Math.max(0, Math.round(padding.bottom))
     const paddingLeft = Math.max(0, Math.round(padding.left ?? 0))
     const paddingRight = Math.max(0, Math.round(padding.right ?? 0))
 
-    const showHeader = typeof sectionConfig.pageTitle === 'boolean'
-      ? sectionConfig.pageTitle
-      : sectionConfig.showHeader !== false
+    const showHeader = sectionConfig.pageTitle
 
-    const alignmentSource = sectionConfig.textAlignment ?? sectionConfig.headerAlignment
-    const headerAlignment =
-      alignmentSource === 'left' || alignmentSource === 'center' || alignmentSource === 'right'
-        ? alignmentSource
-        : 'left'
+    const headerAlignment = sectionConfig.textAlignment
 
     const isInverted = sectionConfig.invert === true
-    const imagePosition = isInverted
-      ? 'right'
-      : sectionConfig.imagePosition === 'right'
-        ? 'right'
-        : 'left'
+    const imagePosition = isInverted ? 'right' : sectionConfig.imagePosition === 'right' ? 'right' : 'left'
 
-    const imageBorderRadiusRaw =
-      typeof sectionConfig.imageBorderRadius === 'number' ? sectionConfig.imageBorderRadius : 0
-    const imageBorderRadius = Math.max(0, Math.min(96, Math.round(imageBorderRadiusRaw)))
+    const imageBorderRadius = Math.max(0, Math.min(96, Math.round(sectionConfig.imageBorderRadius)))
 
-    const contentWidth =
-      sectionConfig.contentWidth === '720px' ||
-      sectionConfig.contentWidth === '960px' ||
-      sectionConfig.contentWidth === '1120px' ||
-      sectionConfig.contentWidth === '1320px' ||
-      sectionConfig.contentWidth === 'none'
-        ? sectionConfig.contentWidth
-        : '1120px'
+    const contentWidth = sectionConfig.contentWidth
 
-    const imageWidthSetting =
-      sectionConfig.imageWidth === '2/3' || sectionConfig.imageWidth === '3/4'
-        ? sectionConfig.imageWidth
-        : '1/2'
+    const imageWidthSetting = sectionConfig.imageWidth
 
     const { imageColumn, textColumn } = (() => {
       if (imageWidthSetting === '2/3') return { imageColumn: '2fr', textColumn: '1fr' }
@@ -1640,14 +1867,7 @@ export async function applyImageWithTextCustomization(themeDir: string, config: 
       return { imageColumn: '1fr', textColumn: '1fr' }
     })()
 
-    const aspectSetting =
-      sectionConfig.imageAspect === 'square' ||
-      sectionConfig.imageAspect === 'portrait' ||
-      sectionConfig.imageAspect === 'landscape' ||
-      sectionConfig.imageAspect === 'wide' ||
-      sectionConfig.imageAspect === 'tall'
-        ? sectionConfig.imageAspect
-        : 'default'
+    const aspectSetting = sectionConfig.imageAspect
 
     const aspectRatioValue =
       aspectSetting === 'square' ? '1 / 1'
@@ -1668,6 +1888,11 @@ export async function applyImageWithTextCustomization(themeDir: string, config: 
     const internalTag = formatInternalTag(sectionConfig.ghostPageTag) || fallbackTag
     const slugTag = internalTag.length > 1 ? `hash-${internalTag.slice(1)}` : 'hash-image-with-text'
 
+    const backgroundColor = sanitizeHexColor(
+      typeof sectionConfig.backgroundColor === 'string' ? sectionConfig.backgroundColor : 'transparent',
+      'transparent'
+    )
+
     // Style block (prepended to template content)
     const styleBlock = [
       '<style>',
@@ -1677,7 +1902,7 @@ export async function applyImageWithTextCustomization(themeDir: string, config: 
       `    --gd-image-text-padding-bottom: ${paddingBottom}px;`,
       `    --gd-image-text-padding-left: ${paddingLeft}px;`,
       `    --gd-image-text-padding-right: ${paddingRight}px;`,
-      '    --gd-image-text-background: #ffffff;',
+      `    --gd-image-text-background: ${backgroundColor};`,
       '    --gd-image-text-text-color: #151515;',
       `    --gd-image-text-aspect: ${aspectRatioValue ?? 'auto'};`,
       `    --gd-image-text-image-radius: ${imageBorderRadius}px;`,

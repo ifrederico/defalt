@@ -29,7 +29,7 @@
 
 .announcement-bar__link {
   color: inherit;
-  text-decoration: {{#if underlineLinks}}underline{{else}}none{{/if}};
+  text-decoration: none;
 }
 
 .announcement-bar__link:hover {
@@ -44,7 +44,8 @@
 
 <section
   class="announcement-bar{{#if (eq width 'narrow')}} announcement-bar--narrow{{/if}}"
-  id="announcement"
+  data-section-type="announcement-bar"
+  data-section-id="{{default sectionId 'announcement-bar'}}"
   style="
     {{sectionStyle}};
     --announcement-bar-background-color: {{backgroundColor}};

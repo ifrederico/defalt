@@ -18,7 +18,6 @@ export const definition: SectionDefinition<typeof headerConfigSchema> = {
   description: 'Main navigation header with logo, menu, and search',
   category: 'header',
   defaultVisibility: true,
-  defaultPadding: { top: 0, bottom: 0 },
 
   // Zod schema for config validation
   configSchema: headerConfigSchema,

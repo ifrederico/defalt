@@ -146,7 +146,7 @@ export function validatePartialConfig(
   }
 
   // Make all fields optional for partial validation
-  const partialSchema = schema.partial()
+  const partialSchema = schema instanceof z.ZodObject ? schema.partial() : schema
   const result = partialSchema.safeParse(partialConfig)
 
   if (result.success) {
@@ -237,7 +237,9 @@ export function validateField(
   const testObject = setNestedValue({}, fieldId, value)
 
   // Use partial schema for single field validation
-  const partialSchema = definition.configSchema.partial()
+  const partialSchema = definition.configSchema instanceof z.ZodObject
+    ? definition.configSchema.partial()
+    : definition.configSchema
   const result = partialSchema.safeParse(testObject)
 
   if (result.success) {
@@ -245,8 +247,8 @@ export function validateField(
   }
 
   // Find error for this specific field
-  const fieldError = result.error.errors.find(
-    (err) => err.path.join('.') === fieldId || err.path[0] === fieldId
+  const fieldError = result.error.issues.find(
+    (issue) => issue.path.join('.') === fieldId || issue.path[0] === fieldId
   )
 
   return {
@@ -292,9 +294,9 @@ export function validateAllConfigs(
  * Format a Zod error into a human-readable message
  */
 export function formatZodError(error: z.ZodError): string {
-  const messages = error.errors.map((err) => {
-    const path = err.path.length > 0 ? `${err.path.join('.')}: ` : ''
-    return `${path}${err.message}`
+  const messages = error.issues.map((issue) => {
+    const path = issue.path.length > 0 ? `${issue.path.join('.')}: ` : ''
+    return `${path}${issue.message}`
   })
 
   return messages.join('; ')
@@ -304,9 +306,9 @@ export function formatZodError(error: z.ZodError): string {
  * Extract field-level errors from a Zod error
  */
 export function extractFieldErrors(error: z.ZodError): FieldError[] {
-  return error.errors.map((err) => ({
-    path: err.path.join('.'),
-    message: err.message
+  return error.issues.map((issue) => ({
+    path: issue.path.join('.'),
+    message: issue.message
   }))
 }
 
@@ -314,8 +316,8 @@ export function extractFieldErrors(error: z.ZodError): FieldError[] {
  * Get error message for a specific field
  */
 export function getFieldError(error: z.ZodError, fieldPath: string): string | null {
-  const fieldError = error.errors.find(
-    (err) => err.path.join('.') === fieldPath
+  const fieldError = error.issues.find(
+    (issue) => issue.path.join('.') === fieldPath
   )
 
   return fieldError?.message ?? null

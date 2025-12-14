@@ -3,7 +3,7 @@
  * Matches database schema in 004_user_subscriptions.sql
  */
 
-import { isPremium } from '../../defalt-sections/premiumConfig.js'
+import { isPremium } from '../config/premiumConfig.js'
 
 export type SubscriptionTier = 'free' | 'plus_monthly' | 'plus_lifetime'
 
@@ -37,7 +37,7 @@ export interface Subscription {
 
 /**
  * Check if a section requires premium access
- * Uses single source of truth from defalt-sections/premiumConfig.ts
+ * Uses single source of truth from defalt-utils/config/premiumConfig.ts
  */
 export function isPremiumSection(sectionId: string): boolean {
   return isPremium(sectionId)

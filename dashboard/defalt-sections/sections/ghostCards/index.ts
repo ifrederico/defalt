@@ -8,13 +8,12 @@ import { ghostCardsDefaults } from './defaults.js'
 
 export const definition: SectionDefinition<typeof ghostCardsConfigSchema> = {
   id: 'ghostCards',
-  label: 'Ghost Cards',
+  label: 'Ghost cards',
   description: 'A grid of content cards',
   tag: '#cards',
   category: 'template',
   defaultVisibility: true,
-  defaultPadding: { top: 0, bottom: 0 },
-  showPaddingControls: false,
+  paddingControls: 'vertical',
   configSchema: ghostCardsConfigSchema,
   settingsSchema: ghostCardsSettingsSchema,
   blocksSchema: undefined,

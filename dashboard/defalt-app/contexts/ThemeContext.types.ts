@@ -1,6 +1,5 @@
 import type {
-  AnnouncementBarConfig,
-  AnnouncementContentConfig
+  AnnouncementBarInstance
 } from '@defalt/utils/config/themeConfig'
 
 export type HeaderSettingsContext = {
@@ -28,8 +27,7 @@ export type FooterSettingsContext = {
 }
 
 export type AnnouncementSettingsContext = {
-  bar: AnnouncementBarConfig
-  content: AnnouncementContentConfig
+  bars: AnnouncementBarInstance[]
 }
 
 export type ThemeContextValue = {

@@ -1,98 +1,166 @@
 {{!-- Ghost Cards Section --}}
 
 <style>
-.ghost-cards {
-  --content-width: {{contentWidth}};
-
+.gd-ghost-cards-section {
   width: 100%;
-  max-width: var(--content-width);
+  background-color: var(--gd-ghost-cards-background, transparent);
+}
+
+.gd-ghost-cards-section .gh-inner {
+  max-width: var(--gd-ghost-cards-content-width, 1120px);
   margin: 0 auto;
-  padding: 0 {{#if (eq contentWidth 'none')}}0{{else}}var(--container-gap, 24px){{/if}};
+  padding: 0 var(--gd-ghost-cards-padding-x, var(--container-gap, 24px));
 }
 
-.ghost-cards__title {
-  margin: 0 0 32px 0;
-  font-weight: 700;
-  color: var(--color-darker-gray);
-}
-
-.ghost-cards__title--small { font-size: 2rem; }
-.ghost-cards__title--normal { font-size: 2.8rem; }
-.ghost-cards__title--large { font-size: 3.6rem; }
-
-.ghost-cards__grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 32px;
-}
-
-.ghost-card {
+.gd-ghost-cards-inner {
   display: flex;
   flex-direction: column;
-  background: var(--background-color, #fff);
-  border-radius: 8px;
-  overflow: hidden;
-  border: 1px solid var(--color-light-gray, #e5e7eb);
+  gap: clamp(32px, 5vw, 48px);
 }
 
-.ghost-card__image {
-  aspect-ratio: 16 / 9;
-  background-color: #f3f4f6;
-  background-size: cover;
-  background-position: center;
+.gd-ghost-cards-hide-header .gh-article-header {
+  display: none;
 }
 
-.ghost-card__content {
-  padding: 20px;
+.gd-ghost-cards-header-left .gh-article-header {
+  text-align: left;
 }
 
-.ghost-card__title {
-  margin: 0 0 8px 0;
-  font-size: 1.8rem;
+.gd-ghost-cards-header-center .gh-article-header {
+  text-align: center;
+}
+
+.gd-ghost-cards-header-right .gh-article-header {
+  text-align: right;
+}
+
+.gd-ghost-title-small .gh-article-header .gh-article-title {
+  font-family: var(--gh-font-heading, var(--font-sans));
+  font-size: calc(2.4rem * var(--factor, 1));
+  font-weight: 725;
+  letter-spacing: -0.015em;
+  line-height: 1.1;
+}
+
+.gd-ghost-title-normal .gh-article-header .gh-article-title {
+  font-family: var(--gh-font-heading, var(--font-sans));
+  font-size: calc(clamp(2.8rem, 1.36vw + 2.25rem, 4rem) * var(--factor, 1));
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+}
+
+.gd-ghost-title-large .gh-article-header .gh-article-title {
+  font-family: var(--gh-font-heading, var(--font-sans));
+  font-size: calc(clamp(3rem, 1.82vw + 2.27rem, 4.6rem) * var(--factor, 1));
+  font-weight: 700;
+  letter-spacing: -0.028em;
+  line-height: 1.1;
+}
+
+.gd-ghost-placeholder-header {
+  margin-bottom: 24px;
+  opacity: 0.5;
+}
+
+	.gd-ghost-placeholder-header .gh-article-title {
+	  color: rgba(21, 21, 21, 0.55);
+	}
+
+	.gd-ghost-placeholder-image {
+	  width: 100%;
+	  max-width: 520px;
+	  height: auto;
+	  border-radius: 12px;
+	  display: block;
+	  margin: 0 auto 16px;
+	}
+
+	.gd-ghost-cards-placeholder {
+	  border: 1px dashed #d4d4d4;
+	  border-radius: 12px;
+	  padding: 24px;
+  background-color: #fafafa;
+  text-align: center;
+  color: #6b7280;
+}
+
+.gd-ghost-cards-placeholder-title {
+  margin-bottom: 8px;
   font-weight: 600;
-  color: var(--color-darker-gray);
+  color: #151515;
 }
 
-.ghost-card__excerpt {
-  margin: 0;
-  font-size: 1.5rem;
-  line-height: 1.5;
-  color: var(--color-secondary-text);
-}
-
-/* Placeholder styling - subtle indication this is preview-only */
-.ghost-cards__placeholder .ghost-card {
-  opacity: 0.7;
-}
-
-.ghost-cards__placeholder .ghost-card__image {
-  background: linear-gradient(135deg, #e5e7eb 0%, #d1d5db 100%);
+.gd-ghost-cards-placeholder code {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 6px;
+  margin: 0 2px;
+  border-radius: 4px;
+  background-color: #ffffff;
+  border: 1px solid #e0e0e0;
+  font-size: 12px;
+  font-family: inherit;
 }
 </style>
 
-<section class="ghost-cards" style="{{sectionStyle}}; text-align: {{textAlignment}};{{#if backgroundColor}}{{#unless (eq backgroundColor 'transparent')}} background-color: {{backgroundColor}};{{/unless}}{{/if}}">
-  {{#if pageTitle}}
-    <h2 class="ghost-cards__title ghost-cards__title--{{titleSize}}">
-      {{#if pages.[0].title}}{{pages.[0].title}}{{else}}Page Title{{/if}}
-    </h2>
-  {{/if}}
-
-  {{#if (length pages)}}
-    <div class="ghost-cards__grid">
-      {{#each pages}}
-        <article class="ghost-card">
-          {{#if feature_image}}
-            <div class="ghost-card__image" style="background-image: url('{{feature_image}}');"></div>
-          {{/if}}
-          <div class="ghost-card__content">
-            {{#if title}}<h3 class="ghost-card__title">{{title}}</h3>{{/if}}
-            {{#if excerpt}}<p class="ghost-card__excerpt">{{excerpt}}</p>{{/if}}
-          </div>
-        </article>
-      {{/each}}
-    </div>
+{{#get "pages" filter=hideTagFilter limit="1"}}
+  {{#if pages}}
+    {{!-- Section intentionally hidden via #cards-hide --}}
   {{else}}
-    {{!-- Placeholder for preview only --}}
-    <img src="/sections/placeholder.jpg" alt="Ghost Cards placeholder" style="width: 100%; height: auto; border-radius: 8px;" />
-  {{/if}}
-</section>
+	    {{#get "pages" filter=tagFilter limit="3" include="tags,authors"}}
+	      {{#if pages}}
+	        <section
+	          class="gd-ghost-cards-section gh-outer{{#unless pageTitle}} gd-ghost-cards-hide-header{{/unless}} gd-ghost-cards-header-{{textAlignment}} gd-ghost-title-{{titleSize}}"
+	          data-section-type="ghost-cards"
+	          data-section-id="{{sectionId}}"
+	          style="{{sectionStyle}}; --gd-ghost-cards-background: {{backgroundColor}}; --gd-ghost-cards-content-width: {{contentWidth}}; --gd-ghost-cards-padding-x: {{containerPaddingX}};"
+	        >
+	          <div class="gh-inner">
+	            <div class="gd-ghost-cards-inner">
+	              {{#foreach pages}}
+	                <article class="gh-article">
+	                  <header class="gh-article-header">
+	                    <h1 class="gh-article-title is-title">{{title}}</h1>
+	                    {{#if custom_excerpt}}
+	                      <p class="gh-article-excerpt is-body">{{custom_excerpt}}</p>
+	                    {{/if}}
+	                  </header>
+	                  <div class="gh-content is-body">
+	                    {{{html}}}
+	                  </div>
+	                </article>
+	              {{/foreach}}
+	            </div>
+	          </div>
+	        </section>
+	      {{else}}
+	        {{#if isPreview}}
+	          <section
+	            class="gd-ghost-cards-section gh-outer{{#unless pageTitle}} gd-ghost-cards-hide-header{{/unless}} gd-ghost-cards-header-{{textAlignment}} gd-ghost-title-{{titleSize}}"
+	            data-section-type="ghost-cards"
+	            data-section-id="{{sectionId}}"
+	            style="{{sectionStyle}}; --gd-ghost-cards-background: {{backgroundColor}}; --gd-ghost-cards-content-width: {{contentWidth}}; --gd-ghost-cards-padding-x: {{containerPaddingX}};"
+	          >
+	            <div class="gh-inner">
+	              <div class="gd-ghost-cards-inner">
+	                <article class="gh-article">
+		                  <header class="gh-article-header gd-ghost-placeholder-header">
+		                    <h1 class="gh-article-title is-title">Ghost cards</h1>
+		                  </header>
+		                  <div class="gd-ghost-cards-placeholder">
+		                    {{#if placeholderImageUrl}}
+		                      <img class="gd-ghost-placeholder-image" src="{{placeholderImageUrl}}" alt="" />
+		                    {{/if}}
+		                    <div class="gd-ghost-cards-placeholder-title">Tag a published Ghost page with <code>{{internalTag}}</code></div>
+		                    <div>Then build the page content with cards.</div>
+		                  </div>
+		                </article>
+	              </div>
+	            </div>
+	          </section>
+	        {{/if}}
+	      {{/if}}
+	    {{/get}}
+	  {{/if}}
+{{/get}}

@@ -92,8 +92,16 @@ export const colorSettingSchema = z.object({
   type: z.literal('color'),
   id: z.string(),
   label: z.string(),
-  default: z.string().default('#000000'),
+  default: z.string().optional(),
   info: z.string().optional(),
+  swatches: z.array(z.object({
+    title: z.string(),
+    hex: z.string().optional(),
+    value: z.string().optional(),
+    background: z.string().optional(),
+    accent: z.boolean().optional(),
+    transparent: z.boolean().optional()
+  })).optional(),
   /** Whether to show a "transparent" option (default: false) */
   allowTransparent: z.boolean().optional()
 })
@@ -105,7 +113,7 @@ export const checkboxSettingSchema = z.object({
   type: z.literal('checkbox'),
   id: z.string(),
   label: z.string(),
-  default: z.boolean().default(false),
+  default: z.boolean().optional(),
   info: z.string().optional()
 })
 
@@ -119,7 +127,7 @@ export const rangeSettingSchema = z.object({
   min: z.number(),
   max: z.number(),
   step: z.number().default(1),
-  default: z.number(),
+  default: z.number().optional(),
   unit: z.string().optional(),
   info: z.string().optional()
 })
@@ -264,6 +272,8 @@ export type BlockSchema = z.infer<typeof blockSchema>
 
 export type SectionCategory = 'template' | 'header'
 
+export type PaddingControls = 'none' | 'vertical' | 'full'
+
 /**
  * Padding configuration for sections
  */
@@ -282,12 +292,18 @@ export type SectionPadding = z.infer<typeof sectionPaddingSchema>
 export interface RenderOptions {
   padding?: SectionPadding
   pages?: Array<{
+    id?: number | string
     title?: string
-    excerpt?: string
-    feature_image?: string
+    slug?: string
     url?: string
+    feature_image?: string
+    feature_image_alt?: string
     html?: string
+    excerpt?: string
+    custom_excerpt?: string
+    tags?: Array<{ name?: string; slug?: string; visibility?: string }>
   }>
+  posts?: Array<Record<string, unknown>>
 }
 
 /**
@@ -309,9 +325,9 @@ export interface SectionDefinition<TConfig extends z.ZodType = z.ZodType> {
   premium?: boolean
   /** Default visibility state */
   defaultVisibility: boolean
-  /** Default padding values */
-  defaultPadding: SectionPadding
-  /** Whether to show padding controls in settings UI (default: true) */
+  /** Padding controls shown in settings UI (default: "vertical") */
+  paddingControls?: PaddingControls
+  /** Whether to show padding controls in settings UI (legacy; default: true) */
   showPaddingControls?: boolean
   /** If true, all padding values are unified */
   usesUnifiedPadding?: boolean
@@ -324,7 +340,7 @@ export interface SectionDefinition<TConfig extends z.ZodType = z.ZodType> {
   /** Factory function for default config */
   createConfig: () => z.infer<TConfig>
   /** Path to Handlebars template (relative to sections/) */
-  templatePath: string
+  templatePath?: string
 }
 
 /**
