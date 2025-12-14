@@ -98,10 +98,8 @@ export function SidebarRail() {
             <Dialog.Trigger asChild>
               <button
                 type="button"
-                className={`w-10 h-10 rounded-md flex items-center justify-center transition-colors focus:outline-none ${
+                className={`w-10 h-10 rounded-md flex items-center justify-center transition-colors focus:outline-none text-foreground ${
                   isPreviewModalOpen ? 'bg-subtle' : 'bg-surface hover:bg-subtle'
-                } ${
-                  isGhostConnected ? 'text-success' : 'text-foreground'
                 }`}
                 aria-label="Preview connection"
               >
