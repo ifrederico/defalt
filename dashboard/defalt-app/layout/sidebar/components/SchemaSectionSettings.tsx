@@ -169,7 +169,7 @@ export function SchemaSectionSettings({
                   </>
                 )}
               </SettingSection>
-              <Separator.Root className="h-px bg-hover mb-4" />
+              <Separator.Root className="h-px bg-hover mt-4 mb-4" />
             </>
           )}
 

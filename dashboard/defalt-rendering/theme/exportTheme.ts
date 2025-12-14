@@ -273,13 +273,13 @@ function resolveHeroFallbackTag(sectionKey: string): string {
 function resolveImageWithTextFallbackTag(sectionKey: string): string {
   const match = sectionKey.trim().toLowerCase().match(/^image-with-text(?:-(\d+))?$/)
   const suffix = match?.[1]
-  return suffix ? `#image-with-text-${suffix}` : '#image-with-text'
+  return suffix ? `#image-text-${suffix}` : '#image-text'
 }
 
 function resolveGhostCardsFallbackTag(sectionKey: string): string {
   const suffix = parseGhostCardIdSuffix(sectionKey)
-  if (suffix <= 1) return '#ghost-card'
-  return `#ghost-card-${suffix}`
+  if (suffix <= 1) return '#cards'
+  return `#cards-${suffix}`
 }
 
 export function generateHomeTemplate(
@@ -390,7 +390,7 @@ export function generateHomeTemplate(
         const imageAspectRatio = resolveImageAspectRatio(heroConfig.imageAspect)
         const imageBorderRadius = Math.max(0, Math.min(96, Math.round(heroConfig.imageBorderRadius)))
 
-        sectionPartial = `{{> "sections/defalt-hero" sectionId=${JSON.stringify(key)} sectionStyle=${JSON.stringify(sectionStyle)} contentWidth=${JSON.stringify(heroConfig.contentWidth)} containerPaddingX=${JSON.stringify(containerPaddingX)} backgroundColor=${JSON.stringify(backgroundColor)} textAlignment=${JSON.stringify(heroConfig.textAlignment)} pageTitle=${heroConfig.pageTitle} imageOnRight=${imageOnRight} imageColumn=${JSON.stringify(imageColumn)} textColumn=${JSON.stringify(textColumn)} imageAspectRatio=${JSON.stringify(imageAspectRatio)} imageBorderRadius=${imageBorderRadius} tagFilter=${JSON.stringify(tagFilter)} internalTag=${JSON.stringify(internalTag)} }}`
+        sectionPartial = `{{> "defalt-hero" sectionId=${JSON.stringify(key)} sectionStyle=${JSON.stringify(sectionStyle)} contentWidth=${JSON.stringify(heroConfig.contentWidth)} containerPaddingX=${JSON.stringify(containerPaddingX)} backgroundColor=${JSON.stringify(backgroundColor)} textAlignment=${JSON.stringify(heroConfig.textAlignment)} pageTitle=${heroConfig.pageTitle} imageOnRight=${imageOnRight} imageColumn=${JSON.stringify(imageColumn)} textColumn=${JSON.stringify(textColumn)} imageAspectRatio=${JSON.stringify(imageAspectRatio)} imageBorderRadius=${imageBorderRadius} tagFilter=${JSON.stringify(tagFilter)} internalTag=${JSON.stringify(internalTag)} }}`
       } else if (definitionId === 'ghostCards') {
         const rawConfig = (sectionConfig.settings?.customConfig ?? {}) as Record<string, unknown>
 
@@ -402,13 +402,12 @@ export function generateHomeTemplate(
           return ghostCardsConfigSchema.parse({})
         })()
 
-        const containerPaddingX = resolveContainerPaddingX(cardsConfig.contentWidth)
-        const backgroundColor = sanitizeHexColor(cardsConfig.backgroundColor, 'transparent')
-        const internalTag = formatInternalTag(cardsConfig.ghostPageTag) || resolveGhostCardsFallbackTag(key)
-        const tagFilter = toTagFilter(internalTag)
-        const hideTagFilter = `tag:hash-cards-hide+${tagFilter}`
+	        const containerPaddingX = resolveContainerPaddingX(cardsConfig.contentWidth)
+	        const backgroundColor = sanitizeHexColor(cardsConfig.backgroundColor, 'transparent')
+	        const internalTag = formatInternalTag(cardsConfig.ghostPageTag) || resolveGhostCardsFallbackTag(key)
+	        const tagFilter = toTagFilter(internalTag)
 
-        sectionPartial = `{{> "sections/defalt-ghost-cards" sectionId=${JSON.stringify(key)} sectionStyle=${JSON.stringify(sectionStyle)} contentWidth=${JSON.stringify(cardsConfig.contentWidth)} containerPaddingX=${JSON.stringify(containerPaddingX)} backgroundColor=${JSON.stringify(backgroundColor)} pageTitle=${cardsConfig.pageTitle} textAlignment=${JSON.stringify(cardsConfig.textAlignment)} titleSize=${JSON.stringify(cardsConfig.titleSize)} tagFilter=${JSON.stringify(tagFilter)} hideTagFilter=${JSON.stringify(hideTagFilter)} internalTag=${JSON.stringify(internalTag)} }}`
+	        sectionPartial = `{{> "defalt-ghost-cards" sectionId=${JSON.stringify(key)} sectionStyle=${JSON.stringify(sectionStyle)} contentWidth=${JSON.stringify(cardsConfig.contentWidth)} containerPaddingX=${JSON.stringify(containerPaddingX)} backgroundColor=${JSON.stringify(backgroundColor)} pageTitle=${cardsConfig.pageTitle} textAlignment=${JSON.stringify(cardsConfig.textAlignment)} titleSize=${JSON.stringify(cardsConfig.titleSize)} tagFilter=${JSON.stringify(tagFilter)} internalTag=${JSON.stringify(internalTag)} }}`
       } else if (definitionId === 'ghostGrid') {
         const rawConfig = (sectionConfig.settings?.customConfig ?? {}) as Record<string, unknown>
 
@@ -422,14 +421,13 @@ export function generateHomeTemplate(
 
         const containerPaddingX = resolveContainerPaddingX(gridConfig.contentWidth)
         const backgroundColor = sanitizeHexColor(gridConfig.backgroundColor, 'transparent')
-        const internalTagLeft = formatInternalTag(gridConfig.tagLeft) || '#grid-left'
-        const internalTagRight = formatInternalTag(gridConfig.tagRight) || '#grid-right'
-        const leftTagFilter = toTagFilter(internalTagLeft)
-        const rightTagFilter = toTagFilter(internalTagRight)
-        const anyTagFilter = `${leftTagFilter},${rightTagFilter}`
-        const hideTagFilter = `tag:hash-cards-hide+${leftTagFilter},tag:hash-cards-hide+${rightTagFilter}`
+	        const internalTagLeft = formatInternalTag(gridConfig.tagLeft) || '#grid-left'
+	        const internalTagRight = formatInternalTag(gridConfig.tagRight) || '#grid-right'
+	        const leftTagFilter = toTagFilter(internalTagLeft)
+	        const rightTagFilter = toTagFilter(internalTagRight)
+	        const anyTagFilter = `${leftTagFilter},${rightTagFilter}`
 
-        sectionPartial = `{{> "sections/defalt-ghost-grid" sectionId=${JSON.stringify(key)} sectionStyle=${JSON.stringify(sectionStyle)} contentWidth=${JSON.stringify(gridConfig.contentWidth)} containerPaddingX=${JSON.stringify(containerPaddingX)} backgroundColor=${JSON.stringify(backgroundColor)} pageTitle=${gridConfig.pageTitle} textAlignment=${JSON.stringify(gridConfig.textAlignment)} titleSize=${JSON.stringify(gridConfig.titleSize)} stackOnMobile=${gridConfig.stackOnMobile} gap=${gridConfig.gap} leftTagFilter=${JSON.stringify(leftTagFilter)} rightTagFilter=${JSON.stringify(rightTagFilter)} anyTagFilter=${JSON.stringify(anyTagFilter)} hideTagFilter=${JSON.stringify(hideTagFilter)} internalTagLeft=${JSON.stringify(internalTagLeft)} internalTagRight=${JSON.stringify(internalTagRight)} }}`
+		        sectionPartial = `{{> "defalt-ghost-grid" sectionId=${JSON.stringify(key)} sectionStyle=${JSON.stringify(sectionStyle)} contentWidth=${JSON.stringify(gridConfig.contentWidth)} containerPaddingX=${JSON.stringify(containerPaddingX)} backgroundColor=${JSON.stringify(backgroundColor)} pageTitle=${gridConfig.pageTitle} textAlignment=${JSON.stringify(gridConfig.textAlignment)} titleSize=${JSON.stringify(gridConfig.titleSize)} stackOnMobile=${gridConfig.stackOnMobile} gap=${gridConfig.gap} leftTagFilter=${JSON.stringify(leftTagFilter)} rightTagFilter=${JSON.stringify(rightTagFilter)} anyTagFilter=${JSON.stringify(anyTagFilter)} internalTagLeft=${JSON.stringify(internalTagLeft)} internalTagRight=${JSON.stringify(internalTagRight)} }}`
       } else if (definitionId === 'image-with-text') {
         const rawConfig = (sectionConfig.settings?.customConfig ?? {}) as Record<string, unknown>
 
@@ -450,7 +448,7 @@ export function generateHomeTemplate(
         const imageAspectRatio = resolveImageAspectRatio(imageTextConfig.imageAspect)
         const imageBorderRadius = Math.max(0, Math.min(96, Math.round(imageTextConfig.imageBorderRadius)))
 
-        sectionPartial = `{{> "sections/defalt-image-with-text" sectionId=${JSON.stringify(key)} sectionStyle=${JSON.stringify(sectionStyle)} contentWidth=${JSON.stringify(imageTextConfig.contentWidth)} containerPaddingX=${JSON.stringify(containerPaddingX)} backgroundColor=${JSON.stringify(backgroundColor)} textAlignment=${JSON.stringify(imageTextConfig.textAlignment)} pageTitle=${imageTextConfig.pageTitle} imageOnRight=${imageOnRight} imageColumn=${JSON.stringify(imageColumn)} textColumn=${JSON.stringify(textColumn)} imageAspectRatio=${JSON.stringify(imageAspectRatio)} imageBorderRadius=${imageBorderRadius} tagFilter=${JSON.stringify(tagFilter)} internalTag=${JSON.stringify(internalTag)} }}`
+        sectionPartial = `{{> "defalt-image-with-text" sectionId=${JSON.stringify(key)} sectionStyle=${JSON.stringify(sectionStyle)} contentWidth=${JSON.stringify(imageTextConfig.contentWidth)} containerPaddingX=${JSON.stringify(containerPaddingX)} backgroundColor=${JSON.stringify(backgroundColor)} textAlignment=${JSON.stringify(imageTextConfig.textAlignment)} pageTitle=${imageTextConfig.pageTitle} imageOnRight=${imageOnRight} imageColumn=${JSON.stringify(imageColumn)} textColumn=${JSON.stringify(textColumn)} imageAspectRatio=${JSON.stringify(imageAspectRatio)} imageBorderRadius=${imageBorderRadius} tagFilter=${JSON.stringify(tagFilter)} internalTag=${JSON.stringify(internalTag)} }}`
       }
 
       if (sectionVisible) {
@@ -707,7 +705,7 @@ export async function applyNavigationCustomization(themeDir: string, config: The
 
 /**
  * Applies editor-driven overrides to the default template file, such as
- * hero sections, announcement bar visibility, and custom CSS.
+ * hero sections, announcement bar markup, and custom CSS.
  *
  * @param themeDir - Path to the theme files.
  * @param config - Template configuration describing section order/state.
@@ -727,8 +725,8 @@ export async function applyDefaultTemplateCustomization(themeDir: string, config
 
   // NOTE: "header" section controls {{> "components/navigation"}} (nav bar in default.hbs)
   // "subheader" section controls {{> "components/header"}} (Magazine/Search/Highlight/Landing in home.hbs)
-  // NOTE: Announcement bar visibility is now handled in applyAnnouncementBarCustomization
-  // which generates an empty partial when hidden, so no marker-based removal needed here
+  // NOTE: Announcement bars are handled in applyAnnouncementBarCustomization
+  // (it adds/removes the include and generates the partial when needed).
   const navigationVisible = headerSettings?.visible !== false
 
   // Wrap navigation block in hidden div if not visible
@@ -750,16 +748,16 @@ export async function applyDefaultTemplateCustomization(themeDir: string, config
 }
 
 /**
- * Generates and writes announcement bar partial for the exported theme.
- * Uses the new engine approach - generates complete clean file without markers.
- * Handles visibility: generates empty partial when hidden.
+ * Generates announcement bar partial for the exported theme.
+ * Adds/removes the include in default.hbs based on visibility.
  *
  * @param themeDir - Path to the theme being customized.
  * @param config - Editor configuration containing section settings.
  * @param document - Optional theme document for resolving defaults.
  */
 export async function applyAnnouncementBarCustomization(themeDir: string, config: ThemeConfig, document?: ThemeDocument) {
-  const partialPath = path.join(themeDir, 'partials', 'sections', 'announcement-bar.hbs')
+  const defaultTemplatePath = path.join(themeDir, 'default.hbs')
+  const partialPath = path.join(themeDir, 'partials', 'announcement-bar.hbs')
 
   const sections = config.sections || {}
   const headerSettings = sections.header?.settings as (SectionSettings & {
@@ -806,11 +804,15 @@ export async function applyAnnouncementBarCustomization(themeDir: string, config
     ? headerSettings.announcementBars
     : resolveLegacyAnnouncementBars()
 
-  const visibleBars = announcementBars.filter((bar) => bar && typeof bar === 'object' && bar.hidden !== true)
-  if (visibleBars.length === 0) {
-    await fs.writeFile(partialPath, '{{!-- Announcement Bars - Not added --}}\n', 'utf-8')
+  const addedBars = announcementBars.filter((bar) => bar && typeof bar === 'object')
+  if (addedBars.length === 0) {
+    await syncDefaultAnnouncementBarInclude(defaultTemplatePath, false)
+    await fs.rm(partialPath, { force: true })
     return
   }
+
+  await syncDefaultAnnouncementBarInclude(defaultTemplatePath, true)
+  await fs.mkdir(path.dirname(partialPath), { recursive: true })
 
   const accentReference = (document?.accentColor ?? DEFAULT_HEADER_SETTINGS.accentColor)?.toLowerCase() ?? ''
   const resolveBackgroundColor = (value: string) =>
@@ -887,7 +889,7 @@ export async function applyAnnouncementBarCustomization(themeDir: string, config
 </style>
 `
 
-  const renderedBars = visibleBars.map((bar) => {
+  const renderedBars = addedBars.map((bar) => {
     const normalizedBar = normalizeAnnouncementBarConfig(bar.bar ?? DEFAULT_ANNOUNCEMENT_BAR_CONFIG, DEFAULT_ANNOUNCEMENT_BAR_CONFIG)
     const normalizedContent = normalizeAnnouncementContentConfig(
       bar.content ?? DEFAULT_ANNOUNCEMENT_CONTENT_CONFIG,
@@ -902,6 +904,8 @@ export async function applyAnnouncementBarCustomization(themeDir: string, config
     const className = normalizedBar.width === 'narrow'
       ? 'announcement-bar announcement-bar--narrow'
       : 'announcement-bar'
+    const isHidden = bar.hidden === true
+    const classNameWithVisibility = isHidden ? `${className} hidden` : className
 
     const style = [
       `padding-top: ${normalizedBar.paddingTop}px`,
@@ -929,14 +933,52 @@ export async function applyAnnouncementBarCustomization(themeDir: string, config
       return '<span class="announcement-bar__item" style="font-size: 1.4rem;">Add announcements in the sidebar.</span>'
     })()
 
-    return `<section class="${className}" style="${style}">
-  <div class="announcement-bar__content">
-    ${contentMarkup}
-  </div>
-</section>`
+    return `<section class="${classNameWithVisibility}" style="${style}"${isHidden ? ' aria-hidden="true"' : ''}>
+	  <div class="announcement-bar__content">
+	    ${contentMarkup}
+	  </div>
+	</section>`
   })
 
   await fs.writeFile(partialPath, `${styleBlock}\n${renderedBars.join('\n')}\n`, 'utf-8')
+}
+
+async function syncDefaultAnnouncementBarInclude(defaultTemplatePath: string, enabled: boolean) {
+  let content: string
+  try {
+    content = await fs.readFile(defaultTemplatePath, 'utf-8')
+  } catch {
+    return
+  }
+
+  const include = '{{> "announcement-bar"}}'
+  const includeLine = /^[ \t]*{{>\s*["'](?:sections\/)?announcement-bar["']\s*}}[ \t]*\r?\n?/gm
+
+  if (!enabled) {
+    const updated = content.replace(includeLine, '')
+    if (updated !== content) {
+      await fs.writeFile(defaultTemplatePath, updated, 'utf-8')
+    }
+    return
+  }
+
+  const strippedContent = content.replace(includeLine, '')
+
+  const viewportMarker = '<div class="gh-viewport">'
+  const viewportIdx = strippedContent.indexOf(viewportMarker)
+  if (viewportIdx !== -1) {
+    const insertAt = viewportIdx + viewportMarker.length
+    const updated = `${strippedContent.slice(0, insertAt)}\n\n    ${include}${strippedContent.slice(insertAt)}`
+    await fs.writeFile(defaultTemplatePath, updated, 'utf-8')
+    return
+  }
+
+  const bodyMarker = '{{{body}}}'
+  const bodyIdx = strippedContent.indexOf(bodyMarker)
+  if (bodyIdx !== -1) {
+    const updated = `${strippedContent.slice(0, bodyIdx)}${include}\n\n${strippedContent.slice(bodyIdx)}`
+    await fs.writeFile(defaultTemplatePath, updated, 'utf-8')
+  }
 }
 
 /**
@@ -944,16 +986,22 @@ export async function applyAnnouncementBarCustomization(themeDir: string, config
  * Templates are copied as-is (Ghost runs them natively).
  */
 export async function applyCustomSectionTemplates(themeDir: string, config: ThemeConfig) {
-  const hasAny = Object.values(config.sections ?? {}).some((section) => {
-    const definitionId = section?.settings?.definitionId
-    return typeof definitionId === 'string' && KNOWN_SECTION_TYPES.has(definitionId)
-  })
+  const order = Array.isArray(config.order?.template) ? config.order.template : []
+  const requiredSectionTypes = new Set<string>()
 
-  if (!hasAny) {
+  for (const key of order) {
+    const section = config.sections?.[key]
+    const definitionId = section?.settings?.definitionId
+    if (typeof definitionId === 'string' && KNOWN_SECTION_TYPES.has(definitionId)) {
+      requiredSectionTypes.add(definitionId)
+    }
+  }
+
+  if (requiredSectionTypes.size === 0) {
     return
   }
 
-  const partialsDir = path.join(themeDir, 'partials', 'sections')
+  const partialsDir = path.join(themeDir, 'partials')
   await fs.mkdir(partialsDir, { recursive: true })
 
   const mappings: Array<{ id: string; filename: string }> = [
@@ -964,6 +1012,9 @@ export async function applyCustomSectionTemplates(themeDir: string, config: Them
   ]
 
   for (const mapping of mappings) {
+    if (!requiredSectionTypes.has(mapping.id)) {
+      continue
+    }
     const content = await readSectionTemplate(mapping.id)
     if (!content) {
       continue
@@ -979,7 +1030,7 @@ export async function applyCustomSectionTemplates(themeDir: string, config: Them
  * @param config - Editor configuration containing section settings.
  */
 export async function applyHeroCustomization(themeDir: string, config: ThemeConfig) {
-  const basePartialPath = path.join(themeDir, 'partials', 'sections', 'defalt-hero.hbs')
+  const basePartialPath = path.join(themeDir, 'partials', 'defalt-hero.hbs')
 
   // Find all hero sections (supports multiple instances)
   const allHeroSections = findAllSectionsByDefinitionId(config, 'hero')
@@ -1174,11 +1225,11 @@ export async function applyHeroCustomization(themeDir: string, config: ThemeConf
     '</style>'
   ].join('\n')
 
-  for (const { key, section } of allHeroSections) {
-    const suffix = getSectionInstanceSuffix(key, 'hero')
-    const partialPath = suffix
-      ? path.join(themeDir, 'partials', 'sections', `defalt-hero${suffix}.hbs`)
-      : basePartialPath
+	  for (const { key, section } of allHeroSections) {
+	    const suffix = getSectionInstanceSuffix(key, 'hero')
+	    const partialPath = suffix
+	      ? path.join(themeDir, 'partials', `defalt-hero${suffix}.hbs`)
+	      : basePartialPath
 
     const heroConfig: HeroConfig = (() => {
       const parsed = heroConfigSchema.safeParse(section.settings?.customConfig ?? {})
@@ -1406,7 +1457,7 @@ export async function applyGhostCardsCustomization(themeDir: string, config: The
     return
   }
 
-  const basePartialPath = path.join(themeDir, 'partials', 'sections', 'defalt-ghost-cards.hbs')
+  const basePartialPath = path.join(themeDir, 'partials', 'defalt-ghost-cards.hbs')
 
   // Find all ghostCards sections
   const allGhostCardsSections = findAllSectionsByDefinitionId(config, 'ghostCards')
@@ -1433,11 +1484,11 @@ export async function applyGhostCardsCustomization(themeDir: string, config: The
   }
 
   // Process each ghost cards section instance
-  for (const { key, section } of allGhostCardsSections) {
-    const suffix = getSectionInstanceSuffix(key, 'ghostCards')
-    const partialPath = suffix
-      ? path.join(themeDir, 'partials', 'sections', `defalt-ghost-cards${suffix}.hbs`)
-      : basePartialPath
+	  for (const { key, section } of allGhostCardsSections) {
+	    const suffix = getSectionInstanceSuffix(key, 'ghostCards')
+	    const partialPath = suffix
+	      ? path.join(themeDir, 'partials', `defalt-ghost-cards${suffix}.hbs`)
+	      : basePartialPath
 
     let content = baseContent
 
@@ -1584,19 +1635,16 @@ export async function applyGhostCardsCustomization(themeDir: string, config: The
     content = content.replace('{{!-- defalt-ghost-cards-section-classes --}}', classInsertion)
 
     // Replace tag filters with this instance's tag
-    const filterPlaceholders = [
-      'filter="tag:hash-ghost-cards"',
-      'filter="tag:hash-ghost-card"',
-      'filter="tag:hash-cards-hide+tag:hash-ghost-card"'
-    ]
-    filterPlaceholders.forEach((placeholder) => {
-      if (content.includes(placeholder)) {
-        const replacement = placeholder.includes('hash-cards-hide')
-          ? `filter="tag:hash-cards-hide+tag:${slugTag}"`
-          : `filter="tag:${slugTag}"`
-        content = content.replace(new RegExp(placeholder, 'g'), replacement)
-      }
-    })
+	    const filterPlaceholders = [
+	      'filter="tag:hash-ghost-cards"',
+	      'filter="tag:hash-ghost-card"',
+	    ]
+	    filterPlaceholders.forEach((placeholder) => {
+	      if (content.includes(placeholder)) {
+	        const replacement = `filter="tag:${slugTag}"`
+	        content = content.replace(new RegExp(placeholder, 'g'), replacement)
+	      }
+	    })
 
     // Update placeholder text to show correct tag for this instance
     content = content.replace(
@@ -1615,7 +1663,7 @@ export async function applyGhostGridCustomization(themeDir: string, config: Them
     return
   }
 
-  const partialPath = path.join(themeDir, 'partials', 'sections', 'defalt-ghost-grid.hbs')
+	  const partialPath = path.join(themeDir, 'partials', 'defalt-ghost-grid.hbs')
   const ghostGridSection = findSectionByDefinitionId(config, 'ghostGrid')
   if (!ghostGridSection) return
 
@@ -1797,7 +1845,7 @@ export async function applyImageWithTextCustomization(themeDir: string, config: 
     return
   }
 
-  const basePartialPath = path.join(themeDir, 'partials', 'sections', 'defalt-image-with-text.hbs')
+  const basePartialPath = path.join(themeDir, 'partials', 'defalt-image-with-text.hbs')
 
   // Find all image-with-text sections
   const allImageWithTextSections = findAllSectionsByDefinitionId(config, 'image-with-text')
@@ -1824,11 +1872,11 @@ export async function applyImageWithTextCustomization(themeDir: string, config: 
   }
 
   // Process each image-with-text section instance
-  for (const { key, section } of allImageWithTextSections) {
-    const suffix = getSectionInstanceSuffix(key, 'image-with-text')
-    const partialPath = suffix
-      ? path.join(themeDir, 'partials', 'sections', `defalt-image-with-text${suffix}.hbs`)
-      : basePartialPath
+	  for (const { key, section } of allImageWithTextSections) {
+	    const suffix = getSectionInstanceSuffix(key, 'image-with-text')
+	    const partialPath = suffix
+	      ? path.join(themeDir, 'partials', `defalt-image-with-text${suffix}.hbs`)
+	      : basePartialPath
 
     let content = baseContent
 

@@ -54,7 +54,7 @@ const SUBHEADER_MARGIN_DEFAULT = 40
 const SUBHEADER_MARGIN_STYLES = new Set(['Highlight', 'Magazine'])
 const SUBHEADER_PADDING_STYLES = new Set(['Landing', 'Search'])
 
-const GHOST_CARD_TAG_BASE = '#ghost-card'
+const GHOST_CARD_TAG_BASE = '#cards'
 
 const generateCustomSectionId = (definitionId: string, existingIds: Set<string>) => {
   const baseId = CUSTOM_SECTION_BASE_ID[definitionId] ?? definitionId
@@ -392,7 +392,15 @@ export function useSectionManager({
       }
 
       if (definitionId === 'image-with-text') {
-        customConfig = { ghostPageTag: `#${instanceId}` } as SectionConfigSchema
+        const suffix = (() => {
+          if (instanceId === 'image-with-text') {
+            return 1
+          }
+          const match = instanceId.match(/^image-with-text-(\d+)$/)
+          const numeric = match ? Number.parseInt(match[1], 10) : NaN
+          return Number.isFinite(numeric) ? numeric : 1
+        })()
+        customConfig = { ghostPageTag: suffix === 1 ? '#image-text' : `#image-text-${suffix}` } as SectionConfigSchema
       }
 
       if (definitionId === 'ghostGrid') {

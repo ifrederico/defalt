@@ -292,7 +292,7 @@ export function registerGhostHelpers(
 
   // Parse filter string for tag conditions.
   // Supports OR (comma-separated clauses) and AND (plus-separated conditions) at a basic level.
-  // Example: "tag:hash-cards-hide+tag:hash-grid-left,tag:hash-cards-hide+tag:hash-grid-right"
+  // Example: "tag:hash-grid-left,tag:hash-grid-right"
   const parseTagFilter = (filter: string): TagFilterClause[] => {
     const normalized = filter.replace(/[()]/g, '')
     const clauses = normalized

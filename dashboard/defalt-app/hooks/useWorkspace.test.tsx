@@ -217,7 +217,7 @@ describe('useWorkspace', () => {
     })
     expect(
       (hook.result.current.customSections['ghost-cards'].config as { ghostPageTag?: string }).ghostPageTag
-    ).toBe('#ghost-card')
+    ).toBe('#cards')
 
     act(() => {
       hook.result.current.addTemplateSection('ghostCards')
@@ -228,7 +228,7 @@ describe('useWorkspace', () => {
     })
     expect(
       (hook.result.current.customSections['ghost-cards-2'].config as { ghostPageTag?: string }).ghostPageTag
-    ).toBe('#ghost-card-2')
+    ).toBe('#cards-2')
 
     hook.unmount()
   })
@@ -254,7 +254,7 @@ describe('useWorkspace', () => {
     await waitFor(() => {
       expect(
         (hook.result.current.customSections['ghost-cards'].config as { ghostPageTag?: string }).ghostPageTag
-      ).toBe('#ghost-card-2')
+      ).toBe('#cards-2')
     })
 
     hook.unmount()
@@ -272,7 +272,7 @@ describe('useWorkspace', () => {
     })
     expect(
       (hook.result.current.customSections['image-with-text'].config as { ghostPageTag?: string }).ghostPageTag
-    ).toBe('#image-with-text')
+    ).toBe('#image-text')
 
     act(() => {
       hook.result.current.addTemplateSection('image-with-text')
@@ -283,7 +283,7 @@ describe('useWorkspace', () => {
     })
     expect(
       (hook.result.current.customSections['image-with-text-2'].config as { ghostPageTag?: string }).ghostPageTag
-    ).toBe('#image-with-text-2')
+    ).toBe('#image-text-2')
 
     hook.unmount()
   })

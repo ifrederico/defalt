@@ -651,14 +651,19 @@ function collectSectionConfigs(document: ThemeDocument): SectionConfig[] {
 }
 
 function isAnnouncementBarEnabled(document: ThemeDocument): boolean {
-  const announcementSectionVisible = document.header?.sections?.['announcement-bar']?.settings?.visible
-  const headerSettingVisible = document.header?.sections?.header?.settings?.announcementBarVisible
+  const headerSettings = document.header?.sections?.header?.settings
 
+  const announcementBars = headerSettings?.announcementBars
+  if (Array.isArray(announcementBars)) {
+    return announcementBars.length > 0
+  }
+
+  const announcementSectionVisible = document.header?.sections?.['announcement-bar']?.settings?.visible
   if (typeof announcementSectionVisible === 'boolean') {
     return announcementSectionVisible
   }
 
-  return headerSettingVisible === true
+  return headerSettings?.announcementBarVisible === true
 }
 
 async function validatePremiumFeatures(
@@ -708,7 +713,7 @@ async function cleanupUnusedPartials(
   document: ThemeDocument,
   tier: SubscriptionTier
 ): Promise<void> {
-  const partialsDir = path.join(workspaceThemeDir, 'partials', 'sections')
+  const partialsDir = path.join(workspaceThemeDir, 'partials')
   const sections = collectSectionConfigs(document)
 
   const hasGhostCards = sections.some(s => s?.settings?.definitionId === 'ghostCards')

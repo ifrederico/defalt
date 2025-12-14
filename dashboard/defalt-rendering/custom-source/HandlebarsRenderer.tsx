@@ -82,13 +82,13 @@ const resolveImageWithTextFallbackTag = (sectionId: string) => {
   const normalized = sectionId.trim().toLowerCase()
   const match = normalized.match(/^image-with-text(?:-(\d+))?$/)
   const suffix = match?.[1]
-  return suffix ? `#image-with-text-${suffix}` : '#image-with-text'
+  return suffix ? `#image-text-${suffix}` : '#image-text'
 }
 
 const resolveGhostCardsFallbackTag = (sectionId: string) => {
   const suffix = parseGhostCardIdSuffix(sectionId)
-  if (suffix <= 1) return '#ghost-card'
-  return `#ghost-card-${suffix}`
+  if (suffix <= 1) return '#cards'
+  return `#cards-${suffix}`
 }
 
 interface HandlebarsRendererProps {
@@ -327,14 +327,13 @@ export function HandlebarsRenderer({
               renderConfig.imageAspectRatio = imageAspectRatio
             }
 
-            if (section.definitionId === 'ghostCards') {
-              const rawTag = baseConfig.ghostPageTag
-              const internalTag = formatInternalTag(rawTag) || resolveGhostCardsFallbackTag(section.id)
-              const tagFilter = toTagFilter(internalTag)
-              renderConfig.internalTag = internalTag
-              renderConfig.tagFilter = tagFilter
-              renderConfig.hideTagFilter = `tag:hash-cards-hide+${tagFilter}`
-            }
+	            if (section.definitionId === 'ghostCards') {
+	              const rawTag = baseConfig.ghostPageTag
+	              const internalTag = formatInternalTag(rawTag) || resolveGhostCardsFallbackTag(section.id)
+	              const tagFilter = toTagFilter(internalTag)
+	              renderConfig.internalTag = internalTag
+	              renderConfig.tagFilter = tagFilter
+	            }
 
 	            if (section.definitionId === 'ghostGrid') {
 	              const left = formatInternalTag(baseConfig.tagLeft) || '#grid-left'
@@ -343,10 +342,9 @@ export function HandlebarsRenderer({
 	              const rightFilter = toTagFilter(right)
               renderConfig.internalTagLeft = left
               renderConfig.internalTagRight = right
-              renderConfig.leftTagFilter = leftFilter
-              renderConfig.rightTagFilter = rightFilter
-              renderConfig.anyTagFilter = `${leftFilter},${rightFilter}`
-	              renderConfig.hideTagFilter = `tag:hash-cards-hide+${leftFilter},tag:hash-cards-hide+${rightFilter}`
+	              renderConfig.leftTagFilter = leftFilter
+	              renderConfig.rightTagFilter = rightFilter
+	              renderConfig.anyTagFilter = `${leftFilter},${rightFilter}`
 	            }
 
 	            renderConfig.isPreview = true
