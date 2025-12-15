@@ -109,6 +109,19 @@
   margin-top: 8px;
 }
 
+.gd-hero-split__ctas.gh-content {
+  font-size: inherit;
+  letter-spacing: inherit;
+}
+
+.gd-hero-split__ctas.gh-content > * + * {
+  margin-top: 0;
+}
+
+.gd-hero-split__ctas .kg-card.kg-cta-card {
+  flex: 1 0 100%;
+}
+
 .gd-hero-split__ctas .kg-btn {
   display: inline-block;
   padding: 0.6em 1.2em;
@@ -176,7 +189,7 @@
                 {{/if}}
               </p>
               {{#if html}}
-                <div class="gd-hero-split__ctas">
+                <div class="gd-hero-split__ctas gh-content is-body">
                   {{{html}}}
                 </div>
               {{/if}}

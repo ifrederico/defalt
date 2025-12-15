@@ -200,8 +200,26 @@ export function registerGhostHelpers(
   })
 
   // ghost_head helper (outputs meta tags)
-  // Note: Koenig card styles come from the theme screen.css loaded by domManipulation.ts
   Handlebars.registerHelper('ghost_head', function () {
+    const cardAssets = (() => {
+      try {
+        const siteUrl = typeof siteMeta.url === 'string' ? siteMeta.url : ''
+        if (!siteUrl) {
+          return ''
+        }
+        const normalizedBase = siteUrl.endsWith('/') ? siteUrl : `${siteUrl}/`
+        const cssHref = new URL('public/cards.min.css', normalizedBase).toString()
+
+        const escapedCssHref = Handlebars.Utils.escapeExpression(cssHref)
+
+        return `
+          <link rel="stylesheet" type="text/css" href="${escapedCssHref}">
+        `
+      } catch {
+        return ''
+      }
+    })()
+
     return new Handlebars.SafeString(`
       <style>
         :root {
@@ -211,6 +229,7 @@ export function registerGhostHelpers(
         }
       </style>
       ${meta.metaTags}
+      ${cardAssets}
     `)
   })
 

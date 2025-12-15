@@ -110,6 +110,19 @@
   margin-top: 8px;
 }
 
+.gd-image-text-buttons.gh-content {
+  font-size: inherit;
+  letter-spacing: inherit;
+}
+
+.gd-image-text-buttons.gh-content > * + * {
+  margin-top: 0;
+}
+
+.gd-image-text-buttons .kg-card.kg-cta-card {
+  flex: 1 0 100%;
+}
+
 .gd-image-text-align-left .gd-image-text-text {
   text-align: left;
   align-items: flex-start;
@@ -162,7 +175,7 @@
                 {{/if}}
               </p>
               {{#if html}}
-                <div class="gd-image-text-buttons">
+                <div class="gd-image-text-buttons gh-content is-body">
                   {{{html}}}
                 </div>
               {{/if}}
