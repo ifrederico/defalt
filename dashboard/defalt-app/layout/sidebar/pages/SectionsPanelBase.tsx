@@ -21,6 +21,7 @@ import { PointerSensor } from '@dnd-kit/react'
 import { isElement } from '@dnd-kit/dom/utilities'
 import type { SidebarItem } from '@defalt/utils/config/configStateDefaults'
 import { type AnnouncementBarConfig, type AnnouncementContentConfig, type AnnouncementBarInstance } from '@defalt/utils/config/themeConfig'
+import type { PreviewData } from '@defalt/rendering/custom-source/handlebars/dataResolvers'
 import { resolveSectionIcon } from '@defalt/utils/config/sectionIcons'
 import {
   isPremium,
@@ -43,6 +44,8 @@ const UPCOMING_SECTION_IDS = new Set([
 ])
 
 export type SectionsPanelProps = {
+  previewData: PreviewData
+  dataSource: 'placeholder' | 'ghost'
   accentColor: string
   postFeedStyleValue: string
   postFeedStyleOptions: string[]

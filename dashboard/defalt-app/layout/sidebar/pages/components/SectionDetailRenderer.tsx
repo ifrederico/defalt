@@ -4,6 +4,7 @@ import type { PaddingControls, SectionConfigSchema, AnnouncementBarSectionConfig
 import { getSectionDefinition } from '@defalt/sections/engine'
 import { SECTION_ID_MAP, PADDING_BLOCK_SECTIONS, CSS_DEFAULT_MARGIN, type AnnouncementBlock } from '@defalt/utils/config/themeConfig'
 import { announcementBarBlocksSchema } from '@defalt/sections/engine'
+import { formatInternalTag, toApiTagSlug } from '@defalt/sections/utils/tagUtils'
 import { SchemaSectionSettings } from '../../components/SchemaSectionSettings'
 import { groupSettingsByHeader, renderSettingInput } from '../../components/settingsRenderUtils'
 import { SchemaThemeSettings } from '../../components/SchemaThemeSettings'
@@ -201,9 +202,45 @@ export function SectionDetailRenderer({ activeDetail, props }: SectionDetailRend
         const blockIndex = activeDetail.blockIndex
         const block = activeAnnouncementBar.content.announcements[blockIndex]
         if (block) {
+          const ghostMatch = (() => {
+            if (props.dataSource !== 'ghost') {
+              return null
+            }
+            const internalTag = formatInternalTag(block.tag) || '#announcement'
+            const tagSlug = toApiTagSlug(internalTag)
+            const previewPages = Array.isArray((props.previewData as unknown as { pages?: unknown[] })?.pages)
+              ? (props.previewData as unknown as { pages: Array<{ title?: unknown; custom_excerpt?: unknown; html?: unknown; tags?: Array<{ slug?: unknown; name?: unknown; visibility?: unknown }> }> }).pages
+              : []
+
+            const matchedPage = previewPages.find((page) =>
+              Array.isArray(page.tags) &&
+              page.tags.some((tag) => typeof tag.slug === 'string' && tag.slug === tagSlug)
+            )
+            if (!matchedPage) {
+              return null
+            }
+            const html = typeof matchedPage.html === 'string' ? matchedPage.html : ''
+            const strippedHtml = html
+              .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+              .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+            const firstParagraphMatch = strippedHtml.match(/<p\b[^>]*>([\s\S]*?)<\/p>/i)
+            const firstParagraphHtml = firstParagraphMatch?.[1] ?? strippedHtml
+            const plainText = firstParagraphHtml
+              .replace(/<[^>]*>/g, ' ')
+              .replace(/\s+/g, ' ')
+              .trim()
+            const customExcerpt = typeof matchedPage.custom_excerpt === 'string' ? matchedPage.custom_excerpt.trim() : ''
+            const title = typeof matchedPage.title === 'string' ? matchedPage.title.trim() : ''
+            const displayTextRaw = plainText || customExcerpt || title
+            const displayText = displayTextRaw.length > 200 ? `${displayTextRaw.slice(0, 200)}…` : displayTextRaw
+            return { displayText, internalTag }
+          })()
+
           return (
             <AnnouncementBlockSettings
               block={block}
+              ghostDisplayText={ghostMatch?.displayText ?? null}
+              hasGhostContent={Boolean(ghostMatch)}
               onUpdateBlock={(updatedBlock) => {
                 props.onAnnouncementContentConfigChange(activeAnnouncementBar.id, () => ({
                   ...activeAnnouncementBar.content,
@@ -505,11 +542,15 @@ function AiSectionSettings({
 
 type AnnouncementBlockSettingsProps = {
   block: AnnouncementBlock
+  ghostDisplayText: string | null
+  hasGhostContent: boolean
   onUpdateBlock: (block: AnnouncementBlock) => void
 }
 
 function AnnouncementBlockSettings({
   block,
+  ghostDisplayText,
+  hasGhostContent,
   onUpdateBlock
 }: AnnouncementBlockSettingsProps) {
   // Get the block schema for 'announcement' type
@@ -536,8 +577,10 @@ function AnnouncementBlockSettings({
               {group.settings.map((setting) => {
                 let currentValue = blockRecord[setting.id]
                 const needsLabel = !selfLabeledTypes.includes(setting.type)
-                // For text field, show guidance text when empty
-                if (setting.id === 'text' && !currentValue) {
+                const isTextField = setting.id === 'text'
+                if (isTextField && hasGhostContent) {
+                  currentValue = ghostDisplayText || `Content from Ghost page ${block.tag || '#announcement'}`
+                } else if (isTextField && !currentValue) {
                   currentValue = `Tag a Ghost page with ${block.tag || '#announcement'}`
                 }
                 return (
@@ -545,7 +588,12 @@ function AnnouncementBlockSettings({
                     {needsLabel && 'label' in setting && (
                       <label className="font-md text-secondary block">{setting.label}</label>
                     )}
-                    {renderSettingInput(setting, currentValue, (next) => handleFieldChange(setting.id, next))}
+                    {renderSettingInput(
+                      setting,
+                      currentValue,
+                      (next) => handleFieldChange(setting.id, next),
+                      { isDisabled: isTextField && hasGhostContent }
+                    )}
                   </div>
                 )
               })}

@@ -79,6 +79,8 @@ export function EditorSidebar({
 	    onBackgroundColorChange,
 	    customCSS,
 	    onCustomCSSChange,
+      previewData,
+      dataSource,
 	    announcementBars,
 	    onAddAnnouncementBar,
 	    onRemoveAnnouncementBar,
@@ -116,6 +118,8 @@ export function EditorSidebar({
   } = workspace
   const isFooterBarHidden = Boolean(sectionVisibility['footerBar'])
   const panelProps = useMemo<SectionsPanelProps>(() => ({
+    previewData,
+    dataSource,
     accentColor,
     postFeedStyleValue,
     postFeedStyleOptions,
@@ -168,6 +172,8 @@ export function EditorSidebar({
 	    onRenameAiSection: renameAiSection,
     onReorderAiSections: reorderAiSections,
   }), [
+    previewData,
+    dataSource,
     accentColor,
     postFeedStyleValue,
     postFeedStyleOptions,

@@ -296,6 +296,13 @@ export function registerSectionHelpers(): void {
 	  const hash = (options.hash ?? {}) as Record<string, unknown>
 	  const filter = typeof hash.filter === 'string' ? hash.filter : undefined
 	  const parsedLimit = Number(hash.limit)
+    const rootContext = (() => {
+      const root = (options.data as unknown as { root?: unknown } | undefined)?.root
+      if (typeof root === 'object' && root !== null) {
+        return root as Record<string, unknown>
+      }
+      return null
+    })()
 
 	  if (resource !== 'pages' && resource !== 'posts') {
 	    const frame = hbs.createFrame(options.data || {})
@@ -304,11 +311,13 @@ export function registerSectionHelpers(): void {
 	    return options.fn?.({ ...baseContext, [resource]: [] } as unknown, invocationOptions)
 	  }
 
-    const source = resource === 'pages'
-      ? (Array.isArray(this.pages) ? [...this.pages] : [])
-      : (Array.isArray((this as unknown as { posts?: unknown }).posts)
-        ? [...((this as unknown as { posts?: unknown[] }).posts as unknown[])]
-        : [])
+    const pagesFromContext = Array.isArray(this.pages)
+      ? this.pages
+      : (Array.isArray(rootContext?.pages) ? (rootContext.pages as unknown[]) : [])
+    const postsFromContext = Array.isArray((this as unknown as { posts?: unknown }).posts)
+      ? ((this as unknown as { posts?: unknown[] }).posts as unknown[])
+      : (Array.isArray(rootContext?.posts) ? (rootContext.posts as unknown[]) : [])
+    const source = resource === 'pages' ? [...pagesFromContext] : [...postsFromContext]
 
     const limit = Number.isFinite(parsedLimit) && parsedLimit > 0 ? parsedLimit : source.length
 

@@ -105,12 +105,6 @@ export function AddSectionCard({
     setQuery('')
   }, [onSelect])
 
-  const handleGenerateBlock = useCallback(() => {
-    onGenerateBlock?.()
-    setOpen(false)
-    setQuery('')
-  }, [onGenerateBlock])
-
   useEffect(() => {
     if (!isEnabled && open) {
       setOpen(false)
@@ -158,34 +152,19 @@ export function AddSectionCard({
 	                <>
 	                  {showGenerateBlock && (
 	                    <>
-	                      <DropdownMenu.Item
-	                        onSelect={handleGenerateBlock}
-	                        className="mx-1 flex cursor-pointer items-center gap-3 rounded-md px-3 py-1.5 font-md text-foreground focus:outline-none group ai-dropdown-item"
-	                      >
-	                        <span className="flex h-8 w-8 items-center justify-center rounded-md bg-surface">
-	                          <Sparkles size={16} strokeWidth={1.5} style={{ stroke: 'url(#ai-gradient)' }} />
-	                          <svg width="0" height="0" style={{ position: 'absolute' }}>
-	                            <defs>
-	                              <linearGradient id="ai-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-	                                <stop offset="0%" stopColor="#ad5ae1" />
-	                                <stop offset="50%" stopColor="#e9618d" />
-	                                <stop offset="100%" stopColor="#fd9e5f" />
-	                              </linearGradient>
-	                            </defs>
-	                          </svg>
-	                        </span>
-	                        <span
-	                          className="flex-1 truncate text-left font-normal leading-none"
-	                          style={{
-	                            backgroundImage: 'linear-gradient(135deg, var(--color-ai-grading-1, #f76e85), var(--color-ai-grading-5, #8b10d6))',
-	                            WebkitBackgroundClip: 'text',
-	                            backgroundClip: 'text',
-	                            WebkitTextFillColor: 'transparent',
-	                          }}
-	                        >
-	                          Generate block
-	                        </span>
-	                      </DropdownMenu.Item>
+                        <FloatingTooltip content="Coming soon to Defalt Plus Monthly.">
+                          <DropdownMenu.Item
+                            disabled
+                            className="mx-1 flex cursor-not-allowed items-center gap-3 rounded-md px-3 py-1.5 font-md text-placeholder opacity-60 data-[disabled]:bg-transparent"
+                          >
+                            <span className="flex h-8 w-8 items-center justify-center rounded-md bg-surface text-placeholder">
+                              <Sparkles size={16} strokeWidth={1.5} />
+                            </span>
+                            <span className="flex-1 truncate text-left font-normal leading-none text-placeholder">
+                              Generate block
+                            </span>
+                          </DropdownMenu.Item>
+                        </FloatingTooltip>
 
 	                      {(filteredDefinitions.length > 0 ||
 	                        filteredUpcomingSections.length > 0) && (

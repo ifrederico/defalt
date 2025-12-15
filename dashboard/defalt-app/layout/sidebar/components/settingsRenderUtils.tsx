@@ -121,6 +121,7 @@ export function renderSettingInput(
           type="text"
           placeholder={setting.placeholder || 'Enter text...'}
           value={typeof value === 'string' ? value : ''}
+          disabled={isDisabled}
           onChange={(e) => onChange(e.target.value)}
         />
       )
@@ -130,6 +131,7 @@ export function renderSettingInput(
           type="url"
           placeholder={setting.placeholder || 'https://...'}
           value={typeof value === 'string' ? value : ''}
+          disabled={isDisabled}
           onChange={(e) => onChange(e.target.value || '#')}
         />
       )
@@ -139,6 +141,7 @@ export function renderSettingInput(
           className="min-h-[80px]"
           placeholder={setting.placeholder || 'Enter content...'}
           value={typeof value === 'string' ? value : ''}
+          disabled={isDisabled}
           onChange={(e) => onChange(e.target.value)}
         />
       )
@@ -149,6 +152,7 @@ export function renderSettingInput(
           className="min-h-[80px]"
           placeholder="Enter content..."
           value={typeof value === 'string' ? value : ''}
+          disabled={isDisabled}
           onChange={(e) => onChange(e.target.value)}
         />
       )

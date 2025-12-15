@@ -873,6 +873,20 @@ export async function applyAnnouncementBarCustomization(themeDir: string, config
   display: inline;
 }
 
+.announcement-bar__item p {
+  display: inline;
+  margin: 0;
+}
+
+.announcement-bar__item a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.announcement-bar__item a:hover {
+  opacity: 0.8;
+}
+
 .announcement-bar__link {
   color: inherit;
   text-decoration: none;
@@ -916,31 +930,54 @@ export async function applyAnnouncementBarCustomization(themeDir: string, config
       `--announcement-bar-divider-color: ${normalizedBar.dividerColor}`,
     ].join('; ')
 
-    const contentMarkup = (() => {
-      if (announcements.length > 0) {
-        return announcements.map((announcement, idx) => {
-          const separator = idx > 0 ? '<span class="announcement-bar__separator">·</span>' : ''
-          const safeText = escapeHandlebarsString(announcement.text ?? '')
-          const safeLink = typeof announcement.link === 'string' ? escapeHandlebarsString(announcement.link) : ''
-          const typographyStyle = resolveTypographyStyle(announcement)
-          if (safeLink) {
-            return `${separator}<a href="${safeLink}" class="announcement-bar__link announcement-bar__item" style="${typographyStyle}">${safeText}</a>`
-          }
-          return `${separator}<span class="announcement-bar__item" style="${typographyStyle}">${safeText}</span>`
-        }).join('')
-      }
+    const announcement = announcements[0]
+    if (!announcement) {
+      return ''
+    }
 
-      return '<span class="announcement-bar__item" style="font-size: 1.4rem;">Add announcements in the sidebar.</span>'
+    const typographyStyle = resolveTypographyStyle(announcement)
+
+    const internalTag = formatInternalTag(announcement.tag) || '#announcement'
+    const tagFilter = toTagFilter(internalTag)
+
+    const manualText = typeof announcement.text === 'string' ? announcement.text.trim() : ''
+    const manualLink = typeof announcement.link === 'string' ? announcement.link.trim() : ''
+
+    const manualMarkup = (() => {
+      if (!manualText) {
+        return ''
+      }
+      const safeText = escapeHandlebarsString(manualText)
+      const safeLink = manualLink ? escapeHandlebarsString(manualLink) : ''
+      if (safeLink) {
+        return `<a href="${safeLink}" class="announcement-bar__link announcement-bar__item" style="${typographyStyle}">${safeText}</a>`
+      }
+      return `<span class="announcement-bar__item" style="${typographyStyle}">${safeText}</span>`
     })()
 
-    return `<section class="${classNameWithVisibility}" style="${style}"${isHidden ? ' aria-hidden="true"' : ''}>
-	  <div class="announcement-bar__content">
-	    ${contentMarkup}
-	  </div>
-	</section>`
+    // Ghost-first rendering: use page HTML content when a page exists for the tag.
+    // Fallback: manual text/link.
+    return `{{#get "pages" filter="${escapeHandlebarsString(tagFilter)}" limit="1" include="tags"}}
+  {{#if pages}}
+    <section class="${classNameWithVisibility}" style="${style}"${isHidden ? ' aria-hidden="true"' : ''}>
+      <div class="announcement-bar__content">
+        {{#foreach pages}}
+          <div class="announcement-bar__item" style="${typographyStyle}">{{{html}}}</div>
+        {{/foreach}}
+      </div>
+    </section>
+  {{else}}
+    ${manualMarkup ? `<section class="${classNameWithVisibility}" style="${style}"${isHidden ? ' aria-hidden="true"' : ''}>
+      <div class="announcement-bar__content">
+        ${manualMarkup}
+      </div>
+    </section>` : ''}
+  {{/if}}
+{{/get}}`
   })
 
-  await fs.writeFile(partialPath, `${styleBlock}\n${renderedBars.join('\n')}\n`, 'utf-8')
+  const nextContent = `${styleBlock}\n${renderedBars.filter(Boolean).join('\n')}\n`
+  await fs.writeFile(partialPath, nextContent, 'utf-8')
 }
 
 async function syncDefaultAnnouncementBarInclude(defaultTemplatePath: string, enabled: boolean) {

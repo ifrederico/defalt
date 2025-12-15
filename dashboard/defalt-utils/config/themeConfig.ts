@@ -397,19 +397,6 @@ export const normalizeAnnouncementBarConfig = (value: unknown, fallback: Announc
     return { ...fallback }
   }
   const raw = value as Record<string, unknown>
-  const tag = (() => {
-    if (typeof raw.tag !== 'string') {
-      return fallback.tag
-    }
-    const trimmed = raw.tag.trim()
-    if (!trimmed) {
-      return fallback.tag
-    }
-    if (trimmed.startsWith('#')) {
-      return trimmed
-    }
-    return `#${trimmed.replace(/^#+/, '')}`
-  })()
   const width = raw.width === 'narrow' ? 'narrow' : 'default'
 
   const dividerThickness = clampNumber(typeof raw.dividerThickness === 'number' ? raw.dividerThickness : 0, 0, 5)
@@ -417,7 +404,6 @@ export const normalizeAnnouncementBarConfig = (value: unknown, fallback: Announc
   const paddingBottom = clampNumber(typeof raw.paddingBottom === 'number' ? raw.paddingBottom : fallback.paddingBottom, 0, 100)
 
   return {
-    tag,
     width,
     backgroundColor: sanitizeHexColorValue(raw.backgroundColor, fallback.backgroundColor),
     textColor: sanitizeHexColorValue(raw.textColor, fallback.textColor),
@@ -550,11 +536,8 @@ const normalizeHeaderSection = (section: SectionConfig | undefined): SectionConf
             ? !obj.visible
             : false
 
-        const defaultBar = { ...DEFAULT_ANNOUNCEMENT_BAR_CONFIG, tag: `#${id}` }
-        const bar = normalizeAnnouncementBarConfig(
-          (obj.bar as AnnouncementBarConfig | undefined) ?? defaultBar,
-          defaultBar
-        )
+        const defaultBar = { ...DEFAULT_ANNOUNCEMENT_BAR_CONFIG }
+        const bar = normalizeAnnouncementBarConfig((obj.bar as AnnouncementBarConfig | undefined) ?? defaultBar, defaultBar)
 
         const contentRaw = obj.content as AnnouncementContentConfig | undefined
         const contentNormalized = normalizeAnnouncementContentConfig(

@@ -219,6 +219,8 @@ export function AppContent() {
 
     // Props for SectionDetailPanel (used in both narrow and wide screen layouts)
     const sectionsPanelProps = {
+        previewData,
+        dataSource,
         accentColor,
         sectionVisibility,
         toggleSectionVisibility,

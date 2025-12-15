@@ -3,7 +3,7 @@ import * as Dialog from '@radix-ui/react-dialog'
 import * as ToggleGroup from '@radix-ui/react-toggle-group'
 import { X, Loader2 } from 'lucide-react'
 import { useWorkspaceContext } from '../contexts/useWorkspaceContext'
-import { fetchGhostTags } from '@defalt/utils/ghost/client'
+import { fetchGhostTags, fetchGhostPages, fetchGhostPosts } from '@defalt/utils/ghost/client'
 import { formatInternalTag, toApiTagSlug } from '@defalt/sections/utils/tagUtils'
 import type { GhostTag } from '@defalt/utils/ghost/types'
 
@@ -19,7 +19,8 @@ type GhostTagWithCount = GhostTag & {
 type InternalTagDisplay = {
   name: string
   slug: string
-  postCount: number | null
+  isFound: boolean
+  itemCount: number | null
   isThemeTag: boolean
 }
 
@@ -27,8 +28,10 @@ export function TagsModal({ open, onOpenChange }: TagsModalProps) {
   const [view, setView] = useState<'public' | 'internal'>('internal')
   const [ghostTags, setGhostTags] = useState<GhostTagWithCount[]>([])
   const [loading, setLoading] = useState(false)
+  const [countsLoading, setCountsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [isConnected, setIsConnected] = useState(false)
+  const [internalTagTotals, setInternalTagTotals] = useState<Record<string, number>>({})
 
   const { customSections, announcementBars } = useWorkspaceContext()
 
@@ -72,7 +75,7 @@ export function TagsModal({ open, onOpenChange }: TagsModalProps) {
     setLoading(true)
     setError(null)
     try {
-      const response = await fetchGhostTags({ include: 'count.posts' })
+      const response = await fetchGhostTags({ include: 'count.posts', limit: 100 })
       setGhostTags(response.tags as GhostTagWithCount[])
       setIsConnected(true)
     } catch (err) {
@@ -87,6 +90,65 @@ export function TagsModal({ open, onOpenChange }: TagsModalProps) {
     }
   }, [])
 
+  // Fetch post+page totals for internal tags (Ghost tag counts don't include pages).
+  useEffect(() => {
+    if (!open || view !== 'internal' || !isConnected) {
+      setCountsLoading((prev) => (prev ? false : prev))
+      setInternalTagTotals((prev) => (Object.keys(prev).length > 0 ? {} : prev))
+      return
+    }
+
+    const internalGhostTags = ghostTags.filter((tag) => tag.visibility === 'internal')
+    if (internalGhostTags.length === 0) {
+      setCountsLoading((prev) => (prev ? false : prev))
+      setInternalTagTotals((prev) => (Object.keys(prev).length > 0 ? {} : prev))
+      return
+    }
+
+    let cancelled = false
+
+    const slugsToCount = new Set(internalGhostTags.map((tag) => tag.slug))
+
+    const fetchTotals = async () => {
+      setCountsLoading(true)
+      try {
+        const results = await Promise.all(
+          Array.from(slugsToCount).map(async (slug) => {
+            const filter = `tag:${slug}`
+            const [postsResponse, pagesResponse] = await Promise.all([
+              fetchGhostPosts({ limit: 1, filter, fields: 'id' }).catch(() => null),
+              fetchGhostPages({ limit: 1, filter, fields: 'id' }).catch(() => null)
+            ])
+
+            const posts = postsResponse?.meta?.pagination?.total ?? 0
+            const pages = pagesResponse?.meta?.pagination?.total ?? 0
+            return { slug, total: posts + pages }
+          })
+        )
+
+        if (cancelled) {
+          return
+        }
+
+        const nextTotals: Record<string, number> = {}
+        results.forEach((result) => {
+          nextTotals[result.slug] = result.total
+        })
+        setInternalTagTotals(nextTotals)
+      } finally {
+        if (!cancelled) {
+          setCountsLoading(false)
+        }
+      }
+    }
+
+    void fetchTotals()
+
+    return () => {
+      cancelled = true
+    }
+  }, [open, view, isConnected, ghostTags])
+
   // Fetch on open
   useEffect(() => {
     if (open) {
@@ -96,36 +158,36 @@ export function TagsModal({ open, onOpenChange }: TagsModalProps) {
 
   // Build internal tags list (theme tags + ghost internal tags)
   const internalTags = useMemo((): InternalTagDisplay[] => {
-    const ghostInternalMap = new Map(
-      ghostTags
-        .filter(t => t.visibility === 'internal')
-        .map(t => [t.name, t])
-    )
+    const internalGhostTags = ghostTags.filter((tag) => tag.visibility === 'internal')
+    const ghostInternalBySlug = new Map(internalGhostTags.map((tag) => [tag.slug, tag]))
 
     // Start with theme tags
     const themeTags: InternalTagDisplay[] = sectionTags.map(tag => {
-      const ghostTag = ghostInternalMap.get(tag)
+      const slug = toApiTagSlug(tag)
+      const isFound = ghostInternalBySlug.has(slug)
       return {
         name: tag,
-        slug: toApiTagSlug(tag),
-        postCount: ghostTag?.count?.posts ?? null,
+        slug,
+        isFound,
+        itemCount: isFound ? (internalTagTotals[slug] ?? null) : null,
         isThemeTag: true
       }
     })
 
     // Add ghost internal tags that aren't theme tags
-    const themeTagNames = new Set(sectionTags)
+    const themeTagSlugs = new Set(sectionTags.map((tag) => toApiTagSlug(tag)))
     const ghostOnlyTags: InternalTagDisplay[] = ghostTags
-      .filter(t => t.visibility === 'internal' && !themeTagNames.has(t.name))
+      .filter(t => t.visibility === 'internal' && !themeTagSlugs.has(t.slug))
       .map(t => ({
         name: t.name,
         slug: t.slug,
-        postCount: t.count?.posts ?? null,
+        isFound: true,
+        itemCount: internalTagTotals[t.slug] ?? null,
         isThemeTag: false
       }))
 
     return [...themeTags, ...ghostOnlyTags]
-  }, [sectionTags, ghostTags])
+  }, [sectionTags, ghostTags, internalTagTotals])
 
   const publicTags = useMemo(() =>
     ghostTags.filter(t => t.visibility === 'public'),
@@ -205,6 +267,7 @@ export function TagsModal({ open, onOpenChange }: TagsModalProps) {
               <InternalTagsList
                 tags={internalTags}
                 isConnected={isConnected}
+                countsLoading={countsLoading}
                 hasSectionTags={sectionTags.length > 0}
               />
             ) : (
@@ -218,12 +281,12 @@ export function TagsModal({ open, onOpenChange }: TagsModalProps) {
 }
 
 // Column header component
-function TableHeader() {
+function TableHeader({ countLabel }: { countLabel: string }) {
   return (
     <div className="grid grid-cols-[1fr_1fr_auto] gap-4 px-6 py-3 border-b border-border sticky top-0 bg-surface">
       <span className="font-xs text-secondary uppercase tracking-wide">Tag</span>
       <span className="font-xs text-secondary uppercase tracking-wide">Slug</span>
-      <span className="font-xs text-secondary uppercase tracking-wide text-right min-w-[80px]">No. of posts</span>
+      <span className="font-xs text-secondary uppercase tracking-wide text-right w-[120px]">{countLabel}</span>
     </div>
   )
 }
@@ -231,10 +294,12 @@ function TableHeader() {
 function InternalTagsList({
   tags,
   isConnected,
+  countsLoading,
   hasSectionTags
 }: {
   tags: InternalTagDisplay[]
   isConnected: boolean
+  countsLoading: boolean
   hasSectionTags: boolean
 }) {
   if (tags.length === 0) {
@@ -250,10 +315,10 @@ function InternalTagsList({
 
   return (
     <div>
-      <TableHeader />
+      <TableHeader countLabel="No. of items" />
       {tags.map((tag, index) => (
         <div
-          key={tag.name}
+          key={tag.slug}
           className={`grid grid-cols-[1fr_1fr_auto] gap-4 items-center px-6 py-4 ${index < tags.length - 1 ? 'border-b border-border' : ''}`}
         >
           <span className="font-md font-bold text-foreground flex items-center justify-between gap-2">
@@ -265,12 +330,16 @@ function InternalTagsList({
             )}
           </span>
           <span className="font-sm text-secondary">{tag.slug}</span>
-          <span className="font-sm text-secondary text-right min-w-[80px]">
-            {tag.postCount !== null
-              ? `${tag.postCount} post${tag.postCount !== 1 ? 's' : ''}`
-              : isConnected
+          <span className="font-sm text-secondary text-right w-[120px] tabular-nums">
+            {!isConnected
+              ? '–'
+              : !tag.isFound
                 ? 'Not found'
-                : '–'}
+                : tag.itemCount !== null
+                  ? `${tag.itemCount} item${tag.itemCount !== 1 ? 's' : ''}`
+                  : countsLoading
+                    ? '…'
+                    : '–'}
           </span>
         </div>
       ))}
@@ -299,7 +368,7 @@ function PublicTagsList({
 
   return (
     <div>
-      <TableHeader />
+      <TableHeader countLabel="No. of posts" />
       {tags.map((tag, index) => (
         <div
           key={tag.id}
@@ -307,7 +376,7 @@ function PublicTagsList({
         >
           <span className="font-md font-bold text-foreground">{tag.name}</span>
           <span className="font-sm text-secondary">{tag.slug}</span>
-          <span className="font-sm text-secondary text-right min-w-[80px]">
+          <span className="font-sm text-secondary text-right w-[120px] tabular-nums">
             {tag.count?.posts !== undefined
               ? `${tag.count.posts} post${tag.count.posts !== 1 ? 's' : ''}`
               : '–'}
