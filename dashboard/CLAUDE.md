@@ -208,3 +208,4 @@ Railway with Docker. Services:
 - **Ghost**: Ghost CMS with bundled defalt theme
 - **Caddy**: Reverse proxy routing `/app/*` to dashboard, rest to Ghost
 - **PostgreSQL**: Theme storage
+- behavior[27;2;13~ CLick to reset theme. Nothing there.[27;2;13~Click on add section on header.[27;2;13~Add Annoucement bar[27;2;13~Click on the annoucenebar bar[27;2;13~click on the little tag[27;2;13~appears #ann...-bar and not #annoucement. Click the tags on the railbar, #announcement-bar is there too.

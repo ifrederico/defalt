@@ -81,7 +81,7 @@ function escapeSectionId(sectionId: string): string {
 }
 
 function getCustomSectionSelector(sectionId: string) {
-  return `[data-section-id="${escapeSectionId(sectionId)}"]`
+  return `[data-section-type="custom"][data-section-id="${escapeSectionId(sectionId)}"]`
 }
 
 function findCommentMarker(doc: Document, key: string, position: 'start' | 'end'): Comment | null {
@@ -163,13 +163,14 @@ export function syncTemplateSections(doc: Document, sections: Array<{ id: string
 
   const desiredIds = new Set(sections.map((section) => section.id))
 
-  Array.from(viewport.querySelectorAll<HTMLElement>('[data-section-id]')).forEach((element) => {
+  Array.from(viewport.querySelectorAll<HTMLElement>('[data-section-type="custom"][data-section-id]')).forEach((element) => {
     const sectionId = element.getAttribute('data-section-id')
     if (!sectionId) {
       return
     }
     if (!desiredIds.has(sectionId)) {
       element.remove()
+      doc.getElementById(`section-style-${sectionId}`)?.remove()
     }
   })
 

@@ -32,7 +32,6 @@ export type AnnouncementBarTypographySpacing = 'tight' | 'regular' | 'wide'
 export type AnnouncementBarTypographyCase = 'default' | 'uppercase'
 
 export interface AnnouncementBarConfig {
-  tag: string
   width: AnnouncementBarWidthSetting
   backgroundColor: string
   textColor: string
@@ -42,8 +41,11 @@ export interface AnnouncementBarConfig {
   paddingBottom: number
 }
 
-/** Individual announcement block */
+/** Individual announcement block - content from Ghost page (via tag) or manual text */
 export interface AnnouncementBlock {
+  /** Ghost tag for content - when set, fetches from Ghost page */
+  tag: string
+  /** Manual text entry - fallback when no Ghost content */
   text: string
   link: string
   /** Typography settings */
@@ -66,7 +68,6 @@ export interface AnnouncementBarInstance {
 }
 
 export const DEFAULT_ANNOUNCEMENT_BAR_CONFIG: AnnouncementBarConfig = {
-  tag: '#announcement-bar',
   width: 'default',
   backgroundColor: '#AC1E3E',
   textColor: '#ffffff',
@@ -78,7 +79,7 @@ export const DEFAULT_ANNOUNCEMENT_BAR_CONFIG: AnnouncementBarConfig = {
 
 export const DEFAULT_ANNOUNCEMENT_CONTENT_CONFIG: AnnouncementContentConfig = {
   announcements: [
-    { text: 'Tag #announcement-bar to a published Ghost page.', link: '', typographySize: 'normal', typographyWeight: 'default', typographySpacing: 'regular', typographyCase: 'default' }
+    { tag: '#announcement', text: '', link: '', typographySize: 'normal', typographyWeight: 'default', typographySpacing: 'regular', typographyCase: 'default' }
   ]
 }
 
@@ -475,10 +476,11 @@ export const normalizeAnnouncementContentConfig = (
     if (!Array.isArray(input)) return fallback.announcements
     return input.map((item): AnnouncementBlock => {
       if (!item || typeof item !== 'object') {
-        return { text: '', link: '', typographySize: 'normal', typographyWeight: 'default', typographySpacing: 'regular', typographyCase: 'default' }
+        return { tag: '#announcement', text: '', link: '', typographySize: 'normal', typographyWeight: 'default', typographySpacing: 'regular', typographyCase: 'default' }
       }
       const obj = item as Record<string, unknown>
       return {
+        tag: typeof obj.tag === 'string' ? obj.tag : '#announcement',
         text: typeof obj.text === 'string' ? obj.text : '',
         link: typeof obj.link === 'string' ? obj.link : '',
         // Typography settings with defaults
@@ -601,15 +603,18 @@ const normalizeHeaderSection = (section: SectionConfig | undefined): SectionConf
       ? legacyContent.announcements
       : DEFAULT_ANNOUNCEMENT_CONTENT_CONFIG.announcements
 
-    return announcements.map((announcement, idx) => ({
-      id: idx === 0 ? 'announcement-bar' : `announcement-bar-${idx + 1}`,
-      hidden: !announcementBarVisible,
-      bar: { ...legacyBar, tag: idx === 0 ? '#announcement-bar' : `#announcement-bar-${idx + 1}` },
-      content: {
-        ...legacyContent,
-        announcements: [announcement]
+    return announcements.map((announcement, idx) => {
+      const tag = idx === 0 ? '#announcement' : `#announcement-${idx + 1}`
+      return {
+        id: idx === 0 ? 'announcement-bar' : `announcement-bar-${idx + 1}`,
+        hidden: !announcementBarVisible,
+        bar: { ...legacyBar },
+        content: {
+          ...legacyContent,
+          announcements: [{ ...announcement, tag: announcement.tag || tag }]
+        }
       }
-    }))
+    })
   })()
 
   return {

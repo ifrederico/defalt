@@ -61,7 +61,6 @@ export function useAnnouncementBars({
   const toBarConfig = useCallback((parsed: ReturnType<typeof parseUnifiedConfig>) => {
     if (!parsed) return null
     return {
-      tag: parsed.tag,
       width: parsed.width,
       backgroundColor: parsed.backgroundColor,
       textColor: parsed.textColor,
@@ -93,13 +92,20 @@ export function useAnnouncementBars({
       suffix += 1
     }
 
+    // Tag uses simple pattern: #announcement, #announcement-2, etc.
+    // Tag is now on the block level (each announcement can have its own tag)
+    const tagSuffix = prevBars.length > 0 ? `-${prevBars.length + 1}` : ''
+    const tag = `#announcement${tagSuffix}`
+
     const nextBars = [
       ...prevBars,
       {
         id,
         hidden: false,
-        bar: { ...DEFAULT_ANNOUNCEMENT_BAR_CONFIG, tag: `#${id}` },
-        content: ensureSingleAnnouncement({ ...DEFAULT_ANNOUNCEMENT_CONTENT_CONFIG })
+        bar: { ...DEFAULT_ANNOUNCEMENT_BAR_CONFIG },
+        content: {
+          announcements: [{ ...DEFAULT_ANNOUNCEMENT_CONTENT_CONFIG.announcements[0], tag }]
+        }
       }
     ]
 
@@ -262,8 +268,15 @@ export function useAnnouncementBars({
         }
         seenIds.add(id)
 
-        const defaultBar = { ...DEFAULT_ANNOUNCEMENT_BAR_CONFIG, tag: `#${id}` }
+        // Generate simple tag: #announcement, #announcement-2, etc.
+        const idMatch = id.match(/^announcement-bar(?:-(\d+))?$/)
+        const tagSuffix = idMatch?.[1] ? `-${idMatch[1]}` : ''
+        const defaultTag = `#announcement${tagSuffix}`
+
+        const defaultBar = { ...DEFAULT_ANNOUNCEMENT_BAR_CONFIG }
         const normalizedBar = normalizeAnnouncementBarConfig(bar.bar ?? defaultBar, defaultBar)
+        // Ensure the block has a tag (use existing or default)
+        const blockTag = bar.content?.announcements?.[0]?.tag || defaultTag
         const normalizedContent = ensureSingleAnnouncement(
           normalizeAnnouncementContentConfig(
             bar.content ?? DEFAULT_ANNOUNCEMENT_CONTENT_CONFIG,
@@ -284,7 +297,7 @@ export function useAnnouncementBars({
             bar: defaultBar,
             content: ensureSingleAnnouncement({
               ...DEFAULT_ANNOUNCEMENT_CONTENT_CONFIG,
-              announcements: [{ ...(fallbackAnnouncement as AnnouncementBlock) }]
+              announcements: [{ ...(fallbackAnnouncement as AnnouncementBlock), tag: blockTag }]
             })
           }
         }

@@ -10,7 +10,8 @@ export type { PreviewPageData }
 
 /**
  * Normalize and format a tag input string
- * Handles various formats: "#tag", "tag", "ghost-card-1", etc.
+ * Simply ensures the tag has a # prefix and is lowercase.
+ * No transformations - what you set is what Ghost page should have.
  */
 export function formatInternalTag(input: unknown): string {
   if (typeof input !== 'string') {
@@ -20,31 +21,10 @@ export function formatInternalTag(input: unknown): string {
   if (!trimmed) {
     return ''
   }
-  const stripped = trimmed.replace(/^#+/, '')
+  // Remove any leading # symbols, then lowercase
+  const stripped = trimmed.replace(/^#+/, '').toLowerCase()
   if (!stripped) {
     return ''
-  }
-  const normalized = stripped.toLowerCase()
-
-  // Ghost Cards: legacy ghost-card/ghost-cards -> new #cards
-  const ghostCardsMatch = normalized.match(/^ghost-cards?-?(\d+)?$/)
-  if (ghostCardsMatch) {
-    const suffix = ghostCardsMatch[1]
-    return suffix ? `#cards-${suffix}` : '#cards'
-  }
-
-  // Ghost Cards: support direct #cards/#cards-2/#cards2 inputs
-  const cardsMatch = normalized.match(/^cards-?(\d+)?$/)
-  if (cardsMatch) {
-    const suffix = cardsMatch[1]
-    return suffix ? `#cards-${suffix}` : '#cards'
-  }
-
-  // Image with text: legacy image-with-text -> new #image-text
-  const imageWithTextMatch = normalized.match(/^image-with-text-?(\d+)?$/)
-  if (imageWithTextMatch) {
-    const suffix = imageWithTextMatch[1]
-    return suffix ? `#image-text-${suffix}` : '#image-text'
   }
   return `#${stripped}`
 }

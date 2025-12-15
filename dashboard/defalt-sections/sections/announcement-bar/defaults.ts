@@ -18,7 +18,8 @@ export const announcementBarDefaults: AnnouncementBarSectionConfig = {
   announcements: [
     {
       ...announcementBlockConfigSchema.parse({}),
-      text: 'Tag #announcement-bar to a published Ghost page.',
+      tag: '#announcement',
+      text: '',
       link: ''
     }
   ]

@@ -12,9 +12,18 @@ export type SectionDetailPanelProps = {
 export function SectionDetailPanel({ activeDetail, onBack, props }: SectionDetailPanelProps) {
   // Look up tags for the active section from its config
   const { activeTag, activeTags, canEditSingleTag } = useMemo(() => {
+    // Check for announcement bar block selection (block-level tag)
     const announcementBar = props.announcementBars.find((bar) => bar.id === activeDetail.id)
     if (announcementBar) {
-      return { activeTag: announcementBar.bar.tag, activeTags: undefined, canEditSingleTag: true }
+      // If a block is selected, get the block's tag
+      if (activeDetail.blockIndex !== undefined) {
+        const block = announcementBar.content.announcements[activeDetail.blockIndex]
+        if (block) {
+          return { activeTag: block.tag || '#announcement', activeTags: undefined, canEditSingleTag: true }
+        }
+      }
+      // Parent announcement bar doesn't have a tag icon (tags are on blocks)
+      return { activeTag: undefined, activeTags: undefined, canEditSingleTag: false }
     }
 
     const customSection = props.customSections[activeDetail.id]
@@ -36,16 +45,20 @@ export function SectionDetailPanel({ activeDetail, onBack, props }: SectionDetai
     // Check for single tag
     const tagValue = typeof config.tag === 'string' ? config.tag : ''
     return { activeTag: tagValue, activeTags: undefined, canEditSingleTag: true }
-  }, [activeDetail.id, props.announcementBars, props.customSections])
+  }, [activeDetail.id, activeDetail.blockIndex, props.announcementBars, props.customSections])
 
   // Handler to update a single tag in section config
   const handleTagChange = useCallback((newTag: string) => {
-    // Announcement bar uses 'tag' field
+    // Announcement bar block tag change
     const announcementBar = props.announcementBars.find((bar) => bar.id === activeDetail.id)
-    if (announcementBar) {
-      props.onAnnouncementBarConfigChange(activeDetail.id, (config) => ({
-        ...config,
-        tag: newTag
+    if (announcementBar && activeDetail.blockIndex !== undefined) {
+      // Update the block's tag
+      const blockIndex = activeDetail.blockIndex
+      props.onAnnouncementContentConfigChange(activeDetail.id, (content) => ({
+        ...content,
+        announcements: content.announcements.map((block, idx) =>
+          idx === blockIndex ? { ...block, tag: newTag } : block
+        )
       }))
       return
     }
@@ -57,7 +70,7 @@ export function SectionDetailPanel({ activeDetail, onBack, props }: SectionDetai
         tag: newTag
       }))
     }
-  }, [activeDetail.id, props])
+  }, [activeDetail.id, activeDetail.blockIndex, props])
 
   // Build tags array for multiple tags
   const tagsConfig = useMemo<TagConfig[] | undefined>(() => {

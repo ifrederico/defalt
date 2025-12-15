@@ -1,4 +1,5 @@
 {{!-- Announcement Bar Section - Engine V2: Block Architecture --}}
+{{!-- Content is fetched from Ghost pages using each block's tag --}}
 
 <style>
 .announcement-bar {
@@ -55,26 +56,49 @@
   "
 >
   <div class="announcement-bar__content">
-    {{!-- Engine V2: Loop over announcements blocks with per-block typography --}}
+    {{!-- Engine V2: Loop over announcements blocks --}}
+    {{!-- Priority: 1) Ghost page content via tag, 2) Manual text, 3) Placeholder --}}
     {{#if (length announcements)}}
       {{#each announcements}}
         {{#unless @first}}<span class="announcement-bar__separator">·</span>{{/unless}}
-        {{#if link}}
-          <a
-            href="{{link}}"
-            class="announcement-bar__link announcement-bar__item"
-            style="font-size: {{#if (eq typographySize 'small')}}1.2rem{{else if (eq typographySize 'large')}}1.6rem{{else if (eq typographySize 'x-large')}}1.8rem{{else}}1.4rem{{/if}}; font-weight: {{#if (eq typographyWeight 'light')}}300{{else if (eq typographyWeight 'bold')}}700{{else}}500{{/if}}; letter-spacing: {{#if (eq typographySpacing 'tight')}}-0.02em{{else if (eq typographySpacing 'wide')}}0.05em{{else}}0{{/if}}; text-transform: {{#if (eq typographyCase 'uppercase')}}uppercase{{else}}none{{/if}};"
-          >{{text}}</a>
-        {{else}}
-          <span
-            class="announcement-bar__item"
-            style="font-size: {{#if (eq typographySize 'small')}}1.2rem{{else if (eq typographySize 'large')}}1.6rem{{else if (eq typographySize 'x-large')}}1.8rem{{else}}1.4rem{{/if}}; font-weight: {{#if (eq typographyWeight 'light')}}300{{else if (eq typographyWeight 'bold')}}700{{else}}500{{/if}}; letter-spacing: {{#if (eq typographySpacing 'tight')}}-0.02em{{else if (eq typographySpacing 'wide')}}0.05em{{else}}0{{/if}}; text-transform: {{#if (eq typographyCase 'uppercase')}}uppercase{{else}}none{{/if}};"
-          >{{text}}</span>
-        {{/if}}
+        {{#get "pages" filter=tagFilter limit="1" include="tags"}}
+          {{#if pages}}
+            {{!-- Ghost page content found --}}
+            {{#foreach pages}}
+              {{#if url}}
+                <a
+                  href="{{url}}"
+                  class="announcement-bar__link announcement-bar__item"
+                  style="font-size: {{#if (eq ../typographySize 'small')}}1.2rem{{else if (eq ../typographySize 'large')}}1.6rem{{else if (eq ../typographySize 'x-large')}}1.8rem{{else}}1.4rem{{/if}}; font-weight: {{#if (eq ../typographyWeight 'light')}}300{{else if (eq ../typographyWeight 'bold')}}700{{else}}500{{/if}}; letter-spacing: {{#if (eq ../typographySpacing 'tight')}}-0.02em{{else if (eq ../typographySpacing 'wide')}}0.05em{{else}}0{{/if}}; text-transform: {{#if (eq ../typographyCase 'uppercase')}}uppercase{{else}}none{{/if}};"
+                >{{#if custom_excerpt}}{{custom_excerpt}}{{else}}{{title}}{{/if}}</a>
+              {{else}}
+                <span
+                  class="announcement-bar__item"
+                  style="font-size: {{#if (eq ../typographySize 'small')}}1.2rem{{else if (eq ../typographySize 'large')}}1.6rem{{else if (eq ../typographySize 'x-large')}}1.8rem{{else}}1.4rem{{/if}}; font-weight: {{#if (eq ../typographyWeight 'light')}}300{{else if (eq ../typographyWeight 'bold')}}700{{else}}500{{/if}}; letter-spacing: {{#if (eq ../typographySpacing 'tight')}}-0.02em{{else if (eq ../typographySpacing 'wide')}}0.05em{{else}}0{{/if}}; text-transform: {{#if (eq ../typographyCase 'uppercase')}}uppercase{{else}}none{{/if}};"
+                >{{#if custom_excerpt}}{{custom_excerpt}}{{else}}{{title}}{{/if}}</span>
+              {{/if}}
+            {{/foreach}}
+          {{else}}
+            {{!-- No Ghost page - use manual text or placeholder --}}
+            {{#if ../text}}
+              {{#if ../link}}
+                <a
+                  href="{{../link}}"
+                  class="announcement-bar__link announcement-bar__item"
+                  style="font-size: {{#if (eq ../typographySize 'small')}}1.2rem{{else if (eq ../typographySize 'large')}}1.6rem{{else if (eq ../typographySize 'x-large')}}1.8rem{{else}}1.4rem{{/if}}; font-weight: {{#if (eq ../typographyWeight 'light')}}300{{else if (eq ../typographyWeight 'bold')}}700{{else}}500{{/if}}; letter-spacing: {{#if (eq ../typographySpacing 'tight')}}-0.02em{{else if (eq ../typographySpacing 'wide')}}0.05em{{else}}0{{/if}}; text-transform: {{#if (eq ../typographyCase 'uppercase')}}uppercase{{else}}none{{/if}};"
+                >{{../text}}</a>
+              {{else}}
+                <span
+                  class="announcement-bar__item"
+                  style="font-size: {{#if (eq ../typographySize 'small')}}1.2rem{{else if (eq ../typographySize 'large')}}1.6rem{{else if (eq ../typographySize 'x-large')}}1.8rem{{else}}1.4rem{{/if}}; font-weight: {{#if (eq ../typographyWeight 'light')}}300{{else if (eq ../typographyWeight 'bold')}}700{{else}}500{{/if}}; letter-spacing: {{#if (eq ../typographySpacing 'tight')}}-0.02em{{else if (eq ../typographySpacing 'wide')}}0.05em{{else}}0{{/if}}; text-transform: {{#if (eq ../typographyCase 'uppercase')}}uppercase{{else}}none{{/if}};"
+                >{{../text}}</span>
+              {{/if}}
+            {{else if ../../isPreview}}
+              <span class="announcement-bar__item" style="font-size: {{#if (eq ../typographySize 'small')}}1.2rem{{else if (eq ../typographySize 'large')}}1.6rem{{else if (eq ../typographySize 'x-large')}}1.8rem{{else}}1.4rem{{/if}}; font-weight: {{#if (eq ../typographyWeight 'light')}}300{{else if (eq ../typographyWeight 'bold')}}700{{else}}500{{/if}}; letter-spacing: {{#if (eq ../typographySpacing 'tight')}}-0.02em{{else if (eq ../typographySpacing 'wide')}}0.05em{{else}}0{{/if}}; text-transform: {{#if (eq ../typographyCase 'uppercase')}}uppercase{{else}}none{{/if}};">Tag a Ghost page with {{../tag}}</span>
+            {{/if}}
+          {{/if}}
+        {{/get}}
       {{/each}}
-    {{!-- Legacy fallback: Support old previewText field for migration --}}
-    {{else if previewText}}
-      <span class="announcement-bar__item" style="font-size: 1.4rem;">{{previewText}}</span>
     {{!-- Empty state --}}
     {{else}}
       <span class="announcement-bar__item" style="font-size: 1.4rem;">Add announcements in the sidebar.</span>

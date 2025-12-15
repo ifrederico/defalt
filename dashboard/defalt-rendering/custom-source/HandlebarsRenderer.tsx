@@ -47,8 +47,7 @@ import {
   preloadTemplates,
   getSectionTemplatePath,
   getSectionDefinition,
-  sectionDefinitions as engineSectionDefinitions,
-  type AnnouncementBarSectionConfig
+  sectionDefinitions as engineSectionDefinitions
 } from '@defalt/sections/engine'
 import { formatInternalTag, toApiTagSlug, parseGhostCardIdSuffix } from '@defalt/sections/utils/tagUtils'
 
@@ -422,8 +421,13 @@ export function HandlebarsRenderer({
         if (!cancelled) {
           const results = await Promise.all(
             sanitizedAnnouncementBars.map(async (bar) => {
+              // Compute tagFilter for each announcement block
+              const announcementsWithTagFilter = bar.content.announcements.map((announcement) => ({
+                ...announcement,
+                tagFilter: toTagFilter(formatInternalTag(announcement.tag) || '#announcement')
+              }))
+
               const config = {
-                tag: bar.bar.tag,
                 sectionId: bar.id,
                 width: bar.bar.width,
                 backgroundColor: bar.bar.backgroundColor,
@@ -432,15 +436,16 @@ export function HandlebarsRenderer({
                 paddingBottom: bar.bar.paddingBottom,
                 dividerThickness: bar.bar.dividerThickness,
                 dividerColor: bar.bar.dividerColor,
-                announcements: bar.content.announcements
-              } satisfies AnnouncementBarSectionConfig & { sectionId: string }
+                announcements: announcementsWithTagFilter,
+                isPreview: true
+              }
 
               try {
                 const html = await renderSection(
                   'announcement-bar',
                   templatePath,
                   config as unknown as Record<string, unknown>,
-                  { padding: { top: config.paddingTop, bottom: config.paddingBottom } }
+                  { padding: { top: config.paddingTop, bottom: config.paddingBottom }, pages: previewPages }
                 )
                 return { id: bar.id, html, hidden: bar.hidden }
               } catch (err) {
@@ -464,7 +469,7 @@ export function HandlebarsRenderer({
     return () => {
       cancelled = true
     }
-  }, [templatesReady, sanitizedAnnouncementBars])
+  }, [templatesReady, sanitizedAnnouncementBars, previewPages])
 
   const resolvedHiddenSections = useMemo(() => {
     const resolved = { ...hiddenSections }

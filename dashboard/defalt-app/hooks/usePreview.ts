@@ -166,20 +166,13 @@ export function usePreview() {
       setGhostDataError(null)
 
       try {
-        // Fetch settings, posts, pages (all for selector), and pages (with internal tags) in parallel
-        const [settingsResponse, postsResponse, allPagesResponse, internalPagesResponse] = await Promise.all([
+        // Fetch settings, posts, and all pages (with tags for section filtering) in parallel
+        const [settingsResponse, postsResponse, allPagesResponse] = await Promise.all([
           fetchGhostSettings(),
           // Include html for post content rendering
           fetchGhostPosts({ limit: 15, include: 'authors,tags,html' }),
-          // Fetch all pages for page preview selector
-          fetchGhostPages({ limit: 50, include: 'html' }).catch(() => ({ pages: [] })),
-          // Fetch pages with internal tags for Ghost Cards, Image with Text, Ghost Grid sections
-          // Using tag:[slug1,slug2] syntax for OR matching
-          fetchGhostPages({
-            limit: 50,
-            include: 'tags,html',
-            filter: 'tag:[hash-announcement-bar,hash-ghost-card,hash-ghost-card-2,hash-ghost-card-3,hash-ghost-card-4,hash-ghost-card-5,hash-image-with-text,hash-image-with-text-2,hash-image-with-text-3,hash-image-with-text-4,hash-image-with-text-5,hash-ghost-grid-1,hash-ghost-grid-2,hash-ghost-grid-3,hash-ghost-grid-4,hash-ghost-grid-5,hash-ghost-grid-6,hash-ghost-grid-7,hash-ghost-grid-8,hash-ghost-grid-9,hash-ghost-grid-10]'
-          }).catch(() => ({ pages: [] }))
+          // Fetch all pages with tags - sections will filter by their configured tag
+          fetchGhostPages({ limit: 100, include: 'tags,html' }).catch(() => ({ pages: [] }))
         ])
 
         if (controller.signal.aborted) return
@@ -196,9 +189,15 @@ export function usePreview() {
           setAvailablePosts(postItems)
         }
 
-        // Store available pages for selection dropdown (actual Ghost pages)
-        if (allPagesResponse.pages && allPagesResponse.pages.length > 0) {
-          const pageItems: GhostPostItem[] = allPagesResponse.pages.map((p) => ({
+        // Store available pages for selection dropdown (exclude pages with only internal tags)
+        const allPages = allPagesResponse.pages || []
+        const publicPages = allPages.filter((p) => {
+          // Include pages that have no tags or at least one public tag
+          if (!p.tags || p.tags.length === 0) return true
+          return p.tags.some((t) => t.visibility === 'public')
+        })
+        if (publicPages.length > 0) {
+          const pageItems: GhostPostItem[] = publicPages.map((p) => ({
             id: p.id,
             title: p.title || 'Untitled',
             slug: p.slug || ''
@@ -236,11 +235,14 @@ export function usePreview() {
           transformedData = transformGhostPostsToHomeData(postsResponse, settings)
         }
 
-        // Add pages with internal tags for section previews
-        if (internalPagesResponse.pages && internalPagesResponse.pages.length > 0) {
+        // Add pages with internal tags for section previews (dynamic - any internal tag works)
+        const pagesWithInternalTags = allPages.filter((p) =>
+          p.tags?.some((t) => t.visibility === 'internal')
+        )
+        if (pagesWithInternalTags.length > 0) {
           transformedData = {
             ...transformedData,
-            pages: internalPagesResponse.pages.map((page) => ({
+            pages: pagesWithInternalTags.map((page) => ({
               id: page.id,
               title: page.title || 'Untitled',
               slug: page.slug || '',

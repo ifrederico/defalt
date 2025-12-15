@@ -51,8 +51,7 @@ export function SectionDetailRenderer({ activeDetail, props }: SectionDetailRend
       return null
     }
     return {
-      tag: activeAnnouncementBar.bar.tag,
-      // Container settings
+      // Container settings (tag is now per-block, not on parent)
       width: activeAnnouncementBar.bar.width,
       backgroundColor: activeAnnouncementBar.bar.backgroundColor,
       textColor: activeAnnouncementBar.bar.textColor,
@@ -60,7 +59,7 @@ export function SectionDetailRenderer({ activeDetail, props }: SectionDetailRend
       dividerColor: activeAnnouncementBar.bar.dividerColor,
       paddingTop: activeAnnouncementBar.bar.paddingTop,
       paddingBottom: activeAnnouncementBar.bar.paddingBottom,
-      // Content settings
+      // Content settings (announcements include tag per block)
       announcements: activeAnnouncementBar.content.announcements
     }
   }, [activeAnnouncementBar])
@@ -535,8 +534,12 @@ function AnnouncementBlockSettings({
           <SettingSection title={group.title || 'Settings'}>
             <div className="space-y-4">
               {group.settings.map((setting) => {
-                const currentValue = blockRecord[setting.id]
+                let currentValue = blockRecord[setting.id]
                 const needsLabel = !selfLabeledTypes.includes(setting.type)
+                // For text field, show guidance text when empty
+                if (setting.id === 'text' && !currentValue) {
+                  currentValue = `Tag a Ghost page with ${block.tag || '#announcement'}`
+                }
                 return (
                   <div key={setting.id} className="space-y-1.5">
                     {needsLabel && 'label' in setting && (

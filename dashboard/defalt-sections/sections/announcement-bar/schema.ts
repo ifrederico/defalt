@@ -5,8 +5,8 @@
  * - Parent (Bar): Controls layout, colors, padding
  * - Child (Block): Controls content, link, and typography
  *
- * Content can be sourced from a Ghost page tagged with #announcement-bar or configured
- * directly in the blocks.
+ * Content can be sourced from a Ghost page tagged with #announcement (or any custom tag)
+ * or configured directly in the blocks.
  */
 
 import { z } from 'zod'
@@ -18,9 +18,13 @@ import type { SettingSchema, BlockSchema } from '../../engine/schemaTypes.js'
 
 /**
  * Individual announcement block config
+ * Content can come from Ghost page (via tag) or manual text entry
  */
 export const announcementBlockConfigSchema = z.object({
-  text: z.string().default('Your announcement here'),
+  // Ghost tag for content - when set, fetches from Ghost page
+  tag: z.string().default('#announcement'),
+  // Manual text entry - used as fallback when no Ghost content
+  text: z.string().default(''),
   link: z.string().default(''),
   // Typography settings
   typographySize: z.enum(['small', 'normal', 'large', 'x-large']).default('normal'),
@@ -40,7 +44,7 @@ export const announcementBarBlocksSchema: BlockSchema[] = [
     name: 'Announcement',
     limit: 5,
     settings: [
-      // Content
+      // Content - manual entry (greyed out when Ghost content available)
       {
         type: 'header',
         id: 'content-header',
@@ -49,7 +53,7 @@ export const announcementBarBlocksSchema: BlockSchema[] = [
       {
         type: 'textarea',
         id: 'text',
-        label: 'Text',
+        label: 'Text'
       },
       // Typography
       {
@@ -107,9 +111,6 @@ export const announcementBarBlocksSchema: BlockSchema[] = [
 // =============================================================================
 
 export const announcementBarConfigSchema = z.object({
-  // --- Ghost Tag ---
-  tag: z.string().default('#announcement'),
-
   // --- Container Settings ---
   width: z.enum(['default', 'narrow']).default('default'),
   backgroundColor: z.string().default('#AC1E3E'),

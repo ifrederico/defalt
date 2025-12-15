@@ -54,11 +54,13 @@ export function TagsModal({ open, onOpenChange }: TagsModalProps) {
       }
     }
 
-    // Announcement bars use tag field
+    // Announcement bars - tags are on blocks (each announcement can have its own tag)
     for (const bar of announcementBars) {
-      if (bar.bar.tag) {
-        const formatted = formatInternalTag(bar.bar.tag)
-        if (formatted) tags.add(formatted)
+      for (const announcement of bar.content.announcements) {
+        if (announcement.tag) {
+          const formatted = formatInternalTag(announcement.tag)
+          if (formatted) tags.add(formatted)
+        }
       }
     }
 
