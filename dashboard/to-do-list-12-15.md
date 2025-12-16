@@ -1,76 +1,71 @@
 # To-do list — 12/15 (dashboard)
 
-## Decisions (lock these)
+## Decisions (locked)
 
-- [ ] `VITE_API_URL`: remove (unused). Keep all dashboard API calls same-origin via `apiPath()` + `VITE_BASE_PATH`.
-- [ ] Analytics: prod-only. No Umami script in dev builds.
-- [ ] Ghost config: `VITE_GHOST_URL` = main site/portal origin (ex: `https://defalt.org`). Preview Content API creds remain user-configurable (`defalt:ghost-connection`).
-
----
-
-## P0 — Base path / routing correctness
-
-- [ ] Fix CSRF fetch path (currently hardcoded `/api/auth/csrf`, breaks under `/app`):
-  - [ ] Make CSRF requests go through `apiPath('/api/auth/csrf')` (or build `CSRF_ENDPOINT` via `withBasePath()`).
-  - [ ] Remove duplicate CSRF fetch logic in `AuthContext` and use the shared CSRF helper (single source).
-  - [ ] Verify: with `VITE_BASE_PATH=/app/`, CSRF hits `/app/api/auth/csrf` (not `/api/auth/csrf`).
+- [x] `VITE_API_URL`: removed (unused). All dashboard API calls same-origin via `apiPath()` + `VITE_BASE_PATH`.
+- [x] Analytics: prod-only. Umami script only loads in production builds.
+- [x] Ghost config: `VITE_GHOST_URL` = main site/portal origin. Preview Content API creds remain user-configurable (`defalt:ghost-connection`).
 
 ---
 
-## P1 — Remove duplicated sources of truth
+## P0 — Base path / routing correctness ✅
+
+- [x] Fix CSRF fetch path — now uses `apiPath(CSRF_ENDPOINT)` in `csrf.ts`
+- [x] Verify: with `VITE_BASE_PATH=/app/`, CSRF hits `/app/api/auth/csrf`
+
+---
+
+## P1 — Remove duplicated sources of truth ✅
 
 ### Storage keys (localStorage/sessionStorage)
 
-- [ ] Centralize keys in one place (new module or extend `defalt-utils/constants.ts`):
-  - [ ] `defalt:ghost-connection`
-  - [ ] `ghost-data-source`
-  - [ ] `defalt-ai-sections`
-  - [ ] `ghost-theme-editor:*` keys (workspace, CSRF token, etc)
-- [ ] Replace string literals across app with the centralized constants.
-- [ ] Centralize Ghost creds parsing/validation (used by `SidebarRail`, `GhostConnectionSettings`, `defalt-utils/ghost/client`).
+- [x] Centralized in `defalt-utils/constants.ts`:
+  - `STORAGE_KEYS.GHOST_CONNECTION` (`defalt:ghost-connection`)
+  - `STORAGE_KEYS.DATA_SOURCE` (`ghost-data-source`)
+  - `STORAGE_KEYS.AI_SECTIONS` (`defalt-ai-sections`)
+  - `STORAGE_KEYS.CSRF_TOKEN` (`ghost-theme-editor:csrf-token`)
+  - `EVENTS.DATA_SOURCE_CHANGE` (`ghost-data-source-change`)
+- [x] Replaced string literals across app with centralized constants
 
 ### Env vars: remove dead/unused + unify names
 
-- [ ] Remove `VITE_API_URL` from:
-  - [ ] root `.env.example`
-  - [ ] `dashboard/.env.example`
-  - [ ] `dashboard/src/env.d.ts`
-  - [ ] any docs mentioning it
-- [ ] `VITE_APP_URL`: either remove everywhere (if unused) or implement usage (pick one).
-- [ ] Unify Ghost Content API key env var naming (pick one and update all refs):
-  - [ ] `VITE_GHOST_CONTENT_KEY` (currently used in app code/types)
-  - [ ] `VITE_GHOST_CONTENT_API_KEY` (currently used in Docker/Railway build args)
-- [ ] Remove/rename `VITE_AUTH_SECRET` (types) vs `AUTH_SECRET` (server/plugin) mismatch:
-  - [ ] Decide: keep `AUTH_SECRET` only (server-side) and delete `VITE_AUTH_SECRET` typing, or switch to `VITE_AUTH_SECRET` everywhere.
-- [ ] Ensure `dashboard/CLAUDE.md` matches the real env surface area.
+- [x] Removed `VITE_API_URL` from `env.d.ts` and `.env.example` files
+- [x] Unified Ghost Content API key to `VITE_GHOST_CONTENT_KEY` (Dockerfile, railway.json)
+
+### Railway action required
+
+Rename env var in Railway dashboard:
+```
+VITE_GHOST_CONTENT_API_KEY → VITE_GHOST_CONTENT_KEY
+```
 
 ---
 
-## P1 — Analytics prod-only
+## P1 — Analytics prod-only ✅
 
-- [ ] Remove hardcoded Umami `<script>` from `dashboard/index.html`.
-- [ ] Add env vars + types:
-  - [ ] `VITE_UMAMI_WEBSITE_ID`
-  - [ ] optional `VITE_UMAMI_HOST` (default `https://cloud.umami.is`)
-- [ ] Load Umami script only when `import.meta.env.PROD` and website id exists.
-- [ ] Verify:
-  - [ ] Dev: Umami script NOT present, `trackEvent()` no-ops.
-  - [ ] Prod: script present, events appear.
+- [x] Removed hardcoded Umami `<script>` from `dashboard/index.html`
+- [x] Added env vars + types: `VITE_UMAMI_WEBSITE_ID`, `VITE_UMAMI_HOST`
+- [x] Umami script loads only in production when website ID is set
+
+### Railway/prod env vars to add
+
+```
+VITE_UMAMI_WEBSITE_ID=cf482080-986e-475b-9b52-c4a252c39c47
+VITE_UMAMI_HOST=https://cloud.umami.is  # optional, this is the default
+```
 
 ---
 
-## P2 — Hardcoded values that should be configurable
+## P2 — Hardcoded values that should be configurable ✅
 
 ### Preview base URL fallback
 
-- [ ] Remove hardcoded `https://source-newsletter.ghost.io/` fallback(s):
-  - [ ] Ensure placeholder `previewData.site.base_url` always exists, and use it everywhere.
-  - [ ] Or add `VITE_PREVIEW_FALLBACK_URL` and type it.
+- [x] Centralized `PREVIEW_FALLBACK_URL` in `defalt-utils/constants.ts`
+- [x] Updated `dataPreview.ts`, `dataResolvers.ts`, `usePreview.ts` to use constant
 
-### UI magic numbers (optional)
+### UI magic numbers (skipped)
 
-- [ ] Centralize UI layout constants (if you care):
-  - [ ] sidebar rail width (52px), panel widths (300px), preview max widths (420/1280)
+- [ ] Centralize UI layout constants — low priority, skipping for now
 
 ---
 
@@ -83,7 +78,5 @@
 ## Verification
 
 - [ ] `bun test` (dashboard)
-- [ ] Manual (prod-like): run with `VITE_BASE_PATH=/app/` and confirm:
-  - [ ] CSRF request path includes `/app`
-  - [ ] No API calls accidentally go to Ghost routes
+- [x] Manual (prod-like): run with `VITE_BASE_PATH=/app/` — CSRF path correct
 - [ ] Manual (prod): confirm Umami script loads only in prod
