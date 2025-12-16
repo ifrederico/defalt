@@ -8,6 +8,9 @@ import '../defalt-app/index.css'
 import RootApp from '../defalt-app/RootApp.tsx'
 import { RootAppErrorBoundary } from '../defalt-app/components/ErrorBoundary.tsx'
 import { MemberProvider } from '../defalt-app/contexts/MemberContext.tsx'
+import { initUmami } from '../defalt-utils/analytics/umami.ts'
+
+initUmami()
 
 const rootElement = document.getElementById('root')
 if (!rootElement) {

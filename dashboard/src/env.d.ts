@@ -8,6 +8,8 @@ declare interface ImportMetaEnv {
   readonly VITE_DEV_BYPASS_AUTH?: string
   readonly VITE_SUPPORT_TIP_URL?: string
   readonly VITE_AUTH_SECRET?: string
+  readonly VITE_UMAMI_WEBSITE_ID?: string
+  readonly VITE_UMAMI_HOST?: string
 }
 
 declare interface ImportMeta {
