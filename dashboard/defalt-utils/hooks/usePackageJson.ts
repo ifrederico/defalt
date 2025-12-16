@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { logError, logWarning } from '../logging/errorLogger.js'
-import { BASE_PATH } from '../env/basePath.js'
+import { getBasePath } from '../env/basePath.js'
 
 export function usePackageJson() {
   const [packageJson, setPackageJsonState] = useState('')
@@ -17,7 +17,7 @@ export function usePackageJson() {
     let isActive = true
     const loadPackageJson = async () => {
       try {
-        const response = await fetch(`${BASE_PATH}/themes/source-complete/package.json`, { signal: controller.signal })
+        const response = await fetch(`${getBasePath()}/themes/source-complete/package.json`, { signal: controller.signal })
         if (!response.ok) {
           throw new Error(`Failed to load package.json (${response.status})`)
         }

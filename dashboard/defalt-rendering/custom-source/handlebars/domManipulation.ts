@@ -14,13 +14,13 @@ import {
   type HeaderCustomizationOptions,
 } from './headerCustomization'
 import { sanitizeCustomCss } from '@defalt/utils/security/sanitizers'
-import { BASE_PATH } from '@defalt/utils/env/basePath'
+import { getBasePath } from '@defalt/utils/env/basePath'
 
 let portalMockElement: HTMLDivElement | null = null
 const CUSTOM_CSS_STYLE_ID = 'gh-editor-custom-css'
 const PREVIEW_STYLES_ID = 'gh-editor-preview-styles'
 const THEME_CSS_LINK_ID = 'gh-editor-theme-css'
-const THEME_CSS_HREF = `${BASE_PATH}/themes/source-complete/assets/built/screen.css`
+const getThemeCssHref = () => `${getBasePath()}/themes/source-complete/assets/built/screen.css`
 const PREVIEW_INLINE_STYLES = `
 body.app-hide-announcement-bar #gh-announcement-bar,
 body.app-hide-announcement-bar .gh-announcement-bar {
@@ -144,7 +144,7 @@ function ensurePreviewStyles(doc: Document) {
       const themeLink = doc.createElement('link')
       themeLink.id = THEME_CSS_LINK_ID
       themeLink.rel = 'stylesheet'
-      themeLink.href = THEME_CSS_HREF
+      themeLink.href = getThemeCssHref()
       head.prepend(themeLink)
     }
   }

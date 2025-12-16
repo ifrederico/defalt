@@ -1,7 +1,7 @@
 import Handlebars, { type HelperOptions } from 'handlebars'
 import type { PreviewPost } from '../HandlebarsRenderer.js'
 import type { PreviewData } from './dataResolvers.js'
-import { BASE_PATH } from '@defalt/utils/env/basePath'
+import { getBasePath } from '@defalt/utils/env/basePath'
 
 interface NavigationMenus {
   primary: Array<{ label: string; href: string; slug?: string; current?: boolean }>
@@ -169,7 +169,7 @@ export function registerGhostHelpers(
   const layoutWidth = pageLayout === 'narrow' ? '720px' : '1120px'
 
   // asset helper - use base path for Railway/production
-  const assetBase = `${BASE_PATH}/themes/source-complete/assets`
+  const assetBase = `${getBasePath()}/themes/source-complete/assets`
 
   Handlebars.registerHelper('asset', function (path: string) {
     return `${assetBase}/${path}`

@@ -39,7 +39,7 @@ import {
   normalizeAnnouncementContentConfig,
   type AnnouncementBarInstance
 } from '@defalt/utils/config/themeConfig'
-import { BASE_PATH } from '@defalt/utils/env/basePath'
+import { getBasePath } from '@defalt/utils/env/basePath'
 import { sanitizeHexColor, sanitizeToken, sanitizeCustomCss } from '@defalt/utils/security/sanitizers'
 import type { SectionInstance } from '@defalt/sections/engine'
 import {
@@ -349,7 +349,7 @@ export function HandlebarsRenderer({
 	            }
 
 	            renderConfig.isPreview = true
-	            renderConfig.placeholderImageUrl = `${BASE_PATH}/sections/placeholder.jpg`
+	            renderConfig.placeholderImageUrl = `${getBasePath()}/sections/placeholder.jpg`
 
 	            html = await renderSection(
 	              section.definitionId,
@@ -570,7 +570,7 @@ export function HandlebarsRenderer({
         // Re-register footer partial with filtered content based on visibility
         // This ensures toggling visibility works in both directions (hide AND show)
         try {
-          const footerPath = `${BASE_PATH}/themes/source-complete/partials/components/footer.hbs`
+          const footerPath = `${getBasePath()}/themes/source-complete/partials/components/footer.hbs`
           const response = await fetch(footerPath)
           if (response.ok) {
             const footerContent = await response.text()

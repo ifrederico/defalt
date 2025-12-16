@@ -11,13 +11,21 @@ import fs from 'fs/promises'
 import path from 'path'
 import { spawn } from 'child_process'
 import crypto from 'crypto'
-import { config as dotenvConfig } from 'dotenv'
 import { fileURLToPath } from 'url'
 
-// Load .env file for server-side access (Vite only exposes VITE_ prefixed vars)
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
-dotenvConfig({ path: path.join(__dirname, '.env') })
+
+// Lazy-load dotenv to avoid issues when config file is bundled during build
+let envLoaded = false
+function ensureEnvLoaded() {
+  if (envLoaded) return
+  // Dynamic import avoids top-level execution in bundled config
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const dotenv = require('dotenv')
+  dotenv.config({ path: path.join(__dirname, '.env') })
+  envLoaded = true
+}
 import {
   generateHomeTemplate,
   readThemePackageName,
@@ -279,6 +287,9 @@ export function themeConfigPlugin(): Plugin {
   return {
     name: 'theme-config-api',
     configureServer(server) {
+      // Load .env on first request (deferred to avoid bundling issues)
+      ensureEnvLoaded()
+
       server.middlewares.use(async (req, res, next) => {
         try {
           if (req.url === '/api/auth/csrf') {

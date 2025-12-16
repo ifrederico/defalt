@@ -1,5 +1,5 @@
 import Handlebars from 'handlebars'
-import { BASE_PATH } from '@defalt/utils/env/basePath'
+import { getBasePath } from '@defalt/utils/env/basePath'
 
 export const THEME_PARTIALS = [
   'components/cta',
@@ -258,24 +258,24 @@ export function filterFooterPartial(
  * Loads Handlebars templates and partials for the current page
  */
 export async function loadTemplates(currentPage: string): Promise<Record<string, string>> {
-  const basePath = `${BASE_PATH}/themes/source-complete`
+  const themePath = `${getBasePath()}/themes/source-complete`
 
   // Determine which templates to load based on current page
   const templateFiles: Record<string, string> = {
-    default: `${basePath}/default.hbs`
+    default: `${themePath}/default.hbs`
   }
 
   if (currentPage === 'home') {
-    templateFiles.home = `${basePath}/home.hbs`
+    templateFiles.home = `${themePath}/home.hbs`
   }
   if (currentPage === 'page2') {
-    templateFiles.index = `${basePath}/index.hbs`
+    templateFiles.index = `${themePath}/index.hbs`
   }
   if (currentPage === 'about') {
-    templateFiles.page = `${basePath}/page.hbs`
+    templateFiles.page = `${themePath}/page.hbs`
   }
   if (currentPage === 'post') {
-    templateFiles.post = `${basePath}/post.hbs`
+    templateFiles.post = `${themePath}/post.hbs`
   }
 
   // Load all templates
@@ -289,7 +289,7 @@ export async function loadTemplates(currentPage: string): Promise<Record<string,
   // Load partials
   await Promise.all(THEME_PARTIALS.map(async (partial) => {
     try {
-      const partialPath = `${basePath}/partials/${partial}.hbs`
+      const partialPath = `${themePath}/partials/${partial}.hbs`
       const content = await fetchWithCache(partialPath)
       const cachedContent = registeredPartials.get(partial)
       if (cachedContent !== content) {
