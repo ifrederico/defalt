@@ -5,7 +5,7 @@
     "buildArgs": {
       "VITE_GHOST_URL": "${{VITE_GHOST_URL}}",
       "VITE_APP_URL": "${{VITE_APP_URL}}",
-      "VITE_GHOST_CONTENT_API_KEY": "${{VITE_GHOST_CONTENT_API_KEY}}"
+      "VITE_GHOST_CONTENT_KEY": "${{VITE_GHOST_CONTENT_KEY}}"
     }
   },
   "deploy": {
