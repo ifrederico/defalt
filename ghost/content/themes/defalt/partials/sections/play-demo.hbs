@@ -1068,6 +1068,52 @@ Usage: {{> "sections/play-demo"}}
         height: 16px;
     }
 
+    .gd-play-ai-waitlist {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 10px;
+        padding: 16px;
+        margin-bottom: 12px;
+        border-radius: 8px;
+        background: linear-gradient(135deg, rgba(160, 203, 255, 0.1), rgba(244, 194, 255, 0.1));
+        border: 1px dashed rgba(198, 173, 255, 0.4);
+        text-align: center;
+    }
+
+    .gd-play-ai-waitlist-title {
+        font-size: 1.2rem;
+        font-weight: 600;
+        background: linear-gradient(135deg, #a0cbff, #c6adff, #f4c2ff);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+    }
+
+    .gd-play-ai-waitlist-text {
+        font-size: 1.1rem;
+        color: var(--play-text-muted);
+        line-height: 1.4;
+    }
+
+    .gd-play-ai-waitlist-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 8px 14px;
+        background: linear-gradient(135deg, #a0cbff, #c6adff, #f4c2ff);
+        color: #1a1a2e;
+        border-radius: 6px;
+        font-size: 1.2rem;
+        font-weight: 600;
+        text-decoration: none;
+        transition: opacity 0.2s ease;
+    }
+
+    .gd-play-ai-waitlist-btn:hover {
+        opacity: 0.9;
+    }
+
     .gd-play-ai-input-wrapper {
         position: relative;
         border-radius: 8px;
@@ -1595,6 +1641,12 @@ Usage: {{> "sections/play-demo"}}
                                     <path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/>
                                 </svg>
                                 Generate block
+                            </div>
+                            {{!-- AI Waitlist Banner --}}
+                            <div class="gd-play-ai-waitlist">
+                                <span class="gd-play-ai-waitlist-title">Coming Soon</span>
+                                <span class="gd-play-ai-waitlist-text">AI-powered section generation is on the way. Join the waitlist to get early access.</span>
+                                <a href="#/portal/signup" class="gd-play-ai-waitlist-btn">Join AI Waitlist</a>
                             </div>
                             <div class="gd-play-ai-input-wrapper">
                                 <div class="gd-play-ai-input" id="gd-ai-input" contenteditable="false"></div>
