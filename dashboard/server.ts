@@ -897,8 +897,8 @@ const distPath = path.join(__dirname, 'dist')
 const sectionsPath = path.join(__dirname, 'defalt-sections', 'sections')
 
 // Serve section HBS templates (mirrors dev server's sectionTemplatesPlugin)
-// Express 5 requires named wildcard parameter
-app.get('/sections/{*path}', async (req, res) => {
+// Handle both /sections/* and /app/sections/* (Caddy proxies /app/* without stripping prefix)
+async function serveSectionTemplate(req: Request, res: Response) {
   const url = '/' + (req.params.path || '')
 
   // Only handle .hbs files
@@ -916,7 +916,11 @@ app.get('/sections/{*path}', async (req, res) => {
   } catch {
     res.status(404).send('Template not found')
   }
-})
+}
+
+// Express 5 requires named wildcard parameter
+app.get('/sections/{*path}', serveSectionTemplate)
+app.get('/app/sections/{*path}', serveSectionTemplate)
 
 app.use(express.static(distPath))
 
