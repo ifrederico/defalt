@@ -897,12 +897,17 @@ const distPath = path.join(__dirname, 'dist')
 const sectionsPath = path.join(__dirname, 'defalt-sections', 'sections')
 
 // Serve section HBS templates (mirrors dev server's sectionTemplatesPlugin)
-// Handle both /sections/* and /app/sections/* (Caddy proxies /app/* without stripping prefix)
+// Caddy strips /app prefix, so requests arrive at /sections/*
 async function serveSectionTemplate(req: Request, res: Response) {
-  const url = '/' + (req.params.path || '')
+  // Express 5 wildcard captures path without leading slash
+  const pathParam = req.params.path || ''
+  const url = '/' + pathParam
+
+  console.log('[sections] Request:', req.originalUrl, '| Param:', pathParam)
 
   // Only handle .hbs files
   if (!url.endsWith('.hbs')) {
+    console.log('[sections] Rejected (not .hbs):', url)
     return res.status(404).send('Not found')
   }
 
@@ -910,17 +915,18 @@ async function serveSectionTemplate(req: Request, res: Response) {
 
   try {
     const content = await fs.readFile(filePath, 'utf-8')
+    console.log('[sections] Served:', filePath, `(${content.length} bytes)`)
     res.setHeader('Content-Type', 'text/plain; charset=utf-8')
     res.setHeader('Cache-Control', 'no-cache')
     res.send(content)
-  } catch {
+  } catch (err) {
+    console.error('[sections] Not found:', filePath, err)
     res.status(404).send('Template not found')
   }
 }
 
 // Express 5 requires named wildcard parameter
 app.get('/sections/{*path}', serveSectionTemplate)
-app.get('/app/sections/{*path}', serveSectionTemplate)
 
 app.use(express.static(distPath))
 
@@ -951,6 +957,15 @@ async function startServer() {
   } catch {
     console.error(`WARNING: dist/index.html not found at ${distPath}`)
     console.error('Run "bun run build" first to generate static files')
+  }
+
+  // Verify sections folder exists
+  try {
+    const sectionDirs = await fs.readdir(sectionsPath)
+    console.log(`Sections templates at: ${sectionsPath}`)
+    console.log(`Available sections: ${sectionDirs.join(', ')}`)
+  } catch {
+    console.error(`WARNING: Sections folder not found at ${sectionsPath}`)
   }
 
   app.listen(PORT, () => {

@@ -5,13 +5,17 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:prod": "VITE_BASE_PATH=/app/ vite",
     "dev:server": "tsx watch server.ts",
     "build": "tsc -b && vite build",
+    "build:prod": "VITE_BASE_PATH=/app/ bun run build",
     "build:theme": "bun install --frozen-lockfile --cwd public/themes/source-complete && bun run --cwd public/themes/source-complete zip",
     "build:all": "bun run build && bun run build:theme",
     "start": "bun server.ts",
+    "start:prod": "bun run build:prod && bun server.ts",
     "lint": "eslint .",
     "test": "vitest run",
+    "test:prod": "bun run build:prod && echo 'Open http://localhost:3000/app/ to test' && bun server.ts",
     "preview": "vite preview"
   },
   "dependencies": {
