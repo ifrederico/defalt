@@ -250,6 +250,11 @@ export function themeConfigPlugin(): Plugin {
 
   async function syncThemeToWorkspace() {
     await fs.mkdir(workspaceRoot, { recursive: true })
+
+    // Clean partials directory to remove stale export artifacts.
+    const partialsDir = path.join(workspaceThemeDir, 'partials')
+    await fs.rm(partialsDir, { recursive: true, force: true })
+
     await fs.mkdir(workspaceThemeDir, { recursive: true })
 
     await fs.cp(themeRoot, workspaceThemeDir, {

@@ -2,10 +2,6 @@ import Handlebars from 'handlebars'
 import { BASE_PATH } from '@defalt/utils/env/basePath'
 
 export const THEME_PARTIALS = [
-  'sections/announcement-bar',
-  'sections/defalt-hero',
-  'sections/defalt-ghost-cards',
-  'sections/defalt-ghost-grid',
   'components/cta',
   'components/featured',
   'components/footer',

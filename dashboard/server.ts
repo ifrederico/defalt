@@ -93,6 +93,7 @@ async function initDatabase() {
 
 import {
   generateHomeTemplate,
+  readThemePackageName,
   applyNavigationCustomization,
   applyFooterCustomization,
   applyDefaultTemplateCustomization,
@@ -746,17 +747,6 @@ async function cleanupUnusedPartials(
         await fs.rm(path.join(partialsDir, partialName), { force: true })
       }
     }
-  }
-}
-
-async function readThemePackageName(themeDir: string): Promise<string> {
-  const pkgPath = path.join(themeDir, 'package.json')
-  try {
-    const pkgRaw = await fs.readFile(pkgPath, 'utf-8')
-    const pkg = JSON.parse(pkgRaw)
-    return pkg.name as string
-  } catch {
-    return 'defalt-theme'
   }
 }
 
