@@ -1,16 +1,6 @@
-import GhostContentAPI from '@tryghost/content-api'
 import { apiPath } from '@defalt/utils/api/apiPath'
 
 const ghostUrl = import.meta.env.VITE_GHOST_URL
-const ghostContentKey = import.meta.env.VITE_GHOST_CONTENT_KEY
-
-const ghostApi = ghostUrl && ghostContentKey
-  ? new GhostContentAPI({
-      url: ghostUrl,
-      key: ghostContentKey,
-      version: 'v5.0'
-    })
-  : null
 
 export interface GhostSubscription {
   id: string
@@ -173,5 +163,3 @@ export async function signOut(): Promise<void> {
   // Redirect to Ghost homepage after sign out
   window.location.href = ghostUrl
 }
-
-export default ghostApi

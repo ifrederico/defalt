@@ -4,8 +4,7 @@
     "builder": "DOCKERFILE",
     "buildArgs": {
       "VITE_GHOST_URL": "${{VITE_GHOST_URL}}",
-      "VITE_APP_URL": "${{VITE_APP_URL}}",
-      "VITE_GHOST_CONTENT_KEY": "${{VITE_GHOST_CONTENT_KEY}}"
+      "VITE_APP_URL": "${{VITE_APP_URL}}"
     }
   },
   "deploy": {
