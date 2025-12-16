@@ -74,6 +74,12 @@
 
 ---
 
+## P3 — Refactor (optional)
+
+- [ ] Split `useWorkspace` into smaller hooks/modules (persistence, hydration, autosave, sync, analytics).
+
+---
+
 ## Verification
 
 - [ ] `bun test` (dashboard)
@@ -81,4 +87,3 @@
   - [ ] CSRF request path includes `/app`
   - [ ] No API calls accidentally go to Ghost routes
 - [ ] Manual (prod): confirm Umami script loads only in prod
-
