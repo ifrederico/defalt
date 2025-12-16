@@ -894,6 +894,28 @@ app.post('/api/theme/export', async (req, res) => {
 // Static File Serving (SPA)
 // =============================================================================
 const distPath = path.join(__dirname, 'dist')
+const sectionsPath = path.join(__dirname, 'defalt-sections', 'sections')
+
+// Serve section HBS templates (mirrors dev server's sectionTemplatesPlugin)
+app.get('/sections/*', async (req, res) => {
+  const url = req.path.replace('/sections', '')
+
+  // Only handle .hbs files
+  if (!url.endsWith('.hbs')) {
+    return res.status(404).send('Not found')
+  }
+
+  const filePath = path.join(sectionsPath, url)
+
+  try {
+    const content = await fs.readFile(filePath, 'utf-8')
+    res.setHeader('Content-Type', 'text/plain; charset=utf-8')
+    res.setHeader('Cache-Control', 'no-cache')
+    res.send(content)
+  } catch {
+    res.status(404).send('Template not found')
+  }
+})
 
 app.use(express.static(distPath))
 
