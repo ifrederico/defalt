@@ -8,6 +8,7 @@ import { TagsModal } from '../components/TagsModal'
 import { GhostConnectionSettings } from '../components/GhostConnectionSettings'
 import { useWorkspaceContext } from '../contexts/useWorkspaceContext'
 import { useActiveTab, useUIActions } from '../stores'
+import { STORAGE_KEYS } from '@defalt/utils/constants'
 
 function formatRelativeTime(date: Date): string {
   const now = new Date()
@@ -23,11 +24,9 @@ function formatRelativeTime(date: Date): string {
   return date.toLocaleDateString()
 }
 
-const GHOST_CONNECTION_KEY = 'defalt:ghost-connection'
-
 function hasGhostCredentials(): boolean {
   try {
-    const stored = localStorage.getItem(GHOST_CONNECTION_KEY)
+    const stored = localStorage.getItem(STORAGE_KEYS.GHOST_CONNECTION)
     if (stored) {
       const parsed = JSON.parse(stored) as { url?: string; contentKey?: string }
       return Boolean(parsed.url && parsed.contentKey)

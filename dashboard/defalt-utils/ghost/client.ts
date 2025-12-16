@@ -11,8 +11,7 @@ import type {
   GhostTagsResponse,
   GhostAuthorsResponse
 } from './types'
-
-const STORAGE_KEY = 'defalt:ghost-connection'
+import { STORAGE_KEYS } from '../constants.js'
 
 export class GhostApiError extends Error {
   statusCode?: number
@@ -33,7 +32,7 @@ type GhostCredentials = {
 
 function getCredentials(): GhostCredentials | null {
   try {
-    const stored = localStorage.getItem(STORAGE_KEY)
+    const stored = localStorage.getItem(STORAGE_KEYS.GHOST_CONNECTION)
     if (stored) {
       const parsed = JSON.parse(stored) as Partial<GhostCredentials>
       if (parsed.url && parsed.contentKey) {

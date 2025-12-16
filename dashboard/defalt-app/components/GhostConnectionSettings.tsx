@@ -4,8 +4,7 @@ import { toast } from 'sonner'
 import { AppButton, TextInput } from '@defalt/ui'
 import { useAuth } from '../hooks/useAuth'
 import { fetchSettings, saveSettings, clearSettings } from '@defalt/utils/api/settingsSync'
-
-const STORAGE_KEY = 'defalt:ghost-connection'
+import { STORAGE_KEYS, EVENTS } from '@defalt/utils/constants'
 const CONNECTION_TIMEOUT_MS = 10000
 
 type ConnectionStatus = 'idle' | 'saving' | 'success' | 'error'
@@ -17,7 +16,7 @@ type GhostCredentials = {
 
 function saveToLocalStorage(credentials: GhostCredentials): void {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(credentials))
+    localStorage.setItem(STORAGE_KEYS.GHOST_CONNECTION, JSON.stringify(credentials))
   } catch {
     // Storage may be unavailable in private browsing
   }
@@ -25,7 +24,7 @@ function saveToLocalStorage(credentials: GhostCredentials): void {
 
 function clearLocalStorage(): void {
   try {
-    localStorage.removeItem(STORAGE_KEY)
+    localStorage.removeItem(STORAGE_KEYS.GHOST_CONNECTION)
   } catch {
     // Storage may be unavailable in private browsing
   }
@@ -33,7 +32,7 @@ function clearLocalStorage(): void {
 
 function setDataSourcePreference(source: 'ghost' | 'placeholder'): void {
   try {
-    localStorage.setItem('ghost-data-source', source)
+    localStorage.setItem(STORAGE_KEYS.DATA_SOURCE, source)
   } catch {
     // Storage may be unavailable in private browsing
   }
@@ -41,7 +40,7 @@ function setDataSourcePreference(source: 'ghost' | 'placeholder'): void {
 
 function loadFromLocalStorage(): GhostCredentials {
   try {
-    const stored = localStorage.getItem(STORAGE_KEY)
+    const stored = localStorage.getItem(STORAGE_KEYS.GHOST_CONNECTION)
     if (stored) {
       const parsed = JSON.parse(stored) as Partial<GhostCredentials>
       return {
@@ -89,7 +88,7 @@ export function GhostConnectionSettings() {
           setUrl(creds.url)
           setContentKey(creds.contentKey)
           setDataSourcePreference('ghost')
-          window.dispatchEvent(new CustomEvent('ghost-data-source-change', { detail: { source: 'ghost' } }))
+          window.dispatchEvent(new CustomEvent(EVENTS.DATA_SOURCE_CHANGE, { detail: { source: 'ghost' } }))
         }
       })
       .catch(() => {
@@ -157,7 +156,7 @@ export function GhostConnectionSettings() {
 
       // Notify preview to switch to Ghost data
       setDataSourcePreference('ghost')
-      window.dispatchEvent(new CustomEvent('ghost-data-source-change', { detail: { source: 'ghost' } }))
+      window.dispatchEvent(new CustomEvent(EVENTS.DATA_SOURCE_CHANGE, { detail: { source: 'ghost' } }))
     } catch (err) {
       setStatus('error')
       if (err instanceof Error && err.name === 'AbortError') {
@@ -188,7 +187,7 @@ export function GhostConnectionSettings() {
 
     // Notify preview to switch back to placeholder data
     setDataSourcePreference('placeholder')
-    window.dispatchEvent(new CustomEvent('ghost-data-source-change', { detail: { source: 'placeholder' } }))
+    window.dispatchEvent(new CustomEvent(EVENTS.DATA_SOURCE_CHANGE, { detail: { source: 'placeholder' } }))
   }, [user])
 
   const hasCredentials = url.length > 0 || contentKey.length > 0

@@ -11,6 +11,7 @@ import { usePreview } from '../hooks/usePreview'
 import { useExport } from '../hooks/useExport'
 import { sanitizeHexColor } from '@defalt/utils/security/sanitizers'
 import { SECTION_ID_MAP, PADDING_BLOCK_SECTIONS } from '@defalt/utils/config/themeConfig'
+import { STORAGE_KEYS } from '@defalt/utils/constants'
 import { trackEvent } from '@defalt/utils/analytics/umami'
 import { UpgradeModal } from '../components/UpgradeModal'
 import { AppButton } from '@defalt/ui/primitives/AppButton'
@@ -69,12 +70,10 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     title: '',
     message: ''
   })
-  const AI_SECTIONS_STORAGE_KEY = 'defalt-ai-sections'
-
   const [aiSections, setAiSections] = useState<Array<{ id: string, name: string, html: string }>>(() => {
     if (typeof window === 'undefined') return []
     try {
-      const stored = localStorage.getItem(AI_SECTIONS_STORAGE_KEY)
+      const stored = localStorage.getItem(STORAGE_KEYS.AI_SECTIONS)
       return stored ? JSON.parse(stored) : []
     } catch {
       return []
@@ -84,7 +83,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
   // Persist AI sections to localStorage
   useEffect(() => {
     try {
-      localStorage.setItem(AI_SECTIONS_STORAGE_KEY, JSON.stringify(aiSections))
+      localStorage.setItem(STORAGE_KEYS.AI_SECTIONS, JSON.stringify(aiSections))
     } catch {
       // localStorage might be full or unavailable
     }

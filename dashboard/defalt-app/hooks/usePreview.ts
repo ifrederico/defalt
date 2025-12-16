@@ -11,13 +11,13 @@ import {
   transformGhostPageToPageData
 } from '@defalt/utils/ghost'
 import { logError } from '@defalt/utils/logging/errorLogger'
+import { STORAGE_KEYS, EVENTS } from '@defalt/utils/constants'
 
 const GHOST_FETCH_TIMEOUT_MS = 20000
-const DATA_SOURCE_KEY = 'ghost-data-source'
 
 function getStoredDataSource(): string | null {
   try {
-    return localStorage.getItem(DATA_SOURCE_KEY)
+    return localStorage.getItem(STORAGE_KEYS.DATA_SOURCE)
   } catch {
     return null
   }
@@ -25,7 +25,7 @@ function getStoredDataSource(): string | null {
 
 function setStoredDataSource(source: string): void {
   try {
-    localStorage.setItem(DATA_SOURCE_KEY, source)
+    localStorage.setItem(STORAGE_KEYS.DATA_SOURCE, source)
   } catch {
     // Storage may be unavailable in private browsing
   }
@@ -143,11 +143,11 @@ export function usePreview() {
       }
     }
 
-    window.addEventListener('ghost-data-source-change', handleSourceChange)
+    window.addEventListener(EVENTS.DATA_SOURCE_CHANGE, handleSourceChange)
     window.addEventListener('ghost-data-refresh', handleRefresh)
 
     return () => {
-      window.removeEventListener('ghost-data-source-change', handleSourceChange)
+      window.removeEventListener(EVENTS.DATA_SOURCE_CHANGE, handleSourceChange)
       window.removeEventListener('ghost-data-refresh', handleRefresh)
     }
   }, [dataSource])
