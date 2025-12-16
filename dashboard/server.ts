@@ -924,9 +924,9 @@ async function serveSectionTemplate(req: Request, res: Response) {
 }
 
 // Express 5 requires named wildcard parameter
-app.get('/sections/{*path}', serveSectionTemplate)
-
 app.use(express.static(distPath))
+
+app.get('/sections/{*path}', serveSectionTemplate)
 
 // SPA fallback - serve index.html for non-static routes
 // Exclude: /api/, /themes/, /theme-config/
