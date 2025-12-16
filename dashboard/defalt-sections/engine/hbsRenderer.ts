@@ -10,6 +10,10 @@
 
 import Handlebars, { type HelperOptions } from 'handlebars'
 import type { SectionPadding, RenderOptions } from './schemaTypes.js'
+import { withBasePath } from '@defalt/utils/env/basePath'
+
+/** Get the sections base path with Vite base path prefix */
+const getSectionsBasePath = () => withBasePath('/sections/')
 
 // =============================================================================
 // Types
@@ -452,7 +456,7 @@ export async function renderSection(
   // Ensure helpers are registered
   registerSectionHelpers()
 
-  const basePath = options.basePath ?? '/sections/'
+  const basePath = options.basePath ?? getSectionsBasePath()
 
   try {
     const template = await fetchAndCompileTemplate(sectionId, templatePath, basePath)
@@ -505,9 +509,10 @@ export async function renderSection(
 async function preloadTemplate(
   sectionId: string,
   templatePath: string,
-  basePath = '/sections/'
+  basePath?: string
 ): Promise<void> {
-  await fetchAndCompileTemplate(sectionId, templatePath, basePath)
+  const resolvedBasePath = basePath ?? getSectionsBasePath()
+  await fetchAndCompileTemplate(sectionId, templatePath, resolvedBasePath)
 }
 
 /**
@@ -515,11 +520,12 @@ async function preloadTemplate(
  */
 export async function preloadTemplates(
   templates: Array<{ sectionId: string; templatePath: string }>,
-  basePath = '/sections/'
+  basePath?: string
 ): Promise<void> {
+  const resolvedBasePath = basePath ?? getSectionsBasePath()
   await Promise.all(
     templates.map(({ sectionId, templatePath }) =>
-      preloadTemplate(sectionId, templatePath, basePath)
+      preloadTemplate(sectionId, templatePath, resolvedBasePath)
     )
   )
 }
