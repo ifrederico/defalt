@@ -1,5 +1,6 @@
 import Handlebars from 'handlebars'
 import { safeJsonForScript } from '@defalt/utils/security/sanitizers'
+import { PREVIEW_FALLBACK_URL } from '@defalt/utils/constants'
 
 // Types from HandlebarsRenderer.tsx
 export type PageType = 'home' | 'about' | 'post' | 'page2'
@@ -99,7 +100,7 @@ export function toRelativeUrl(href?: string, siteUrl?: string) {
   }
 
   try {
-    const base = new URL(siteUrl || 'https://source-newsletter.ghost.io/')
+    const base = new URL(siteUrl || `${PREVIEW_FALLBACK_URL}/`)
     const target = new URL(href, base)
     if (target.origin === base.origin) {
       const normalizedPath = target.pathname.replace(/\/+$/, '') || '/'
@@ -114,7 +115,7 @@ export function toRelativeUrl(href?: string, siteUrl?: string) {
 export function toAbsoluteUrl(href?: string, siteUrl?: string) {
   if (!href && siteUrl) return siteUrl
   try {
-    const base = new URL(siteUrl || 'https://source-newsletter.ghost.io/')
+    const base = new URL(siteUrl || `${PREVIEW_FALLBACK_URL}/`)
     if (!href) return base.toString()
     const url = new URL(href, base)
     return url.toString()
@@ -295,7 +296,7 @@ export function resolveSiteUrl(previewData: PreviewData) {
   return (
     previewData?.site?.base_url ||
     previewData?.header?.navigation_bar?.brand?.href ||
-    'https://source-newsletter.ghost.io/'
+    `${PREVIEW_FALLBACK_URL}/`
   )
 }
 
