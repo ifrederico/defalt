@@ -3,6 +3,7 @@ import fs from 'fs'
 import { fileURLToPath } from 'url'
 import { defineConfig, type Plugin } from 'vitest/config'
 import { loadEnv } from 'vite'
+import type { Connect } from 'vite'
 import react from '@vitejs/plugin-react'
 import { themeConfigPlugin } from './vite-plugin-theme-config'
 
@@ -18,28 +19,44 @@ function sectionTemplatesPlugin(): Plugin {
   return {
     name: 'section-templates',
     configureServer(server) {
-      server.middlewares.use('/sections', (req, res, next) => {
-        const url = req.url || ''
-        // Only handle .hbs files
+      const mounts = new Set<string>(['/sections'])
+      const base = server.config.base || '/'
+      if (base !== '/') {
+        mounts.add(`${base.replace(/\/$/, '')}/sections`)
+      }
+
+      const root = path.resolve(sectionsDir)
+
+      const handler: Connect.NextHandleFunction = (req, res, next) => {
+        const rawUrl = req.url || ''
+        const url = rawUrl.split('?')[0] || ''
         if (!url.endsWith('.hbs')) {
           return next()
         }
 
-        const filePath = path.join(sectionsDir, url)
-
-        // Check if file exists
-        if (!fs.existsSync(filePath)) {
+        const requestedPath = url.replace(/^\/+/, '')
+        const resolved = path.resolve(root, requestedPath)
+        if (!resolved.startsWith(root + path.sep)) {
           res.statusCode = 404
           res.end('Template not found')
           return
         }
 
-        // Read and serve the file
-        const content = fs.readFileSync(filePath, 'utf-8')
+        if (!fs.existsSync(resolved)) {
+          res.statusCode = 404
+          res.end('Template not found')
+          return
+        }
+
+        const content = fs.readFileSync(resolved, 'utf-8')
         res.setHeader('Content-Type', 'text/plain; charset=utf-8')
         res.setHeader('Cache-Control', 'no-cache')
         res.end(content)
-      })
+      }
+
+      for (const mount of mounts) {
+        server.middlewares.use(mount, handler)
+      }
     }
   }
 }

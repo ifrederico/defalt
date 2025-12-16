@@ -899,29 +899,27 @@ const sectionsPath = path.join(__dirname, 'defalt-sections', 'sections')
 // Serve section HBS templates (mirrors dev server's sectionTemplatesPlugin)
 // Caddy strips /app prefix, so requests arrive at /sections/*
 async function serveSectionTemplate(req: Request, res: Response) {
-  // Express 5 wildcard captures path without leading slash
-  const pathParam = req.params.path || ''
-  const url = '/' + pathParam
+  const rawPathParam = req.params.path
+  const rawPath = Array.isArray(rawPathParam) ? rawPathParam.join('/') : String(rawPathParam ?? '')
+  const requestedPath = rawPath.replace(/^\/+/, '')
 
-  console.log('[sections] Request:', req.originalUrl, '| Param:', pathParam)
-
-  // Only handle .hbs files
-  if (!url.endsWith('.hbs')) {
-    console.log('[sections] Rejected (not .hbs):', url)
+  if (!requestedPath.endsWith('.hbs')) {
     return res.status(404).send('Not found')
   }
 
-  const filePath = path.join(sectionsPath, url)
+  const root = path.resolve(sectionsPath)
+  const resolved = path.resolve(root, requestedPath)
+  if (!resolved.startsWith(root + path.sep)) {
+    return res.status(404).send('Template not found')
+  }
 
   try {
-    const content = await fs.readFile(filePath, 'utf-8')
-    console.log('[sections] Served:', filePath, `(${content.length} bytes)`)
+    const content = await fs.readFile(resolved, 'utf-8')
     res.setHeader('Content-Type', 'text/plain; charset=utf-8')
     res.setHeader('Cache-Control', 'no-cache')
-    res.send(content)
-  } catch (err) {
-    console.error('[sections] Not found:', filePath, err)
-    res.status(404).send('Template not found')
+    return res.send(content)
+  } catch {
+    return res.status(404).send('Template not found')
   }
 }
 
