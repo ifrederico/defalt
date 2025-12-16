@@ -5,7 +5,8 @@
     "buildArgs": {
       "VITE_GHOST_URL": "${{VITE_GHOST_URL}}",
       "VITE_APP_URL": "${{VITE_APP_URL}}",
-      "VITE_BASE_PATH": "/app/"
+      "VITE_BASE_PATH": "/app/",
+      "VITE_UMAMI_WEBSITE_ID": "${{VITE_UMAMI_WEBSITE_ID}}"
     }
   },
   "deploy": {
