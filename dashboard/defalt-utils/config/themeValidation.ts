@@ -28,7 +28,7 @@ const pageConfigSchema = z.object({
   sections: z.record(z.string(), sectionConfigSchema).optional()
 }).catchall(z.unknown())
 
-export const themeDocumentSchema = z.object({
+const themeDocumentSchema = z.object({
   name: z.string().optional(),
   version: z.number().optional(),
   accentColor: z.string().optional(),
@@ -40,7 +40,7 @@ export const themeDocumentSchema = z.object({
   pages: z.record(z.string(), pageConfigSchema).optional()
 }).catchall(z.unknown())
 
-export const workspaceBackupSchema = z.object({
+const workspaceBackupSchema = z.object({
   version: z.number(),
   exportedAt: z.string(),
   document: themeDocumentSchema

@@ -72,12 +72,8 @@ Verdict: TRUE
 
 ## Confirmed unused exports (repo-local, safe-to-remove if you want)
 
-- `defalt-utils/config/themeValidation.ts`
-  - `themeDocumentSchema` (exported, not imported anywhere)
-  - `workspaceBackupSchema` (exported, not imported anywhere)
-- `defalt-sections/engine/hbsRenderer.ts` (exports not referenced outside `defalt-sections/engine/index.ts` re-export)
-  - `clearTemplateCache`, `invalidateTemplate`, `buildCssVariables`, `getTemplateSource`, `isTemplateCached`
-- `defalt-sections/engine/sectionRegistry.ts` (exports not referenced outside `defalt-sections/engine/index.ts` re-export)
-  - `hasSection`, `getSectionIds`, `getPremiumSections`, `getFreeSections`, `listSections`, `debugLogSections`
-
-Note: many `defalt-sections/engine/validation.ts` helpers also look unused outside the engine re-export; treat as “public API?” decision.
+- Removed now:
+  - `defalt-utils/config/themeValidation.ts`: `themeDocumentSchema`, `workspaceBackupSchema` exports (kept as internal constants).
+  - `defalt-sections/engine/hbsRenderer.ts`: removed unused exports/functions (`clearTemplateCache`, `invalidateTemplate`, `renderSectionSync`, `buildCssVariables`, `getTemplateSource`, `isTemplateCached`, `sanitizeHexColor`, `sanitizeHref`, `escapeHtml`) and removed the unused `templateSourceCache`.
+  - `defalt-sections/engine/sectionRegistry.ts`: removed unused exports (`hasSection`, `getSectionIds`, `getPremiumSections`, `getFreeSections`, `listSections`, `debugLogSections`) and made `sectionDefinitionMap` internal.
+  - `defalt-sections/engine/validation.ts`: removed (was not used anywhere in-repo; `engine/index.ts` no longer re-exports it).

@@ -44,24 +44,7 @@ export interface RenderSectionOptions extends RenderOptions {
 // =============================================================================
 
 const templateCache = new Map<string, HandlebarsTemplateDelegate>()
-const templateSourceCache = new Map<string, string>()
 const hbs = Handlebars.create()
-
-/**
- * Clear all cached templates (useful for hot reload)
- */
-export function clearTemplateCache(): void {
-  templateCache.clear()
-  templateSourceCache.clear()
-}
-
-/**
- * Clear a specific template from cache
- */
-export function invalidateTemplate(sectionId: string): void {
-  templateCache.delete(sectionId)
-  templateSourceCache.delete(sectionId)
-}
 
 // =============================================================================
 // Helpers Registration
@@ -72,7 +55,7 @@ let helpersRegistered = false
 /**
  * Register common Handlebars helpers for section templates
  */
-export function registerSectionHelpers(): void {
+function registerSectionHelpers(): void {
   if (helpersRegistered) return
   helpersRegistered = true
 
@@ -429,7 +412,6 @@ async function fetchAndCompileTemplate(
     }
 
     const source = await response.text()
-    templateSourceCache.set(sectionId, source)
 
     // Compile template
     const compiled = hbs.compile(source)
@@ -517,50 +499,10 @@ export async function renderSection(
  * Synchronously render a section if template is already cached
  * Returns null if template is not cached
  */
-export function renderSectionSync(
-  sectionId: string,
-  config: Record<string, unknown>,
-  options: RenderOptions = {}
-): string | null {
-  const template = templateCache.get(sectionId)
-  if (!template) {
-    return null
-  }
-
-  registerSectionHelpers()
-
-  // Resolve padding: prefer explicit options, fallback to config values
-  const padding: SectionPadding = options.padding ?? {
-    top: typeof config.paddingTop === 'number' ? config.paddingTop : 0,
-    bottom: typeof config.paddingBottom === 'number' ? config.paddingBottom : 0,
-    left: typeof config.paddingLeft === 'number' ? config.paddingLeft : undefined,
-    right: typeof config.paddingRight === 'number' ? config.paddingRight : undefined
-  }
-
-  const context: SectionRenderContext = {
-    config,
-    padding,
-    pages: options.pages,
-    posts: options.posts,
-    ...config
-  }
-
-  const hasPadding =
-    padding.top > 0 ||
-    padding.bottom > 0 ||
-    (padding.left ?? 0) > 0 ||
-    (padding.right ?? 0) > 0
-  if (hasPadding) {
-    context.sectionStyle = buildPaddingStyle(padding)
-  }
-
-  return template(context)
-}
-
 /**
  * Preload a template into cache
  */
-export async function preloadTemplate(
+async function preloadTemplate(
   sectionId: string,
   templatePath: string,
   basePath = '/sections/'
@@ -589,7 +531,7 @@ export async function preloadTemplates(
 /**
  * Build CSS padding style string from padding config
  */
-export function buildPaddingStyle(padding: SectionPadding): string {
+function buildPaddingStyle(padding: SectionPadding): string {
   const styles: string[] = []
 
   if (typeof padding.top === 'number') {
@@ -606,121 +548,4 @@ export function buildPaddingStyle(padding: SectionPadding): string {
   }
 
   return styles.join('; ')
-}
-
-/**
- * Build CSS custom properties string from config
- */
-export function buildCssVariables(
-  config: Record<string, unknown>,
-  prefix = 'gd'
-): string {
-  const vars: string[] = []
-
-  for (const [key, value] of Object.entries(config)) {
-    if (value === undefined || value === null) continue
-
-    // Convert camelCase to kebab-case
-    const cssKey = key.replace(/([A-Z])/g, '-$1').toLowerCase()
-
-    if (typeof value === 'string') {
-      vars.push(`--${prefix}-${cssKey}: ${value}`)
-    } else if (typeof value === 'number') {
-      // Add px unit for numeric values that look like dimensions
-      const needsUnit = cssKey.includes('padding') ||
-        cssKey.includes('margin') ||
-        cssKey.includes('radius') ||
-        cssKey.includes('width') ||
-        cssKey.includes('height')
-      vars.push(`--${prefix}-${cssKey}: ${value}${needsUnit ? 'px' : ''}`)
-    } else if (typeof value === 'boolean') {
-      vars.push(`--${prefix}-${cssKey}: ${value ? '1' : '0'}`)
-    }
-  }
-
-  return vars.join('; ')
-}
-
-/**
- * Sanitize a hex color value
- */
-export function sanitizeHexColor(value: unknown, fallback: string): string {
-  if (typeof value !== 'string') {
-    return fallback
-  }
-
-  const normalized = value.trim().toLowerCase()
-
-  if (normalized === 'transparent') {
-    return normalized
-  }
-
-  if (/^#([0-9a-f]{3}|[0-9a-f]{6})$/.test(normalized)) {
-    // Expand shorthand (#abc -> #aabbcc)
-    if (normalized.length === 4) {
-      const r = normalized[1]
-      const g = normalized[2]
-      const b = normalized[3]
-      return `#${r}${r}${g}${g}${b}${b}`
-    }
-    return normalized
-  }
-
-  return fallback
-}
-
-/**
- * Sanitize a URL/href value
- */
-export function sanitizeHref(value: unknown): string {
-  if (typeof value !== 'string') {
-    return '#'
-  }
-
-  const trimmed = value.trim()
-  if (!trimmed) {
-    return '#'
-  }
-
-  // Block javascript: URLs
-  const lower = trimmed.toLowerCase()
-  if (lower.startsWith('javascript:')) {
-    return '#'
-  }
-
-  return trimmed
-}
-
-/**
- * Escape HTML entities
- */
-export function escapeHtml(value: unknown): string {
-  if (typeof value !== 'string') {
-    return ''
-  }
-
-  return value
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;')
-}
-
-// =============================================================================
-// Template Source Access
-// =============================================================================
-
-/**
- * Get the raw template source (for export/debugging)
- */
-export function getTemplateSource(sectionId: string): string | null {
-  return templateSourceCache.get(sectionId) ?? null
-}
-
-/**
- * Check if a template is cached
- */
-export function isTemplateCached(sectionId: string): boolean {
-  return templateCache.has(sectionId)
 }

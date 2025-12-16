@@ -6,7 +6,7 @@
  * - Common/shared setting presets
  * - Handlebars template rendering
  * - Section auto-discovery and registry
- * - Runtime config validation
+ * - Config validation (via schema boundaries)
  *
  * @example
  * // Importing schema types
@@ -17,9 +17,6 @@
  *
  * // Rendering a section
  * import { renderSection, getSectionDefinition } from '@defalt/sections/engine'
- *
- * // Validating config
- * import { validateSectionConfig, getDefaultConfig } from '@defalt/sections/engine'
  */
 
 // =============================================================================
@@ -105,29 +102,9 @@ export {
 export {
   // Core rendering
   renderSection,
-  renderSectionSync,
 
   // Template management
-  preloadTemplate,
   preloadTemplates,
-  clearTemplateCache,
-  invalidateTemplate,
-  isTemplateCached,
-  getTemplateSource,
-
-  // Helper registration
-  registerSectionHelpers,
-
-  // Style utilities
-  buildPaddingStyle,
-  buildCssVariables,
-  sanitizeHexColor,
-  sanitizeHref,
-  escapeHtml,
-
-  // Types
-  type SectionRenderContext,
-  type RenderSectionOptions
 } from './hbsRenderer.js'
 
 // =============================================================================
@@ -137,69 +114,14 @@ export {
 export {
   // Registry state
   sectionDefinitions,
-  sectionDefinitionMap,
 
   // Lookup functions
   getSectionDefinition,
-  hasSection,
-  getSectionIds,
-  getSectionsByCategory,
-  getPremiumSections,
-  getFreeSections,
   getSectionTemplatePath,
 
   // Instance building
   buildSectionInstance,
-
-  // Utilities
-  listSections,
-  debugLogSections,
-
-  // Types
-  type SectionModule,
-  type RegisteredSection
 } from './sectionRegistry.js'
-
-// =============================================================================
-// Validation
-// =============================================================================
-
-export {
-  // Full validation
-  validateSectionConfig,
-  parseConfigOrThrow,
-
-  // Partial validation
-  validatePartialConfig,
-
-  // Field validation
-  validateField,
-
-  // Batch validation
-  validateAllConfigs,
-
-  // Default config
-  getDefaultConfig,
-  mergeWithDefaults,
-
-  // Error formatting
-  formatZodError,
-  extractFieldErrors,
-  getFieldError,
-
-  // Schema access
-  getSectionSchema,
-  hasConfigSchema,
-
-  // Utilities
-  getNestedValue,
-
-  // Types
-  type ValidationResult,
-  type ValidationSuccess,
-  type ValidationError,
-  type FieldError
-} from './validation.js'
 
 // =============================================================================
 // Premium Config

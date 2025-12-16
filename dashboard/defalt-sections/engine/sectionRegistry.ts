@@ -163,7 +163,7 @@ export const sectionDefinitions: RegisteredSection[] = loadSectionDefinitions()
 /**
  * Map for O(1) lookup by section ID
  */
-export const sectionDefinitionMap = new Map<string, RegisteredSection>(
+const sectionDefinitionMap = new Map<string, RegisteredSection>(
   sectionDefinitions.map((def) => [def.id, def])
 )
 
@@ -179,38 +179,10 @@ export function getSectionDefinition(sectionId: string): RegisteredSection | und
 }
 
 /**
- * Check if a section exists
- */
-export function hasSection(sectionId: string): boolean {
-  return sectionDefinitionMap.has(sectionId)
-}
-
-/**
- * Get all section IDs
- */
-export function getSectionIds(): string[] {
-  return Array.from(sectionDefinitionMap.keys())
-}
-
-/**
  * Get sections by category
  */
 export function getSectionsByCategory(category: SectionCategory): RegisteredSection[] {
   return sectionDefinitions.filter((def) => def.category === category)
-}
-
-/**
- * Get all premium sections
- */
-export function getPremiumSections(): RegisteredSection[] {
-  return sectionDefinitions.filter((def) => def.premium)
-}
-
-/**
- * Get all free sections
- */
-export function getFreeSections(): RegisteredSection[] {
-  return sectionDefinitions.filter((def) => !def.premium)
 }
 
 /**
@@ -265,43 +237,6 @@ export function buildSectionInstance<T = unknown>(
 export function getSectionTemplatePath(sectionId: string): string | null {
   const definition = sectionDefinitionMap.get(sectionId)
   return definition?.templatePath ?? null
-}
-
-/**
- * List all available sections with metadata
- */
-export function listSections(): Array<{
-  id: string
-  label: string
-  description?: string
-  category: SectionCategory
-  premium: boolean
-}> {
-  return sectionDefinitions.map((def) => ({
-    id: def.id,
-    label: def.label,
-    description: def.description,
-    category: def.category,
-    premium: def.premium
-  }))
-}
-
-// =============================================================================
-// Debug Utilities
-// =============================================================================
-
-/**
- * Log all registered sections (for debugging)
- */
-export function debugLogSections(): void {
-  console.group('[sectionRegistry] Registered Sections')
-  for (const def of sectionDefinitions) {
-    console.log(`- ${def.id} (${def.label})${def.premium ? ' [PREMIUM]' : ''}`)
-    console.log(`  Template: ${def.templatePath ?? '(none)'}`)
-    console.log(`  Settings: ${def.settingsSchema?.length ?? 0} fields`)
-    console.log(`  Blocks: ${def.blocksSchema?.length ?? 0} types`)
-  }
-  console.groupEnd()
 }
 
 // Log on import in development
