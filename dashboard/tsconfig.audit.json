@@ -1,0 +1,12 @@
+{
+  "extends": "./tsconfig.app.json",
+  "include": [
+    "src",
+    "defalt-app",
+    "defalt-ui",
+    "defalt-sections",
+    "defalt-rendering",
+    "defalt-utils",
+    "server.ts"
+  ]
+}

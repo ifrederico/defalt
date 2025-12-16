@@ -1,6 +1,7 @@
 import { CSRF_ENDPOINT, CSRF_TOKEN_STORAGE_KEY } from './constants.js'
 import { logError } from '../logging/errorLogger.js'
 import { isAbortError } from '../helpers/errorHelpers.js'
+import { apiPath } from '../api/apiPath.js'
 
 const readStoredToken = (): string | null => {
   try {
@@ -32,7 +33,7 @@ export const getCachedCsrfToken = (): string | null => readStoredToken()
 
 export async function requestCsrfToken(signal?: AbortSignal): Promise<string | null> {
   try {
-    const response = await fetch(CSRF_ENDPOINT, {
+    const response = await fetch(apiPath(CSRF_ENDPOINT), {
       method: 'GET',
       credentials: 'same-origin',
       headers: {
