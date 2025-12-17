@@ -5,7 +5,7 @@
  * and exporting the customized theme during development.
  */
 
-import type { Plugin } from 'vite'
+import { loadEnv, type Plugin, type ViteDevServer } from 'vite'
 import type { IncomingMessage, ServerResponse } from 'http'
 import fs from 'fs/promises'
 import path from 'path'
@@ -16,19 +16,25 @@ import { fileURLToPath } from 'url'
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
-// Lazy-load dotenv to avoid issues when config file is bundled during build
+// Lazy-load env to avoid top-level execution during config bundling
 let envLoaded = false
-function ensureEnvLoaded() {
+let authSecret: string | undefined
+let ghostUrl: string | undefined
+let secureCookie = false
+
+function ensureEnvLoaded(server: ViteDevServer) {
   if (envLoaded) return
-  // Dynamic import avoids top-level execution in bundled config
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const dotenv = require('dotenv')
-  dotenv.config({ path: path.join(__dirname, '.env') })
+  const env = loadEnv(server.config.mode, __dirname, ['VITE_', 'AUTH_'])
+  authSecret = env.AUTH_SECRET?.trim() || undefined
+  ghostUrl = env.VITE_GHOST_URL?.trim() || undefined
+  secureCookie = server.config.mode === 'production'
   envLoaded = true
 }
 import {
   generateHomeTemplate,
   readThemePackageName,
+  applyPackageJsonCustomization,
+  applyCustomCssCustomization,
   applyNavigationCustomization,
   applyFooterCustomization,
   applyDefaultTemplateCustomization,
@@ -123,12 +129,11 @@ async function ensureDependenciesInstalled(themeDir: string) {
 }
 
 function ensureAuthorized(req: IncomingMessage, res: ServerResponse, routeName: string): boolean {
-  const expectedSecret = process.env.AUTH_SECRET?.trim()
-  if (!expectedSecret) {
+  if (!authSecret) {
     return true
   }
 
-  if (extractAuthToken(req) === expectedSecret) {
+  if (extractAuthToken(req) === authSecret) {
     return true
   }
 
@@ -152,8 +157,6 @@ const parseCookies = (cookieHeader: string | undefined): Record<string, string> 
   }, {})
 }
 
-const devSecureCookie = process.env.NODE_ENV === 'production'
-
 const serializeCsrfCookie = (token: string): string => {
   const parts = [
     `${CSRF_COOKIE_NAME}=${encodeURIComponent(token)}`,
@@ -162,7 +165,7 @@ const serializeCsrfCookie = (token: string): string => {
     'HttpOnly',
     'Max-Age=3600'
   ]
-  if (devSecureCookie) {
+  if (secureCookie) {
     parts.push('Secure')
   }
   return parts.join('; ')
@@ -288,7 +291,7 @@ export function themeConfigPlugin(): Plugin {
     name: 'theme-config-api',
     configureServer(server) {
       // Load .env on first request (deferred to avoid bundling issues)
-      ensureEnvLoaded()
+      ensureEnvLoaded(server)
 
       server.middlewares.use(async (req, res, next) => {
         try {
@@ -314,7 +317,6 @@ export function themeConfigPlugin(): Plugin {
 
           // Ghost Member proxy for development
           if (req.url === '/api/member' && req.method === 'GET') {
-            const ghostUrl = process.env.VITE_GHOST_URL
             if (!ghostUrl) {
               sendJson(res, 500, { error: 'Ghost URL not configured' })
               return
@@ -485,6 +487,17 @@ export function themeConfigPlugin(): Plugin {
               const pageConfig = document.pages.homepage
               const headerConfig = document.header.sections.header
               const footerConfig = document.footer
+
+              try {
+                await applyPackageJsonCustomization(workspaceThemeDir, document)
+              } catch (error) {
+                sendJson(res, 400, {
+                  error: 'Invalid packageJson',
+                  message: error instanceof Error ? error.message : String(error)
+                })
+                return
+              }
+              await applyCustomCssCustomization(workspaceThemeDir, document)
 
               const { content, partialFiles } = generateHomeTemplate(pageConfig, headerConfig, footerConfig)
               await fs.writeFile(path.join(workspaceThemeDir, 'home.hbs'), content, 'utf-8')

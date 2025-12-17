@@ -94,6 +94,8 @@ async function initDatabase() {
 import {
   generateHomeTemplate,
   readThemePackageName,
+  applyPackageJsonCustomization,
+  applyCustomCssCustomization,
   applyNavigationCustomization,
   applyFooterCustomization,
   applyDefaultTemplateCustomization,
@@ -841,6 +843,16 @@ app.post('/api/theme/export', async (req, res) => {
         await fs.writeFile(partialPath, partial.content, 'utf-8')
       }
     }
+
+    try {
+      await applyPackageJsonCustomization(workspaceThemeDir, document)
+    } catch (error) {
+      return res.status(400).json({
+        error: 'Invalid packageJson',
+        message: error instanceof Error ? error.message : String(error)
+      })
+    }
+    await applyCustomCssCustomization(workspaceThemeDir, document)
 
     const themeConfigForAssets = {
       sections: {

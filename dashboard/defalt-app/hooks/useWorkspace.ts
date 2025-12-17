@@ -676,7 +676,7 @@ export function useWorkspace({
 
     const document = loadPersistedThemeDocument()
     const headerSettings = extractHeaderSettings(headerConfig, document)
-    const mainSettings = extractMainSettings(pageConfig)
+    const mainSettings = extractMainSettings(pageConfig, document)
 
     const snapshot: WorkspaceSnapshot = {
       headerSettings,
@@ -721,7 +721,8 @@ export function useWorkspace({
       header: headerConfig,
       footer: footerConfig,
       page: pageConfig,
-      packageJson: workspaceState.packageJson
+      packageJson: workspaceState.packageJson,
+      customCSS: workspaceState.mainSettings.customCSS
     }, workspaceState.headerSettings.accentColor)
 
     setWorkspaceSnapshot(workspaceState)
@@ -1092,7 +1093,7 @@ export function useWorkspace({
     const pageConfig = normalized.pages[pageKey] ?? normalized.pages.homepage
     const headerConfig = normalized.header.sections.header
     const headerSettings = extractHeaderSettings(headerConfig, normalized)
-    const mainSettings = extractMainSettings(pageConfig)
+    const mainSettings = extractMainSettings(pageConfig, normalized)
     const hasDocumentPackageJson = typeof normalized.packageJson === 'string' && normalized.packageJson.trim().length > 0
     const packageJsonValue = hasDocumentPackageJson
       ? normalized.packageJson as string

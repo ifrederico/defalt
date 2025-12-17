@@ -127,6 +127,7 @@ export interface ThemeDocument {
   version: number
   accentColor?: string
   packageJson?: string
+  customCSS?: string
   header: {
     sections: Record<string, SectionConfig>
   }
@@ -159,6 +160,7 @@ export interface EditorState {
   footer: FooterConfig
   page: PageConfig
   packageJson?: string
+  customCSS?: string
 }
 
 export const CSS_DEFAULT_PADDING: Record<string, number | SectionPadding> = {
@@ -783,6 +785,23 @@ export const normalizeThemeDocument = (candidate: unknown): ThemeDocument => {
   const version = typeof raw.version === 'number' ? raw.version : THEME_DOCUMENT_VERSION
   const accentColor = typeof raw.accentColor === 'string' ? raw.accentColor : DEFAULT_HEADER_SETTINGS.accentColor
   const packageJson = typeof raw.packageJson === 'string' ? raw.packageJson : undefined
+  const customCSS = (() => {
+    if (typeof raw.customCSS === 'string') {
+      return raw.customCSS
+    }
+
+    // Legacy: customCSS previously lived under pages.*.sections.main.settings.customCSS (now removed by normalizePageConfig).
+    const rawPages = raw.pages && typeof raw.pages === 'object' ? raw.pages : {}
+    const pageKeys = Object.values(PAGE_KEY_MAP) as DocumentPageKey[]
+    for (const pageKey of pageKeys) {
+      const page = (rawPages as Record<string, PageConfig | undefined>)[pageKey]
+      const legacyValue = (page?.sections?.main?.settings as { customCSS?: unknown } | undefined)?.customCSS
+      if (typeof legacyValue === 'string' && legacyValue.trim().length > 0) {
+        return legacyValue
+      }
+    }
+    return undefined
+  })()
 
   const headerSection = normalizeHeaderSection(raw.header?.sections?.header)
   const footer = normalizeFooterConfig(raw.footer)
@@ -801,6 +820,7 @@ export const normalizeThemeDocument = (candidate: unknown): ThemeDocument => {
     version,
     accentColor,
     packageJson,
+    customCSS,
     header: {
       sections: {
         header: headerSection
@@ -1045,7 +1065,8 @@ export const loadEditorState = (page: string): EditorState => {
     header: clone(header),
     footer: clone(footer),
     page: clone(pageConfig),
-    packageJson: document.packageJson
+    packageJson: document.packageJson,
+    customCSS: document.customCSS
   }
 }
 
@@ -1068,6 +1089,10 @@ export const persistEditorState = (page: string, state: EditorState, accentColor
 
   if (typeof state.packageJson === 'string') {
     document.packageJson = state.packageJson
+  }
+
+  if (typeof state.customCSS === 'string') {
+    document.customCSS = state.customCSS
   }
 
   return persistThemeDocument(document)
@@ -1114,14 +1139,17 @@ export const extractHeaderSettings = (header: SectionConfig, document?: ThemeDoc
   }
 }
 
-export const extractMainSettings = (page: PageConfig): MainSettingsSnapshot => {
+export const extractMainSettings = (page: PageConfig, document?: ThemeDocument): MainSettingsSnapshot => {
   const mainSection = page.sections.main
   const settings = (mainSection?.settings ?? {}) as Partial<SectionSettings>
+  const resolvedCustomCSS = typeof document?.customCSS === 'string'
+    ? document.customCSS
+    : (typeof settings.customCSS === 'string' ? settings.customCSS : DEFAULT_MAIN_SETTINGS.customCSS)
   return {
     pageLayout: (settings.pageLayout as PageLayoutSetting) ?? DEFAULT_MAIN_SETTINGS.pageLayout,
     borderThickness: typeof settings.borderThickness === 'number' ? settings.borderThickness : DEFAULT_MAIN_SETTINGS.borderThickness,
     cornerRadius: typeof settings.cornerRadius === 'number' ? settings.cornerRadius : DEFAULT_MAIN_SETTINGS.cornerRadius,
-    customCSS: typeof settings.customCSS === 'string' ? settings.customCSS : DEFAULT_MAIN_SETTINGS.customCSS
+    customCSS: resolvedCustomCSS
   }
 }
 

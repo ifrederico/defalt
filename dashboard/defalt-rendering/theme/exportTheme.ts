@@ -10,6 +10,7 @@ import {
   CSS_DEFAULT_PADDING,
   CSS_DEFAULT_MARGIN,
 } from '../../defalt-utils/config/themeConfig.js'
+import { sanitizeCustomCss } from '../../defalt-utils/security/sanitizers.js'
 import type {
   PageConfig,
   FooterConfig,
@@ -50,6 +51,10 @@ const SECTION_TEMPLATE_PATHS: Record<string, string> = {
 
 function getSectionTemplatePath(sectionId: string): string | null {
   return SECTION_TEMPLATE_PATHS[sectionId] ?? null
+}
+
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 }
 
 /**
@@ -439,6 +444,62 @@ export async function readThemePackageName(themeDir: string) {
     return pkg.name as string
   } catch {
     return 'defalt-theme'
+  }
+}
+
+export async function applyPackageJsonCustomization(themeDir: string, document: ThemeDocument) {
+  if (typeof document.packageJson !== 'string') {
+    return
+  }
+  const trimmed = document.packageJson.trim()
+  if (!trimmed) {
+    return
+  }
+
+  try {
+    const parsed = JSON.parse(trimmed) as unknown
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+      throw new Error('packageJson must be a JSON object')
+    }
+    const name = (parsed as { name?: unknown }).name
+    if (typeof name !== 'string' || name.trim().length === 0) {
+      throw new Error('packageJson missing required "name" field')
+    }
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error)
+    throw new Error(`Invalid packageJson (must be valid JSON): ${message}`)
+  }
+
+  await fs.writeFile(path.join(themeDir, 'package.json'), `${trimmed}\n`, 'utf-8')
+}
+
+export async function applyCustomCssCustomization(themeDir: string, document: ThemeDocument) {
+  const rawCustomCss = typeof document.customCSS === 'string' ? document.customCSS : ''
+  const sanitized = sanitizeCustomCss(rawCustomCss)
+
+  const utilCssPath = path.join(themeDir, 'assets', 'built', 'util.css')
+
+  let current: string
+  try {
+    current = await fs.readFile(utilCssPath, 'utf-8')
+  } catch {
+    return
+  }
+
+  const markerStart = '/* defalt-custom-css-start */'
+  const markerEnd = '/* defalt-custom-css-end */'
+  const markerRegex = new RegExp(`${escapeRegExp(markerStart)}[\\s\\S]*?${escapeRegExp(markerEnd)}\\s*`, 'g')
+
+  let next = current.replace(markerRegex, '').trimEnd()
+
+  if (sanitized.trim().length > 0) {
+    next += `\n\n${markerStart}\n${sanitized.trimEnd()}\n${markerEnd}\n`
+  } else if (!next.endsWith('\n')) {
+    next += '\n'
+  }
+
+  if (next !== current) {
+    await fs.writeFile(utilCssPath, next, 'utf-8')
   }
 }
 
