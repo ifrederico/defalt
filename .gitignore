@@ -33,3 +33,6 @@ Thumbs.db
 
 # Theme export workspace (temp files)
 .theme-export-workspace/
+
+# Local study repos (do not commit)
+dashboard/puck-main/
