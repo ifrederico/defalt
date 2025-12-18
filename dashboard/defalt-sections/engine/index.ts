@@ -29,9 +29,6 @@ export {
 
   // Individual setting schemas
   textSettingSchema,
-  textareaSettingSchema,
-  richtextSettingSchema,
-  urlSettingSchema,
   colorSettingSchema,
   checkboxSettingSchema,
   rangeSettingSchema,
@@ -47,14 +44,6 @@ export {
 
   // Section padding schema
   sectionPaddingSchema,
-
-  // Helper functions for creating settings
-  createTextSetting,
-  createColorSetting,
-  createRangeSetting,
-  createSelectSetting,
-  createCheckboxSetting,
-  createHeaderSetting,
 
   // Types
   type SettingSchema,

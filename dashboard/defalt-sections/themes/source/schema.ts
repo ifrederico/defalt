@@ -157,8 +157,3 @@ export const sourceThemeSettingsGroups: ThemeSettingsGroup[] = [
 /**
  * Flat list of all settings (for compatibility)
  */
-export const sourceThemeSettingsSchema: SettingSchema[] = [
-  ...appearanceSettings,
-  ...postSettings,
-  ...spacingSettings
-]

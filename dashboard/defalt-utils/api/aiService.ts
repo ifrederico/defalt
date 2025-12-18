@@ -325,34 +325,3 @@ export async function generateSectionStream(
     callbacks.onError?.(err instanceof Error ? err.message : 'Unknown error')
   }
 }
-
-/**
- * Validate a generated section's Handlebars template
- */
-export async function validateSection(
-  template: string
-): Promise<{ valid: boolean; errors?: string[] }> {
-  if (!AI_SERVICE_URL) {
-    return { valid: false, errors: ['AI service not configured'] }
-  }
-
-  try {
-    const response = await fetch(`${AI_SERVICE_URL}/api/validate-section`, {
-      method: 'POST',
-      headers: getHeaders(),
-      credentials: 'include',
-      body: JSON.stringify({ template })
-    })
-
-    if (!response.ok) {
-      return { valid: false, errors: ['Validation request failed'] }
-    }
-
-    return await response.json()
-  } catch (err) {
-    return {
-      valid: false,
-      errors: [err instanceof Error ? err.message : 'Unknown error']
-    }
-  }
-}

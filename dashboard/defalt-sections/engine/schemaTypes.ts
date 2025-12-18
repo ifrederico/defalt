@@ -53,7 +53,7 @@ export const textSettingSchema = z.object({
 /**
  * Textarea setting (multi-line text)
  */
-export const textareaSettingSchema = z.object({
+const textareaSettingSchema = z.object({
   type: z.literal('textarea'),
   id: z.string(),
   label: z.string(),
@@ -65,7 +65,7 @@ export const textareaSettingSchema = z.object({
 /**
  * Rich text editor setting
  */
-export const richtextSettingSchema = z.object({
+const richtextSettingSchema = z.object({
   type: z.literal('richtext'),
   id: z.string(),
   label: z.string(),
@@ -76,7 +76,7 @@ export const richtextSettingSchema = z.object({
 /**
  * URL input setting
  */
-export const urlSettingSchema = z.object({
+const urlSettingSchema = z.object({
   type: z.literal('url'),
   id: z.string(),
   label: z.string(),
@@ -174,7 +174,7 @@ export const radioSettingSchema = z.object({
 /**
  * Image picker setting (with drag-drop upload)
  */
-export const imagePickerSettingSchema = z.object({
+const imagePickerSettingSchema = z.object({
   type: z.literal('image_picker'),
   id: z.string(),
   label: z.string(),
@@ -352,62 +352,4 @@ export interface SectionInstance<TConfig = unknown> {
   label: string
   category: SectionCategory
   config: TConfig
-}
-
-// =============================================================================
-// Helper Functions
-// =============================================================================
-
-/**
- * Create a text setting with type safety
- */
-export function createTextSetting(
-  config: Omit<z.infer<typeof textSettingSchema>, 'type'>
-): z.infer<typeof textSettingSchema> {
-  return { type: 'text', ...config }
-}
-
-/**
- * Create a color setting with type safety
- */
-export function createColorSetting(
-  config: Omit<z.infer<typeof colorSettingSchema>, 'type'>
-): z.infer<typeof colorSettingSchema> {
-  return { type: 'color', ...config }
-}
-
-/**
- * Create a range setting with type safety
- */
-export function createRangeSetting(
-  config: Omit<z.infer<typeof rangeSettingSchema>, 'type'>
-): z.infer<typeof rangeSettingSchema> {
-  return { type: 'range', ...config }
-}
-
-/**
- * Create a select setting with type safety
- */
-export function createSelectSetting(
-  config: Omit<z.infer<typeof selectSettingSchema>, 'type'>
-): z.infer<typeof selectSettingSchema> {
-  return { type: 'select', ...config }
-}
-
-/**
- * Create a checkbox setting with type safety
- */
-export function createCheckboxSetting(
-  config: Omit<z.infer<typeof checkboxSettingSchema>, 'type'>
-): z.infer<typeof checkboxSettingSchema> {
-  return { type: 'checkbox', ...config }
-}
-
-/**
- * Create a header setting with type safety
- */
-export function createHeaderSetting(
-  config: Omit<z.infer<typeof headerSettingSchema>, 'type'>
-): z.infer<typeof headerSettingSchema> {
-  return { type: 'header', ...config }
 }

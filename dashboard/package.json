@@ -32,7 +32,6 @@
     "@radix-ui/react-slider": "^1.2.0",
     "@radix-ui/react-switch": "^1.2.6",
     "@radix-ui/react-toggle-group": "^1.0.7",
-    "@tryghost/content-api": "^1.12.2",
     "@uiw/react-codemirror": "^4.25.2",
     "archiver": "^7.0.1",
     "css-tree": "^3.1.0",
@@ -48,7 +47,6 @@
     "sonner": "^1.5.0",
     "tailwind-merge": "^2.5.2",
     "tsx": "^4.19.0",
-    "use-debounce": "^10.0.6",
     "zod": "^4.1.12",
     "zustand": "^5.0.9"
   },
