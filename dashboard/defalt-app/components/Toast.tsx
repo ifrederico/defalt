@@ -1,7 +1,7 @@
-import { useCallback, useEffect, type ReactNode } from 'react'
+import { useCallback, type ReactNode } from 'react'
 import { Toaster, toast } from 'sonner'
 import 'sonner/dist/styles.css'
-import { getPendingToast, clearPendingToast, type ToastType } from './toastUtils'
+import type { ToastType } from '../types/toast'
 import { ToastContext } from './ToastContext'
 
 export function ToastProvider({ children }: { children: ReactNode }) {
@@ -17,20 +17,6 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     }
     toast(title, options)
   }, [])
-
-  // Check for pending toasts after page reload
-  useEffect(() => {
-    const pendingToast = getPendingToast()
-    if (pendingToast) {
-      clearPendingToast()
-      // Small delay to ensure page is fully loaded
-      const timeoutId = setTimeout(() => {
-        showToast(pendingToast.title, pendingToast.description, pendingToast.type)
-      }, 100)
-      return () => clearTimeout(timeoutId)
-    }
-    return undefined
-  }, [showToast])
 
   return (
     <ToastContext.Provider value={{ showToast }}>

@@ -1,10 +1,10 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { CheckCircle, XCircle, Loader2 } from 'lucide-react'
-import { toast } from 'sonner'
 import { AppButton, TextInput } from '@defalt/ui'
 import { useAuth } from '../hooks/useAuth'
 import { fetchSettings, saveSettings, clearSettings } from '@defalt/utils/api/settingsSync'
 import { STORAGE_KEYS, EVENTS } from '@defalt/utils/constants'
+import { useToast } from './ToastContext'
 const CONNECTION_TIMEOUT_MS = 10000
 
 type ConnectionStatus = 'idle' | 'saving' | 'success' | 'error'
@@ -56,6 +56,7 @@ function loadFromLocalStorage(): GhostCredentials {
 
 export function GhostConnectionSettings() {
   const { user } = useAuth()
+  const { showToast } = useToast()
   const [url, setUrl] = useState('')
   const [contentKey, setContentKey] = useState('')
   const [status, setStatus] = useState<ConnectionStatus>('idle')
@@ -148,7 +149,7 @@ export function GhostConnectionSettings() {
       // Save to cloud if authenticated
       if (user) {
         saveSettings(normalizedUrl, contentKey).catch(() => {
-          toast.error('Cloud sync failed', { description: 'Settings saved locally only.' })
+          showToast('Cloud sync failed', 'Settings saved locally only.', 'error')
         })
       }
 
@@ -168,7 +169,7 @@ export function GhostConnectionSettings() {
       clearTimeout(timeoutId)
       setIsSaving(false)
     }
-  }, [url, contentKey, user])
+  }, [url, contentKey, user, showToast])
 
   const handleClear = useCallback(() => {
     clearLocalStorage()
@@ -176,7 +177,7 @@ export function GhostConnectionSettings() {
     // Clear from cloud if authenticated
     if (user) {
       clearSettings().catch(() => {
-        toast.error('Cloud sync failed', { description: 'Settings cleared locally only.' })
+        showToast('Cloud sync failed', 'Settings cleared locally only.', 'error')
       })
     }
 
@@ -188,7 +189,7 @@ export function GhostConnectionSettings() {
     // Notify preview to switch back to placeholder data
     setDataSourcePreference('placeholder')
     window.dispatchEvent(new CustomEvent(EVENTS.DATA_SOURCE_CHANGE, { detail: { source: 'placeholder' } }))
-  }, [user])
+  }, [user, showToast])
 
   const hasCredentials = url.length > 0 || contentKey.length > 0
 

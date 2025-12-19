@@ -1,4 +1,4 @@
-# Implementations (2025-12-18) — Puck patterns → Defalt refactor plan
+# Roadmap (2025-12-18) — Puck patterns → Defalt refactor plan
 
 Purpose: implementer-ready backlog (file list + callsites + acceptance checks) to copy the best structural patterns from Puck into Defalt.
 
@@ -8,14 +8,18 @@ Reference: Puck Editor (puckeditor/puck). Relevant upstream paths:
 - `packages/core/lib/resolve-component-data.ts` + `types/Config.tsx` (`resolveData` in component config)
 - `packages/core/store/slices/*` (slice-based state)
 
-## A) Decisions required (blockers)
+## A) Decisions (locked)
 
 1) **Multiple hero instances**
-- Decide canonical tag scheme (`#hero`, `#hero-2`, …?) and whether to normalize legacy values on load.
+- Canonical ids + tags: `hero`, `hero-2`, … with `#hero`, `#hero-2`, …
+- Normalize on load; no runtime legacy support.
 
 2) **Announcement block `tag` + `link`**
-- Decide whether UI exposes them.
-- If auto-managed: define the rule (how tag/link are generated/stored).
+- UI exposes both.
+- Auto-tag defaults per block; user can edit; collisions are blocked.
+
+## new feature
+- Design palette panel (railbar icon) for global styles: colors, fonts, dark mode, spacing, radii; store in ThemeDocument; apply via utils.css overrides (after `screen.css`); keep `package.json` theme settings unchanged.
 
 ## B) Phase 1 — Add `ThemeDocument` migration pipeline (pure transforms)
 
@@ -27,8 +31,8 @@ Reference: Puck Editor (puckeditor/puck). Relevant upstream paths:
 - `dashboard/defalt-utils/config/migrations/migrations.ts`
   - exports ordered `THEME_DOCUMENT_MIGRATIONS: ThemeDocumentMigration[]`
 - `dashboard/defalt-utils/config/migrations/001-normalize-ghostCards-tags.ts`
-- `dashboard/defalt-utils/config/migrations/002-normalize-hero-tags.ts` (blocked by decision A1)
-- `dashboard/defalt-utils/config/migrations/003-normalize-announcement-blocks.ts` (blocked by decision A2)
+- `dashboard/defalt-utils/config/migrations/002-normalize-hero-tags.ts`
+- `dashboard/defalt-utils/config/migrations/003-normalize-announcement-blocks.ts`
 
 ### B2) Integrate at the only correct boundaries
 Modify:
@@ -98,8 +102,8 @@ Edit:
 Add pure tests for `sectionDerived` (no DOM):
 - `dashboard/defalt-rendering/derived/sectionDerived.test.ts`
   - hero fallback tag derivation for ids:
-    - `hero-defalt` -> `#hero`
-    - `hero-defalt-2` -> `#hero-2`
+    - `hero` -> `#hero`
+    - `hero-2` -> `#hero-2`
   - ghostCards fallback tags from ids:
     - `ghostCards` (or expected id format) -> `#cards`
     - `ghostCards-2` -> `#cards-2`

@@ -14,11 +14,12 @@ import {
   type AISettings
 } from '@defalt/utils/api/aiService'
 import { logError } from '@defalt/utils/logging/errorLogger'
+import type { ToastType } from '../types/toast'
 
 export type AIModel = 'haiku' | 'sonnet' | 'opus'
 
 export type UseAIGenerateParams = {
-  showToast?: (title: string, description?: string, type?: 'success' | 'error' | 'info') => void
+  showToast?: (title: string, description?: string, type?: ToastType) => void
 }
 
 export type GenerationState = {

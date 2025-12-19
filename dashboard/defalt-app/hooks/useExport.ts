@@ -8,6 +8,7 @@ import { safeParseWorkspaceBackup } from '@defalt/utils/config/themeValidation'
 import { logError, logWarning } from '@defalt/utils/logging/errorLogger'
 import { apiPath } from '@defalt/utils/api/apiPath'
 import { trackEvent } from '@defalt/utils/analytics/umami'
+import type { ToastType } from '../types/toast'
 
 const BACKUP_VERSION = 2 as const
 const EXPORT_TIMEOUT_MS = 60000
@@ -17,8 +18,6 @@ type NormalizedWorkspaceBackup = {
   exportedAt: string
   document: ThemeDocument
 }
-
-type ToastType = 'success' | 'error' | 'info'
 
 type UseExportParams = {
   hasUnsavedChanges: boolean

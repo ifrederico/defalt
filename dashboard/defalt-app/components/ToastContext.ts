@@ -1,5 +1,5 @@
 import { createContext, useContext } from 'react'
-import type { ToastType } from './toastUtils'
+import type { ToastType } from '../types/toast'
 
 export interface ToastContextValue {
   showToast: (title: string, description?: string, type?: ToastType) => void

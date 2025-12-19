@@ -6,21 +6,12 @@ import type { ReactNode } from 'react'
 import { ToastProvider } from './Toast'
 import { useToast } from './ToastContext'
 
-const {
-  toastSpy,
-  successSpy,
-  errorSpy,
-  mockToaster,
-  getPendingToastMock,
-  clearPendingToastMock
-} = vi.hoisted(() => {
+const { toastSpy, successSpy, errorSpy, mockToaster } = vi.hoisted(() => {
   return {
     toastSpy: vi.fn(),
     successSpy: vi.fn(),
     errorSpy: vi.fn(),
-    mockToaster: ({ children }: { children?: ReactNode }) => <div data-testid="toaster">{children}</div>,
-    getPendingToastMock: vi.fn(),
-    clearPendingToastMock: vi.fn()
+    mockToaster: ({ children }: { children?: ReactNode }) => <div data-testid="toaster">{children}</div>
   }
 })
 
@@ -29,29 +20,16 @@ vi.mock('sonner', () => ({
   toast: Object.assign(toastSpy, { success: successSpy, error: errorSpy })
 }))
 
-vi.mock('./toastUtils', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('./toastUtils')>()
-  return {
-    ...actual,
-    getPendingToast: () => getPendingToastMock(),
-    clearPendingToast: () => clearPendingToastMock()
-  }
-})
-
 const Wrapper = ({ children }: { children: ReactNode }) => <ToastProvider>{children}</ToastProvider>
 
 describe('Toast', () => {
   beforeEach(() => {
-    vi.useFakeTimers()
     toastSpy.mockClear()
     successSpy.mockClear()
     errorSpy.mockClear()
-    getPendingToastMock.mockReset()
-    clearPendingToastMock.mockReset()
   })
 
   afterEach(() => {
-    vi.useRealTimers()
     vi.restoreAllMocks()
   })
 
@@ -89,17 +67,4 @@ describe('Toast', () => {
     expect(toastSpy).not.toHaveBeenCalled()
   })
 
-  it('shows pending toast on mount', () => {
-    getPendingToastMock.mockReturnValue({ title: 'Welcome back', description: 'Restored session', type: 'success' })
-    const { unmount } = renderHook(() => useToast(), { wrapper: Wrapper })
-
-    act(() => {
-      vi.runAllTimers()
-    })
-
-    expect(clearPendingToastMock).toHaveBeenCalledTimes(1)
-    expect(successSpy).toHaveBeenCalledWith('Welcome back', { description: 'Restored session' })
-
-    unmount()
-  })
 })

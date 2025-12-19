@@ -10,8 +10,6 @@ export const STORAGE_KEYS = {
   AI_SECTIONS: 'defalt-ai-sections',
   // Workspace state
   CLOUD_LOADED: 'ghost-theme-editor:cloud-loaded',
-  LOGIN_TOAST_SHOWN: 'ghost-theme-editor:login-toast-shown',
-  PENDING_TOAST: 'ghost-theme-editor:pending-toast',
   CSRF_TOKEN: 'ghost-theme-editor:csrf-token'
 }
 
