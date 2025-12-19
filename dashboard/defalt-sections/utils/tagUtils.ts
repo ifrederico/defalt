@@ -87,3 +87,14 @@ export function parseGhostCardTagSuffix(tagValue: unknown): number {
   const numeric = Number.parseInt(legacyMatch[1], 10)
   return Number.isFinite(numeric) ? numeric : 1
 }
+
+export function normalizeGhostCardsTag(tagValue: unknown): string {
+  const suffix = parseGhostCardTagSuffix(tagValue)
+  if (suffix <= 0) {
+    return ''
+  }
+  if (suffix <= 1) {
+    return '#cards'
+  }
+  return `#cards-${suffix}`
+}

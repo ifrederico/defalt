@@ -13,7 +13,7 @@ import {
   type SectionInstance,
   type SectionConfigSchema
 } from '@defalt/sections/engine'
-import { formatInternalTag, parseGhostCardIdSuffix, parseGhostCardTagSuffix } from '@defalt/sections/utils/tagUtils'
+import { formatInternalTag, normalizeGhostCardsTag, parseGhostCardIdSuffix, parseGhostCardTagSuffix } from '@defalt/sections/utils/tagUtils'
 import { SECTION_ICON_MAP, GhostIcon } from '@defalt/utils/config/sectionIcons'
 import { sanitizeNumericValue, resolveNumericValue } from '@defalt/utils/helpers/numericHelpers'
 import { deepClone } from '@defalt/utils/helpers/deepClone'
@@ -734,11 +734,25 @@ export function useSectionManager({
         const next: Record<string, unknown> = { ...record }
 
         if ('tag' in next) {
-          const formatted = formatInternalTag(next.tag)
-          if (formatted) {
-            next.tag = formatted
+          if (current.definitionId === 'ghostCards') {
+            const normalized = normalizeGhostCardsTag(next.tag)
+            if (normalized) {
+              next.tag = normalized
+            } else {
+              const formatted = formatInternalTag(next.tag)
+              if (formatted) {
+                next.tag = formatted
+              } else {
+                delete next.tag
+              }
+            }
           } else {
-            delete next.tag
+            const formatted = formatInternalTag(next.tag)
+            if (formatted) {
+              next.tag = formatted
+            } else {
+              delete next.tag
+            }
           }
         }
 

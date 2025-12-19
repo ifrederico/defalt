@@ -10,7 +10,7 @@ import {
   CSS_DEFAULT_PADDING,
   CSS_DEFAULT_MARGIN,
 } from '../../defalt-utils/config/themeConfig.js'
-import { sanitizeCustomCss } from '../../defalt-utils/security/sanitizers.js'
+import { sanitizeCustomCss, sanitizeHexColor } from '../../defalt-utils/security/sanitizers.js'
 import type {
   PageConfig,
   FooterConfig,
@@ -32,7 +32,16 @@ import type { GhostGridSectionConfig } from '../../defalt-sections/sections/ghos
 import { imageWithTextConfigSchema, type ImageWithTextSectionConfig } from '../../defalt-sections/sections/image-with-text/schema.js'
 import { ghostCardsConfigSchema } from '../../defalt-sections/sections/ghostCards/schema.js'
 import { ghostGridConfigSchema } from '../../defalt-sections/sections/ghostGrid/schema.js'
-import { formatInternalTag, toApiTagSlug, parseGhostCardIdSuffix } from '../../defalt-sections/utils/tagUtils.js'
+import { formatInternalTag } from '../../defalt-sections/utils/tagUtils.js'
+import {
+  resolveContainerPaddingX,
+  resolveGhostCardsFallbackTag,
+  resolveHeroFallbackTag,
+  resolveImageAspectRatio,
+  resolveImageColumns,
+  resolveImageWithTextFallbackTag,
+  toTagFilter
+} from '../derived/sectionDerived.js'
 
 // Known section types that can be exported
 const KNOWN_SECTION_TYPES = new Set(['hero', 'ghostCards', 'ghostGrid', 'image-with-text'])
@@ -117,26 +126,6 @@ function escapeHandlebarsString(value: string): string {
     .replace(/}/g, '&#125;')
 }
 
-function sanitizeHexColor(value: string | null | undefined, fallback: string): string {
-  if (typeof value !== 'string') {
-    return fallback
-  }
-  const normalized = value.trim().toLowerCase()
-  if (normalized === 'transparent') {
-    return normalized
-  }
-  if (/^#([0-9a-f]{3}|[0-9a-f]{6})$/.test(normalized)) {
-    if (normalized.length === 4) {
-      const r = normalized[1]
-      const g = normalized[2]
-      const b = normalized[3]
-      return `#${r}${r}${g}${g}${b}${b}`
-    }
-    return normalized
-  }
-  return fallback
-}
-
 function normalizePaddingValue(value: unknown, fallback: number): number {
   if (typeof value === 'number' && Number.isFinite(value)) {
     return Math.max(0, Math.round(value))
@@ -191,47 +180,6 @@ function buildSectionStyle(padding: PaddingConfig): string {
     styles.push(`padding-right: ${padding.right}px`)
   }
   return styles.join('; ')
-}
-
-function resolveContainerPaddingX(contentWidth: string): string {
-  return contentWidth === 'none' ? '0px' : 'var(--container-gap, 24px)'
-}
-
-function resolveImageColumns(imageWidth: string): { imageColumn: string; textColumn: string } {
-  if (imageWidth === '2/3') return { imageColumn: '2fr', textColumn: '1fr' }
-  if (imageWidth === '3/4') return { imageColumn: '3fr', textColumn: '1fr' }
-  return { imageColumn: '1fr', textColumn: '1fr' }
-}
-
-function resolveImageAspectRatio(imageAspect: string): string {
-  if (imageAspect === 'square') return '1 / 1'
-  if (imageAspect === 'portrait') return '3 / 4'
-  if (imageAspect === 'wide') return '16 / 9'
-  if (imageAspect === 'tall') return '9 / 16'
-  if (imageAspect === 'landscape') return '4 / 3'
-  return ''
-}
-
-function toTagFilter(internalTag: string): string {
-  return `tag:${toApiTagSlug(internalTag)}`
-}
-
-function resolveHeroFallbackTag(sectionKey: string): string {
-  const match = sectionKey.trim().toLowerCase().match(/^(?:hero-defalt|header-defalt|hero)(?:-(\d+))?$/)
-  const suffix = match?.[1]
-  return suffix ? `#hero-${suffix}` : '#hero'
-}
-
-function resolveImageWithTextFallbackTag(sectionKey: string): string {
-  const match = sectionKey.trim().toLowerCase().match(/^image-with-text(?:-(\d+))?$/)
-  const suffix = match?.[1]
-  return suffix ? `#image-text-${suffix}` : '#image-text'
-}
-
-function resolveGhostCardsFallbackTag(sectionKey: string): string {
-  const suffix = parseGhostCardIdSuffix(sectionKey)
-  if (suffix <= 1) return '#cards'
-  return `#cards-${suffix}`
 }
 
 export function generateHomeTemplate(

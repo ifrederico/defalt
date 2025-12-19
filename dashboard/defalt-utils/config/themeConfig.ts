@@ -3,7 +3,9 @@ import { logError } from '../logging/errorLogger.js'
 import { WORKSPACE_STORAGE_PREFIX } from '../constants.js'
 import { apiPath } from '../api/apiPath.js'
 import { getCachedCsrfToken, requestCsrfToken } from '../security/csrf.js'
+import { sanitizeHexColor } from '../security/sanitizers.js'
 import { deepClone } from '../helpers/deepClone.js'
+import { runThemeDocumentMigrations } from './migrations/index.js'
 
 export type PageType = 'home' | 'about' | 'post' | 'page'
 
@@ -374,26 +376,6 @@ const clampNumber = (value: number, min: number, max: number): number => {
   return Math.min(Math.max(value, min), max)
 }
 
-const sanitizeHexColorValue = (value: unknown, fallback: string): string => {
-  if (typeof value !== 'string') {
-    return fallback
-  }
-  const normalized = value.trim().toLowerCase()
-  if (normalized === 'transparent') {
-    return normalized
-  }
-  if (/^#([0-9a-f]{3}|[0-9a-f]{6})$/.test(normalized)) {
-    if (normalized.length === 4) {
-      const r = normalized[1]
-      const g = normalized[2]
-      const b = normalized[3]
-      return `#${r}${r}${g}${g}${b}${b}`
-    }
-    return normalized
-  }
-  return fallback
-}
-
 export const normalizeAnnouncementBarConfig = (value: unknown, fallback: AnnouncementBarConfig): AnnouncementBarConfig => {
   if (!value || typeof value !== 'object') {
     return { ...fallback }
@@ -407,10 +389,10 @@ export const normalizeAnnouncementBarConfig = (value: unknown, fallback: Announc
 
   return {
     width,
-    backgroundColor: sanitizeHexColorValue(raw.backgroundColor, fallback.backgroundColor),
-    textColor: sanitizeHexColorValue(raw.textColor, fallback.textColor),
+    backgroundColor: sanitizeHexColor(typeof raw.backgroundColor === 'string' ? raw.backgroundColor : null, fallback.backgroundColor),
+    textColor: sanitizeHexColor(typeof raw.textColor === 'string' ? raw.textColor : null, fallback.textColor),
     dividerThickness,
-    dividerColor: sanitizeHexColorValue(raw.dividerColor, fallback.dividerColor),
+    dividerColor: sanitizeHexColor(typeof raw.dividerColor === 'string' ? raw.dividerColor : null, fallback.dividerColor),
     paddingTop,
     paddingBottom
   }
@@ -831,6 +813,15 @@ export const normalizeThemeDocument = (candidate: unknown): ThemeDocument => {
   }
 }
 
+const migrateThemeDocument = (document: ThemeDocument): { doc: ThemeDocument; applied: string[] } => {
+  try {
+    return runThemeDocumentMigrations(document)
+  } catch (error) {
+    logError(error, { scope: 'themeConfig.runThemeDocumentMigrations' })
+    return { doc: document, applied: [] }
+  }
+}
+
 // Read from draft storage (sessionStorage)
 const readDraftDocument = (): ThemeDocument | null => {
   const storage = getDraftStorage()
@@ -847,12 +838,18 @@ const readDraftDocument = (): ThemeDocument | null => {
     const parsed = JSON.parse(raw) as unknown
     const validated = safeParseThemeDocument(parsed, 'draft-storage', { suppressLog: true })
     if (validated) {
-      return normalizeThemeDocument(validated)
+      const normalized = normalizeThemeDocument(validated)
+      const migrated = migrateThemeDocument(normalized)
+      if (migrated.applied.length > 0) {
+        storage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(migrated.doc))
+      }
+      return migrated.doc
     }
     const normalized = normalizeThemeDocument(parsed)
+    const migrated = migrateThemeDocument(normalized)
     pendingStorageNormalizationEvent = { source: 'draft-storage', reason: 'schema' }
-    storage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(normalized))
-    return normalized
+    storage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(migrated.doc))
+    return migrated.doc
   } catch (error) {
     logError(error, { scope: 'themeConfig.loadDraftDocument' })
     pendingStorageNormalizationEvent = { source: 'draft-storage', reason: 'parse' }
@@ -877,12 +874,18 @@ const readSavedDocument = (): ThemeDocument => {
     const parsed = JSON.parse(raw) as unknown
     const validated = safeParseThemeDocument(parsed, 'saved-storage', { suppressLog: true })
     if (validated) {
-      return normalizeThemeDocument(validated)
+      const normalized = normalizeThemeDocument(validated)
+      const migrated = migrateThemeDocument(normalized)
+      if (migrated.applied.length > 0) {
+        storage.setItem(SAVED_STORAGE_KEY, JSON.stringify(migrated.doc))
+      }
+      return migrated.doc
     }
     const normalized = normalizeThemeDocument(parsed)
+    const migrated = migrateThemeDocument(normalized)
     pendingStorageNormalizationEvent = { source: 'saved-storage', reason: 'schema' }
-    storage.setItem(SAVED_STORAGE_KEY, JSON.stringify(normalized))
-    return normalized
+    storage.setItem(SAVED_STORAGE_KEY, JSON.stringify(migrated.doc))
+    return migrated.doc
   } catch (error) {
     logError(error, { scope: 'themeConfig.loadSavedDocument' })
     pendingStorageNormalizationEvent = { source: 'saved-storage', reason: 'parse' }
@@ -1031,13 +1034,15 @@ export const loadSavedThemeDocument = (): ThemeDocument => {
 // Persist to draft storage (sessionStorage) - for auto-save
 export const persistDraftThemeDocument = (document: ThemeDocument): boolean => {
   const normalized = normalizeThemeDocument(document)
-  return writeDraftDocument(normalized)
+  const migrated = migrateThemeDocument(normalized)
+  return writeDraftDocument(migrated.doc)
 }
 
 // Persist to saved storage (localStorage) - for explicit save
 export const persistSavedThemeDocument = (document: ThemeDocument): boolean => {
   const normalized = normalizeThemeDocument(document)
-  return writeSavedDocument(normalized)
+  const migrated = migrateThemeDocument(normalized)
+  return writeSavedDocument(migrated.doc)
 }
 
 // Legacy export - loads draft first, falls back to saved
@@ -1045,7 +1050,8 @@ export const loadPersistedThemeDocument = (): ThemeDocument => clone(readPersist
 
 export const persistThemeDocument = (document: ThemeDocument): boolean => {
   const normalized = normalizeThemeDocument(document)
-  return writePersistedDocument(normalized)
+  const migrated = migrateThemeDocument(normalized)
+  return writePersistedDocument(migrated.doc)
 }
 
 const resolveDocumentPageKey = (page: string): DocumentPageKey => {
@@ -1110,13 +1116,15 @@ export const saveThemeDocument = async (document: ThemeDocument): Promise<void> 
       csrfToken = await requestCsrfToken()
     }
 
+    const normalized = normalizeThemeDocument(document)
+    const migrated = migrateThemeDocument(normalized)
     const response = await fetch(apiPath('/api/theme-config'), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         ...(csrfToken ? { 'x-csrf-token': csrfToken } : {})
       },
-      body: JSON.stringify(normalizeThemeDocument(document), null, 2)
+      body: JSON.stringify(migrated.doc, null, 2)
     })
 
     if (!response.ok) {

@@ -49,47 +49,16 @@ import {
   getSectionDefinition,
   sectionDefinitions as engineSectionDefinitions
 } from '@defalt/sections/engine'
-import { formatInternalTag, toApiTagSlug, parseGhostCardIdSuffix } from '@defalt/sections/utils/tagUtils'
-
-const resolveContainerPaddingX = (contentWidth: unknown) =>
-  contentWidth === 'none' ? '0px' : 'var(--container-gap, 24px)'
-
-const resolveImageColumns = (imageWidth: unknown) => {
-  if (imageWidth === '2/3') return { imageColumn: '2fr', textColumn: '1fr' }
-  if (imageWidth === '3/4') return { imageColumn: '3fr', textColumn: '1fr' }
-  return { imageColumn: '1fr', textColumn: '1fr' }
-}
-
-const resolveImageAspectRatio = (imageAspect: unknown): string => {
-  if (imageAspect === 'square') return '1 / 1'
-  if (imageAspect === 'portrait') return '3 / 4'
-  if (imageAspect === 'wide') return '16 / 9'
-  if (imageAspect === 'tall') return '9 / 16'
-  if (imageAspect === 'landscape') return '4 / 3'
-  return ''
-}
-
-const toTagFilter = (internalTag: string) => `tag:${toApiTagSlug(internalTag)}`
-
-const resolveHeroFallbackTag = (sectionId: string) => {
-  const normalized = sectionId.trim().toLowerCase()
-  const match = normalized.match(/^(?:hero-defalt|header-defalt|hero)(?:-(\d+))?$/)
-  const suffix = match?.[1]
-  return suffix ? `#hero-${suffix}` : '#hero'
-}
-
-const resolveImageWithTextFallbackTag = (sectionId: string) => {
-  const normalized = sectionId.trim().toLowerCase()
-  const match = normalized.match(/^image-with-text(?:-(\d+))?$/)
-  const suffix = match?.[1]
-  return suffix ? `#image-text-${suffix}` : '#image-text'
-}
-
-const resolveGhostCardsFallbackTag = (sectionId: string) => {
-  const suffix = parseGhostCardIdSuffix(sectionId)
-  if (suffix <= 1) return '#cards'
-  return `#cards-${suffix}`
-}
+import { formatInternalTag } from '@defalt/sections/utils/tagUtils'
+import {
+  resolveContainerPaddingX,
+  resolveGhostCardsFallbackTag,
+  resolveHeroFallbackTag,
+  resolveImageAspectRatio,
+  resolveImageColumns,
+  resolveImageWithTextFallbackTag,
+  toTagFilter
+} from '../derived/sectionDerived'
 
 interface HandlebarsRendererProps {
   accentColor: string

@@ -4,6 +4,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { renderHook, act, waitFor } from '@testing-library/react'
 import type { ReactNode } from 'react'
 import type { ThemeDocument } from '@defalt/utils/config/themeConfig'
+import { apiPath } from '@defalt/utils/api/apiPath'
 import { useWorkspace } from './useWorkspace'
 import { HistoryProvider } from '../contexts/HistoryContext'
 
@@ -332,7 +333,7 @@ describe('useWorkspace', () => {
       await hook.result.current.resetWorkspace()
     })
 
-    expect(fetchMock).toHaveBeenCalledWith('/api/theme-config', expect.objectContaining({ method: 'DELETE' }))
+    expect(fetchMock).toHaveBeenCalledWith(apiPath('/api/theme-config'), expect.objectContaining({ method: 'DELETE' }))
     expect(showToast).toHaveBeenCalledWith('Theme reset.', undefined, 'success')
 
     fetchMock.mockRestore()
