@@ -345,31 +345,7 @@ export function applyHeaderCustomizations(doc: Document, options: HeaderCustomiz
   applyStickyHeaderBehavior(doc, options.stickyHeaderMode)
   applyTypographyCase(doc, options.typographyCase)
   const basePadding = options.sectionPadding ? { ...options.sectionPadding } : {}
-  const subscribeEnabled = options.subheaderStyle === 'Landing' || options.subheaderStyle === 'Search'
   applySectionPadding(doc, basePadding)
   applySectionMargins(doc, options.sectionMargins ?? {})
-  const hideCta = !subscribeEnabled
-  applyCtaVisibility(doc, hideCta)
   // Featured posts positioning is now handled by template generation, no DOM manipulation needed
-}
-
-function applyCtaVisibility(doc: Document, hide: boolean) {
-  const cta = doc.querySelector<HTMLElement>('.gh-cta')
-  if (!cta) {
-    return
-  }
-
-  if (hide) {
-    cta.dataset.editorHiddenCta = 'true'
-    if (cta.parentElement) {
-      cta.parentElement.removeChild(cta)
-    } else {
-      cta.remove()
-    }
-  } else {
-    if (cta.dataset.editorHiddenCta) {
-      delete cta.dataset.editorHiddenCta
-    }
-    cta.style.removeProperty('display')
-  }
 }

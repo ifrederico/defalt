@@ -22,6 +22,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
   const {
     packageJson,
     onPackageJsonChange: setPackageJson,
+    resetPackageJson,
     navigationLayoutValue,
     navigationLayoutOptions,
     navigationLayoutError: headerSettingsError,
@@ -102,6 +103,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     currentPage,
     packageJson,
     setPackageJson,
+    resetPackageJson,
     isAuthenticated,
     user,
     showToast,

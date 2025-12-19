@@ -32,8 +32,7 @@ body.app-hide-header .gh-navigation {
   display: none !important;
 }
 
-body.app-hide-subheader section.gh-header,
-body.app-hide-subheader section.gh-cta {
+body.app-hide-subheader section.gh-header {
   display: none !important;
 }
 

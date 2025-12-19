@@ -5,6 +5,7 @@ import { getBasePath } from '../env/basePath.js'
 export function usePackageJson() {
   const [packageJson, setPackageJsonState] = useState('')
   const hasOverrideRef = useRef(false)
+  const basePackageJsonRef = useRef<string>('')
 
   const setPackageJson = useCallback((value: string) => {
     hasOverrideRef.current = true
@@ -22,6 +23,7 @@ export function usePackageJson() {
           throw new Error(`Failed to load package.json (${response.status})`)
         }
         const text = await response.text()
+        basePackageJsonRef.current = text
         if (!hasOverrideRef.current && isActive) {
           setPackageJsonState(text)
         }
@@ -31,7 +33,9 @@ export function usePackageJson() {
         }
         logError(error, { scope: 'usePackageJson.loadPackageJson' })
         if (!hasOverrideRef.current && isActive) {
-          setPackageJsonState('{\n  "name": "source"\n}')
+          const fallback = '{\n  "name": "source"\n}'
+          basePackageJsonRef.current = fallback
+          setPackageJsonState(fallback)
         }
       }
     }
@@ -206,6 +210,16 @@ export function usePackageJson() {
       custom[key] = field
     })
   }, [updatePackageJson])
+
+  const resetPackageJson = useCallback(() => {
+    hasOverrideRef.current = false
+    const base = basePackageJsonRef.current
+    if (base) {
+      setPackageJsonState(base)
+      return
+    }
+    setPackageJsonState('{\n  "name": "source"\n}')
+  }, [])
 
   const navigationLayoutConfig = useMemo<Record<string, unknown> | null>(() => {
     const field = getCustomField('navigation_layout')
@@ -403,6 +417,7 @@ export function usePackageJson() {
   return {
     packageJson,
     setPackageJson,
+    resetPackageJson,
     parsedPackageJson,
     navigationLayoutConfig,
     navigationLayoutOptions,

@@ -13,16 +13,32 @@ import {
   type SectionInstance,
   type SectionConfigSchema
 } from '@defalt/sections/engine'
-import { formatInternalTag, normalizeGhostCardsTag, normalizeHeroTag, parseGhostCardIdSuffix, parseGhostCardTagSuffix } from '@defalt/sections/utils/tagUtils'
+import {
+  formatInternalTag,
+  normalizeGhostCardsTag,
+  normalizeHeroTag,
+  normalizeImageWithTextTag,
+  parseGhostCardIdSuffix,
+  parseGhostCardTagSuffix,
+  resolveHeroTagFromId,
+  resolveImageWithTextTagFromId
+} from '@defalt/sections/utils/tagUtils'
 import { SECTION_ICON_MAP, GhostIcon } from '@defalt/utils/config/sectionIcons'
 import { sanitizeNumericValue, resolveNumericValue } from '@defalt/utils/helpers/numericHelpers'
 import { deepClone } from '@defalt/utils/helpers/deepClone'
 import {
   footerItemsDefault,
   getTemplateDefaults,
-  HERO_ID_PREFIX,
   type SidebarItem
-} from '@defalt/utils/config/configStateDefaults'
+} from '@defalt/utils/config/sectionRegistry'
+import {
+  buildCustomSectionInstanceId,
+  collectTagSources,
+  findTagCollision,
+  getCustomSectionEntry,
+  getCustomSectionMaxInstances,
+  resolveCustomSectionLabel
+} from '@defalt/utils/config/sectionRegistry'
 import { logError } from '@defalt/utils/logging/errorLogger'
 import {
   ReorderCommand,
@@ -42,12 +58,6 @@ import type {
   MarginUpdateResult
 } from './types'
 
-const CUSTOM_SECTION_BASE_ID: Record<string, string> = {
-  hero: HERO_ID_PREFIX,
-  ghostCards: 'ghost-cards',
-  ghostGrid: 'ghost-grid'
-}
-
 const SUBHEADER_SECTION_ID = 'subheader'
 const SUBHEADER_PADDING_DEFAULT = CSS_DEFAULT_PADDING.subheader as number
 const SUBHEADER_MARGIN_DEFAULT = 40
@@ -56,16 +66,8 @@ const SUBHEADER_PADDING_STYLES = new Set(['Landing', 'Search'])
 
 const GHOST_CARD_TAG_BASE = '#cards'
 
-const generateCustomSectionId = (definitionId: string, existingIds: Set<string>) => {
-  const baseId = CUSTOM_SECTION_BASE_ID[definitionId] ?? definitionId
-  let attempt = baseId
-  let suffix = 2
-  while (existingIds.has(attempt)) {
-    attempt = `${baseId}-${suffix}`
-    suffix += 1
-  }
-  return attempt
-}
+const generateCustomSectionId = (definitionId: string, existingIds: Set<string>) =>
+  buildCustomSectionInstanceId(definitionId, existingIds)
 
 const getNextGhostCardsSuffix = (sections: Record<string, SectionInstance>) => {
   let maxSuffix = 0
@@ -208,7 +210,8 @@ export function useSectionManager({
   markAsDirty,
   showToast,
   currentPageRef,
-  getHistoryPageId
+  getHistoryPageId,
+  tagStateRef
 }: SectionManagerParams): SectionManagerReturn {
   const currentPage = currentPageRef.current
 
@@ -382,6 +385,20 @@ export function useSectionManager({
       }
 
       const existingIds = new Set(templateItemsRef.current.map((item) => item.id))
+      const maxInstances = getCustomSectionMaxInstances(definitionId)
+      if (maxInstances) {
+        const existingCount = Object.values(customSectionsRef.current).filter(
+          (section) => section.definitionId === definitionId
+        ).length
+        if (existingCount >= maxInstances) {
+          showToast(
+            'Section limit reached',
+            `You can add up to ${maxInstances} of this section type.`,
+            'error'
+          )
+          return
+        }
+      }
       let instanceId = generateCustomSectionId(definitionId, existingIds)
       let customConfig: SectionConfigSchema | undefined
 
@@ -391,43 +408,9 @@ export function useSectionManager({
         customConfig = { tag: ghostCardsMeta.tag } as SectionConfigSchema
       }
 
-      if (definitionId === 'hero') {
-        const suffix = (() => {
-          if (instanceId === HERO_ID_PREFIX) {
-            return 1
-          }
-          const match = instanceId.match(/^hero-(\d+)$/)
-          const numeric = match ? Number.parseInt(match[1], 10) : NaN
-          return Number.isFinite(numeric) ? numeric : 1
-        })()
-        customConfig = { tag: suffix === 1 ? '#hero' : `#hero-${suffix}` } as SectionConfigSchema
-      }
-
-      if (definitionId === 'image-with-text') {
-        const suffix = (() => {
-          if (instanceId === 'image-with-text') {
-            return 1
-          }
-          const match = instanceId.match(/^image-with-text-(\d+)$/)
-          const numeric = match ? Number.parseInt(match[1], 10) : NaN
-          return Number.isFinite(numeric) ? numeric : 1
-        })()
-        customConfig = { tag: suffix === 1 ? '#image-text' : `#image-text-${suffix}` } as SectionConfigSchema
-      }
-
-      if (definitionId === 'ghostGrid') {
-        const suffix = (() => {
-          if (instanceId === 'ghost-grid') {
-            return 1
-          }
-          const match = instanceId.match(/^ghost-grid-(\d+)$/)
-          const numeric = match ? Number.parseInt(match[1], 10) : NaN
-          return Number.isFinite(numeric) ? numeric : 1
-        })()
-        customConfig = {
-          tagLeft: suffix === 1 ? '#grid-left' : `#grid-left-${suffix}`,
-          tagRight: suffix === 1 ? '#grid-right' : `#grid-right-${suffix}`
-        } as SectionConfigSchema
+      const entry = getCustomSectionEntry(definitionId)
+      if (entry) {
+        customConfig = entry.resolveDefaultTags(instanceId) as SectionConfigSchema
       }
 
       const instance = buildSectionInstance(definitionId, instanceId, customConfig)
@@ -447,7 +430,7 @@ export function useSectionManager({
         ...cloneSidebarItems(templateItemsRef.current),
         {
           id: instanceId,
-          label: instance.label,
+          label: resolveCustomSectionLabel(instanceId, definitionId),
           definitionId,
           icon: definitionIconMap[definitionId] || GhostIcon
         }
@@ -758,6 +741,18 @@ export function useSectionManager({
                 delete next.tag
               }
             }
+          } else if (current.definitionId === 'image-with-text') {
+            const normalized = normalizeImageWithTextTag(next.tag)
+            if (normalized) {
+              next.tag = normalized
+            } else {
+              const formatted = formatInternalTag(next.tag)
+              if (formatted) {
+                next.tag = formatted
+              } else {
+                delete next.tag
+              }
+            }
           } else {
             const formatted = formatInternalTag(next.tag)
             if (formatted) {
@@ -792,6 +787,27 @@ export function useSectionManager({
         return
       }
 
+      if (tagStateRef) {
+        const nextCustomSections = {
+          ...cloneCustomSectionsState(customSectionsRef.current),
+          [id]: nextInstance
+        }
+        const sources = collectTagSources(
+          nextCustomSections,
+          tagStateRef.current?.announcementBars ?? []
+        )
+        const collision = findTagCollision(sources)
+        if (collision) {
+          const labels = collision.sources.map((source) => source.label).join(', ')
+          showToast(
+            'Tag already used',
+            `${collision.tag} is already used by ${labels}.`,
+            'error'
+          )
+          return
+        }
+      }
+
       const prevCustomSections = cloneCustomSectionsState(customSectionsRef.current)
       const nextCustomSections = cloneCustomSectionsState(customSectionsRef.current)
       nextCustomSections[id] = nextInstance
@@ -818,7 +834,7 @@ export function useSectionManager({
         })
       )
     },
-    [customSectionsRef, executeCommand, getHistoryPageId, markAsDirty, sectionPaddingRef, setCustomSections, setSectionPadding, showToast]
+    [customSectionsRef, executeCommand, getHistoryPageId, markAsDirty, sectionPaddingRef, setCustomSections, setSectionPadding, showToast, tagStateRef]
   )
 
   // Subheader spacing

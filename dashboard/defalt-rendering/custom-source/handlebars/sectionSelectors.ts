@@ -7,7 +7,6 @@ export type SectionSelector = string | string[]
 export const TEMPLATE_SECTION_SELECTORS = {
   subheader: 'section.gh-header',
   featured: 'section.gh-featured',
-  cta: 'section.gh-cta',
   main: ['section.gh-container.is-grid', 'section.gh-container.is-list']
 } as const satisfies Record<string, SectionSelector>
 
@@ -24,7 +23,6 @@ export const SECTION_ID_TO_SELECTOR: Record<string, SectionSelector> = {
   // Template sections
   'subheader': TEMPLATE_SECTION_SELECTORS.subheader,
   'featured': TEMPLATE_SECTION_SELECTORS.featured,
-  'cta': TEMPLATE_SECTION_SELECTORS.cta,
   'main': TEMPLATE_SECTION_SELECTORS.main,
   // Footer sections
   'footer': FOOTER_ROOT_SELECTOR,

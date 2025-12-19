@@ -7,6 +7,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   const {
     packageJson,
     setPackageJson,
+    resetPackageJson,
     effectiveNavigationLayoutValue,
     navigationLayoutOptions,
     headerSettingsError,
@@ -55,6 +56,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   const value = useMemo<ThemeContextValue>(() => ({
     packageJson,
     onPackageJsonChange: setPackageJson,
+    resetPackageJson,
     navigationLayoutValue: effectiveNavigationLayoutValue,
     navigationLayoutOptions,
     navigationLayoutError: headerSettingsError,
@@ -101,6 +103,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   }), [
     packageJson,
     setPackageJson,
+    resetPackageJson,
     effectiveNavigationLayoutValue,
     navigationLayoutOptions,
     headerSettingsError,

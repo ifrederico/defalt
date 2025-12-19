@@ -1,4 +1,9 @@
-import { parseGhostCardIdSuffix, toApiTagSlug } from '../../defalt-sections/utils/tagUtils.js'
+import {
+  parseGhostCardIdSuffix,
+  toApiTagSlug,
+  resolveHeroTagFromId,
+  resolveImageWithTextTagFromId
+} from '../../defalt-sections/utils/tagUtils.js'
 
 export const resolveContainerPaddingX = (contentWidth: unknown): string =>
   contentWidth === 'none' ? '0px' : 'var(--container-gap, 24px)'
@@ -20,23 +25,14 @@ export const resolveImageAspectRatio = (imageAspect: unknown): string => {
 
 export const toTagFilter = (internalTag: string): string => `tag:${toApiTagSlug(internalTag)}`
 
-export const resolveHeroFallbackTag = (sectionId: string): string => {
-  const normalized = sectionId.trim().toLowerCase()
-  const match = normalized.match(/^(?:hero-defalt|header-defalt|hero)(?:-(\d+))?$/)
-  const suffix = match?.[1]
-  return suffix ? `#hero-${suffix}` : '#hero'
-}
+export const resolveHeroFallbackTag = (sectionId: string): string =>
+  resolveHeroTagFromId(sectionId)
 
-export const resolveImageWithTextFallbackTag = (sectionId: string): string => {
-  const normalized = sectionId.trim().toLowerCase()
-  const match = normalized.match(/^image-with-text(?:-(\d+))?$/)
-  const suffix = match?.[1]
-  return suffix ? `#image-text-${suffix}` : '#image-text'
-}
+export const resolveImageWithTextFallbackTag = (sectionId: string): string =>
+  resolveImageWithTextTagFromId(sectionId)
 
 export const resolveGhostCardsFallbackTag = (sectionId: string): string => {
   const suffix = parseGhostCardIdSuffix(sectionId)
   if (suffix <= 1) return '#cards'
   return `#cards-${suffix}`
 }
-

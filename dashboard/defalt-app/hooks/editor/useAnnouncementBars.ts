@@ -9,6 +9,7 @@ import {
   type AnnouncementBarInstance,
   type AnnouncementBlock
 } from '@defalt/utils/config/themeConfig'
+import { collectTagSources, findTagCollision, resolveAnnouncementBlockTag } from '@defalt/utils/config/sectionRegistry'
 import { useSyncedState } from '@defalt/utils/hooks'
 import { announcementBarConfigSchema } from '@defalt/sections/engine'
 import { AnnouncementCommand } from '@defalt/utils/history/commands'
@@ -31,19 +32,11 @@ const cloneAnnouncementBars = (bars: AnnouncementBarInstance[]): AnnouncementBar
     }
   }))
 
-const ensureSingleAnnouncement = (content: AnnouncementContentConfig): AnnouncementContentConfig => {
-  const fallbackAnnouncement = DEFAULT_ANNOUNCEMENT_CONTENT_CONFIG.announcements[0]
-  const first = content.announcements[0] ?? fallbackAnnouncement
-  return {
-    ...content,
-    announcements: [{ ...first }]
-  }
-}
-
 export function useAnnouncementBars({
   executeCommand,
   markAsDirty,
-  showToast
+  showToast,
+  tagStateRef
 }: AnnouncementBarsParams): AnnouncementBarsReturn {
   const [announcementBars, setAnnouncementBars, announcementBarsRef] = useSyncedState<AnnouncementBarInstance[]>([])
 
@@ -74,9 +67,9 @@ export function useAnnouncementBars({
   const toContentConfig = useCallback(
     (parsed: ReturnType<typeof parseUnifiedConfig>) => {
       if (!parsed) return null
-      return ensureSingleAnnouncement({
+      return {
         announcements: parsed.announcements
-      } satisfies AnnouncementContentConfig)
+      } satisfies AnnouncementContentConfig
     },
     []
   )
@@ -92,10 +85,9 @@ export function useAnnouncementBars({
       suffix += 1
     }
 
-    // Tag uses simple pattern: #announcement, #announcement-2, etc.
-    // Tag is now on the block level (each announcement can have its own tag)
-    const tagSuffix = prevBars.length > 0 ? `-${prevBars.length + 1}` : ''
-    const tag = `#announcement${tagSuffix}`
+    // Tag uses bar + block index pattern (e.g. #announcement, #announcement-2, #announcement-2-1).
+    // Tag is on the block level (each announcement can have its own tag).
+    const tag = resolveAnnouncementBlockTag(id, 0)
 
     const nextBars = [
       ...prevBars,
@@ -219,8 +211,7 @@ export function useAnnouncementBars({
         updater(previous),
         previous
       )
-      const normalizedCandidate = ensureSingleAnnouncement(nextCandidate)
-      const parsed = parseUnifiedConfig(prevBars[idx].bar, normalizedCandidate)
+      const parsed = parseUnifiedConfig(prevBars[idx].bar, nextCandidate)
       const next = toContentConfig(parsed)
       if (!next) {
         showToast('Invalid settings', 'Could not update announcement content.', 'error')
@@ -233,6 +224,23 @@ export function useAnnouncementBars({
       const nextBars = cloneAnnouncementBars(announcementBarsRef.current)
       nextBars[idx] = { ...nextBars[idx], content: next }
 
+      if (tagStateRef) {
+        const sources = collectTagSources(
+          tagStateRef.current?.customSections ?? {},
+          nextBars
+        )
+        const collision = findTagCollision(sources)
+        if (collision) {
+          const labels = collision.sources.map((source) => source.label).join(', ')
+          showToast(
+            'Tag already used',
+            `${collision.tag} is already used by ${labels}.`,
+            'error'
+          )
+          return
+        }
+      }
+
       executeCommand(
         new AnnouncementCommand({
           label: 'Update announcement',
@@ -242,15 +250,13 @@ export function useAnnouncementBars({
         })
       )
     },
-    [announcementBarsRef, executeCommand, markAsDirty, parseUnifiedConfig, setAnnouncementBars, showToast, toContentConfig]
+    [announcementBarsRef, executeCommand, markAsDirty, parseUnifiedConfig, setAnnouncementBars, showToast, toContentConfig, tagStateRef]
   )
 
   const hydrateAnnouncementBars = useCallback(
     (data: AnnouncementBarsHydrationData) => {
       const rawBars = Array.isArray(data.announcementBars) ? data.announcementBars : []
       const seenIds = new Set<string>()
-      const fallbackAnnouncement = DEFAULT_ANNOUNCEMENT_CONTENT_CONFIG.announcements[0]
-
       let hadInvalid = false
 
       const nextBars: AnnouncementBarInstance[] = rawBars.map((bar) => {
@@ -267,23 +273,22 @@ export function useAnnouncementBars({
         }
         seenIds.add(id)
 
-        // Generate simple tag: #announcement, #announcement-2, etc.
-        const idMatch = id.match(/^announcement-bar(?:-(\d+))?$/)
-        const tagSuffix = idMatch?.[1] ? `-${idMatch[1]}` : ''
-        const defaultTag = `#announcement${tagSuffix}`
-
         const defaultBar = { ...DEFAULT_ANNOUNCEMENT_BAR_CONFIG }
         const normalizedBar = normalizeAnnouncementBarConfig(bar.bar ?? defaultBar, defaultBar)
-        // Ensure the block has a tag (use existing or default)
-        const blockTag = bar.content?.announcements?.[0]?.tag || defaultTag
-        const normalizedContent = ensureSingleAnnouncement(
-          normalizeAnnouncementContentConfig(
-            bar.content ?? DEFAULT_ANNOUNCEMENT_CONTENT_CONFIG,
-            DEFAULT_ANNOUNCEMENT_CONTENT_CONFIG
-          )
+        const normalizedContent = normalizeAnnouncementContentConfig(
+          bar.content ?? DEFAULT_ANNOUNCEMENT_CONTENT_CONFIG,
+          DEFAULT_ANNOUNCEMENT_CONTENT_CONFIG
         )
+        const ensuredAnnouncements = (normalizedContent.announcements ?? []).map((block, index) => ({
+          ...block,
+          tag: block.tag || resolveAnnouncementBlockTag(id, index)
+        }))
+        const contentWithTags: AnnouncementContentConfig = {
+          ...normalizedContent,
+          announcements: ensuredAnnouncements
+        }
 
-        const parsed = parseUnifiedConfig(normalizedBar, normalizedContent)
+        const parsed = parseUnifiedConfig(normalizedBar, contentWithTags)
         const finalBar = toBarConfig(parsed)
         const finalContent = toContentConfig(parsed)
 
@@ -293,10 +298,15 @@ export function useAnnouncementBars({
             id,
             hidden: bar.hidden === true,
             bar: defaultBar,
-            content: ensureSingleAnnouncement({
+            content: {
               ...DEFAULT_ANNOUNCEMENT_CONTENT_CONFIG,
-              announcements: [{ ...(fallbackAnnouncement as AnnouncementBlock), tag: blockTag }]
-            })
+              announcements: [
+                {
+                  ...(DEFAULT_ANNOUNCEMENT_CONTENT_CONFIG.announcements[0] as AnnouncementBlock),
+                  tag: resolveAnnouncementBlockTag(id, 0)
+                }
+              ]
+            }
           }
         }
 

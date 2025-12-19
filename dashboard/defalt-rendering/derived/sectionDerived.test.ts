@@ -3,8 +3,8 @@ import { resolveHeroFallbackTag, resolveGhostCardsFallbackTag } from './sectionD
 
 describe('sectionDerived', () => {
   it('derives hero fallback tags', () => {
-    expect(resolveHeroFallbackTag('hero-defalt')).toBe('#hero')
-    expect(resolveHeroFallbackTag('hero-defalt-2')).toBe('#hero-2')
+    expect(resolveHeroFallbackTag('hero')).toBe('#hero')
+    expect(resolveHeroFallbackTag('hero-2')).toBe('#hero-2')
   })
 
   it('derives ghostCards fallback tags', () => {
@@ -12,4 +12,3 @@ describe('sectionDerived', () => {
     expect(resolveGhostCardsFallbackTag('ghost-cards-2')).toBe('#cards-2')
   })
 })
-

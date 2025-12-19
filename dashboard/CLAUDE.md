@@ -7,8 +7,6 @@ Technical documentation for the dashboard module. See [../AGENTS.md](../AGENTS.m
 Copy `.env.example` to `.env` and configure:
 
 **Required for development:**
-- `VITE_GHOST_URL` - Ghost instance URL
-- `VITE_GHOST_CONTENT_KEY` - Ghost Content API key
 - `VITE_APP_URL` - Dashboard app URL
 - `DATABASE_URL` - PostgreSQL connection string (for theme storage)
 

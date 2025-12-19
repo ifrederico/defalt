@@ -115,6 +115,7 @@ const createWorkspaceProps = (overrides: Partial<WorkspaceParams> = {}): Workspa
   currentPage: 'home',
   packageJson: '{}',
   setPackageJson: vi.fn(),
+  resetPackageJson: vi.fn(),
   isAuthenticated: false,
   user: null,
   showToast: vi.fn(),

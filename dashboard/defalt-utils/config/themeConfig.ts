@@ -5,6 +5,14 @@ import { apiPath } from '../api/apiPath.js'
 import { getCachedCsrfToken, requestCsrfToken } from '../security/csrf.js'
 import { sanitizeHexColor } from '../security/sanitizers.js'
 import { deepClone } from '../helpers/deepClone.js'
+import { formatInternalTag } from '../../defalt-sections/utils/tagUtils.js'
+import {
+  applyDefaultTagsForSection,
+  getFooterOrder,
+  getTemplateOrder,
+  normalizeSectionId,
+  resolveAnnouncementBlockTag
+} from './sectionRegistry.js'
 
 export type PageType = 'home' | 'about' | 'post' | 'page'
 
@@ -261,7 +269,7 @@ const createDefaultHeaderSection = (): SectionConfig => ({
 })
 
 const createDefaultFooterConfig = (): FooterConfig => ({
-  order: ['footerBar', 'footerSignup'],
+  order: getFooterOrder(),
   sections: {
     footerBar: {
       type: 'footer-bar',
@@ -302,7 +310,7 @@ const createDefaultPageConfig = (pageKey: DocumentPageKey): PageConfig => {
   }
 
   return {
-    order: pageKey === 'homepage' ? ['subheader', 'featured', 'main'] : ['main'],
+    order: getTemplateOrder(pageKey),
     sections
   }
 }
@@ -513,8 +521,19 @@ const normalizeHeaderSection = (section: SectionConfig | undefined): SectionConf
           DEFAULT_ANNOUNCEMENT_CONTENT_CONFIG
         )
 
-        const announcement =
-          contentNormalized.announcements[0] ?? defaultAnnouncement
+        const announcements = contentNormalized.announcements.length > 0
+          ? contentNormalized.announcements
+          : [defaultAnnouncement]
+        const limitedAnnouncements = announcements.slice(0, 5)
+        const ensuredAnnouncements = limitedAnnouncements.map((block, index) => {
+          const normalizedTag = formatInternalTag(block.tag)
+          const fallbackTag = resolveAnnouncementBlockTag(id, index)
+          const shouldAutoFix = normalizedTag === '#announcement' && fallbackTag !== '#announcement'
+          return {
+            ...block,
+            tag: normalizedTag ? (shouldAutoFix ? fallbackTag : normalizedTag) : fallbackTag
+          }
+        })
 
         return {
           id,
@@ -522,7 +541,7 @@ const normalizeHeaderSection = (section: SectionConfig | undefined): SectionConf
           bar,
           content: {
             ...contentNormalized,
-            announcements: [announcement]
+            announcements: ensuredAnnouncements
           }
         }
       })
@@ -608,6 +627,9 @@ const normalizeFooterConfig = (footer: FooterConfig | undefined): FooterConfig =
   }
 }
 
+const normalizeSectionKey = (key: string): string =>
+  normalizeSectionId(key)
+
 /**
  * Normalizes a page configuration for a specific template, ensuring
  * default sections exist and removing duplicate entries.
@@ -619,17 +641,42 @@ const normalizeFooterConfig = (footer: FooterConfig | undefined): FooterConfig =
 const normalizePageConfig = (pageKey: DocumentPageKey, page: PageConfig | undefined): PageConfig => {
   const defaults = createDefaultPageConfig(pageKey)
   const orderSource = Array.isArray(page?.order) ? page?.order as string[] : []
+  const rawSections = page?.sections && typeof page.sections === 'object'
+    ? page.sections as Record<string, SectionConfig>
+    : {}
+  const normalizedSections: Record<string, SectionConfig> = {}
+
+  Object.entries(rawSections).forEach(([rawKey, section]) => {
+    if (typeof rawKey !== 'string') {
+      return
+    }
+    const normalizedKey = normalizeSectionKey(rawKey)
+    if (normalizedKey === rawKey && !normalizedSections[normalizedKey]) {
+      normalizedSections[normalizedKey] = section
+    }
+  })
+
+  Object.entries(rawSections).forEach(([rawKey, section]) => {
+    if (typeof rawKey !== 'string') {
+      return
+    }
+    const normalizedKey = normalizeSectionKey(rawKey)
+    if (!normalizedSections[normalizedKey]) {
+      normalizedSections[normalizedKey] = section
+    }
+  })
   const order: string[] = []
   const seen = new Set<string>()
   orderSource.forEach((key) => {
     if (typeof key !== 'string') {
       return
     }
-    if (seen.has(key)) {
+    const normalizedKey = normalizeSectionKey(key)
+    if (seen.has(normalizedKey)) {
       return
     }
-    seen.add(key)
-    order.push(key)
+    seen.add(normalizedKey)
+    order.push(normalizedKey)
   })
   defaults.order.forEach((key) => {
     if (!seen.has(key)) {
@@ -646,7 +693,7 @@ const normalizePageConfig = (pageKey: DocumentPageKey, page: PageConfig | undefi
       return
     }
     const defaultSection = defaultSections[key]
-    const stored = page?.sections?.[key]
+    const stored = normalizedSections[key]
 
     // For subheader section on homepage, always ensure it exists from defaults
     if (key === 'subheader' && pageKey === 'homepage' && !stored && defaultSection) {
@@ -677,6 +724,13 @@ const normalizePageConfig = (pageKey: DocumentPageKey, page: PageConfig | undefi
       delete filteredSettings.borderThickness
       delete filteredSettings.cornerRadius
       delete filteredSettings.customCSS
+    }
+    if (typeof filteredSettings.definitionId === 'string') {
+      filteredSettings.customConfig = applyDefaultTagsForSection(
+        filteredSettings.definitionId,
+        key,
+        filteredSettings.customConfig
+      )
     }
 
     sections[key] = {
@@ -1106,7 +1160,6 @@ export const SECTION_ID_MAP: Record<string, string> = {
   header: 'header',
   subheader: 'subheader',
   featured: 'featured',
-  cta: 'cta',
   main: 'main',
   footer: 'footer',
   footerBar: 'footerBar',
@@ -1117,7 +1170,6 @@ export const CONFIG_TO_ID_MAP: Record<string, string> = {
   header: 'header',
   subheader: 'subheader',
   featured: 'featured',
-  cta: 'cta',
   main: 'main',
   footer: 'footer',
   footerBar: 'footerBar',

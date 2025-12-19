@@ -6,11 +6,12 @@ AI assistant behavior guidelines for this repository.
 
 - Be blunt and minimal. No narrative about your process or shifting approach.
 - Prioritize correctness over speed. Slow and accurate > fast and wrong.
-- In all interactions and commit messages, be extremely concise. Sacrifice grammar for brevity.
+- In all interactions and commit messages, be concise.
 
 ## Task Approach
 
 - Before coding, restate task in 2–4 bullets; ask questions instead of guessing.
+- Suggest improvements and recommendations with each question.
 - After plans or code, include a short checklist of requirements and mark what is done.
 - At the end of each plan, give me a list of unresolved questions to answer, if any.
 

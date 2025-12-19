@@ -19,10 +19,11 @@ import {
 import { DragDropProvider, DragOverlay } from '@dnd-kit/react'
 import { PointerSensor } from '@dnd-kit/react'
 import { isElement } from '@dnd-kit/dom/utilities'
-import type { SidebarItem } from '@defalt/utils/config/configStateDefaults'
+import type { SidebarItem } from '@defalt/utils/config/sectionRegistry'
 import { type AnnouncementBarConfig, type AnnouncementContentConfig, type AnnouncementBarInstance } from '@defalt/utils/config/themeConfig'
 import type { PreviewData } from '@defalt/rendering/custom-source/handlebars/dataResolvers'
 import { resolveSectionIcon } from '@defalt/utils/config/sectionIcons'
+import { resolveAnnouncementBarLabel } from '@defalt/utils/config/sectionRegistry'
 import {
   isPremium,
   type SectionDefinition,
@@ -245,9 +246,9 @@ export const SectionsPanelBase = memo(function SectionsPanelBase({
   )
 
 	  const groups = useMemo<SectionGroupDescriptor[]>(() => {
-	    const announcementBarItems: SidebarItem[] = props.announcementBars.map((bar, idx) => ({
+	    const announcementBarItems: SidebarItem[] = props.announcementBars.map((bar) => ({
 	      id: bar.id,
-	      label: idx === 0 ? 'Announcement bar' : `Announcement bar ${idx + 1}`,
+	      label: resolveAnnouncementBarLabel(bar.id),
 	      icon: PanelTopDashed
 	    }))
 

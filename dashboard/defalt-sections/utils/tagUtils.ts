@@ -56,6 +56,68 @@ export function parseGhostCardIdSuffix(sectionId: string): number {
 }
 
 /**
+ * Parse numeric suffix from a hero section ID.
+ * Returns 1 for base IDs, the number for suffixed IDs, or 0 for non-matching IDs.
+ */
+export function parseHeroIdSuffix(sectionId: string): number {
+  if (typeof sectionId !== 'string') {
+    return 0
+  }
+  const normalized = sectionId.trim().toLowerCase()
+  const match = normalized.match(/^hero(?:-(\d+))?$/)
+  if (!match) {
+    return 0
+  }
+  if (!match[1]) {
+    return 1
+  }
+  const numeric = Number.parseInt(match[1], 10)
+  return Number.isFinite(numeric) ? numeric : 1
+}
+
+/**
+ * Resolve the default hero tag for a given instance ID.
+ */
+export function resolveHeroTagFromId(sectionId: string): string {
+  const suffix = parseHeroIdSuffix(sectionId)
+  if (suffix <= 1) {
+    return '#hero'
+  }
+  return `#hero-${suffix}`
+}
+
+/**
+ * Parse numeric suffix from an image-with-text section ID.
+ * Returns 1 for base IDs, the number for suffixed IDs, or 0 for non-matching IDs.
+ */
+export function parseImageWithTextIdSuffix(sectionId: string): number {
+  if (typeof sectionId !== 'string') {
+    return 0
+  }
+  const normalized = sectionId.trim().toLowerCase()
+  const match = normalized.match(/^image-with-text(?:-(\d+))?$/)
+  if (!match) {
+    return 0
+  }
+  if (!match[1]) {
+    return 1
+  }
+  const numeric = Number.parseInt(match[1], 10)
+  return Number.isFinite(numeric) ? numeric : 1
+}
+
+/**
+ * Resolve the default image-with-text tag for a given instance ID.
+ */
+export function resolveImageWithTextTagFromId(sectionId: string): string {
+  const suffix = parseImageWithTextIdSuffix(sectionId)
+  if (suffix <= 1) {
+    return '#image-text'
+  }
+  return `#image-text-${suffix}`
+}
+
+/**
  * Parse numeric suffix from a ghost card tag value.
  * Returns 1 for '#cards', the number for '#cards-N', or 0 for non-matching tags.
  */
@@ -97,6 +159,28 @@ export function normalizeGhostCardsTag(tagValue: unknown): string {
     return '#cards'
   }
   return `#cards-${suffix}`
+}
+
+export function normalizeImageWithTextTag(tagValue: unknown): string {
+  if (typeof tagValue !== 'string') {
+    return ''
+  }
+  const normalized = tagValue.trim().replace(/^#+/, '').toLowerCase()
+  if (!normalized) {
+    return ''
+  }
+  const match = normalized.match(/^image-text-?(\d+)?$/)
+  if (!match) {
+    return ''
+  }
+  if (!match[1]) {
+    return '#image-text'
+  }
+  const numeric = Number.parseInt(match[1], 10)
+  if (!Number.isFinite(numeric) || numeric <= 1) {
+    return '#image-text'
+  }
+  return `#image-text-${numeric}`
 }
 
 export function normalizeHeroTag(tagValue: unknown): string {

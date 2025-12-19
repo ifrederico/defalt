@@ -11,7 +11,7 @@ import {
 } from 'lucide-react'
 import { useSortable } from '@dnd-kit/react/sortable'
 import { useDragOperation } from '@dnd-kit/react'
-import type { SidebarItem } from '@defalt/utils/config/configStateDefaults'
+import type { SidebarItem } from '@defalt/utils/config/sectionRegistry'
 
 export type SectionRowProps = {
   item: SidebarItem

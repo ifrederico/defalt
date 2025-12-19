@@ -33,6 +33,7 @@ export type AnnouncementSettingsContext = {
 export type ThemeContextValue = {
   packageJson: string
   onPackageJsonChange: (value: string) => void
+  resetPackageJson: () => void
   navigationLayoutValue: string
   navigationLayoutOptions: string[]
   navigationLayoutError: string | null

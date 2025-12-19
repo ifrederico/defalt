@@ -825,7 +825,7 @@ export async function applyAnnouncementBarCustomization(themeDir: string, config
     )
 
     const announcements = normalizedContent.announcements.length > 0
-      ? normalizedContent.announcements.slice(0, 1)
+      ? normalizedContent.announcements
       : []
 
     const className = normalizedBar.width === 'narrow'
@@ -843,50 +843,59 @@ export async function applyAnnouncementBarCustomization(themeDir: string, config
       `--announcement-bar-divider-color: ${normalizedBar.dividerColor}`,
     ].join('; ')
 
-    const announcement = announcements[0]
-    if (!announcement) {
+    if (announcements.length === 0) {
       return ''
     }
 
-    const typographyStyle = resolveTypographyStyle(announcement)
+    const announcementMarkup = announcements.map((announcement, index) => {
+      const typographyStyle = resolveTypographyStyle(announcement)
 
-    const internalTag = formatInternalTag(announcement.tag) || '#announcement'
-    const tagFilter = toTagFilter(internalTag)
+      const internalTag = formatInternalTag(announcement.tag) || '#announcement'
+      const tagFilter = toTagFilter(internalTag)
 
-    const manualText = typeof announcement.text === 'string' ? announcement.text.trim() : ''
-    const manualLink = typeof announcement.link === 'string' ? announcement.link.trim() : ''
+      const manualText = typeof announcement.text === 'string' ? announcement.text.trim() : ''
+      const manualLink = typeof announcement.link === 'string' ? announcement.link.trim() : ''
 
-    const manualMarkup = (() => {
-      if (!manualText) {
-        return ''
-      }
-      const safeText = escapeHandlebarsString(manualText)
-      const safeLink = manualLink ? escapeHandlebarsString(manualLink) : ''
-      if (safeLink) {
-        return `<a href="${safeLink}" class="announcement-bar__link announcement-bar__item" style="${typographyStyle}">${safeText}</a>`
-      }
-      return `<span class="announcement-bar__item" style="${typographyStyle}">${safeText}</span>`
-    })()
+      const manualMarkup = (() => {
+        if (!manualText) {
+          return ''
+        }
+        const safeText = escapeHandlebarsString(manualText)
+        const safeLink = manualLink ? escapeHandlebarsString(manualLink) : ''
+        if (safeLink) {
+          return `<a href="${safeLink}" class="announcement-bar__link announcement-bar__item" style="${typographyStyle}">${safeText}</a>`
+        }
+        return `<span class="announcement-bar__item" style="${typographyStyle}">${safeText}</span>`
+      })()
 
-    // Ghost-first rendering: use page HTML content when a page exists for the tag.
-    // Fallback: manual text/link.
-    return `{{#get "pages" filter="${escapeHandlebarsString(tagFilter)}" limit="1" include="tags"}}
-  {{#if pages}}
-    <section class="${classNameWithVisibility}" style="${style}"${isHidden ? ' aria-hidden="true"' : ''}>
-      <div class="announcement-bar__content">
+      const separator = index > 0 ? '<span class="announcement-bar__separator">·</span>' : ''
+      const ghostContent = `${separator}
         {{#foreach pages}}
           <div class="announcement-bar__item" style="${typographyStyle}">{{{html}}}</div>
-        {{/foreach}}
-      </div>
-    </section>
+        {{/foreach}}`
+      const manualContent = manualMarkup ? `${separator}${manualMarkup}` : ''
+
+      // Ghost-first rendering: use page HTML content when a page exists for the tag.
+      // Fallback: manual text/link.
+      return `{{#get "pages" filter="${escapeHandlebarsString(tagFilter)}" limit="1" include="tags"}}
+  {{#if pages}}
+    ${ghostContent}
   {{else}}
-    ${manualMarkup ? `<section class="${classNameWithVisibility}" style="${style}"${isHidden ? ' aria-hidden="true"' : ''}>
-      <div class="announcement-bar__content">
-        ${manualMarkup}
-      </div>
-    </section>` : ''}
+    ${manualContent}
   {{/if}}
 {{/get}}`
+    })
+
+    const announcementContent = announcementMarkup.filter(Boolean).join('\n')
+    if (!announcementContent) {
+      return ''
+    }
+
+    return `<section class="${classNameWithVisibility}" style="${style}"${isHidden ? ' aria-hidden="true"' : ''}>
+  <div class="announcement-bar__content">
+    ${announcementContent}
+  </div>
+</section>`
   })
 
   const nextContent = `${styleBlock}\n${renderedBars.filter(Boolean).join('\n')}\n`

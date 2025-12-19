@@ -59,6 +59,7 @@ import {
   resolveImageWithTextFallbackTag,
   toTagFilter
 } from '../derived/sectionDerived'
+import { getFooterOrder, getTemplateOrder } from '@defalt/utils/config/sectionRegistry'
 
 interface HandlebarsRendererProps {
   accentColor: string
@@ -102,8 +103,8 @@ export function HandlebarsRenderer({
   sectionPadding = {},
   sectionMargins = {},
   hiddenSections = {},
-  templateOrder = ['subheader', 'featured', 'cta', 'main'],
-  footerOrder = ['footer_bar', 'footer_signup'],
+  templateOrder = getTemplateOrder('home'),
+  footerOrder = getFooterOrder(),
   onLoadingChange,
   onNavigate,
   customCss,
@@ -156,7 +157,7 @@ export function HandlebarsRenderer({
         bar,
         content: {
           ...content,
-          announcements: announcements.slice(0, 1)
+          announcements
         }
       }
     })

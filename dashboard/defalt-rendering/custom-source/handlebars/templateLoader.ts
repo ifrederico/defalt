@@ -130,14 +130,6 @@ export function filterTemplatesByVisibility(
       )
     }
 
-    // Remove CTA section if needed (currently not toggleable, but keeping for consistency)
-    if (hiddenSections.cta) {
-      homeContent = homeContent.replace(
-        /\s*\{\{>\s*"components\/cta"\}\}\s*/g,
-        '\n'
-      )
-    }
-
     filtered.home = homeContent
   }
 

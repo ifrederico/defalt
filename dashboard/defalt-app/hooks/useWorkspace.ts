@@ -38,14 +38,14 @@ import {
   getSectionDefinition,
   type SectionInstance
 } from '@defalt/sections/engine'
+import { applyDefaultTagsForSection, normalizeSectionId, resolveCustomSectionLabel } from '@defalt/utils/config/sectionRegistry'
 import { Ghost as GhostIcon } from 'lucide-react'
 import {
   footerDefaultsById,
   footerItemsDefault,
   getTemplateDefaults,
-  normalizeHeroSectionId,
   type SidebarItem
-} from '@defalt/utils/config/configStateDefaults'
+} from '@defalt/utils/config/sectionRegistry'
 import { useSaveQueue, isAbortError, throwIfAborted } from '@defalt/utils/hooks'
 import { TIMING } from '@defalt/utils/constants'
 import { apiPath } from '@defalt/utils/api/apiPath'
@@ -55,6 +55,7 @@ import { useHistoryContext } from '../contexts/useHistoryContext'
 import { GlobalSettingCommand } from '@defalt/utils/history/commands'
 import { useSectionManager, useAnnouncementBars } from './editor'
 import type { ToastHandler, SectionHydrationData, AnnouncementBarsHydrationData } from './editor'
+import type { TagState } from '@defalt/utils/config/sectionRegistry'
 
 export type { WorkspacePage }
 
@@ -62,6 +63,7 @@ type UseWorkspaceParams = {
   currentPage: WorkspacePage
   packageJson: string
   setPackageJson: (value: string) => void
+  resetPackageJson: () => void
   isAuthenticated: boolean
   user: AuthUser | null
   showToast: ToastHandler
@@ -74,10 +76,24 @@ type PersistExtras = {
   packageJson?: string
 }
 
+const normalizeSectionCustomConfig = (
+  definitionId: string | undefined,
+  instanceId: string,
+  customConfig: unknown
+): Record<string, unknown> | undefined => {
+  if (!definitionId) {
+    return customConfig && typeof customConfig === 'object'
+      ? { ...(customConfig as Record<string, unknown>) }
+      : undefined
+  }
+  return applyDefaultTagsForSection(definitionId, instanceId, customConfig)
+}
+
 export function useWorkspace({
   currentPage,
   packageJson,
   setPackageJson,
+  resetPackageJson,
   isAuthenticated,
   user,
   showToast,
@@ -142,20 +158,35 @@ export function useWorkspace({
     return page
   }, [])
 
+  const tagStateRef = useRef<TagState>({
+    customSections: {},
+    announcementBars: []
+  })
+
   // Use extracted hooks
   const sectionManager = useSectionManager({
     executeCommand,
     markAsDirty,
     showToast,
     currentPageRef,
-    getHistoryPageId
+    getHistoryPageId,
+    tagStateRef
   })
 
   const announcementBarsManager = useAnnouncementBars({
     executeCommand,
     markAsDirty,
-    showToast
+    showToast,
+    tagStateRef
   })
+
+  useEffect(() => {
+    tagStateRef.current.customSections = sectionManager.customSectionsRef.current
+  }, [sectionManager.customSections])
+
+  useEffect(() => {
+    tagStateRef.current.announcementBars = announcementBarsManager.announcementBarsRef.current
+  }, [announcementBarsManager.announcementBars])
 
   const templateDefaults = useMemo(() => getTemplateDefaults(currentPage), [currentPage])
   const templateDefaultsById = useMemo(() => {
@@ -343,7 +374,7 @@ export function useWorkspace({
 
     templateOrder.forEach((configKey) => {
       const rawItemId = CONFIG_TO_ID_MAP[configKey] || configKey
-      const normalizedItemId = normalizeHeroSectionId(rawItemId)
+      const normalizedItemId = normalizeSectionId(rawItemId)
       if (!allowSubscribe && normalizedItemId === 'subheader') {
         return
       }
@@ -351,12 +382,17 @@ export function useWorkspace({
       const definitionId = sectionConfig?.settings?.definitionId
 
       if (definitionId) {
-        const instance = buildSectionInstance(definitionId, normalizedItemId, sectionConfig?.settings?.customConfig)
+        const normalizedCustomConfig = normalizeSectionCustomConfig(
+          definitionId,
+          normalizedItemId,
+          sectionConfig?.settings?.customConfig
+        )
+        const instance = buildSectionInstance(definitionId, normalizedItemId, normalizedCustomConfig)
         if (instance) {
           newCustomSections[normalizedItemId] = instance
           newTemplateItems.push({
             id: normalizedItemId,
-            label: instance.label,
+            label: resolveCustomSectionLabel(normalizedItemId, definitionId),
             definitionId,
             icon: sectionManager.definitionIconMap[definitionId] || GhostIcon
           })
@@ -369,7 +405,7 @@ export function useWorkspace({
           newCustomSections[normalizedItemId] = fallbackInstance
           newTemplateItems.push({
             id: normalizedItemId,
-            label: fallbackInstance.label,
+            label: resolveCustomSectionLabel(normalizedItemId, definitionId),
             definitionId,
             icon: sectionManager.definitionIconMap[definitionId] || GhostIcon
           })
@@ -415,7 +451,7 @@ export function useWorkspace({
 
     Object.entries(pageConfig.sections).forEach(([key, section]) => {
       const rawItemId = CONFIG_TO_ID_MAP[key] || key
-      const stateId = normalizeHeroSectionId(rawItemId)
+      const stateId = normalizeSectionId(rawItemId)
       if (!allowSubscribe && stateId === 'subheader') {
         return
       }
@@ -797,9 +833,11 @@ export function useWorkspace({
 
     if (typeof snapshot.packageJson === 'string' && snapshot.packageJson.length > 0) {
       setPackageJson(snapshot.packageJson)
+    } else {
+      resetPackageJson()
     }
     setWorkspaceHydrated(true)
-  }, [currentPage, hydrateFromEditorState, loadStoredState, setPackageJson, showToast])
+  }, [currentPage, hydrateFromEditorState, loadStoredState, resetPackageJson, setPackageJson, showToast])
 
   const scheduleSave = useCallback(() => {
     if (!isHydrated) {

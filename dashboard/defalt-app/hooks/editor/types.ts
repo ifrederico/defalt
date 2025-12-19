@@ -5,11 +5,12 @@ import type {
   AnnouncementContentConfig,
   AnnouncementBarInstance
 } from '@defalt/utils/config/themeConfig'
-import type { SidebarItem } from '@defalt/utils/config/configStateDefaults'
+import type { SidebarItem } from '@defalt/utils/config/sectionRegistry'
 import type { SectionInstance, SectionConfigSchema, listDefinitionsByCategory } from '@defalt/sections/engine'
 import type { LucideIcon } from 'lucide-react'
 import type { HistoryCommand } from '@defalt/utils/history/commands'
 import type { WorkspacePage } from '../../types/workspace'
+import type { TagState } from '@defalt/utils/config/sectionRegistry'
 
 export type PaddingUpdateResult = {
   previousState: Record<string, SectionPadding>
@@ -35,6 +36,7 @@ export interface SectionManagerParams {
   showToast: ToastHandler
   currentPageRef: MutableRefObject<WorkspacePage>
   getHistoryPageId: () => string
+  tagStateRef: MutableRefObject<TagState>
 }
 
 export interface SectionManagerReturn {
@@ -140,6 +142,7 @@ export interface AnnouncementBarsParams {
   executeCommand: (cmd: HistoryCommand) => void
   markAsDirty: () => void
   showToast: ToastHandler
+  tagStateRef: MutableRefObject<TagState>
 }
 
 export interface AnnouncementBarsReturn {

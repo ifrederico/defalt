@@ -14,6 +14,7 @@ import { useMediaQuery } from '@defalt/utils/hooks'
 import type { StickyHeaderMode } from '@defalt/rendering/custom-source/handlebars/headerCustomization'
 import { LoadingState } from '@defalt/ui/primitives/LoadingState'
 import { useActiveDetail, useActiveTab, useHoveredSectionId, useScrollToSectionId, useSidebarExpanded, useUIActions } from './stores'
+import { normalizeSectionId, resolveCustomSectionLabel, resolveSectionLabel as resolveSectionLabelFromRegistry } from '@defalt/utils/config/sectionRegistry'
 
 export function AppContent() {
     const activeDetail = useActiveDetail()
@@ -106,49 +107,11 @@ export function AppContent() {
     } = useThemeContext()
     const { showToast } = useToast()
 
-    const normalizeSectionId = useCallback((sectionId: string): string => {
-        const lower = sectionId.toLowerCase()
-        if (lower === 'footer_bar' || lower === 'footer-bar') {
-            return 'footerBar'
-        }
-        if (lower === 'footer_signup' || lower === 'footer-signup') {
-            return 'footerSignup'
-        }
-        return sectionId
-    }, [])
-
 	    const resolveSectionLabel = useCallback((sectionId: string): string => {
 	        const normalizedId = normalizeSectionId(sectionId)
 
-	        if (normalizedId === 'header') {
-	            return 'Header'
-	        }
 	        if (normalizedId === 'footer') {
 	            return 'Footer'
-	        }
-	        const announcementBarIndex = announcementBars.findIndex((bar) => bar.id === normalizedId)
-	        if (announcementBarIndex !== -1) {
-	            return announcementBarIndex === 0 ? 'Announcement bar' : `Announcement bar ${announcementBarIndex + 1}`
-	        }
-	        if (normalizedId === 'subheader') {
-	            const labelMap: Record<string, string> = {
-	                'Landing': 'Landing',
-	                'Search': 'Search',
-                'Magazine': 'Magazine',
-                'Highlight': 'Highlight',
-                'Off': 'Off',
-            }
-            return labelMap[headerStyleValue] ?? 'Subheader'
-        }
-
-        const templateLabel = templateItems.find((item) => item.id === normalizedId)?.label
-        if (templateLabel) {
-            return templateLabel
-        }
-
-	        const footerLabel = footerItems.find((item) => item.id === normalizedId)?.label
-	        if (footerLabel) {
-	            return footerLabel
 	        }
 
 	        const aiLabel = aiSections.find((section) => section.id === normalizedId)?.name
@@ -157,12 +120,12 @@ export function AppContent() {
 	        }
 
 	        const customSection = customSections[normalizedId]
-	        if (customSection?.label) {
-	            return customSection.label
+	        if (customSection) {
+	            return resolveCustomSectionLabel(normalizedId, customSection.definitionId)
 	        }
 
-	        return normalizedId
-	    }, [aiSections, announcementBars, footerItems, headerStyleValue, templateItems, customSections, normalizeSectionId])
+	        return resolveSectionLabelFromRegistry(normalizedId, { headerStyleValue })
+	    }, [aiSections, customSections, headerStyleValue])
 
     const handlePreviewSectionSelect = useCallback((sectionId: string) => {
         const normalizedId = normalizeSectionId(sectionId)
@@ -172,6 +135,17 @@ export function AppContent() {
         const label = resolveSectionLabel(normalizedId)
         selectSection(normalizedId, label)
     }, [activeDetail, resolveSectionLabel, normalizeSectionId, selectSection])
+
+    useEffect(() => {
+        if (!activeDetail) {
+            return
+        }
+        const normalizedId = normalizeSectionId(activeDetail.id)
+        const resolvedLabel = resolveSectionLabel(normalizedId)
+        if (resolvedLabel && resolvedLabel !== activeDetail.label) {
+            selectSection(normalizedId, resolvedLabel)
+        }
+    }, [activeDetail, normalizeSectionId, resolveSectionLabel, selectSection])
 
     // Effect to handle checkout success
     useEffect(() => {
