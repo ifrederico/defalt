@@ -217,8 +217,7 @@ export function useAnnouncementBars({
       const previous = prevBars[idx].content
       const nextCandidate = normalizeAnnouncementContentConfig(
         updater(previous),
-        previous,
-        prevBars[idx].bar
+        previous
       )
       const normalizedCandidate = ensureSingleAnnouncement(nextCandidate)
       const parsed = parseUnifiedConfig(prevBars[idx].bar, normalizedCandidate)
@@ -280,8 +279,7 @@ export function useAnnouncementBars({
         const normalizedContent = ensureSingleAnnouncement(
           normalizeAnnouncementContentConfig(
             bar.content ?? DEFAULT_ANNOUNCEMENT_CONTENT_CONFIG,
-            DEFAULT_ANNOUNCEMENT_CONTENT_CONFIG,
-            bar.bar
+            DEFAULT_ANNOUNCEMENT_CONTENT_CONFIG
           )
         )
 

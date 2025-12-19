@@ -5,7 +5,6 @@ import { apiPath } from '../api/apiPath.js'
 import { getCachedCsrfToken, requestCsrfToken } from '../security/csrf.js'
 import { sanitizeHexColor } from '../security/sanitizers.js'
 import { deepClone } from '../helpers/deepClone.js'
-import { runThemeDocumentMigrations } from './migrations/index.js'
 
 export type PageType = 'home' | 'about' | 'post' | 'page'
 
@@ -95,9 +94,6 @@ export interface SectionSettings {
   stickyHeaderMode?: StickyHeaderModeSetting
   searchEnabled?: boolean
   typographyCase?: HeaderTypographyCaseSetting
-  announcementBarVisible?: boolean
-  announcementBarConfig?: AnnouncementBarConfig
-  announcementContentConfig?: AnnouncementContentConfig
   announcementBars?: AnnouncementBarInstance[]
   accentColor?: string
   backgroundColor?: string
@@ -400,16 +396,12 @@ export const normalizeAnnouncementBarConfig = (value: unknown, fallback: Announc
 
 export const normalizeAnnouncementContentConfig = (
   value: unknown,
-  fallback: AnnouncementContentConfig,
-  legacySource?: unknown
+  fallback: AnnouncementContentConfig
 ): AnnouncementContentConfig => {
   if (!value || typeof value !== 'object') {
     return { ...fallback }
   }
   const raw = value as Record<string, unknown>
-  const legacy = legacySource && typeof legacySource === 'object'
-    ? legacySource as Record<string, unknown>
-    : undefined
 
   const parseSize = (input: unknown): AnnouncementBarTypographySize | null => {
     if (input === 'small' || input === 'normal' || input === 'large' || input === 'x-large') {
@@ -436,11 +428,6 @@ export const normalizeAnnouncementContentConfig = (
     return null
   }
 
-  const legacyTypographySize = parseSize(raw.typographySize) ?? parseSize(legacy?.typographySize)
-  const legacyTypographyWeight = parseWeight(raw.typographyWeight) ?? parseWeight(legacy?.typographyWeight)
-  const legacyTypographySpacing = parseSpacing(raw.typographySpacing) ?? parseSpacing(legacy?.typographySpacing)
-  const legacyTypographyCase = parseCase(raw.typographyCase) ?? parseCase(legacy?.typographyCase)
-
   // Parse announcements array
   const parseAnnouncements = (input: unknown): AnnouncementBlock[] => {
     if (!Array.isArray(input)) return fallback.announcements
@@ -454,10 +441,10 @@ export const normalizeAnnouncementContentConfig = (
         text: typeof obj.text === 'string' ? obj.text : '',
         link: typeof obj.link === 'string' ? obj.link : '',
         // Typography settings with defaults
-        typographySize: parseSize(obj.typographySize) ?? legacyTypographySize ?? 'normal',
-        typographyWeight: parseWeight(obj.typographyWeight) ?? legacyTypographyWeight ?? 'default',
-        typographySpacing: parseSpacing(obj.typographySpacing) ?? legacyTypographySpacing ?? 'regular',
-        typographyCase: parseCase(obj.typographyCase) ?? legacyTypographyCase ?? 'default'
+        typographySize: parseSize(obj.typographySize) ?? 'normal',
+        typographyWeight: parseWeight(obj.typographyWeight) ?? 'default',
+        typographySpacing: parseSpacing(obj.typographySpacing) ?? 'regular',
+        typographyCase: parseCase(obj.typographyCase) ?? 'default'
       }
     })
   }
@@ -469,7 +456,7 @@ export const normalizeAnnouncementContentConfig = (
 
 /**
  * Normalizes the persisted header section ensuring all optional fields
- * exist and legacy properties are migrated to the current schema.
+ * exist and announcement bars are sanitized.
  *
  * @param section - The raw header section read from storage.
  * @returns A sanitized header section ready for use in the editor.
@@ -477,9 +464,6 @@ export const normalizeAnnouncementContentConfig = (
 const normalizeHeaderSection = (section: SectionConfig | undefined): SectionConfig => {
   const defaults = createDefaultHeaderSection()
   const settings = (section?.settings ?? {}) as Record<string, unknown>
-  const announcementBarVisible = typeof settings.announcementBarVisible === 'boolean'
-    ? settings.announcementBarVisible
-    : undefined
 
   const normalizeAnnouncementBars = (input: unknown): AnnouncementBarInstance[] => {
     if (!Array.isArray(input)) {
@@ -526,8 +510,7 @@ const normalizeHeaderSection = (section: SectionConfig | undefined): SectionConf
         const contentRaw = obj.content as AnnouncementContentConfig | undefined
         const contentNormalized = normalizeAnnouncementContentConfig(
           contentRaw ?? DEFAULT_ANNOUNCEMENT_CONTENT_CONFIG,
-          DEFAULT_ANNOUNCEMENT_CONTENT_CONFIG,
-          obj.bar
+          DEFAULT_ANNOUNCEMENT_CONTENT_CONFIG
         )
 
         const announcement =
@@ -546,43 +529,7 @@ const normalizeHeaderSection = (section: SectionConfig | undefined): SectionConf
       .filter((item): item is AnnouncementBarInstance => item !== null)
   }
 
-  const announcementBars = (() => {
-    const normalized = normalizeAnnouncementBars(settings.announcementBars)
-    if (normalized.length > 0) {
-      return normalized
-    }
-
-    if (announcementBarVisible === undefined) {
-      return []
-    }
-
-    const legacyBar = normalizeAnnouncementBarConfig(
-      (settings.announcementBarConfig as AnnouncementBarConfig | undefined) ?? DEFAULT_ANNOUNCEMENT_BAR_CONFIG,
-      DEFAULT_ANNOUNCEMENT_BAR_CONFIG
-    )
-    const legacyContent = normalizeAnnouncementContentConfig(
-      (settings.announcementContentConfig as AnnouncementContentConfig | undefined) ?? DEFAULT_ANNOUNCEMENT_CONTENT_CONFIG,
-      DEFAULT_ANNOUNCEMENT_CONTENT_CONFIG,
-      settings.announcementBarConfig
-    )
-
-    const announcements = legacyContent.announcements.length > 0
-      ? legacyContent.announcements
-      : DEFAULT_ANNOUNCEMENT_CONTENT_CONFIG.announcements
-
-    return announcements.map((announcement, idx) => {
-      const tag = idx === 0 ? '#announcement' : `#announcement-${idx + 1}`
-      return {
-        id: idx === 0 ? 'announcement-bar' : `announcement-bar-${idx + 1}`,
-        hidden: !announcementBarVisible,
-        bar: { ...legacyBar },
-        content: {
-          ...legacyContent,
-          announcements: [{ ...announcement, tag: announcement.tag || tag }]
-        }
-      }
-    })
-  })()
+  const announcementBars = normalizeAnnouncementBars(settings.announcementBars)
 
   return {
     type: 'header',
@@ -813,15 +760,6 @@ export const normalizeThemeDocument = (candidate: unknown): ThemeDocument => {
   }
 }
 
-const migrateThemeDocument = (document: ThemeDocument): { doc: ThemeDocument; applied: string[] } => {
-  try {
-    return runThemeDocumentMigrations(document)
-  } catch (error) {
-    logError(error, { scope: 'themeConfig.runThemeDocumentMigrations' })
-    return { doc: document, applied: [] }
-  }
-}
-
 // Read from draft storage (sessionStorage)
 const readDraftDocument = (): ThemeDocument | null => {
   const storage = getDraftStorage()
@@ -838,18 +776,12 @@ const readDraftDocument = (): ThemeDocument | null => {
     const parsed = JSON.parse(raw) as unknown
     const validated = safeParseThemeDocument(parsed, 'draft-storage', { suppressLog: true })
     if (validated) {
-      const normalized = normalizeThemeDocument(validated)
-      const migrated = migrateThemeDocument(normalized)
-      if (migrated.applied.length > 0) {
-        storage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(migrated.doc))
-      }
-      return migrated.doc
+      return normalizeThemeDocument(validated)
     }
     const normalized = normalizeThemeDocument(parsed)
-    const migrated = migrateThemeDocument(normalized)
     pendingStorageNormalizationEvent = { source: 'draft-storage', reason: 'schema' }
-    storage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(migrated.doc))
-    return migrated.doc
+    storage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(normalized))
+    return normalized
   } catch (error) {
     logError(error, { scope: 'themeConfig.loadDraftDocument' })
     pendingStorageNormalizationEvent = { source: 'draft-storage', reason: 'parse' }
@@ -874,18 +806,12 @@ const readSavedDocument = (): ThemeDocument => {
     const parsed = JSON.parse(raw) as unknown
     const validated = safeParseThemeDocument(parsed, 'saved-storage', { suppressLog: true })
     if (validated) {
-      const normalized = normalizeThemeDocument(validated)
-      const migrated = migrateThemeDocument(normalized)
-      if (migrated.applied.length > 0) {
-        storage.setItem(SAVED_STORAGE_KEY, JSON.stringify(migrated.doc))
-      }
-      return migrated.doc
+      return normalizeThemeDocument(validated)
     }
     const normalized = normalizeThemeDocument(parsed)
-    const migrated = migrateThemeDocument(normalized)
     pendingStorageNormalizationEvent = { source: 'saved-storage', reason: 'schema' }
-    storage.setItem(SAVED_STORAGE_KEY, JSON.stringify(migrated.doc))
-    return migrated.doc
+    storage.setItem(SAVED_STORAGE_KEY, JSON.stringify(normalized))
+    return normalized
   } catch (error) {
     logError(error, { scope: 'themeConfig.loadSavedDocument' })
     pendingStorageNormalizationEvent = { source: 'saved-storage', reason: 'parse' }
@@ -1034,15 +960,13 @@ export const loadSavedThemeDocument = (): ThemeDocument => {
 // Persist to draft storage (sessionStorage) - for auto-save
 export const persistDraftThemeDocument = (document: ThemeDocument): boolean => {
   const normalized = normalizeThemeDocument(document)
-  const migrated = migrateThemeDocument(normalized)
-  return writeDraftDocument(migrated.doc)
+  return writeDraftDocument(normalized)
 }
 
 // Persist to saved storage (localStorage) - for explicit save
 export const persistSavedThemeDocument = (document: ThemeDocument): boolean => {
   const normalized = normalizeThemeDocument(document)
-  const migrated = migrateThemeDocument(normalized)
-  return writeSavedDocument(migrated.doc)
+  return writeSavedDocument(normalized)
 }
 
 // Legacy export - loads draft first, falls back to saved
@@ -1050,8 +974,7 @@ export const loadPersistedThemeDocument = (): ThemeDocument => clone(readPersist
 
 export const persistThemeDocument = (document: ThemeDocument): boolean => {
   const normalized = normalizeThemeDocument(document)
-  const migrated = migrateThemeDocument(normalized)
-  return writePersistedDocument(migrated.doc)
+  return writePersistedDocument(normalized)
 }
 
 const resolveDocumentPageKey = (page: string): DocumentPageKey => {
@@ -1117,14 +1040,13 @@ export const saveThemeDocument = async (document: ThemeDocument): Promise<void> 
     }
 
     const normalized = normalizeThemeDocument(document)
-    const migrated = migrateThemeDocument(normalized)
     const response = await fetch(apiPath('/api/theme-config'), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         ...(csrfToken ? { 'x-csrf-token': csrfToken } : {})
       },
-      body: JSON.stringify(migrated.doc, null, 2)
+      body: JSON.stringify(normalized, null, 2)
     })
 
     if (!response.ok) {

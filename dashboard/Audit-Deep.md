@@ -1,6 +1,7 @@
 # Defalt dashboard deep audit (architectural)
 
 Date: 2025-12-17
+Updated: 2025-12-19 (false positives + decisions)
 
 Notes:
 - File:line refs match this repo state and will drift.
@@ -21,13 +22,26 @@ Removed after repo-wide import scan (0 usages):
 - `dashboard/defalt-app/types/ghost-content-api.d.ts`
 - `dashboard/package.json` deps: `use-debounce`, `@tryghost/content-api` (removed; lockfile updated)
 
+## Resolved / false positives (as of 2025-12-19)
+- Derived-config helpers are shared (no preview/export duplication):
+  - `dashboard/defalt-rendering/derived/sectionDerived.ts`
+- Color sanitization drift resolved (export + themeConfig use shared `sanitizeHexColor`):
+  - `dashboard/defalt-rendering/theme/exportTheme.ts:13`
+  - `dashboard/defalt-utils/config/themeConfig.ts:6`
+- Announcement bar UI exposes `tag` + `link` (schema + settings renderer align):
+  - `dashboard/defalt-sections/sections/announcement-bar/schema.ts:41`
+  - `dashboard/defalt-app/layout/sidebar/pages/components/SectionDetailRenderer.tsx:552`
+- Ghost cards legacy tag normalization exists on edit:
+  - `dashboard/defalt-app/hooks/editor/useSectionManager.ts:731`
+- Base-path mismatch test note was wrong (tests already use `apiPath()`):
+  - `dashboard/defalt-app/hooks/useWorkspace.test.tsx:336`
+
 ## Executive summary (highest ROI problems)
 - Settings have multiple sources of truth (schema defaults + UI fallbacks + editor injection + normalization).
-- Preview vs export duplicate “derived config” logic (tags, widths, image layout) → guaranteed drift.
 - Hero multi-instance is supported but tag assignment is broken (duplicate `#hero`).
-- Announcement bar is “block-based” on paper, but runtime enforces single-item bars; UI can’t edit `tag`/`link`.
+- Announcement bar schema/UI allow repeatable blocks, but runtime enforces single-item bars.
 - DB init SQL likely fails on first boot (trigger created before function).
-- Base-path handling (`/api` vs `/app/api`) leaks into tests and likely deployments.
+- Preview hides by stripping markup while export wraps in hidden markup (behavior mismatch).
 
 ## End-to-end flow (actual)
 
@@ -78,14 +92,6 @@ Changing constraints requires edits in both places.
 - Warns but still registers. `dashboard/defalt-sections/engine/sectionRegistry.ts:138` and `:148`.
 - Only validates `settingsSchema` ids against `configSchema.shape`; does not validate `blocksSchema` ids. (Validation loop starts here.) `dashboard/defalt-sections/engine/sectionRegistry.ts:107`.
 
-### 1.5 Announcement bar block schema drift (link + tag not editable)
-Config has `tag` and `link`, template uses them, UI does not expose them.
-- Config: `link` exists. `dashboard/defalt-sections/sections/announcement-bar/schema.ts:23`.
-- Block UI schema: no `tag` / `link` fields. `dashboard/defalt-sections/sections/announcement-bar/schema.ts:41`.
-- Template: renders `<a href="{{../link}}">...` when link present. `dashboard/defalt-sections/sections/announcement-bar/announcement-bar.hbs:92`.
-
-Schema says repeatable blocks (limit 5), but runtime enforces single announcement (see 3.5).
-
 ## 2) defalt-rendering
 
 ### 2.1 Rendering engine consumes config via two separate pipelines
@@ -102,20 +108,10 @@ At least 4:
 - `pageLayout` → hardcoded `--container-width` values. `dashboard/defalt-rendering/custom-source/handlebars/domManipulation.ts:698`.
 - Section `contentWidth` setting → template-specific max-width behavior. `dashboard/defalt-sections/engine/commonSettings.ts:24` and `dashboard/defalt-sections/sections/hero/hero.hbs:162`.
 
-### 2.3 Preview vs export duplicate “derived config” builders
-Same concepts exist twice:
-- preview: `resolveContainerPaddingX`, `resolveImageColumns`, `toTagFilter`, fallback tag resolvers. `dashboard/defalt-rendering/custom-source/HandlebarsRenderer.tsx:54`.
-- export: same names. `dashboard/defalt-rendering/theme/exportTheme.ts:196`.
-
 ### 2.4 Preview hides by stripping markup; export hides by wrapping markup
 - Preview strips via regex replacement. `dashboard/defalt-rendering/custom-source/handlebars/templateLoader.ts:78`.
 - Export wraps in `<div class="hidden">`. `dashboard/defalt-rendering/theme/exportTheme.ts:294`.
-
-### 2.5 Sanitization drift (color)
-Color sanitizers are inconsistent across layers:
-- canonical (robust): `sanitizeHexColor`. `dashboard/defalt-utils/security/sanitizers.ts:126`.
-- exportTheme local (weak): `sanitizeHexColor`. `dashboard/defalt-rendering/theme/exportTheme.ts:120`.
-- themeConfig local (weak): `sanitizeHexColorValue`. `dashboard/defalt-utils/config/themeConfig.ts:377`.
+Decision: match export behavior (wrap hidden markup in preview).
 
 ## 3) defalt-app
 
@@ -143,14 +139,7 @@ Preview/export fallback logic can derive `#hero-2` from the id, but only when th
 - export fallback. `dashboard/defalt-rendering/theme/exportTheme.ts:219`.
 
 Because config tag is explicitly set to `#hero`, fallback never triggers → tag collision.
-
-### 3.4 Ghost cards legacy tag normalization is missing (confirmed by failing test)
-There’s a helper to parse legacy tag suffixes:
-- `parseGhostCardTagSuffix()`. `dashboard/defalt-sections/utils/tagUtils.ts:62`.
-
-But nothing normalizes the value on edit/hydration, so tags like `#ghost-card2` persist as-is.
-The existing test expects normalization:
-- expects `#cards-2`. `dashboard/defalt-app/hooks/useWorkspace.test.tsx:236`.
+Decision: tags should be unique by default (`#hero`, `#hero-2`, …); normalize on load.
 
 ### 3.5 Announcement bars: schema says repeatable blocks; runtime enforces single
 Enforced by app:
@@ -159,18 +148,15 @@ Enforced by preview:
 - preview truncates announcements array to 1. `dashboard/defalt-rendering/custom-source/HandlebarsRenderer.tsx:189`.
 Schema still advertises 5 blocks:
 - blocksSchema limit 5. `dashboard/defalt-sections/sections/announcement-bar/schema.ts:45`.
+Decision: allow multi (limit 5) by removing truncation in app + preview.
 
-### 3.6 Base-path mismatch leaks into tests (likely prod too)
-`apiPath()` prefixes with Vite `BASE_URL`. `dashboard/defalt-utils/api/apiPath.ts:8`.
-
-Test expects hardcoded `/api/theme-config`:
-- `useWorkspace.test.tsx`. `dashboard/defalt-app/hooks/useWorkspace.test.tsx:335`.
-
-If the app is served under `/app/`, actual calls are `/app/api/...`.
-
-### 3.7 Subscription gating API is inconsistent
+### 3.6 Subscription gating API is inconsistent
 `hasFeature(feature)` ignores the parameter:
 - `void feature`. `dashboard/defalt-app/contexts/SubscriptionContext.tsx:68`.
+Decision: plus gets access to everything; free can add/experiment but export should block premium sections.
+Export currently bypasses gating:
+- `tier: 'plus_monthly'` unconditionally. `dashboard/server.ts:676`.
+Decision: server should derive tier from member data (not client).
 
 ## 4) defalt-ui
 
@@ -203,14 +189,12 @@ Custom CSS persistence moved to document-level:
 - normalization preserves/migrates it. `dashboard/defalt-utils/config/themeConfig.ts:788`.
 - persistence writes it. `dashboard/defalt-utils/config/themeConfig.ts:1094`.
 
-### 5.4 Stale premium config / dead export logic
-Premium config references missing sections:
+### 5.4 Premium sections are planned but not shipped yet
+Premium config references sections that don’t exist yet:
 - `grid/faq/about/testimonials`. `dashboard/defalt-utils/config/premiumConfig.ts:3`.
 Server maps those to partial names:
 - `PREMIUM_SECTION_PARTIALS`. `dashboard/server.ts:629`.
-
-But server export currently forces tier to plus:
-- `tier: 'plus_monthly'` unconditionally. `dashboard/server.ts:676`.
+Plan: keep this list for upcoming sections, but add the missing sections/partials before enabling export gating.
 
 ### 5.5 Unreachable legacy: `header.sections['announcement-bar']`
 Server checks this:
@@ -221,17 +205,12 @@ But normalization collapses to only `{ header }`:
 ## Cross-cutting categories (requested)
 
 ### Broken references / stale data
-- Premium feature ids reference non-existent sections. `dashboard/defalt-utils/config/premiumConfig.ts:3`.
-- Server premium partial mapping includes files that don’t exist in this repo (not fatal due to `force: true` deletes). `dashboard/server.ts:629`.
+- Premium feature ids reference sections not shipped yet (planned). `dashboard/defalt-utils/config/premiumConfig.ts:3`.
+- Server premium partial mapping includes files not in repo yet. `dashboard/server.ts:629`.
 
 ### Unreachable code
 - `hasFeature(feature)` ignores feature. `dashboard/defalt-app/contexts/SubscriptionContext.tsx:66`.
 - Legacy announcement-bar header-section branch (see 5.5).
 
-### Redundant code
-- Preview vs export derived config builders duplicated (tags/layout helpers). `dashboard/defalt-rendering/custom-source/HandlebarsRenderer.tsx:54` and `dashboard/defalt-rendering/theme/exportTheme.ts:196`.
-- Multiple sanitizers for “colors”. `dashboard/defalt-utils/security/sanitizers.ts:126`, `dashboard/defalt-rendering/theme/exportTheme.ts:120`, `dashboard/defalt-utils/config/themeConfig.ts:377`.
-
 ## Open questions (need your answers)
-1) Multiple hero instances: should tags be forced unique by default (`#hero`, `#hero-2`, …), and should we normalize legacy hero tags on load?
-2) Announcement blocks: should UI expose `block.tag` and `block.link` (currently not editable), or keep them auto-managed? If auto-managed, what is the rule?
+- None.

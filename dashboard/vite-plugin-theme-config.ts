@@ -201,6 +201,18 @@ function ensureCsrf(req: IncomingMessage, res: ServerResponse, routeName: string
 const isStringArray = (value: unknown): value is string[] =>
   Array.isArray(value) && value.every((item) => typeof item === 'string')
 
+function normalizeApiUrl(rawUrl: string | undefined, base: string): string {
+  const url = (rawUrl || '').split('?')[0] || ''
+  if (!url) return ''
+  if (!base || base === '/') return url
+  const normalizedBase = base.endsWith('/') ? base.slice(0, -1) : base
+  if (url === normalizedBase) return '/'
+  if (url.startsWith(`${normalizedBase}/`)) {
+    return url.slice(normalizedBase.length) || '/'
+  }
+  return url
+}
+
 function validateThemeConfigPayload(payload: unknown): { valid: boolean, error?: string } {
   if (!isPlainObject(payload)) {
     return { valid: false, error: 'Theme config must be an object.' }
@@ -295,7 +307,10 @@ export function themeConfigPlugin(): Plugin {
 
       server.middlewares.use(async (req, res, next) => {
         try {
-          if (req.url === '/api/auth/csrf') {
+          const base = server.config.base || '/'
+          const normalizedUrl = normalizeApiUrl(req.url, base)
+
+          if (normalizedUrl === '/api/auth/csrf') {
             if (req.method !== 'GET') {
               res.statusCode = 405
               res.setHeader('Allow', 'GET')
@@ -310,13 +325,13 @@ export function themeConfigPlugin(): Plugin {
           }
 
           // Ghost Content API proxy for development (disabled)
-          if (req.url?.startsWith('/api/ghost/content') && req.method === 'GET') {
+          if (normalizedUrl?.startsWith('/api/ghost/content') && req.method === 'GET') {
             sendJson(res, 410, { success: false, error: 'Ghost proxy disabled; call Ghost directly.' })
             return
           }
 
           // Ghost Member proxy for development
-          if (req.url === '/api/member' && req.method === 'GET') {
+          if (normalizedUrl === '/api/member' && req.method === 'GET') {
             if (!ghostUrl) {
               sendJson(res, 500, { error: 'Ghost URL not configured' })
               return
@@ -350,7 +365,7 @@ export function themeConfigPlugin(): Plugin {
             return
           }
 
-          if (req.url === '/api/theme-config') {
+          if (normalizedUrl === '/api/theme-config') {
             if (req.method === 'DELETE') {
               if (!ensureAuthorized(req, res, '/api/theme-config')) {
                 return
@@ -429,7 +444,7 @@ export function themeConfigPlugin(): Plugin {
             return
           }
 
-          if (req.url === '/api/theme/export' && req.method === 'POST') {
+          if (normalizedUrl === '/api/theme/export' && req.method === 'POST') {
             if (!ensureAuthorized(req, res, '/api/theme/export')) {
               return
             }

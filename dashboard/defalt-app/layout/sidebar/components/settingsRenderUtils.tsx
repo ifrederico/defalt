@@ -132,7 +132,7 @@ export function renderSettingInput(
           placeholder={setting.placeholder || 'https://...'}
           value={typeof value === 'string' ? value : ''}
           disabled={isDisabled}
-          onChange={(e) => onChange(e.target.value || '#')}
+          onChange={(e) => onChange(e.target.value)}
         />
       )
     case 'textarea':

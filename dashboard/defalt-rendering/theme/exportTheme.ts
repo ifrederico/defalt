@@ -17,9 +17,6 @@ import type {
   SectionConfig,
   SectionSettings,
   ThemeDocument,
-  AnnouncementBarConfig,
-  AnnouncementContentConfig,
-  AnnouncementBarInstance,
   AnnouncementBlock,
   SectionPadding,
   SectionMargin,
@@ -677,7 +674,7 @@ export async function applyDefaultTemplateCustomization(themeDir: string, config
   }
 
   const sections = config.sections || {}
-  const headerSettings = sections.header?.settings as (SectionSettings & { announcementBarVisible?: boolean }) | undefined
+  const headerSettings = sections.header?.settings as SectionSettings | undefined
 
   // NOTE: "header" section controls {{> "components/navigation"}} (nav bar in default.hbs)
   // "subheader" section controls {{> "components/header"}} (Magazine/Search/Highlight/Landing in home.hbs)
@@ -716,49 +713,10 @@ export async function applyAnnouncementBarCustomization(themeDir: string, config
   const partialPath = path.join(themeDir, 'partials', 'announcement-bar.hbs')
 
   const sections = config.sections || {}
-  const headerSettings = sections.header?.settings as (SectionSettings & {
-    announcementBars?: AnnouncementBarInstance[]
-    announcementBarVisible?: boolean
-    announcementBarConfig?: AnnouncementBarConfig
-    announcementContentConfig?: AnnouncementContentConfig
-  }) | undefined
-
-  const resolveLegacyAnnouncementBars = (): AnnouncementBarInstance[] => {
-    const legacyVisible = typeof headerSettings?.announcementBarVisible === 'boolean'
-      ? headerSettings.announcementBarVisible
-      : undefined
-    if (legacyVisible === undefined) {
-      return []
-    }
-
-    const legacyBar = normalizeAnnouncementBarConfig(
-      headerSettings?.announcementBarConfig ?? DEFAULT_ANNOUNCEMENT_BAR_CONFIG,
-      DEFAULT_ANNOUNCEMENT_BAR_CONFIG
-    )
-    const legacyContent = normalizeAnnouncementContentConfig(
-      headerSettings?.announcementContentConfig ?? DEFAULT_ANNOUNCEMENT_CONTENT_CONFIG,
-      DEFAULT_ANNOUNCEMENT_CONTENT_CONFIG,
-      headerSettings?.announcementBarConfig
-    )
-
-    const announcements = legacyContent.announcements.length > 0
-      ? legacyContent.announcements
-      : DEFAULT_ANNOUNCEMENT_CONTENT_CONFIG.announcements
-
-    return announcements.map((announcement, idx) => ({
-      id: idx === 0 ? 'announcement-bar' : `announcement-bar-${idx + 1}`,
-      hidden: !legacyVisible,
-      bar: { ...legacyBar },
-      content: {
-        ...legacyContent,
-        announcements: [announcement]
-      }
-    }))
-  }
-
+  const headerSettings = sections.header?.settings as SectionSettings | undefined
   const announcementBars = Array.isArray(headerSettings?.announcementBars)
     ? headerSettings.announcementBars
-    : resolveLegacyAnnouncementBars()
+    : []
 
   const addedBars = announcementBars.filter((bar) => bar && typeof bar === 'object')
   if (addedBars.length === 0) {
@@ -863,8 +821,7 @@ export async function applyAnnouncementBarCustomization(themeDir: string, config
     const normalizedBar = normalizeAnnouncementBarConfig(bar.bar ?? DEFAULT_ANNOUNCEMENT_BAR_CONFIG, DEFAULT_ANNOUNCEMENT_BAR_CONFIG)
     const normalizedContent = normalizeAnnouncementContentConfig(
       bar.content ?? DEFAULT_ANNOUNCEMENT_CONTENT_CONFIG,
-      DEFAULT_ANNOUNCEMENT_CONTENT_CONFIG,
-      bar.bar
+      DEFAULT_ANNOUNCEMENT_CONTENT_CONFIG
     )
 
     const announcements = normalizedContent.announcements.length > 0

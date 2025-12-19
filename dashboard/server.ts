@@ -657,16 +657,7 @@ function isAnnouncementBarEnabled(document: ThemeDocument): boolean {
   const headerSettings = document.header?.sections?.header?.settings
 
   const announcementBars = headerSettings?.announcementBars
-  if (Array.isArray(announcementBars)) {
-    return announcementBars.length > 0
-  }
-
-  const announcementSectionVisible = document.header?.sections?.['announcement-bar']?.settings?.visible
-  if (typeof announcementSectionVisible === 'boolean') {
-    return announcementSectionVisible
-  }
-
-  return headerSettings?.announcementBarVisible === true
+  return Array.isArray(announcementBars) && announcementBars.length > 0
 }
 
 async function validatePremiumFeatures(

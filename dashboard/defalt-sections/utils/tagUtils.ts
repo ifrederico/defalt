@@ -1,6 +1,6 @@
 /**
  * Shared tag utilities for Ghost section definitions
- * Used by ghostCards, ghostGrid, and imageWithText sections
+ * Used by ghostCards, ghostGrid, imageWithText, and hero sections
  */
 
 import type { PreviewPageData } from '../engine/previewTypes.js'
@@ -97,4 +97,26 @@ export function normalizeGhostCardsTag(tagValue: unknown): string {
     return '#cards'
   }
   return `#cards-${suffix}`
+}
+
+export function normalizeHeroTag(tagValue: unknown): string {
+  if (typeof tagValue !== 'string') {
+    return ''
+  }
+  const normalized = tagValue.trim().replace(/^#+/, '').toLowerCase()
+  if (!normalized) {
+    return ''
+  }
+  const match = normalized.match(/^hero-?(\d+)?$/)
+  if (!match) {
+    return ''
+  }
+  if (!match[1]) {
+    return '#hero'
+  }
+  const numeric = Number.parseInt(match[1], 10)
+  if (!Number.isFinite(numeric) || numeric <= 1) {
+    return '#hero'
+  }
+  return `#hero-${numeric}`
 }

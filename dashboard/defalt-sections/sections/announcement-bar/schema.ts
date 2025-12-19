@@ -51,9 +51,21 @@ export const announcementBarBlocksSchema: BlockSchema[] = [
         label: 'Content'
       },
       {
+        type: 'text',
+        id: 'tag',
+        label: 'Tag',
+        placeholder: '#announcement'
+      },
+      {
         type: 'textarea',
         id: 'text',
         label: 'Text'
+      },
+      {
+        type: 'url',
+        id: 'link',
+        label: 'Link',
+        placeholder: 'https://...'
       },
       // Typography
       {

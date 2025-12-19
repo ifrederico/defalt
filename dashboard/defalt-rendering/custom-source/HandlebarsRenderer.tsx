@@ -146,7 +146,7 @@ export function HandlebarsRenderer({
     const fallbackAnnouncement = DEFAULT_ANNOUNCEMENT_CONTENT_CONFIG.announcements[0]
     return announcementBars.map((entry) => {
       const bar = normalizeAnnouncementBarConfig(entry.bar ?? DEFAULT_ANNOUNCEMENT_BAR_CONFIG, DEFAULT_ANNOUNCEMENT_BAR_CONFIG)
-      const content = normalizeAnnouncementContentConfig(entry.content ?? DEFAULT_ANNOUNCEMENT_CONTENT_CONFIG, DEFAULT_ANNOUNCEMENT_CONTENT_CONFIG, entry.bar)
+      const content = normalizeAnnouncementContentConfig(entry.content ?? DEFAULT_ANNOUNCEMENT_CONTENT_CONFIG, DEFAULT_ANNOUNCEMENT_CONTENT_CONFIG)
       const announcements = content.announcements.length > 0
         ? content.announcements
         : [fallbackAnnouncement]
@@ -826,6 +826,27 @@ export function HandlebarsRenderer({
       }
     }
   }, [selectedSectionId])
+
+  // Re-apply selection highlight when padding/margins change (keeps overlay synced).
+  useEffect(() => {
+    if (!selectedSectionId) return
+    const iframe = iframeRef.current
+    if (!iframe) return
+
+    const doc = iframe.contentDocument || iframe.contentWindow?.document
+    if (!doc || doc.readyState !== 'complete') return
+
+    const win = doc.defaultView
+    const applyHighlight = () => {
+      highlightSection(doc, selectedSectionId, { scroll: false })
+    }
+
+    if (win) {
+      win.requestAnimationFrame(applyHighlight)
+    } else {
+      applyHighlight()
+    }
+  }, [selectedSectionId, sectionPadding, sectionMargins])
 
   // Effect to highlight hovered section from sidebar
   useEffect(() => {
