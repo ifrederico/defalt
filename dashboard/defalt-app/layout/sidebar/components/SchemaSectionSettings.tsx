@@ -37,7 +37,7 @@ export function SchemaSectionSettings({
     if (definition.paddingControls) {
       return definition.paddingControls
     }
-    return definition.showPaddingControls === false ? 'none' : 'vertical'
+    return 'vertical'
   }, [definition])
 
   // Must call all hooks unconditionally before any early returns

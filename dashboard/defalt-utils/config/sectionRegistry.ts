@@ -1,8 +1,5 @@
 import {
   formatInternalTag,
-  normalizeGhostCardsTag,
-  normalizeHeroTag,
-  normalizeImageWithTextTag,
   parseGhostCardIdSuffix,
   resolveHeroTagFromId,
   resolveImageWithTextTagFromId
@@ -116,7 +113,7 @@ const CUSTOM_SECTION_REGISTRY: Record<string, CustomSectionRegistryEntry> = {
     maxInstances: MAX_CUSTOM_INSTANCES,
     tagFields: ['tag'],
     resolveDefaultTags: (instanceId) => ({ tag: resolveHeroTagFromId(instanceId) }),
-    normalizeTagValue: (_field, value) => normalizeHeroTag(value) || formatInternalTag(value)
+    normalizeTagValue: (_field, value) => formatInternalTag(value)
   },
   'image-with-text': {
     definitionId: 'image-with-text',
@@ -125,7 +122,7 @@ const CUSTOM_SECTION_REGISTRY: Record<string, CustomSectionRegistryEntry> = {
     maxInstances: MAX_CUSTOM_INSTANCES,
     tagFields: ['tag'],
     resolveDefaultTags: (instanceId) => ({ tag: resolveImageWithTextTagFromId(instanceId) }),
-    normalizeTagValue: (_field, value) => normalizeImageWithTextTag(value) || formatInternalTag(value)
+    normalizeTagValue: (_field, value) => formatInternalTag(value)
   },
   ghostCards: {
     definitionId: 'ghostCards',
@@ -134,7 +131,7 @@ const CUSTOM_SECTION_REGISTRY: Record<string, CustomSectionRegistryEntry> = {
     maxInstances: MAX_CUSTOM_INSTANCES,
     tagFields: ['tag'],
     resolveDefaultTags: (instanceId) => ({ tag: resolveGhostCardsTagFromId(instanceId) }),
-    normalizeTagValue: (_field, value) => normalizeGhostCardsTag(value) || formatInternalTag(value)
+    normalizeTagValue: (_field, value) => formatInternalTag(value)
   },
   ghostGrid: {
     definitionId: 'ghostGrid',
@@ -159,16 +156,7 @@ const CUSTOM_BASE_ID_TO_DEFINITION = Object.values(CUSTOM_SECTION_REGISTRY).redu
   {}
 )
 
-export const normalizeSectionId = (sectionId: string): string => {
-  const lower = sectionId.toLowerCase()
-  if (lower === 'footer_bar' || lower === 'footer-bar') {
-    return 'footerBar'
-  }
-  if (lower === 'footer_signup' || lower === 'footer-signup') {
-    return 'footerSignup'
-  }
-  return sectionId
-}
+export const normalizeSectionId = (sectionId: string): string => sectionId
 
 export const getCustomSectionEntry = (definitionId: string): CustomSectionRegistryEntry | null =>
   CUSTOM_SECTION_REGISTRY[definitionId] ?? null
@@ -301,23 +289,17 @@ export const applyDefaultTagsForSection = (
   entry.tagFields.forEach((field) => {
     const rawValue = next[field]
     const normalized = entry.normalizeTagValue(field, rawValue)
-    const fallback = defaults[field]
-
-    if (!rawValue) {
-      if (fallback) {
-        next[field] = fallback
-      }
-      return
-    }
+    const defaultTag = defaults[field]
 
     if (normalized) {
       next[field] = normalized
       return
     }
 
-    const formatted = formatInternalTag(rawValue)
-    if (formatted) {
-      next[field] = formatted
+    if (defaultTag) {
+      next[field] = defaultTag
+    } else {
+      delete next[field]
     }
   })
 

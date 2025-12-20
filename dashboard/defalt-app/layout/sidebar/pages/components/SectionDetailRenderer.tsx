@@ -307,7 +307,7 @@ export function SectionDetailRenderer({ activeDetail, props }: SectionDetailRend
       if (definition?.settingsSchema && definition.settingsSchema.length > 0) {
         const config = activeCustomSection.config as SectionConfigSchema
         const padding = props.sectionPadding[sectionId] ?? { top: 0, bottom: 0, left: 0, right: 0 }
-        const paddingControls: PaddingControls = definition.paddingControls ?? (definition.showPaddingControls === false ? 'none' : 'vertical')
+        const paddingControls: PaddingControls = definition.paddingControls ?? 'vertical'
         const hasPaddingControls = paddingControls !== 'none'
         return (
           <SchemaSectionSettings
@@ -415,15 +415,7 @@ function AiSectionSettings({
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
     } catch {
-      // Fallback for older browsers
-      const textarea = document.createElement('textarea')
-      textarea.value = html
-      document.body.appendChild(textarea)
-      textarea.select()
-      document.execCommand('copy')
-      document.body.removeChild(textarea)
-      setCopied(true)
-      setTimeout(() => setCopied(false), 2000)
+      setCopied(false)
     }
   }, [html])
 

@@ -6,6 +6,8 @@ import { useShallow } from 'zustand/shallow'
 export type SectionDetail = {
   id: string
   label: string
+  blockType?: string
+  blockIndex?: number
 }
 
 export type ActiveTab = 'sections' | 'settings' | 'code' | 'ai'

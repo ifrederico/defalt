@@ -7,27 +7,29 @@ Technical documentation for the dashboard module. See [../AGENTS.md](../AGENTS.m
 Copy `.env.example` to `.env` and configure:
 
 **Required for development:**
-- `VITE_APP_URL` - Dashboard app URL
+- `VITE_APP_URL` - Dashboard app URL (dev default `http://localhost:5173/app`)
+- `VITE_BASE_PATH` - Base path for dashboard routing (dev default `/app/`)
 - `DATABASE_URL` - PostgreSQL connection string (for theme storage)
 
 **Optional:**
-- `AUTH_SECRET` - Legacy CSRF protection (optional)
+- `AUTH_SECRET` - CSRF protection (optional)
 
 Install dependencies with `bun install`.
 
 ## Testing
 
 ```bash
-bun test              # Run all tests via Vitest
-bun test -- sanitizers.test.ts  # Run single test file
+bun run test              # Run all tests via Vitest
+bun run test -- sanitizers.test.ts  # Run single test file
 ```
 
 Primary test suite: [sanitizers.test.ts](defalt-utils/security/sanitizers.test.ts) validates input sanitization for CSS, hex colors, and tokens.
+Use `bun run test` (Vitest). `bun test` runs Bun's test runner and will fail on Vitest APIs.
 
 ## Development Commands
 
 ```bash
-bun run dev           # Start Vite dev server (http://localhost:5173)
+bun run dev           # Start Vite dev server (http://localhost:5173/app/)
 bun run dev:server    # Start Express server with watch mode
 bun run build         # TypeScript compile + Vite build
 bun run build:theme   # Build the Ghost theme in public/themes/source-complete
@@ -148,7 +150,7 @@ Contexts in `defalt-app/contexts/` use base classes (`*Base.ts`) for shared logi
 - Uses schema engine: [header/schema.ts](defalt-sections/sections/header/schema.ts)
 - Settings: navigation layout, sticky header, search toggle, typography case
 
-**Error Boundary**: [DashboardErrorBoundary.tsx](defalt-app/components/DashboardErrorBoundary.tsx) wraps main app with fallback UI for runtime errors. Displays error message with reload option.
+**Error Boundary**: [DashboardErrorBoundary.tsx](defalt-app/components/DashboardErrorBoundary.tsx) wraps main app with error UI for runtime errors. Displays error message with reload option.
 
 **Export Pipeline** (vite-plugin-theme-config.ts):
 1. Copy `public/themes/source-complete` to temp workspace

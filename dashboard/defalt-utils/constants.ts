@@ -19,5 +19,5 @@ export const EVENTS = {
 
 export const WORKSPACE_STORAGE_PREFIX = 'ghost-theme-editor'
 
-// Preview fallback URL for placeholder data and URL resolution
-export const PREVIEW_FALLBACK_URL = 'https://source-newsletter.ghost.io'
+// Preview placeholder URL for sample data and URL resolution
+export const PREVIEW_PLACEHOLDER_URL = 'https://source-newsletter.ghost.io'

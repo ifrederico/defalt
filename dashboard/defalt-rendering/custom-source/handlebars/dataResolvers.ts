@@ -1,6 +1,6 @@
 import Handlebars from 'handlebars'
 import { safeJsonForScript } from '@defalt/utils/security/sanitizers'
-import { PREVIEW_FALLBACK_URL } from '@defalt/utils/constants'
+import { PREVIEW_PLACEHOLDER_URL } from '@defalt/utils/constants'
 
 // Types from HandlebarsRenderer.tsx
 export type PageType = 'home' | 'about' | 'post' | 'page2'
@@ -100,7 +100,7 @@ export function toRelativeUrl(href?: string, siteUrl?: string) {
   }
 
   try {
-    const base = new URL(siteUrl || `${PREVIEW_FALLBACK_URL}/`)
+    const base = new URL(siteUrl || `${PREVIEW_PLACEHOLDER_URL}/`)
     const target = new URL(href, base)
     if (target.origin === base.origin) {
       const normalizedPath = target.pathname.replace(/\/+$/, '') || '/'
@@ -115,7 +115,7 @@ export function toRelativeUrl(href?: string, siteUrl?: string) {
 export function toAbsoluteUrl(href?: string, siteUrl?: string) {
   if (!href && siteUrl) return siteUrl
   try {
-    const base = new URL(siteUrl || `${PREVIEW_FALLBACK_URL}/`)
+    const base = new URL(siteUrl || `${PREVIEW_PLACEHOLDER_URL}/`)
     if (!href) return base.toString()
     const url = new URL(href, base)
     return url.toString()
@@ -204,7 +204,7 @@ export function estimateReadingTimeFromText(text?: string): string | undefined {
   return formatReadingTimeFromWordCount(countWords(text))
 }
 
-function normalizeReadingTime(value: unknown, fallback?: string): string | undefined {
+function normalizeReadingTime(value: unknown, defaultValue?: string): string | undefined {
   if (typeof value === 'number' && Number.isFinite(value)) {
     return `${Math.max(1, Math.round(value))} min read`
   }
@@ -222,7 +222,7 @@ function normalizeReadingTime(value: unknown, fallback?: string): string | undef
     }
     return `${trimmed} min read`
   }
-  return fallback
+  return defaultValue
 }
 
 // Navigation
@@ -269,7 +269,7 @@ export function resolveSite(previewData: PreviewData, siteUrl?: string) {
   const baseUrl = siteUrl || brand.href || site.base_url || 'https://example.com/'
   const membersActions = previewData?.header?.navigation_bar?.actions?.members
   const footerSignup = previewData?.footer?.signup
-  const iconFallback = (() => {
+  const defaultIcon = (() => {
     try {
       return `${new URL(baseUrl).origin}/favicon.ico`
     } catch {
@@ -283,7 +283,7 @@ export function resolveSite(previewData: PreviewData, siteUrl?: string) {
     locale: site.locale ?? 'en',
     url: baseUrl,
     logo: brand.logo ?? site.logo,
-    icon: site.icon ?? iconFallback,
+    icon: site.icon ?? defaultIcon,
     cover_image: site.cover_image ?? hero?.background_image,
     members_enabled: site.members_enabled ?? Boolean(membersActions || footerSignup),
     members_invite_only: Boolean(site.members_invite_only),
@@ -296,7 +296,7 @@ export function resolveSiteUrl(previewData: PreviewData) {
   return (
     previewData?.site?.base_url ||
     previewData?.header?.navigation_bar?.brand?.href ||
-    `${PREVIEW_FALLBACK_URL}/`
+    `${PREVIEW_PLACEHOLDER_URL}/`
   )
 }
 
@@ -467,15 +467,15 @@ function collectCardsFromPreview(previewData: PreviewData): PreviewData[] {
 }
 
 // Authors
-export function buildAuthors(source: PreviewData | null | undefined, siteUrl: string, fallbackName?: string): PreviewAuthor[] {
+export function buildAuthors(source: PreviewData | null | undefined, siteUrl: string, defaultName?: string): PreviewAuthor[] {
   if (!source) {
-    const name = fallbackName || 'Custom'
+    const name = defaultName || 'Custom'
     return [{ name, url: toRelativeUrl('/', siteUrl) }]
   }
 
   const author = source.author ?? source.meta?.author
   if (!author) {
-    const name = fallbackName || 'Custom'
+    const name = defaultName || 'Custom'
     return [{ name, url: toRelativeUrl('/', siteUrl) }]
   }
 
@@ -619,13 +619,13 @@ function renderBlock(block: ContentBlock): string {
   }
 }
 
-export function buildPostFromArticle(article: PreviewData | null | undefined, siteUrl: string, fallbackName?: string) {
+export function buildPostFromArticle(article: PreviewData | null | undefined, siteUrl: string, defaultName?: string) {
   if (!article) {
     return null
   }
 
   const authorSource = article.author ?? article.primary_author ?? article.meta?.author
-  const authors = buildAuthors(authorSource ? { author: authorSource } : null, siteUrl, fallbackName)
+  const authors = buildAuthors(authorSource ? { author: authorSource } : null, siteUrl, defaultName)
   const hero = article.hero_image ?? {}
   const contentBlocks = Array.isArray(article.content_blocks)
     ? article.content_blocks

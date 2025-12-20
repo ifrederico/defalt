@@ -9,9 +9,8 @@ import type { PreviewPageData } from '../engine/previewTypes.js'
 export type { PreviewPageData }
 
 /**
- * Normalize and format a tag input string
- * Simply ensures the tag has a # prefix and is lowercase.
- * No transformations - what you set is what Ghost page should have.
+ * Normalize and format a tag input string.
+ * Requires a leading # and lowercases the tag value.
  */
 export function formatInternalTag(input: unknown): string {
   if (typeof input !== 'string') {
@@ -19,6 +18,9 @@ export function formatInternalTag(input: unknown): string {
   }
   const trimmed = input.trim()
   if (!trimmed) {
+    return ''
+  }
+  if (!trimmed.startsWith('#')) {
     return ''
   }
   // Remove any leading # symbols, then lowercase
@@ -36,7 +38,7 @@ export function toApiTagSlug(internalTag: string): string {
   if (internalTag.startsWith('#')) {
     return 'hash-' + internalTag.slice(1)
   }
-  return internalTag
+  return ''
 }
 
 /**
@@ -115,92 +117,4 @@ export function resolveImageWithTextTagFromId(sectionId: string): string {
     return '#image-text'
   }
   return `#image-text-${suffix}`
-}
-
-/**
- * Parse numeric suffix from a ghost card tag value.
- * Returns 1 for '#cards', the number for '#cards-N', or 0 for non-matching tags.
- */
-export function parseGhostCardTagSuffix(tagValue: unknown): number {
-  if (typeof tagValue !== 'string') {
-    return 0
-  }
-  const normalized = tagValue.trim().replace(/^#+/, '').toLowerCase()
-  if (!normalized) {
-    return 0
-  }
-
-  const cardsMatch = normalized.match(/^cards-?(\d+)?$/)
-  if (cardsMatch) {
-    const numeric = cardsMatch[1] ? Number.parseInt(cardsMatch[1], 10) : NaN
-    if (!cardsMatch[1]) {
-      return 1
-    }
-    return Number.isFinite(numeric) ? numeric : 1
-  }
-
-  const legacyMatch = normalized.match(/^ghost-cards?-?(\d+)?$/)
-  if (!legacyMatch) {
-    return 0
-  }
-  if (!legacyMatch[1]) {
-    return 1
-  }
-  const numeric = Number.parseInt(legacyMatch[1], 10)
-  return Number.isFinite(numeric) ? numeric : 1
-}
-
-export function normalizeGhostCardsTag(tagValue: unknown): string {
-  const suffix = parseGhostCardTagSuffix(tagValue)
-  if (suffix <= 0) {
-    return ''
-  }
-  if (suffix <= 1) {
-    return '#cards'
-  }
-  return `#cards-${suffix}`
-}
-
-export function normalizeImageWithTextTag(tagValue: unknown): string {
-  if (typeof tagValue !== 'string') {
-    return ''
-  }
-  const normalized = tagValue.trim().replace(/^#+/, '').toLowerCase()
-  if (!normalized) {
-    return ''
-  }
-  const match = normalized.match(/^image-text-?(\d+)?$/)
-  if (!match) {
-    return ''
-  }
-  if (!match[1]) {
-    return '#image-text'
-  }
-  const numeric = Number.parseInt(match[1], 10)
-  if (!Number.isFinite(numeric) || numeric <= 1) {
-    return '#image-text'
-  }
-  return `#image-text-${numeric}`
-}
-
-export function normalizeHeroTag(tagValue: unknown): string {
-  if (typeof tagValue !== 'string') {
-    return ''
-  }
-  const normalized = tagValue.trim().replace(/^#+/, '').toLowerCase()
-  if (!normalized) {
-    return ''
-  }
-  const match = normalized.match(/^hero-?(\d+)?$/)
-  if (!match) {
-    return ''
-  }
-  if (!match[1]) {
-    return '#hero'
-  }
-  const numeric = Number.parseInt(match[1], 10)
-  if (!Number.isFinite(numeric) || numeric <= 1) {
-    return '#hero'
-  }
-  return `#hero-${numeric}`
 }

@@ -399,10 +399,10 @@ export function useWorkspace({
           return
         }
 
-        const fallbackInstance = buildSectionInstance(definitionId, normalizedItemId)
-        if (fallbackInstance) {
+        const defaultInstance = buildSectionInstance(definitionId, normalizedItemId)
+        if (defaultInstance) {
           invalidCustomSections.push(normalizedItemId)
-          newCustomSections[normalizedItemId] = fallbackInstance
+          newCustomSections[normalizedItemId] = defaultInstance
           newTemplateItems.push({
             id: normalizedItemId,
             label: resolveCustomSectionLabel(normalizedItemId, definitionId),
@@ -447,8 +447,6 @@ export function useWorkspace({
     const newPadding: Record<string, { top: number, bottom: number, left?: number, right?: number }> = {}
     const newMargins: Record<string, { top?: number, bottom?: number }> = {}
 
-    const legacyConfigPaddingSections = new Set(['hero', 'ghostCards', 'ghostGrid', 'image-with-text'])
-
     Object.entries(pageConfig.sections).forEach(([key, section]) => {
       const rawItemId = CONFIG_TO_ID_MAP[key] || key
       const stateId = normalizeSectionId(rawItemId)
@@ -481,11 +479,11 @@ export function useWorkspace({
 
       newVisibility[stateId] = section.settings.visible === false
 
-      const resolvePaddingValue = (value: unknown, fallback: number) => {
+      const resolvePaddingValue = (value: unknown, defaultValue: number) => {
         if (typeof value === 'number' && Number.isFinite(value)) {
           return value
         }
-        return fallback
+        return defaultValue
       }
 
       if (typeof section.settings.paddingBlock === 'number') {
@@ -508,36 +506,6 @@ export function useWorkspace({
         newPadding[stateId] = defaultPadding
       }
 
-      if (definitionId && legacyConfigPaddingSections.has(definitionId)) {
-        const configRecord = section.settings.customConfig as Record<string, unknown> | undefined
-        const legacyTop = typeof configRecord?.paddingTop === 'number' && Number.isFinite(configRecord.paddingTop)
-          ? Math.max(0, configRecord.paddingTop)
-          : undefined
-        const legacyBottom = typeof configRecord?.paddingBottom === 'number' && Number.isFinite(configRecord.paddingBottom)
-          ? Math.max(0, configRecord.paddingBottom)
-          : undefined
-        if (legacyTop !== undefined || legacyBottom !== undefined) {
-          const existing = newPadding[stateId] ?? defaultPadding
-          newPadding[stateId] = {
-            top: legacyTop ?? existing.top,
-            bottom: legacyBottom ?? existing.bottom,
-            left: existing.left ?? 0,
-            right: existing.right ?? 0
-          }
-
-          const instance = newCustomSections[stateId]
-          const instanceConfig = instance?.config as Record<string, unknown> | undefined
-          if (instance && instanceConfig) {
-            const nextConfig = { ...instanceConfig }
-            delete nextConfig.paddingTop
-            delete nextConfig.paddingBottom
-            delete nextConfig.paddingLeft
-            delete nextConfig.paddingRight
-            newCustomSections[stateId] = { ...instance, config: nextConfig }
-          }
-        }
-      }
-
       if (usesUnifiedPadding) {
         const existing = newPadding[stateId]
         const value = existing?.top ?? defaultPadding.top
@@ -550,12 +518,12 @@ export function useWorkspace({
       }
 
       const marginDefaults = CSS_DEFAULT_MARGIN[key]
-      const resolveMarginValue = (value: unknown, fallback?: number) => {
+      const resolveMarginValue = (value: unknown, defaultValue?: number) => {
         if (typeof value === 'number' && Number.isFinite(value)) {
           return Math.max(0, value)
         }
-        if (typeof fallback === 'number' && Number.isFinite(fallback)) {
-          return Math.max(0, fallback)
+        if (typeof defaultValue === 'number' && Number.isFinite(defaultValue)) {
+          return Math.max(0, defaultValue)
         }
         return undefined
       }
@@ -784,8 +752,8 @@ export function useWorkspace({
       const recovered = loadStoredState()
       try {
         snapshot = hydrateFromEditorState(recovered)
-      } catch (fallbackError) {
-        logError(fallbackError, { scope: 'useWorkspace.hydrateState.fallback' })
+      } catch (recoveryError) {
+        logError(recoveryError, { scope: 'useWorkspace.hydrateState.recovery' })
         clearWorkspaceStorage()
         showToast('Workspace reset', 'Storage was corrupted. Reset to defaults.', 'error')
         snapshot = hydrateFromEditorState(loadEditorState(currentPage))

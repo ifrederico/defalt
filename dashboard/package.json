@@ -4,7 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "VITE_BASE_PATH=/app/ vite",
     "dev:prod": "VITE_BASE_PATH=/app/ vite",
     "dev:server": "tsx watch server.ts",
     "build": "tsc -b && vite build",

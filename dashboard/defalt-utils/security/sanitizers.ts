@@ -123,7 +123,7 @@ const ALLOWED_AT_RULES = new Set(['media', 'supports', 'font-face', 'keyframes',
 const PROHIBITED_SELECTOR_PATTERNS = [/\[/, /:has\s*\(/i]
 const DANGEROUS_VALUE_PATTERNS = [/url\s*\(/i, /expression\s*\(/i, /@import/i, /behavior\s*:/i, /-moz-binding\s*:/i, /javascript:/i]
 
-export function sanitizeHexColor(value: string | undefined | null, fallback: string): string {
+export function sanitizeHexColor(value: string | undefined | null, defaultValue: string): string {
   if (typeof value === 'string') {
     const normalized = value.trim().toLowerCase()
 
@@ -185,7 +185,7 @@ export function sanitizeHexColor(value: string | undefined | null, fallback: str
       return normalized
     }
   }
-  return fallback
+  return defaultValue
 }
 
 export function sanitizeToken(value: string | undefined | null): string {

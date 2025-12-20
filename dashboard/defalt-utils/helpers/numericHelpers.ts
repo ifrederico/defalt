@@ -5,20 +5,20 @@
 
 /**
  * Sanitizes a numeric value, ensuring it's a valid finite number.
- * Returns fallback if value is undefined, null, NaN, or Infinity.
+ * Returns default value if input is undefined, null, NaN, or Infinity.
  *
  * @param value - The value to sanitize
- * @param fallback - Value to return if input is invalid (default: 0)
+ * @param defaultValue - Value to return if input is invalid (default: 0)
  * @param min - Optional minimum value to clamp to
  * @returns Sanitized number
  */
 export function sanitizeNumericValue(
   value: unknown,
-  fallback = 0,
+  defaultValue = 0,
   min?: number
 ): number {
   if (typeof value !== 'number' || !Number.isFinite(value)) {
-    return fallback
+    return defaultValue
   }
   if (min !== undefined) {
     return Math.max(min, value)
@@ -27,24 +27,24 @@ export function sanitizeNumericValue(
 }
 
 /**
- * Resolves a numeric value with optional fallback.
- * Returns undefined if both value and fallback are invalid.
+ * Resolves a numeric value with an optional default.
+ * Returns undefined if both value and default are invalid.
  *
  * @param value - Primary value to check
- * @param fallback - Fallback value if primary is invalid
+ * @param defaultValue - Default value if primary is invalid
  * @param min - Optional minimum value to clamp to
  * @returns Resolved number or undefined
  */
 export function resolveNumericValue(
   value: unknown,
-  fallback?: number,
+  defaultValue?: number,
   min?: number
 ): number | undefined {
   if (typeof value === 'number' && Number.isFinite(value)) {
     return min !== undefined ? Math.max(min, value) : value
   }
-  if (typeof fallback === 'number' && Number.isFinite(fallback)) {
-    return min !== undefined ? Math.max(min, fallback) : fallback
+  if (typeof defaultValue === 'number' && Number.isFinite(defaultValue)) {
+    return min !== undefined ? Math.max(min, defaultValue) : defaultValue
   }
   return undefined
 }
@@ -73,7 +73,7 @@ export type PaddingPair = { top: number; bottom: number }
 
 /**
  * Resolves a padding pair (top/bottom) from value and defaults.
- * Always returns numbers (uses 0 as final fallback).
+ * Always returns numbers (uses 0 as final default).
  *
  * @param padding - Current padding settings
  * @param defaults - Default padding values

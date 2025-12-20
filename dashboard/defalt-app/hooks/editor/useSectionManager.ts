@@ -15,13 +15,7 @@ import {
 } from '@defalt/sections/engine'
 import {
   formatInternalTag,
-  normalizeGhostCardsTag,
-  normalizeHeroTag,
-  normalizeImageWithTextTag,
-  parseGhostCardIdSuffix,
-  parseGhostCardTagSuffix,
-  resolveHeroTagFromId,
-  resolveImageWithTextTagFromId
+  parseGhostCardIdSuffix
 } from '@defalt/sections/utils/tagUtils'
 import { SECTION_ICON_MAP, GhostIcon } from '@defalt/utils/config/sectionIcons'
 import { sanitizeNumericValue, resolveNumericValue } from '@defalt/utils/helpers/numericHelpers'
@@ -75,11 +69,9 @@ const getNextGhostCardsSuffix = (sections: Record<string, SectionInstance>) => {
     if (section.definitionId !== 'ghostCards') {
       return
     }
-    const currentTag = (section.config as { tag?: unknown })?.tag
     maxSuffix = Math.max(
       maxSuffix,
-      parseGhostCardIdSuffix(section.id),
-      parseGhostCardTagSuffix(currentTag)
+      parseGhostCardIdSuffix(section.id)
     )
   })
   return maxSuffix + 1
@@ -717,49 +709,11 @@ export function useSectionManager({
         const next: Record<string, unknown> = { ...record }
 
         if ('tag' in next) {
-          if (current.definitionId === 'ghostCards') {
-            const normalized = normalizeGhostCardsTag(next.tag)
-            if (normalized) {
-              next.tag = normalized
-            } else {
-              const formatted = formatInternalTag(next.tag)
-              if (formatted) {
-                next.tag = formatted
-              } else {
-                delete next.tag
-              }
-            }
-          } else if (current.definitionId === 'hero') {
-            const normalized = normalizeHeroTag(next.tag)
-            if (normalized) {
-              next.tag = normalized
-            } else {
-              const formatted = formatInternalTag(next.tag)
-              if (formatted) {
-                next.tag = formatted
-              } else {
-                delete next.tag
-              }
-            }
-          } else if (current.definitionId === 'image-with-text') {
-            const normalized = normalizeImageWithTextTag(next.tag)
-            if (normalized) {
-              next.tag = normalized
-            } else {
-              const formatted = formatInternalTag(next.tag)
-              if (formatted) {
-                next.tag = formatted
-              } else {
-                delete next.tag
-              }
-            }
+          const formatted = formatInternalTag(next.tag)
+          if (formatted) {
+            next.tag = formatted
           } else {
-            const formatted = formatInternalTag(next.tag)
-            if (formatted) {
-              next.tag = formatted
-            } else {
-              delete next.tag
-            }
+            delete next.tag
           }
         }
 

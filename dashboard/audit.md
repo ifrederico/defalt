@@ -31,8 +31,7 @@ Removed after repo-wide import scan (0 usages):
 - Announcement bar UI exposes `tag` + `link` (schema + settings renderer align):
   - `dashboard/defalt-sections/sections/announcement-bar/schema.ts:41`
   - `dashboard/defalt-app/layout/sidebar/pages/components/SectionDetailRenderer.tsx:552`
-- Ghost cards legacy tag normalization exists on edit:
-  - `dashboard/defalt-app/hooks/editor/useSectionManager.ts:731`
+- Ghost cards tag normalization removed; strict `#tag` required.
 - Base-path mismatch test note was wrong (tests already use `apiPath()`):
   - `dashboard/defalt-app/hooks/useWorkspace.test.tsx:336`
 
@@ -45,8 +44,8 @@ Removed after repo-wide import scan (0 usages):
 - Export gating: server derives tier from member data (not client).
 
 ## Executive summary (highest ROI problems)
-- Settings have multiple sources of truth (schema defaults + UI fallbacks + editor injection + normalization).
-- Legacy hero ids/tag mismatch produced duplicate `#hero` (migration + unified registry added; verify).
+- Settings have multiple sources of truth (schema defaults + UI defaults + editor injection + normalization).
+- Hero ids/tag mismatch produced duplicate `#hero` (no migration; reset required).
 - Announcement bars are single-only at runtime despite schema/UI supporting blocks.
 - Preview/export hide mismatch (strip vs wrap).
 - Container width mismatch between initial render and incremental updates.
@@ -140,11 +139,11 @@ Decision: match export behavior (wrap hidden markup in preview).
 - `SchemaSectionSettings` mutates config by key. `dashboard/defalt-app/layout/sidebar/components/SchemaSectionSettings.tsx:56`.
 - Renderer adds non-schema behavior (defaults + coercions). `dashboard/defalt-app/layout/sidebar/components/settingsRenderUtils.tsx:109`.
 
-### 3.3 Hero ids + tags (unified, no legacy)
+### 3.3 Hero ids + tags (canonical only)
 Canonical ids: `hero`, `hero-2`, ...
 
 Notes:
-- No legacy migration. Existing legacy ids/tags must be fixed manually.
+- No migration. Existing ids/tags must be reset manually.
 - Default tags still use `#hero`, `#hero-2`, ...
 
 Status: verify in app.
@@ -195,7 +194,7 @@ Server maps those to partial names:
 - `PREMIUM_SECTION_PARTIALS`. `dashboard/server.ts:629`.
 Plan: keep list for upcoming sections, but add the missing sections/partials before enabling export gating.
 
-### 5.4 Unreachable legacy: `header.sections['announcement-bar']`
+### 5.4 Unreachable branch: `header.sections['announcement-bar']`
 Server checks this:
 - `document.header.sections?.['announcement-bar']`. `dashboard/server.ts:664`.
 But normalization collapses to only `{ header }`:
@@ -209,7 +208,7 @@ But normalization collapses to only `{ header }`:
 
 ### Unreachable code
 - `hasFeature(feature)` ignores feature. `dashboard/defalt-app/contexts/SubscriptionContext.tsx:66`.
-- Legacy announcement-bar header-section branch (see 5.4).
+- Announcement-bar header-section branch (see 5.4).
 
 ## Open questions
 - None.

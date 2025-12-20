@@ -14,6 +14,7 @@
 
   /* Semantic text colors */
   --color-foreground: #111827;       /* gray-900 - primary text */
+  --color-foreground-rgb: 17, 24, 39;
   --color-secondary: #4B5563;        /* gray-600 - secondary text */
   --color-muted: #7c8b9a;            /* muted text */
   --color-placeholder: #9CA3AF;      /* gray-400 - placeholder/disabled */
@@ -46,10 +47,6 @@
   --color-info-light: #E5F5FA;       /* Light cyan - info backgrounds */
   --color-info-border: #B3DFF0;      /* Light cyan - info borders */
 
-  /* Legacy aliases (for gradual migration) */
-  --defalt-surface: var(--color-surface);
-  --defalt-contrast-strong: var(--color-foreground);
-  --defalt-contrast-strong-rgb: 17, 24, 39;
 }
 
 /* TODO: Dark mode - placeholder for future implementation
@@ -58,9 +55,9 @@
     --defalt-primary: #AC1E3E;
     --defalt-font-accent: #F691A8;
     --defalt-font-background: #4B1021;
-    --defalt-surface: #1B1013;
-    --defalt-contrast-strong: #F7FAFC;
-    --defalt-contrast-strong-rgb: 247, 250, 252;
+    --color-surface: #1B1013;
+    --color-foreground: #F7FAFC;
+    --color-foreground-rgb: 247, 250, 252;
     --defalt-highlight: #F16B8B;
     --defalt-highlight-rgb: 241, 107, 139;
   }
@@ -96,13 +93,13 @@ input[type="range"] {
 
 /* Track */
 input[type="range"]::-webkit-slider-runnable-track {
-  background: var(--defalt-contrast-strong);
+  background: var(--color-foreground);
   height: 4px;
   border-radius: 2px;
 }
 
 input[type="range"]::-moz-range-track {
-  background: var(--defalt-contrast-strong);
+  background: var(--color-foreground);
   height: 4px;
   border-radius: 2px;
 }
@@ -112,7 +109,7 @@ input[type="range"]::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
   margin-top: -6px;
-  background-color: var(--defalt-contrast-strong);
+  background-color: var(--color-foreground);
   height: 16px;
   width: 16px;
   border-radius: 50%;
@@ -120,7 +117,7 @@ input[type="range"]::-webkit-slider-thumb {
 
 input[type="range"]::-moz-range-thumb {
   border: none;
-  background-color: var(--defalt-contrast-strong);
+  background-color: var(--color-foreground);
   height: 16px;
   width: 16px;
   border-radius: 50%;
@@ -194,7 +191,7 @@ input[type="number"] {
 .preview-loading-bar {
   width: 30%;
   min-width: 120px;
-  background-image: linear-gradient(90deg, rgba(var(--defalt-contrast-strong-rgb), 0), rgba(var(--defalt-contrast-strong-rgb), 0.6), rgba(var(--defalt-contrast-strong-rgb), 0));
+  background-image: linear-gradient(90deg, rgba(var(--color-foreground-rgb), 0), rgba(var(--color-foreground-rgb), 0.6), rgba(var(--color-foreground-rgb), 0));
   animation: preview-loading 1.2s ease-in-out infinite;
 }
 

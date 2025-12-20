@@ -2,7 +2,7 @@
  * Deep Clone Utility
  *
  * Provides a consistent way to deep clone objects across the codebase.
- * Uses structuredClone when available, falls back to JSON for older environments.
+ * Uses structuredClone for deep cloning.
  */
 
 /**
@@ -12,10 +12,8 @@
  * @returns A deep clone of the value
  */
 export function deepClone<T>(value: T): T {
-  // Use structuredClone if available (modern browsers, Node 17+)
-  if (typeof structuredClone === 'function') {
-    return structuredClone(value)
+  if (typeof structuredClone !== 'function') {
+    throw new Error('structuredClone is required for deepClone')
   }
-  // Fallback for older environments
-  return JSON.parse(JSON.stringify(value))
+  return structuredClone(value)
 }

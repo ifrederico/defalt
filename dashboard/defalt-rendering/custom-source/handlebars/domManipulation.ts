@@ -286,7 +286,7 @@ export function reorderTemplateInDOM(doc: Document, order: string[]) {
       }
     }
 
-    // Try custom section selector as fallback
+    // Try custom section selector when no matches
     if (elements.length === 0) {
       const customSelector = getCustomSectionSelector(key)
       const customElement = doc.querySelector(customSelector)
@@ -449,8 +449,8 @@ export function setupSectionSelection(
       selectors: (() => {
         const base = getSectionSelector(id)
         const escaped = escapeSectionId(id)
-        const fallback = `[data-section-id="${escaped}"]`
-        return Array.from(new Set([...base, fallback]))
+        const dataSelector = `[data-section-id="${escaped}"]`
+        return Array.from(new Set([...base, dataSelector]))
       })()
     }))
     .filter((entry) => entry.selectors.length > 0)
@@ -461,16 +461,7 @@ export function setupSectionSelection(
 
   ensureHighlightStyles(doc)
 
-  const normalizeSectionId = (sectionId: string): string => {
-    const lower = sectionId.toLowerCase()
-    if (lower === 'footer_bar' || lower === 'footer-bar') {
-      return 'footerBar'
-    }
-    if (lower === 'footer_signup' || lower === 'footer-signup') {
-      return 'footerSignup'
-    }
-    return sectionId
-  }
+  const normalizeSectionId = (sectionId: string): string => sectionId
 
   const getSelectedSectionId = (): string | null => {
     const raw = doc.documentElement?.getAttribute(SELECTED_SECTION_ID_ATTRIBUTE)
@@ -795,16 +786,6 @@ export function injectHtmlIntoIframe(
           left: scrollLeft,
           behavior: 'instant'
         })
-
-        // Fallback for older browsers
-        if (doc.documentElement) {
-          doc.documentElement.scrollTop = scrollTop
-          doc.documentElement.scrollLeft = scrollLeft
-        }
-        if (doc.body) {
-          doc.body.scrollTop = scrollTop
-          doc.body.scrollLeft = scrollLeft
-        }
 
         // Restore original scroll behavior after a frame
         win.requestAnimationFrame(() => {

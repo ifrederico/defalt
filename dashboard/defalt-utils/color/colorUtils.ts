@@ -8,11 +8,11 @@ const expandShortHex = (hex: string): string => {
   return `#${r}${r}${g}${g}${b}${b}`
 }
 
-export const sanitizeHex = (value: string | undefined | null, fallback: string): string => {
+export const sanitizeHex = (value: string | undefined | null, defaultValue: string): string => {
   if (typeof value === 'string') {
     const trimmed = value.trim().toLowerCase()
     if (!trimmed) {
-      return fallback
+      return defaultValue
     }
     if (trimmed === 'transparent') {
       return 'transparent'
@@ -22,7 +22,7 @@ export const sanitizeHex = (value: string | undefined | null, fallback: string):
       return normalized.length === 4 ? expandShortHex(normalized) : normalized
     }
   }
-  return fallback
+  return defaultValue
 }
 
 const hexToRgb = (hex: string): { r: number; g: number; b: number } => {

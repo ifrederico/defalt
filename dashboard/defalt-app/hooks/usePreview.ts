@@ -11,7 +11,7 @@ import {
   transformGhostPageToPageData
 } from '@defalt/utils/ghost'
 import { logError } from '@defalt/utils/logging/errorLogger'
-import { STORAGE_KEYS, EVENTS, PREVIEW_FALLBACK_URL } from '@defalt/utils/constants'
+import { STORAGE_KEYS, EVENTS, PREVIEW_PLACEHOLDER_URL } from '@defalt/utils/constants'
 
 const GHOST_FETCH_TIMEOUT_MS = 20000
 
@@ -303,7 +303,7 @@ export function usePreview() {
     if (typeof baseUrl === 'string' && baseUrl.length > 0) {
       return baseUrl
     }
-    return `${PREVIEW_FALLBACK_URL}/`
+    return `${PREVIEW_PLACEHOLDER_URL}/`
   }, [previewData])
 
   const previewBaseOrigin = useMemo(() => {

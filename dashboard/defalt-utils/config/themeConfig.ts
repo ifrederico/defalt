@@ -54,7 +54,7 @@ export interface AnnouncementBarConfig {
 export interface AnnouncementBlock {
   /** Ghost tag for content - when set, fetches from Ghost page */
   tag: string
-  /** Manual text entry - fallback when no Ghost content */
+  /** Manual text entry - used when no Ghost content */
   text: string
   link: string
   /** Typography settings */
@@ -333,22 +333,22 @@ const DEFAULT_THEME_DOCUMENT: ThemeDocument = {
   }
 }
 
-const normalizeBoolean = (value: unknown, fallback: boolean): boolean => {
+const normalizeBoolean = (value: unknown, defaultValue: boolean): boolean => {
   if (typeof value === 'boolean') {
     return value
   }
-  return fallback
+  return defaultValue
 }
 
-const normalizeNumber = (value: unknown, fallback: number): number => {
+const normalizeNumber = (value: unknown, defaultValue: number): number => {
   if (typeof value === 'number' && Number.isFinite(value)) {
     return value
   }
-  return fallback
+  return defaultValue
 }
 
-const normalizePadding = (value: unknown, fallback: SectionPadding | undefined): SectionPadding | undefined => {
-  if (!fallback) {
+const normalizePadding = (value: unknown, defaultPadding: SectionPadding | undefined): SectionPadding | undefined => {
+  if (!defaultPadding) {
     if (!value || typeof value !== 'object') {
       return undefined
     }
@@ -362,14 +362,14 @@ const normalizePadding = (value: unknown, fallback: SectionPadding | undefined):
   }
 
   if (!value || typeof value !== 'object') {
-    return { ...fallback }
+    return { ...defaultPadding }
   }
   const raw = value as Record<string, unknown>
   return {
-    top: normalizeNumber(raw.top, fallback.top),
-    bottom: normalizeNumber(raw.bottom, fallback.bottom),
-    left: typeof raw.left === 'number' ? raw.left : fallback.left,
-    right: typeof raw.right === 'number' ? raw.right : fallback.right
+    top: normalizeNumber(raw.top, defaultPadding.top),
+    bottom: normalizeNumber(raw.bottom, defaultPadding.bottom),
+    left: typeof raw.left === 'number' ? raw.left : defaultPadding.left,
+    right: typeof raw.right === 'number' ? raw.right : defaultPadding.right
   }
 }
 
@@ -380,23 +380,23 @@ const clampNumber = (value: number, min: number, max: number): number => {
   return Math.min(Math.max(value, min), max)
 }
 
-export const normalizeAnnouncementBarConfig = (value: unknown, fallback: AnnouncementBarConfig): AnnouncementBarConfig => {
+export const normalizeAnnouncementBarConfig = (value: unknown, defaultConfig: AnnouncementBarConfig): AnnouncementBarConfig => {
   if (!value || typeof value !== 'object') {
-    return { ...fallback }
+    return { ...defaultConfig }
   }
   const raw = value as Record<string, unknown>
   const width = raw.width === 'narrow' ? 'narrow' : 'default'
 
   const dividerThickness = clampNumber(typeof raw.dividerThickness === 'number' ? raw.dividerThickness : 0, 0, 5)
-  const paddingTop = clampNumber(typeof raw.paddingTop === 'number' ? raw.paddingTop : fallback.paddingTop, 0, 100)
-  const paddingBottom = clampNumber(typeof raw.paddingBottom === 'number' ? raw.paddingBottom : fallback.paddingBottom, 0, 100)
+  const paddingTop = clampNumber(typeof raw.paddingTop === 'number' ? raw.paddingTop : defaultConfig.paddingTop, 0, 100)
+  const paddingBottom = clampNumber(typeof raw.paddingBottom === 'number' ? raw.paddingBottom : defaultConfig.paddingBottom, 0, 100)
 
   return {
     width,
-    backgroundColor: sanitizeHexColor(typeof raw.backgroundColor === 'string' ? raw.backgroundColor : null, fallback.backgroundColor),
-    textColor: sanitizeHexColor(typeof raw.textColor === 'string' ? raw.textColor : null, fallback.textColor),
+    backgroundColor: sanitizeHexColor(typeof raw.backgroundColor === 'string' ? raw.backgroundColor : null, defaultConfig.backgroundColor),
+    textColor: sanitizeHexColor(typeof raw.textColor === 'string' ? raw.textColor : null, defaultConfig.textColor),
     dividerThickness,
-    dividerColor: sanitizeHexColor(typeof raw.dividerColor === 'string' ? raw.dividerColor : null, fallback.dividerColor),
+    dividerColor: sanitizeHexColor(typeof raw.dividerColor === 'string' ? raw.dividerColor : null, defaultConfig.dividerColor),
     paddingTop,
     paddingBottom
   }
@@ -404,10 +404,10 @@ export const normalizeAnnouncementBarConfig = (value: unknown, fallback: Announc
 
 export const normalizeAnnouncementContentConfig = (
   value: unknown,
-  fallback: AnnouncementContentConfig
+  defaultConfig: AnnouncementContentConfig
 ): AnnouncementContentConfig => {
   if (!value || typeof value !== 'object') {
-    return { ...fallback }
+    return { ...defaultConfig }
   }
   const raw = value as Record<string, unknown>
 
@@ -438,7 +438,7 @@ export const normalizeAnnouncementContentConfig = (
 
   // Parse announcements array
   const parseAnnouncements = (input: unknown): AnnouncementBlock[] => {
-    if (!Array.isArray(input)) return fallback.announcements
+    if (!Array.isArray(input)) return defaultConfig.announcements
     return input.map((item): AnnouncementBlock => {
       if (!item || typeof item !== 'object') {
         return { tag: '#announcement', text: '', link: '', typographySize: 'normal', typographyWeight: 'default', typographySpacing: 'regular', typographyCase: 'default' }
@@ -527,11 +527,11 @@ const normalizeHeaderSection = (section: SectionConfig | undefined): SectionConf
         const limitedAnnouncements = announcements.slice(0, 5)
         const ensuredAnnouncements = limitedAnnouncements.map((block, index) => {
           const normalizedTag = formatInternalTag(block.tag)
-          const fallbackTag = resolveAnnouncementBlockTag(id, index)
-          const shouldAutoFix = normalizedTag === '#announcement' && fallbackTag !== '#announcement'
+          const defaultTag = resolveAnnouncementBlockTag(id, index)
+          const shouldAutoFix = normalizedTag === '#announcement' && defaultTag !== '#announcement'
           return {
             ...block,
-            tag: normalizedTag ? (shouldAutoFix ? fallbackTag : normalizedTag) : fallbackTag
+            tag: normalizedTag ? (shouldAutoFix ? defaultTag : normalizedTag) : defaultTag
           }
         })
 
@@ -607,12 +607,12 @@ const normalizeFooterConfig = (footer: FooterConfig | undefined): FooterConfig =
       return
     }
     const settings: Partial<SectionSettings> = source.settings ?? {}
-    const fallbackPadding = defaultSection?.settings?.padding
+    const defaultPadding = defaultSection?.settings?.padding
     sections[key] = {
       type: defaultSection?.type ?? source.type ?? 'custom',
       settings: {
         visible: normalizeBoolean(settings.visible, defaultSection?.settings?.visible ?? true),
-        padding: normalizePadding(settings.padding, fallbackPadding),
+        padding: normalizePadding(settings.padding, defaultPadding),
         paddingBlock: typeof settings.paddingBlock === 'number'
           ? settings.paddingBlock
           : defaultSection?.settings?.paddingBlock
@@ -715,7 +715,7 @@ const normalizePageConfig = (pageKey: DocumentPageKey, page: PageConfig | undefi
       return
     }
     const settings: Partial<SectionSettings> = source.settings ?? {}
-    const fallbackPadding = defaultSection?.settings?.padding
+    const defaultPadding = defaultSection?.settings?.padding
 
     // Filter out deprecated main section properties
     const filteredSettings: Partial<SectionSettings> = { ...settings }
@@ -738,7 +738,7 @@ const normalizePageConfig = (pageKey: DocumentPageKey, page: PageConfig | undefi
       settings: {
         ...filteredSettings,
         visible: normalizeBoolean(settings.visible, defaultSection?.settings?.visible ?? true),
-        padding: normalizePadding(settings.padding, fallbackPadding),
+        padding: normalizePadding(settings.padding, defaultPadding),
         paddingBlock: typeof settings.paddingBlock === 'number'
           ? settings.paddingBlock
           : defaultSection?.settings?.paddingBlock
@@ -768,23 +768,7 @@ export const normalizeThemeDocument = (candidate: unknown): ThemeDocument => {
   const version = typeof raw.version === 'number' ? raw.version : THEME_DOCUMENT_VERSION
   const accentColor = typeof raw.accentColor === 'string' ? raw.accentColor : DEFAULT_HEADER_SETTINGS.accentColor
   const packageJson = typeof raw.packageJson === 'string' ? raw.packageJson : undefined
-  const customCSS = (() => {
-    if (typeof raw.customCSS === 'string') {
-      return raw.customCSS
-    }
-
-    // Legacy: customCSS previously lived under pages.*.sections.main.settings.customCSS (now removed by normalizePageConfig).
-    const rawPages = raw.pages && typeof raw.pages === 'object' ? raw.pages : {}
-    const pageKeys = Object.values(PAGE_KEY_MAP) as DocumentPageKey[]
-    for (const pageKey of pageKeys) {
-      const page = (rawPages as Record<string, PageConfig | undefined>)[pageKey]
-      const legacyValue = (page?.sections?.main?.settings as { customCSS?: unknown } | undefined)?.customCSS
-      if (typeof legacyValue === 'string' && legacyValue.trim().length > 0) {
-        return legacyValue
-      }
-    }
-    return undefined
-  })()
+  const customCSS = typeof raw.customCSS === 'string' ? raw.customCSS : undefined
 
   const headerSection = normalizeHeaderSection(raw.header?.sections?.header)
   const footer = normalizeFooterConfig(raw.footer)
@@ -874,7 +858,7 @@ const readSavedDocument = (): ThemeDocument => {
   }
 }
 
-// Legacy function - reads from draft first, falls back to saved
+// Read persisted document (draft preferred)
 const readPersistedDocument = (): ThemeDocument => {
   const draft = readDraftDocument()
   if (draft) {
@@ -976,7 +960,7 @@ const writeSavedDocument = (document: ThemeDocument): boolean => {
   }
 }
 
-// Legacy function - writes to draft storage
+// Write persisted document to draft storage
 const writePersistedDocument = (document: ThemeDocument): boolean => {
   return writeDraftDocument(document)
 }
@@ -1023,7 +1007,7 @@ export const persistSavedThemeDocument = (document: ThemeDocument): boolean => {
   return writeSavedDocument(normalized)
 }
 
-// Legacy export - loads draft first, falls back to saved
+// Load persisted document (draft preferred)
 export const loadPersistedThemeDocument = (): ThemeDocument => clone(readPersistedDocument())
 
 export const persistThemeDocument = (document: ThemeDocument): boolean => {

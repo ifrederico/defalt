@@ -47,18 +47,18 @@ export const GHOST_SECTION_IDS = new Set([
  * Resolution order:
  * 1. If identifier is a Ghost built-in section → GhostIcon
  * 2. If identifier is in SECTION_ICON_MAP → mapped icon
- * 3. Fallback → provided fallback or GhostIcon
+ * 3. Default → provided icon or GhostIcon
  *
  * @param identifier - The section ID or definition ID
- * @param fallback - Optional fallback icon (defaults to GhostIcon)
+ * @param defaultIcon - Optional icon (defaults to GhostIcon)
  * @returns The resolved LucideIcon
  */
 export function resolveSectionIcon(
   identifier: string | undefined | null,
-  fallback: LucideIcon = GhostIcon
+  defaultIcon: LucideIcon = GhostIcon
 ): LucideIcon {
   if (!identifier) {
-    return fallback
+    return defaultIcon
   }
 
   const normalized = identifier.toLowerCase()
@@ -73,12 +73,12 @@ export function resolveSectionIcon(
     return SECTION_ICON_MAP[identifier]
   }
 
-  // Also check normalized version for case-insensitive fallback
+  // Also check normalized version for case-insensitive match
   if (SECTION_ICON_MAP[normalized]) {
     return SECTION_ICON_MAP[normalized]
   }
 
-  return fallback
+  return defaultIcon
 }
 
 // Re-export GhostIcon for convenience

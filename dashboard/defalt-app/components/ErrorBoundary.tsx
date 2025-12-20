@@ -3,15 +3,15 @@ import { RefreshCcw, AlertTriangle } from 'lucide-react'
 import { useToast } from './ToastContext'
 import { logError } from '@defalt/utils/logging/errorLogger'
 
-type FallbackRenderArgs = {
+type ErrorRenderArgs = {
   error: Error
   reset: () => void
 }
 
 type ErrorBoundaryProps = {
   children: ReactNode
-  fallback?: ReactNode
-  fallbackRender?: (args: FallbackRenderArgs) => ReactNode
+  errorContent?: ReactNode
+  renderError?: (args: ErrorRenderArgs) => ReactNode
   onError?: (error: Error, info: ErrorInfo) => void
   onReset?: () => void
   resetKeys?: ReadonlyArray<unknown>
@@ -62,10 +62,10 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
 
   render() {
     if (this.state.error) {
-      if (this.props.fallbackRender) {
-        return this.props.fallbackRender({ error: this.state.error, reset: this.reset })
+      if (this.props.renderError) {
+        return this.props.renderError({ error: this.state.error, reset: this.reset })
       }
-      return this.props.fallback ?? null
+      return this.props.errorContent ?? null
     }
     return this.props.children
   }
@@ -116,13 +116,13 @@ function FullScreenError({ title, description, onRetry, retryLabel = 'Try again'
   )
 }
 
-type PreviewFallbackProps = {
+type PreviewErrorStateProps = {
   title: string
   description: string
   onRetry: () => void
 }
 
-function PreviewFallback({ title, description, onRetry }: PreviewFallbackProps) {
+function PreviewErrorState({ title, description, onRetry }: PreviewErrorStateProps) {
   return (
     <div className="flex h-full min-h-[480px] w-full flex-col items-center justify-center gap-4 rounded-md border border-dashed border-border-strong bg-subtle text-center">
       <div className="flex h-12 w-12 items-center justify-center rounded-full bg-warning-light text-warning">
@@ -151,7 +151,7 @@ export function RootAppErrorBoundary({ children }: { children: ReactNode }) {
       onError={(error) => {
         logError(error, { scope: 'RootAppErrorBoundary' })
       }}
-      fallbackRender={({ reset }) => (
+      renderError={({ reset }) => (
         <FullScreenError
           title="Something went wrong"
           description="The editor failed to load. Please try again or reload the page."
@@ -173,7 +173,7 @@ export function DashboardErrorBoundary({ children }: { children: ReactNode }) {
         logError(error, { scope: 'DashboardErrorBoundary' })
         showToast('Editor crashed', 'Something went wrong in the dashboard. Try again or reload.', 'error')
       }}
-      fallbackRender={({ reset }) => (
+      renderError={({ reset }) => (
         <FullScreenError
           title="Dashboard crashed"
           description="An unexpected error occurred. Trying again usually fixes it."
@@ -205,8 +205,8 @@ export function PreviewErrorBoundary({ children, resetKeys, onPreviewError, onPr
         onPreviewError?.(error)
       }}
       onReset={onPreviewReset}
-      fallbackRender={({ reset }) => (
-        <PreviewFallback
+      renderError={({ reset }) => (
+        <PreviewErrorState
           title="Preview failed"
           description="We could not render the preview. Retry to rebuild it."
           onRetry={reset}

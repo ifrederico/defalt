@@ -1,6 +1,6 @@
-import { PREVIEW_FALLBACK_URL } from '@defalt/utils/constants'
+import { PREVIEW_PLACEHOLDER_URL } from '@defalt/utils/constants'
 
-const BASE_URL = PREVIEW_FALLBACK_URL
+const BASE_URL = PREVIEW_PLACEHOLDER_URL
 const SITE_NAME = 'Custom'
 
 const assetManifest = import.meta.glob('./images/**/*', { eager: true, import: 'default' }) as Record<string, string>

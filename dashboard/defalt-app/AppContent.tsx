@@ -22,7 +22,7 @@ export function AppContent() {
     const hoveredSectionId = useHoveredSectionId()
     const scrollToSectionId = useScrollToSectionId()
     const sidebarExpanded = useSidebarExpanded()
-    const { selectSection, setScrollToSectionId, clearSelection } = useUIActions()
+    const { selectSection, setScrollToSectionId, clearSelection, setActiveDetail } = useUIActions()
     const isWideScreen = useMediaQuery('(min-width: 1348px)')
     const ghostOverlayTimeoutRef = useRef<number | null>(null)
 
@@ -140,12 +140,19 @@ export function AppContent() {
         if (!activeDetail) {
             return
         }
+        if (activeDetail.blockIndex !== undefined) {
+            return
+        }
         const normalizedId = normalizeSectionId(activeDetail.id)
         const resolvedLabel = resolveSectionLabel(normalizedId)
         if (resolvedLabel && resolvedLabel !== activeDetail.label) {
-            selectSection(normalizedId, resolvedLabel)
+            setActiveDetail({ ...activeDetail, id: normalizedId, label: resolvedLabel })
+            return
         }
-    }, [activeDetail, normalizeSectionId, resolveSectionLabel, selectSection])
+        if (normalizedId !== activeDetail.id) {
+            setActiveDetail({ ...activeDetail, id: normalizedId })
+        }
+    }, [activeDetail, normalizeSectionId, resolveSectionLabel, setActiveDetail])
 
     // Effect to handle checkout success
     useEffect(() => {

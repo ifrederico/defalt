@@ -32,11 +32,11 @@ import { ghostGridConfigSchema } from '../../defalt-sections/sections/ghostGrid/
 import { formatInternalTag } from '../../defalt-sections/utils/tagUtils.js'
 import {
   resolveContainerPaddingX,
-  resolveGhostCardsFallbackTag,
-  resolveHeroFallbackTag,
+  resolveGhostCardsDefaultTag,
+  resolveHeroDefaultTag,
   resolveImageAspectRatio,
   resolveImageColumns,
-  resolveImageWithTextFallbackTag,
+  resolveImageWithTextDefaultTag,
   toTagFilter
 } from '../derived/sectionDerived.js'
 
@@ -123,43 +123,43 @@ function escapeHandlebarsString(value: string): string {
     .replace(/}/g, '&#125;')
 }
 
-function normalizePaddingValue(value: unknown, fallback: number): number {
+function normalizePaddingValue(value: unknown, defaultValue: number): number {
   if (typeof value === 'number' && Number.isFinite(value)) {
     return Math.max(0, Math.round(value))
   }
-  return Math.max(0, Math.round(fallback))
+  return Math.max(0, Math.round(defaultValue))
 }
 
 function resolveSectionPadding(
   sectionConfig: ThemeConfig['sections'][string] | undefined,
-  fallback: PaddingConfig
+  defaultPadding: PaddingConfig
 ): PaddingConfig {
   const settings = sectionConfig?.settings
   if (!settings) {
-    return { ...fallback }
+    return { ...defaultPadding }
   }
 
   const rawPadding = settings.padding as { top?: unknown, bottom?: unknown, left?: unknown, right?: unknown } | undefined
   if (rawPadding && (typeof rawPadding === 'object')) {
-    const top = normalizePaddingValue(rawPadding.top, fallback.top)
-    const bottom = normalizePaddingValue(rawPadding.bottom, fallback.bottom)
-    const left = normalizePaddingValue(rawPadding.left, fallback.left ?? 0)
-    const right = normalizePaddingValue(rawPadding.right, fallback.right ?? 0)
+    const top = normalizePaddingValue(rawPadding.top, defaultPadding.top)
+    const bottom = normalizePaddingValue(rawPadding.bottom, defaultPadding.bottom)
+    const left = normalizePaddingValue(rawPadding.left, defaultPadding.left ?? 0)
+    const right = normalizePaddingValue(rawPadding.right, defaultPadding.right ?? 0)
     return { top, bottom, left, right }
   }
 
   const paddingBlock = settings.paddingBlock
   if (typeof paddingBlock === 'number') {
-    const unified = normalizePaddingValue(paddingBlock, fallback.top)
+    const unified = normalizePaddingValue(paddingBlock, defaultPadding.top)
     return {
       top: unified,
       bottom: unified,
-      left: fallback.left,
-      right: fallback.right
+      left: defaultPadding.left,
+      right: defaultPadding.right
     }
   }
 
-  return { ...fallback }
+  return { ...defaultPadding }
 }
 
 function buildSectionStyle(padding: PaddingConfig): string {
@@ -280,7 +280,7 @@ export function generateHomeTemplate(
 
         const containerPaddingX = resolveContainerPaddingX(heroConfig.contentWidth)
         const backgroundColor = sanitizeHexColor(heroConfig.backgroundColor, 'transparent')
-        const internalTag = formatInternalTag(heroConfig.tag) || resolveHeroFallbackTag(key)
+        const internalTag = formatInternalTag(heroConfig.tag) || resolveHeroDefaultTag(key)
         const tagFilter = toTagFilter(internalTag)
         const imageOnRight = heroConfig.invert === true || heroConfig.imagePosition === 'right'
         const { imageColumn, textColumn } = resolveImageColumns(heroConfig.imageWidth)
@@ -301,7 +301,7 @@ export function generateHomeTemplate(
 
 	        const containerPaddingX = resolveContainerPaddingX(cardsConfig.contentWidth)
 	        const backgroundColor = sanitizeHexColor(cardsConfig.backgroundColor, 'transparent')
-	        const internalTag = formatInternalTag(cardsConfig.tag) || resolveGhostCardsFallbackTag(key)
+	        const internalTag = formatInternalTag(cardsConfig.tag) || resolveGhostCardsDefaultTag(key)
 	        const tagFilter = toTagFilter(internalTag)
 
 	        sectionPartial = `{{> "defalt-ghost-cards" sectionId=${JSON.stringify(key)} sectionStyle=${JSON.stringify(sectionStyle)} contentWidth=${JSON.stringify(cardsConfig.contentWidth)} containerPaddingX=${JSON.stringify(containerPaddingX)} backgroundColor=${JSON.stringify(backgroundColor)} pageTitle=${cardsConfig.pageTitle} textAlignment=${JSON.stringify(cardsConfig.textAlignment)} titleSize=${JSON.stringify(cardsConfig.titleSize)} tagFilter=${JSON.stringify(tagFilter)} internalTag=${JSON.stringify(internalTag)} }}`
@@ -338,7 +338,7 @@ export function generateHomeTemplate(
 
         const containerPaddingX = resolveContainerPaddingX(imageTextConfig.contentWidth)
         const backgroundColor = sanitizeHexColor(imageTextConfig.backgroundColor, 'transparent')
-        const internalTag = formatInternalTag(imageTextConfig.tag) || resolveImageWithTextFallbackTag(key)
+        const internalTag = formatInternalTag(imageTextConfig.tag) || resolveImageWithTextDefaultTag(key)
         const tagFilter = toTagFilter(internalTag)
         const imageOnRight = imageTextConfig.invert === true || imageTextConfig.imagePosition === 'right'
         const { imageColumn, textColumn } = resolveImageColumns(imageTextConfig.imageWidth)
@@ -876,7 +876,7 @@ export async function applyAnnouncementBarCustomization(themeDir: string, config
       const manualContent = manualMarkup ? `${separator}${manualMarkup}` : ''
 
       // Ghost-first rendering: use page HTML content when a page exists for the tag.
-      // Fallback: manual text/link.
+      // Manual text/link renders when no page is found.
       return `{{#get "pages" filter="${escapeHandlebarsString(tagFilter)}" limit="1" include="tags"}}
   {{#if pages}}
     ${ghostContent}
@@ -999,12 +999,12 @@ export async function applyMainSectionCustomization(themeDir: string, config: Th
   }
 
   const defaultMainPadding = CSS_DEFAULT_PADDING.main
-  let fallback: PaddingConfig
+  let defaultPadding: PaddingConfig
   if (typeof defaultMainPadding === 'number') {
-    fallback = { top: defaultMainPadding, bottom: defaultMainPadding, left: 0, right: 0 }
+    defaultPadding = { top: defaultMainPadding, bottom: defaultMainPadding, left: 0, right: 0 }
   } else {
     const paddingObject = (defaultMainPadding ?? {}) as SectionPadding
-    fallback = {
+    defaultPadding = {
       top: paddingObject.top ?? 0,
       bottom: paddingObject.bottom ?? 0,
       left: paddingObject.left ?? 0,
@@ -1013,7 +1013,7 @@ export async function applyMainSectionCustomization(themeDir: string, config: Th
   }
 
   const mainSection = config.sections?.main
-  const resolvedPadding = resolveSectionPadding(mainSection, fallback)
+  const resolvedPadding = resolveSectionPadding(mainSection, defaultPadding)
 
   // Style block (prepended to template content)
   const styleBlock = [
@@ -1108,8 +1108,8 @@ export async function applyFooterCustomization(themeDir: string, config: ThemeCo
 
   const requestedOrder = Array.isArray(config.order?.footer) ? config.order.footer : []
   const validOrder = requestedOrder.filter((key): key is FooterKey => key === 'footerSignup' || key === 'footerBar')
-  const fallbackOrder: FooterKey[] = ['footerBar', 'footerSignup']
-  const resolvedOrder = validOrder.length > 0 ? validOrder : fallbackOrder
+  const defaultOrder: FooterKey[] = ['footerBar', 'footerSignup']
+  const resolvedOrder = validOrder.length > 0 ? validOrder : defaultOrder
 
   const includeMap: Record<FooterKey, boolean> = {
     footerSignup: includeSignup,

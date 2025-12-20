@@ -23,7 +23,7 @@ import type { SettingSchema, BlockSchema } from '../../engine/schemaTypes.js'
 export const announcementBlockConfigSchema = z.object({
   // Ghost tag for content - when set, fetches from Ghost page
   tag: z.string().default('#announcement'),
-  // Manual text entry - used as fallback when no Ghost content
+  // Manual text entry - used when no Ghost content
   text: z.string().default(''),
   link: z.string().default(''),
   // Typography settings

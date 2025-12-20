@@ -25,13 +25,13 @@ export const resolveImageAspectRatio = (imageAspect: unknown): string => {
 
 export const toTagFilter = (internalTag: string): string => `tag:${toApiTagSlug(internalTag)}`
 
-export const resolveHeroFallbackTag = (sectionId: string): string =>
+export const resolveHeroDefaultTag = (sectionId: string): string =>
   resolveHeroTagFromId(sectionId)
 
-export const resolveImageWithTextFallbackTag = (sectionId: string): string =>
+export const resolveImageWithTextDefaultTag = (sectionId: string): string =>
   resolveImageWithTextTagFromId(sectionId)
 
-export const resolveGhostCardsFallbackTag = (sectionId: string): string => {
+export const resolveGhostCardsDefaultTag = (sectionId: string): string => {
   const suffix = parseGhostCardIdSuffix(sectionId)
   if (suffix <= 1) return '#cards'
   return `#cards-${suffix}`

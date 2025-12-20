@@ -5,7 +5,7 @@ import {
   type ThemeDocument
 } from '@defalt/utils/config/themeConfig'
 import { safeParseWorkspaceBackup } from '@defalt/utils/config/themeValidation'
-import { logError, logWarning } from '@defalt/utils/logging/errorLogger'
+import { logError } from '@defalt/utils/logging/errorLogger'
 import { apiPath } from '@defalt/utils/api/apiPath'
 import { trackEvent } from '@defalt/utils/analytics/umami'
 import type { ToastType } from '../types/toast'
@@ -28,9 +28,6 @@ type UseExportParams = {
   onShowUpgradeModal?: () => void
 }
 
-const isPlainObject = (value: unknown): value is Record<string, unknown> =>
-  typeof value === 'object' && value !== null && !Array.isArray(value)
-
 const parseWorkspaceBackup = (raw: unknown): NormalizedWorkspaceBackup | null => {
   const parsed = safeParseWorkspaceBackup(raw)
   if (parsed) {
@@ -41,37 +38,6 @@ const parseWorkspaceBackup = (raw: unknown): NormalizedWorkspaceBackup | null =>
       document: normalizeThemeDocument(parsed.document as ThemeDocument)
     }
   }
-
-  const record = isPlainObject(raw) ? raw : null
-  if (record?.document && isPlainObject(record.document)) {
-    try {
-      const versionValue = typeof record.version === 'number' ? record.version : BACKUP_VERSION
-      const exportedAtValue = typeof record.exportedAt === 'string'
-        ? record.exportedAt
-        : new Date().toISOString()
-      return {
-        version: versionValue,
-        exportedAt: exportedAtValue,
-        document: normalizeThemeDocument(record.document)
-      }
-    } catch (error) {
-      logWarning('Failed to normalize legacy backup document', { scope: 'useExport.parseWorkspaceBackup.legacy', error })
-      return null
-    }
-  }
-
-  if (record) {
-    try {
-      return {
-        version: BACKUP_VERSION,
-        exportedAt: new Date().toISOString(),
-        document: normalizeThemeDocument(record)
-      }
-    } catch {
-      return null
-    }
-  }
-
   return null
 }
 

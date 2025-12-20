@@ -83,7 +83,7 @@ vi.mock('@defalt/utils/config/themeConfig', async (importOriginal) => {
   }
 })
 
-// Legacy useThemeConfig mock removed - logic now inlined in useWorkspace
+// useThemeConfig mock removed - logic now inlined in useWorkspace
 
 let enqueueVersion = 0
 const enqueueSpy = vi.fn(
@@ -231,33 +231,6 @@ describe('useWorkspace', () => {
     expect(
       (hook.result.current.customSections['ghost-cards-2'].config as { tag?: string }).tag
     ).toBe('#cards-2')
-
-    hook.unmount()
-  })
-
-  it('normalizes legacy ghost card tags without hyphens', async () => {
-    const hook = renderWorkspaceHook(createWorkspaceProps())
-
-    act(() => {
-      hook.result.current.addTemplateSection('ghostCards')
-    })
-
-    await waitFor(() => {
-      expect(hook.result.current.customSections['ghost-cards']).toBeDefined()
-    })
-
-    act(() => {
-      hook.result.current.updateCustomSectionConfig('ghost-cards', (config) => ({
-        ...config,
-        tag: '#ghost-card2'
-      }))
-    })
-
-    await waitFor(() => {
-      expect(
-        (hook.result.current.customSections['ghost-cards'].config as { tag?: string }).tag
-      ).toBe('#cards-2')
-    })
 
     hook.unmount()
   })

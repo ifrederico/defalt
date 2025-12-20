@@ -33,9 +33,9 @@ export function usePackageJson() {
         }
         logError(error, { scope: 'usePackageJson.loadPackageJson' })
         if (!hasOverrideRef.current && isActive) {
-          const fallback = '{\n  "name": "source"\n}'
-          basePackageJsonRef.current = fallback
-          setPackageJsonState(fallback)
+          const defaultPackageJson = '{\n  "name": "source"\n}'
+          basePackageJsonRef.current = defaultPackageJson
+          setPackageJsonState(defaultPackageJson)
         }
       }
     }
@@ -125,7 +125,7 @@ export function usePackageJson() {
     return options.filter((option): option is string => typeof option === 'string')
   }, [getCustomField])
 
-  const getStringFieldValue = useCallback((key: string, fallback = '') => {
+  const getStringFieldValue = useCallback((key: string, defaultValue = '') => {
     const raw = getCustomFieldRawValue(key)
     if (typeof raw === 'string') {
       return raw
@@ -135,10 +135,10 @@ export function usePackageJson() {
       return String(raw)
     }
 
-    return fallback
+    return defaultValue
   }, [getCustomFieldRawValue])
 
-  const getBooleanFieldValue = useCallback((key: string, fallback = false) => {
+  const getBooleanFieldValue = useCallback((key: string, defaultValue = false) => {
     const raw = getCustomFieldRawValue(key)
     if (typeof raw === 'boolean') {
       return raw
@@ -158,7 +158,7 @@ export function usePackageJson() {
       return raw !== 0
     }
 
-    return fallback
+    return defaultValue
   }, [getCustomFieldRawValue])
 
   const updatePackageJson = useCallback((updater: (data: Record<string, unknown>) => void) => {
@@ -305,9 +305,9 @@ export function usePackageJson() {
 
   const headerAndFooterColorOptions = useMemo(() => getCustomFieldOptions('header_and_footer_color'), [getCustomFieldOptions])
   const headerAndFooterColorValue = useMemo(() => {
-    const fallback = headerAndFooterColorOptions[0] ?? 'Background color'
-    const value = getStringFieldValue('header_and_footer_color', fallback)
-    return headerAndFooterColorOptions.includes(value) ? value : fallback
+    const defaultOption = headerAndFooterColorOptions[0] ?? 'Background color'
+    const value = getStringFieldValue('header_and_footer_color', defaultOption)
+    return headerAndFooterColorOptions.includes(value) ? value : defaultOption
   }, [getStringFieldValue, headerAndFooterColorOptions])
   const handleHeaderAndFooterColorChange = useCallback((value: string) => {
     setCustomFieldValue('header_and_footer_color', value, 'select')
@@ -315,9 +315,9 @@ export function usePackageJson() {
 
   const titleFontOptions = useMemo(() => getCustomFieldOptions('title_font'), [getCustomFieldOptions])
   const titleFontValue = useMemo(() => {
-    const fallback = titleFontOptions[0] ?? 'Modern sans-serif'
-    const value = getStringFieldValue('title_font', fallback)
-    return titleFontOptions.includes(value) ? value : fallback
+    const defaultOption = titleFontOptions[0] ?? 'Modern sans-serif'
+    const value = getStringFieldValue('title_font', defaultOption)
+    return titleFontOptions.includes(value) ? value : defaultOption
   }, [getStringFieldValue, titleFontOptions])
   const handleTitleFontChange = useCallback((value: string) => {
     setCustomFieldValue('title_font', value, 'select')
@@ -325,9 +325,9 @@ export function usePackageJson() {
 
   const bodyFontOptions = useMemo(() => getCustomFieldOptions('body_font'), [getCustomFieldOptions])
   const bodyFontValue = useMemo(() => {
-    const fallback = bodyFontOptions[0] ?? 'Modern sans-serif'
-    const value = getStringFieldValue('body_font', fallback)
-    return bodyFontOptions.includes(value) ? value : fallback
+    const defaultOption = bodyFontOptions[0] ?? 'Modern sans-serif'
+    const value = getStringFieldValue('body_font', defaultOption)
+    return bodyFontOptions.includes(value) ? value : defaultOption
   }, [getStringFieldValue, bodyFontOptions])
   const handleBodyFontChange = useCallback((value: string) => {
     setCustomFieldValue('body_font', value, 'select')
@@ -346,9 +346,9 @@ export function usePackageJson() {
 
   const subheaderStyleOptions = useMemo(() => getCustomFieldOptions('header_style'), [getCustomFieldOptions])
   const subheaderStyleValue = useMemo(() => {
-    const fallback = subheaderStyleOptions[0] ?? 'Landing'
-    const value = getStringFieldValue('header_style', fallback)
-    return subheaderStyleOptions.includes(value) ? value : fallback
+    const defaultOption = subheaderStyleOptions[0] ?? 'Landing'
+    const value = getStringFieldValue('header_style', defaultOption)
+    return subheaderStyleOptions.includes(value) ? value : defaultOption
   }, [getStringFieldValue, subheaderStyleOptions])
   const handleSubheaderStyleChange = useCallback((value: string) => {
     setCustomFieldValue('header_style', value, 'select')
@@ -371,9 +371,9 @@ export function usePackageJson() {
 
   const postFeedStyleOptions = useMemo(() => getCustomFieldOptions('post_feed_style'), [getCustomFieldOptions])
   const postFeedStyleValue = useMemo(() => {
-    const fallback = postFeedStyleOptions[0] ?? 'List'
-    const value = getStringFieldValue('post_feed_style', fallback)
-    return postFeedStyleOptions.includes(value) ? value : fallback
+    const defaultOption = postFeedStyleOptions[0] ?? 'List'
+    const value = getStringFieldValue('post_feed_style', defaultOption)
+    return postFeedStyleOptions.includes(value) ? value : defaultOption
   }, [getStringFieldValue, postFeedStyleOptions])
   const handlePostFeedStyleChange = useCallback((value: string) => {
     setCustomFieldValue('post_feed_style', value, 'select')

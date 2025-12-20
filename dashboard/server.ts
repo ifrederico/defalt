@@ -931,7 +931,7 @@ app.use(express.static(distPath))
 
 app.get('/sections/{*path}', serveSectionTemplate)
 
-// SPA fallback - serve index.html for non-static routes
+// SPA catch-all - serve index.html for non-static routes
 // Exclude: /api/, /themes/, /theme-config/
 app.get(/^\/(?!api\/|themes\/|theme-config\/).*/, (_req, res) => {
   res.sendFile(path.join(distPath, 'index.html'))

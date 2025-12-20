@@ -52,11 +52,11 @@ import {
 import { formatInternalTag } from '@defalt/sections/utils/tagUtils'
 import {
   resolveContainerPaddingX,
-  resolveGhostCardsFallbackTag,
-  resolveHeroFallbackTag,
+  resolveGhostCardsDefaultTag,
+  resolveHeroDefaultTag,
   resolveImageAspectRatio,
   resolveImageColumns,
-  resolveImageWithTextFallbackTag,
+  resolveImageWithTextDefaultTag,
   toTagFilter
 } from '../derived/sectionDerived'
 import { getFooterOrder, getTemplateOrder } from '@defalt/utils/config/sectionRegistry'
@@ -144,13 +144,13 @@ export function HandlebarsRenderer({
     [customCss]
   )
   const sanitizedAnnouncementBars = useMemo(() => {
-    const fallbackAnnouncement = DEFAULT_ANNOUNCEMENT_CONTENT_CONFIG.announcements[0]
+    const defaultAnnouncement = DEFAULT_ANNOUNCEMENT_CONTENT_CONFIG.announcements[0]
     return announcementBars.map((entry) => {
       const bar = normalizeAnnouncementBarConfig(entry.bar ?? DEFAULT_ANNOUNCEMENT_BAR_CONFIG, DEFAULT_ANNOUNCEMENT_BAR_CONFIG)
       const content = normalizeAnnouncementContentConfig(entry.content ?? DEFAULT_ANNOUNCEMENT_CONTENT_CONFIG, DEFAULT_ANNOUNCEMENT_CONTENT_CONFIG)
       const announcements = content.announcements.length > 0
         ? content.announcements
-        : [fallbackAnnouncement]
+        : [defaultAnnouncement]
       return {
         id: entry.id,
         hidden: entry.hidden === true,
@@ -229,7 +229,7 @@ export function HandlebarsRenderer({
       .then(() => setTemplatesReady(true))
       .catch((err) => {
         console.warn('[HandlebarsRenderer] Failed to preload section templates:', err)
-        setTemplatesReady(true) // Continue anyway, will fall back to legacy
+        setTemplatesReady(true) // Continue anyway; templates load on demand
       })
   }, [])
 
@@ -251,7 +251,7 @@ export function HandlebarsRenderer({
 
         const templatePath = getSectionTemplatePath(section.definitionId)
         const sectionDef = getSectionDefinition(section.definitionId)
-        const paddingControls = sectionDef?.paddingControls ?? (sectionDef?.showPaddingControls === false ? 'none' : 'vertical')
+        const paddingControls = sectionDef?.paddingControls ?? 'vertical'
         const shouldUseGlobalPadding = paddingControls !== 'none'
         const padding = shouldUseGlobalPadding ? sectionPadding[section.id] : undefined
 
@@ -272,7 +272,7 @@ export function HandlebarsRenderer({
 
             if (section.definitionId === 'hero') {
               const rawTag = baseConfig.tag
-              const internalTag = formatInternalTag(rawTag) || resolveHeroFallbackTag(section.id)
+              const internalTag = formatInternalTag(rawTag) || resolveHeroDefaultTag(section.id)
               const imageOnRight = baseConfig.invert === true || baseConfig.imagePosition === 'right'
               const { imageColumn, textColumn } = resolveImageColumns(baseConfig.imageWidth)
               const imageAspectRatio = resolveImageAspectRatio(baseConfig.imageAspect)
@@ -286,7 +286,7 @@ export function HandlebarsRenderer({
 
             if (section.definitionId === 'image-with-text') {
               const rawTag = baseConfig.tag
-              const internalTag = formatInternalTag(rawTag) || resolveImageWithTextFallbackTag(section.id)
+              const internalTag = formatInternalTag(rawTag) || resolveImageWithTextDefaultTag(section.id)
               const imageOnRight = baseConfig.invert === true || baseConfig.imagePosition === 'right'
               const { imageColumn, textColumn } = resolveImageColumns(baseConfig.imageWidth)
               const imageAspectRatio = resolveImageAspectRatio(baseConfig.imageAspect)
@@ -300,7 +300,7 @@ export function HandlebarsRenderer({
 
 	            if (section.definitionId === 'ghostCards') {
 	              const rawTag = baseConfig.tag
-	              const internalTag = formatInternalTag(rawTag) || resolveGhostCardsFallbackTag(section.id)
+	              const internalTag = formatInternalTag(rawTag) || resolveGhostCardsDefaultTag(section.id)
 	              const tagFilter = toTagFilter(internalTag)
 	              renderConfig.internalTag = internalTag
 	              renderConfig.tagFilter = tagFilter
@@ -464,12 +464,7 @@ export function HandlebarsRenderer({
   }, [hiddenSections, currentPage])
 
   const sectionIdsForPreview = useMemo(() => {
-    const normalizeSectionId = (id: string) => {
-      const lower = id.toLowerCase()
-      if (lower === 'footer_bar' || lower === 'footer-bar') return 'footerBar'
-      if (lower === 'footer_signup' || lower === 'footer-signup') return 'footerSignup'
-      return id
-    }
+    const normalizeSectionId = (id: string) => id
 
     const ids = new Set<string>(['header', 'footer'])
     sanitizedAnnouncementBars.forEach((bar) => ids.add(normalizeSectionId(bar.id)))

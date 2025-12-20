@@ -132,11 +132,11 @@ function registerSectionHelpers(): void {
   })
 
   // Conditional class helper
-  hbs.registerHelper('classIf', (condition, className, fallback) => {
+  hbs.registerHelper('classIf', (condition, className, elseClass) => {
     if (condition) {
       return typeof className === 'string' ? className : ''
     }
-    return typeof fallback === 'string' ? fallback : ''
+    return typeof elseClass === 'string' ? elseClass : ''
   })
 
   // Default value helper
@@ -461,7 +461,7 @@ export async function renderSection(
   try {
     const template = await fetchAndCompileTemplate(sectionId, templatePath, basePath)
 
-    // Resolve padding: prefer explicit options, fallback to config values
+    // Resolve padding: prefer explicit options, otherwise use config values
     const padding: SectionPadding = options.padding ?? {
       top: typeof config.paddingTop === 'number' ? config.paddingTop : 0,
       bottom: typeof config.paddingBottom === 'number' ? config.paddingBottom : 0,
