@@ -19,8 +19,7 @@ export const announcementBarDefaults: AnnouncementBarSectionConfig = {
     {
       ...announcementBlockConfigSchema.parse({}),
       tag: '#announcement',
-      text: '',
-      link: ''
+      text: ''
     }
   ]
 }

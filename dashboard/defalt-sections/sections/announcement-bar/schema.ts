@@ -3,7 +3,7 @@
  *
  * Engine V2: Block Architecture
  * - Parent (Bar): Controls layout, colors, padding
- * - Child (Block): Controls content, link, and typography
+ * - Child (Block): Controls content and typography
  *
  * Content can be sourced from a Ghost page tagged with #announcement (or any custom tag)
  * or configured directly in the blocks.
@@ -59,7 +59,6 @@ export const announcementBlockConfigSchema = z.object({
   tag: z.string().default('#announcement'),
   // Manual text entry - used when no Ghost content
   text: z.string().default(''),
-  link: z.string().default(''),
   // Typography settings
   typographySize: z.enum(ANNOUNCEMENT_TYPOGRAPHY_SIZE_VALUES).default('normal'),
   typographyWeight: z.enum(ANNOUNCEMENT_TYPOGRAPHY_WEIGHT_VALUES).default('default'),
@@ -85,21 +84,9 @@ export const announcementBarBlocksSchema: BlockSchema[] = [
         label: 'Content'
       },
       {
-        type: 'text',
-        id: 'tag',
-        label: 'Tag',
-        placeholder: '#announcement'
-      },
-      {
         type: 'textarea',
         id: 'text',
         label: 'Text'
-      },
-      {
-        type: 'url',
-        id: 'link',
-        label: 'Link',
-        placeholder: 'https://...'
       },
       // Typography
       {

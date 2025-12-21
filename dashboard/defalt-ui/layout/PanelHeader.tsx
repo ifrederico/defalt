@@ -124,10 +124,10 @@ export function PanelHeader({ title, onBack, tag, onTagChange, tags }: PanelHead
               <Popover.Trigger asChild>
                 <button
                   type="button"
-                  className="w-8 h-8 rounded-md flex items-center justify-center transition-colors focus:outline-none bg-surface hover:bg-subtle text-muted"
+                  className="w-9 h-9 rounded-md flex items-center justify-center transition-colors focus:outline-none bg-surface hover:bg-subtle text-secondary hover:text-foreground"
                   aria-label="Ghost tags"
                 >
-                  <Tag size={16} strokeWidth={1.5} />
+                  <Tag size={18} strokeWidth={1.5} />
                 </button>
               </Popover.Trigger>
             </FloatingTooltip>
@@ -169,10 +169,10 @@ export function PanelHeader({ title, onBack, tag, onTagChange, tags }: PanelHead
               <Popover.Trigger asChild>
                 <button
                   type="button"
-                  className="w-8 h-8 rounded-md flex items-center justify-center transition-colors focus:outline-none bg-surface hover:bg-subtle text-muted"
+                  className="w-9 h-9 rounded-md flex items-center justify-center transition-colors focus:outline-none bg-surface hover:bg-subtle text-secondary hover:text-foreground"
                   aria-label={`Ghost tag: ${tag}`}
                 >
-                  <Tag size={16} strokeWidth={1.5} />
+                  <Tag size={18} strokeWidth={1.5} />
                 </button>
               </Popover.Trigger>
             </FloatingTooltip>
@@ -213,10 +213,10 @@ export function PanelHeader({ title, onBack, tag, onTagChange, tags }: PanelHead
           <FloatingTooltip content={`Ghost tag: ${tag}`}>
             <button
               type="button"
-              className="w-8 h-8 rounded-md flex items-center justify-center transition-colors focus:outline-none bg-surface hover:bg-subtle text-muted"
+              className="w-9 h-9 rounded-md flex items-center justify-center transition-colors focus:outline-none bg-surface hover:bg-subtle text-secondary hover:text-foreground"
               aria-label={`Ghost tag: ${tag}`}
             >
-              <Tag size={16} strokeWidth={1.5} />
+              <Tag size={18} strokeWidth={1.5} />
             </button>
           </FloatingTooltip>
         ) : null}

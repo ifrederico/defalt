@@ -10,7 +10,7 @@ export type AppButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
 }
 
 const baseClasses =
-  'inline-flex select-none items-center justify-center rounded-md px-5 py-2 font-md transition-colors'
+  'inline-flex select-none items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50'
 
 const variantStateClasses: Record<Variant, Record<State, string>> = {
   primary: {
@@ -20,10 +20,10 @@ const variantStateClasses: Record<Variant, Record<State, string>> = {
     success: 'bg-primary text-white',
   },
   secondary: {
-    default: 'bg-surface text-foreground border border-border hover:bg-subtle',
-    loading: 'cursor-wait bg-surface text-muted border border-border',
-    disabled: 'cursor-not-allowed bg-surface text-placeholder border border-border',
-    success: 'bg-surface text-secondary border border-border',
+    default: 'border border-border bg-surface text-foreground hover:bg-subtle',
+    loading: 'cursor-wait border border-border bg-surface text-muted',
+    disabled: 'cursor-not-allowed border border-border bg-surface text-placeholder',
+    success: 'border border-border bg-surface text-secondary',
   },
   danger: {
     default: 'bg-error text-white hover:opacity-90',
@@ -44,9 +44,9 @@ const variantStateClasses: Record<Variant, Record<State, string>> = {
     success: 'bg-transparent text-secondary',
   },
   dark: {
-    default: 'bg-inverse text-white hover:opacity-90',
-    loading: 'cursor-wait bg-hover text-muted',
-    disabled: 'cursor-not-allowed bg-hover text-placeholder',
+    default: 'bg-inverse text-white hover:bg-inverse-subtle',
+    loading: 'cursor-wait bg-inverse text-white opacity-75',
+    disabled: 'cursor-not-allowed bg-inverse text-white opacity-60',
     success: 'bg-inverse text-white',
   },
   link: {
@@ -67,6 +67,7 @@ export function AppButton({
 }: AppButtonProps) {
   const classes = twMerge(
     baseClasses,
+    'h-[34px] px-3 py-2',
     variantStateClasses[variant][state],
     className
   )

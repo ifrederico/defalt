@@ -1,4 +1,4 @@
-import { useCallback, type ReactNode } from 'react'
+import { useCallback, type CSSProperties, type ReactNode } from 'react'
 import { Toaster, toast } from 'sonner'
 import 'sonner/dist/styles.css'
 import type { ToastType } from '../types/toast'
@@ -25,6 +25,12 @@ export function ToastProvider({ children }: { children: ReactNode }) {
         position="bottom-left"
         duration={3000}
         theme="light"
+        className="toaster group"
+        style={{
+          '--normal-bg': 'var(--color-surface)',
+          '--normal-text': 'var(--color-foreground)',
+          '--normal-border': 'var(--color-border)'
+        } as CSSProperties}
         toastOptions={{
           classNames: {
             toast: 'bg-surface text-foreground border border-border shadow-md',

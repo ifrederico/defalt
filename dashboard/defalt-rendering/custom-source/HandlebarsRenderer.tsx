@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import type { MutableRefObject } from 'react'
 import Handlebars from 'handlebars'
 import { registerGhostHelpers } from './handlebars/helpers'
@@ -140,6 +140,10 @@ export function HandlebarsRenderer({
   const [renderedHtml, setRenderedHtml] = useState('')
   const [templates, setTemplates] = useState<Record<string, string> | null>(null)
   const [frameHoverSectionId, setFrameHoverSectionId] = useState<string | null>(null)
+  const [layoutTick, setLayoutTick] = useState(0)
+  const triggerLayoutTick = useCallback(() => {
+    setLayoutTick((prev) => prev + 1)
+  }, [])
 
   const sanitizedAccentColor = useMemo(
     () => sanitizeHexColor(accentColor, '#AC1E3E'),
@@ -650,7 +654,8 @@ export function HandlebarsRenderer({
     sectionPadding,
     sectionMargins,
     announcementBars: renderedAnnouncementBars,
-  }), [sectionPadding, sectionMargins, renderedAnnouncementBars])
+    layoutTick,
+  }), [sectionPadding, sectionMargins, renderedAnnouncementBars, layoutTick])
 
   return (
     <div style={{ position: 'relative', width: '100%', height: '100%' }}>
@@ -674,11 +679,11 @@ export function HandlebarsRenderer({
             position: 'absolute',
             top: 0,
             left: 0,
-            width: '100%',
-            height: '100%',
+            width: '115%',
+            height: '115%',
             border: 'none',
             backgroundColor: '#ffffff',
-            transform: 'none',
+            transform: 'scale(0.86957)',
             transformOrigin: 'top left'
           }}
         >
@@ -703,6 +708,7 @@ export function HandlebarsRenderer({
             accentColor={sanitizedAccentColor}
             backgroundColor={sanitizedBackgroundColor}
             pageLayout={pageLayout}
+            onLayoutUpdate={triggerLayoutTick}
           />
           <SelectionOverlay
             selectedSectionId={selectedSectionId ?? null}
@@ -715,6 +721,8 @@ export function HandlebarsRenderer({
             hiddenSections={hiddenSections}
             customSectionIds={customTemplateSections.map((section) => section.id)}
             aiSectionIds={aiSections.map((section) => section.id)}
+            customSections={customTemplateSections}
+            sectionPadding={sectionPadding}
             onToggleVisibility={onToggleSectionVisibility}
             onDuplicateSection={onDuplicateSection}
             onRemoveSection={onRemoveSection}
@@ -747,6 +755,7 @@ type PreviewFrameContentProps = {
   accentColor: string
   backgroundColor: string
   pageLayout: 'narrow' | 'normal'
+  onLayoutUpdate?: () => void
 }
 
 function PreviewFrameContent({
@@ -769,12 +778,28 @@ function PreviewFrameContent({
   accentColor,
   backgroundColor,
   pageLayout,
+  onLayoutUpdate,
 }: PreviewFrameContentProps) {
   const { document: frameDocument, frameRoot } = useFrame()
   const hasInjectedRef = useRef(false)
   const sectionSelectionCleanupRef = useRef<(() => void) | null>(null)
   const previewNavigationCleanupRef = useRef<(() => void) | null>(null)
   const prevSelectedSectionIdRef = useRef<string | null>(null)
+  const scheduleLayoutUpdate = useCallback(() => {
+    if (!onLayoutUpdate) {
+      return
+    }
+    const win = frameDocument?.defaultView
+    if (!win) {
+      onLayoutUpdate()
+      return
+    }
+    win.requestAnimationFrame(() => {
+      win.requestAnimationFrame(() => {
+        onLayoutUpdate()
+      })
+    })
+  }, [frameDocument, onLayoutUpdate])
 
   useEffect(() => {
     hasInjectedRef.current = false
@@ -794,6 +819,7 @@ function PreviewFrameContent({
       customSections,
       selectedSectionId: selectedSectionId ?? null,
     })
+    scheduleLayoutUpdate()
   // eslint-disable-next-line react-hooks/exhaustive-deps -- Only re-inject on HTML changes
   }, [renderedHtml, frameDocument, frameRoot])
 
@@ -821,6 +847,7 @@ function PreviewFrameContent({
       applyHeaderCustomizations(frameDocument, headerOptions)
       syncAnnouncementBars(frameDocument, announcementBars)
       applyCustomCss(frameDocument, customCss)
+      scheduleLayoutUpdate()
     }
 
     if (win) {
@@ -828,7 +855,7 @@ function PreviewFrameContent({
     } else {
       update()
     }
-  }, [frameDocument, headerOptions, announcementBars, customCss])
+  }, [frameDocument, headerOptions, announcementBars, customCss, scheduleLayoutUpdate])
 
   useEffect(() => {
     if (!hasInjectedRef.current || !frameDocument) return
@@ -850,6 +877,7 @@ function PreviewFrameContent({
     const update = () => {
       syncTemplateSections(frameDocument, customSections)
       applyHeaderCustomizations(frameDocument, headerOptions)
+      scheduleLayoutUpdate()
     }
 
     if (win) {
@@ -857,27 +885,35 @@ function PreviewFrameContent({
     } else {
       update()
     }
-  }, [frameDocument, customSections, headerOptions])
+  }, [frameDocument, customSections, headerOptions, scheduleLayoutUpdate])
 
   useEffect(() => {
     if (!hasInjectedRef.current || !frameDocument) return
     const win = frameDocument.defaultView
     if (win) {
-      win.requestAnimationFrame(() => reorderTemplateInDOM(frameDocument, filteredTemplateOrder))
+      win.requestAnimationFrame(() => {
+        reorderTemplateInDOM(frameDocument, filteredTemplateOrder)
+        scheduleLayoutUpdate()
+      })
     } else {
       reorderTemplateInDOM(frameDocument, filteredTemplateOrder)
+      scheduleLayoutUpdate()
     }
-  }, [frameDocument, filteredTemplateOrder])
+  }, [frameDocument, filteredTemplateOrder, scheduleLayoutUpdate])
 
   useEffect(() => {
     if (!hasInjectedRef.current || !frameDocument) return
     const win = frameDocument.defaultView
     if (win) {
-      win.requestAnimationFrame(() => reorderFooterInDOM(frameDocument, footerOrder))
+      win.requestAnimationFrame(() => {
+        reorderFooterInDOM(frameDocument, footerOrder)
+        scheduleLayoutUpdate()
+      })
     } else {
       reorderFooterInDOM(frameDocument, footerOrder)
+      scheduleLayoutUpdate()
     }
-  }, [frameDocument, footerOrder])
+  }, [frameDocument, footerOrder, scheduleLayoutUpdate])
 
   useEffect(() => {
     if (!hasInjectedRef.current || !frameDocument || !renderedHtml) return

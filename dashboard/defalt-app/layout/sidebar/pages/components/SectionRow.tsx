@@ -72,7 +72,8 @@ export const SectionRow = memo(function SectionRow({
   const scrollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const handleVisible = rowHovered || handleHovered || handleFocused
   const handleHighlighted = handleHovered || handleFocused
-  const labelWeightClass = 'font-normal'
+  const labelWeightClass = isSelected ? 'font-semibold' : 'font-medium'
+  const rowToneClass = isSelected || rowHovered ? 'text-foreground' : 'text-[#626D79]'
 
   // @dnd-kit sortable setup with Puck-style transition
   const { ref: sortableRef, isDragging, isDropTarget } = useSortable({
@@ -141,7 +142,7 @@ export const SectionRow = memo(function SectionRow({
   return (
     <div
       ref={sortableRef}
-      className={`group relative flex items-center justify-between rounded-md px-2 py-2 font-md transition-colors ${
+      className={`group relative flex items-center justify-between rounded-md px-2 py-2 text-base transition-colors ${
         isSelected || rowHovered ? 'bg-subtle' : 'bg-surface'
       } ${isDragging ? 'opacity-50' : ''} ${isSelectable ? 'cursor-pointer' : ''}`}
       data-section-id={item.id}
@@ -201,7 +202,7 @@ export const SectionRow = memo(function SectionRow({
                 onToggleFooter?.()
               }
             }}
-            className="flex h-7 w-4 items-center justify-center shrink-0 text-secondary hover:text-foreground transition-colors"
+            className="flex h-7 w-4 items-center justify-center shrink-0 text-[#626D79] hover:text-foreground transition-colors"
             aria-label={
               isAnnouncementBar
                 ? (announcementBarExpanded ? 'Collapse announcements' : 'Expand announcements')
@@ -220,7 +221,7 @@ export const SectionRow = memo(function SectionRow({
         {draggable ? (
           <div className="relative flex h-7 w-7 items-center justify-center">
             <span
-              className={`flex h-7 w-7 items-center justify-center text-secondary transition-opacity duration-150 ${handleVisible ? 'opacity-0' : 'opacity-100'}`}
+              className={`flex h-7 w-7 items-center justify-center transition-opacity duration-150 ${rowToneClass} ${handleVisible ? 'opacity-0' : 'opacity-100'}`}
               aria-hidden={handleVisible}
             >
               <Icon size={16} strokeWidth={1.5} />
@@ -229,7 +230,7 @@ export const SectionRow = memo(function SectionRow({
               type="button"
               ref={handleButtonRef}
               className={`absolute inset-0 flex h-7 w-7 items-center justify-center rounded-md transition-all duration-150 cursor-grab active:cursor-grabbing focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-strong hover:bg-hover ${
-                handleVisible ? 'opacity-100 text-secondary pointer-events-auto' : 'opacity-0 text-placeholder pointer-events-none'
+                handleVisible ? 'opacity-100 text-foreground pointer-events-auto' : 'opacity-0 text-placeholder pointer-events-none'
               } ${handleHighlighted ? 'bg-hover' : ''}`}
               aria-label={`Drag ${item.label}`}
               onPointerDown={handlePointerDown}
@@ -242,14 +243,14 @@ export const SectionRow = memo(function SectionRow({
             </button>
           </div>
         ) : (
-          <span className="flex h-7 w-7 items-center justify-center text-secondary">
+          <span className={`flex h-7 w-7 items-center justify-center ${rowToneClass}`}>
             <Icon size={16} strokeWidth={1.5} />
           </span>
         )}
         {isSelectable ? (
           <button
             type="button"
-            className={`flex-1 text-left ${labelWeightClass} text-foreground hover:text-secondary flex items-center justify-between min-w-0`}
+            className={`flex-1 text-left ${labelWeightClass} ${rowToneClass} hover:text-foreground flex items-center justify-between min-w-0 transition-colors`}
             onClick={() => onOpenDetail(item.id, item.label)}
           >
             <span className="truncate">{item.label}</span>
@@ -260,7 +261,7 @@ export const SectionRow = memo(function SectionRow({
             )}
           </button>
         ) : (
-          <span className={`flex-1 ${labelWeightClass} text-foreground flex items-center justify-between min-w-0`}>
+          <span className={`flex-1 ${labelWeightClass} ${rowToneClass} flex items-center justify-between min-w-0 transition-colors`}>
             <span className="truncate">{item.label}</span>
             {isPremium && (
               <span className="flex h-4 w-4 items-center justify-center rounded-full bg-amber-100 shrink-0 ml-2 mr-2">

@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from 'react'
-import * as Dialog from '@radix-ui/react-dialog'
+import * as Dialog from '@defalt/ui/primitives/Dialog'
 import * as ToggleGroup from '@radix-ui/react-toggle-group'
 import { X, Loader2 } from 'lucide-react'
 import { useWorkspaceContext } from '../contexts/useWorkspaceContext'
@@ -197,8 +197,8 @@ export function TagsModal({ open, onOpenChange }: TagsModalProps) {
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 z-40 bg-gradient-to-br from-black/20 to-black/10 backdrop-blur-[2px] data-[state=open]:animate-fadeIn data-[state=closed]:animate-fadeOut" />
-        <Dialog.Content className="fixed left-1/2 top-[10%] z-50 w-[min(640px,calc(100vw-2rem))] -translate-x-1/2 rounded-lg bg-surface shadow-xl focus:outline-none data-[state=open]:animate-contentShow">
+        <Dialog.Overlay />
+        <Dialog.Content className="w-[min(640px,calc(100vw-2rem))]">
           {/* Header with title and toggle */}
           <div className="flex items-center justify-between px-6 py-4">
             <Dialog.Title className="text-xl font-bold text-foreground">

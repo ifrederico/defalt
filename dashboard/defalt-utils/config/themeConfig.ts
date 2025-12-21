@@ -57,7 +57,6 @@ export interface AnnouncementBlock {
   tag: string
   /** Manual text entry - used when no Ghost content */
   text: string
-  link: string
   /** Typography settings */
   typographySize: AnnouncementBarTypographySize
   typographyWeight: AnnouncementBarTypographyWeight
@@ -92,7 +91,7 @@ export const DEFAULT_ANNOUNCEMENT_BAR_CONFIG: AnnouncementBarConfig = {
 
 export const DEFAULT_ANNOUNCEMENT_CONTENT_CONFIG: AnnouncementContentConfig = {
   announcements: [
-    { tag: '#announcement', text: '', link: '', typographySize: 'normal', typographyWeight: 'default', typographySpacing: 'regular', typographyCase: 'default' }
+    { tag: '#announcement', text: '', typographySize: 'normal', typographyWeight: 'default', typographySpacing: 'regular', typographyCase: 'default' }
   ]
 }
 
@@ -453,13 +452,12 @@ export const normalizeAnnouncementContentConfig = (
     if (!Array.isArray(input)) return defaultConfig.announcements
     return input.map((item): AnnouncementBlock => {
       if (!item || typeof item !== 'object') {
-        return { tag: '#announcement', text: '', link: '', typographySize: 'normal', typographyWeight: 'default', typographySpacing: 'regular', typographyCase: 'default' }
+        return { tag: '#announcement', text: '', typographySize: 'normal', typographyWeight: 'default', typographySpacing: 'regular', typographyCase: 'default' }
       }
       const obj = item as Record<string, unknown>
       return {
         tag: typeof obj.tag === 'string' ? obj.tag : '#announcement',
         text: typeof obj.text === 'string' ? obj.text : '',
-        link: typeof obj.link === 'string' ? obj.link : '',
         // Typography settings with defaults
         typographySize: parseSize(obj.typographySize) ?? 'normal',
         typographyWeight: parseWeight(obj.typographyWeight) ?? 'default',

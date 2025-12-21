@@ -32,7 +32,7 @@ import {
   type LucideIcon
 } from 'lucide-react'
 import type { SectionSettingSchema } from '@defalt/sections/engine'
-import { SliderField, ToggleSwitch, ColorPickerSetting, Dropdown, InlineControlRow, TextInput, TextArea } from '@defalt/ui'
+import { SliderField, ToggleSwitch, ColorPickerSetting, Select, InlineControlRow, TextInput, TextArea } from '@defalt/ui'
 
 // Icon name to component mapping for radio buttons and card lists
 const ICON_MAP: Record<string, LucideIcon> = {
@@ -103,7 +103,6 @@ export function groupSettingsByHeader(settings: SectionSettingSchema[]): Setting
 
 export type RenderSettingOptions = {
   isDisabled?: boolean
-  size?: 'small' | 'default'
 }
 
 export function renderSettingInput(
@@ -112,7 +111,7 @@ export function renderSettingInput(
   onChange: (next: unknown) => void,
   options: RenderSettingOptions = {}
 ) {
-  const { isDisabled, size } = options
+  const { isDisabled } = options
 
   switch (setting.type) {
     case 'text':
@@ -173,7 +172,6 @@ export function renderSettingInput(
             checked={value === true}
             onChange={(checked) => onChange(checked)}
             ariaLabel={setting.label}
-            size={size}
             disabled={isDisabled}
           />
         </InlineControlRow>
@@ -197,7 +195,7 @@ export function renderSettingInput(
     case 'select':
       return (
         <InlineControlRow label={setting.label}>
-          <Dropdown
+          <Select
             selected={
               typeof value === 'string'
                 ? value

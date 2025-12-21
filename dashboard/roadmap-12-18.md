@@ -118,3 +118,28 @@ Approach: extract pure modules first, then decide if Zustand slices are needed.
 
 ## F) Known failing tests to target (current)
 - None under Vitest (`bun run test`); `bun test` uses Bun's runner and will fail on Vitest APIs.
+
+## G) Phase 5 — Responsive preview scaling (like Ghost)
+
+Goal: match Ghost's zoomed-out preview behavior with responsive breakpoints.
+
+### G1) Current state
+- [x] Basic scaling implemented: 115% size with 0.86957 scale (single breakpoint)
+- `dashboard/defalt-rendering/custom-source/HandlebarsRenderer.tsx:673-683`
+
+### G2) Target (Ghost pattern)
+Ghost uses responsive breakpoints for preview scaling:
+| Screen width | iframe size | Scale | Effect |
+|--------------|-------------|-------|--------|
+| > 1600px | 110% | 0.90909 | Slight zoom-out |
+| ≤ 1600px | 130% | 0.76923 | More zoom-out on smaller screens |
+
+### G3) Implementation options
+1. **CSS classes** — Move iframe styles to Tailwind classes with responsive variants
+2. **Media query hook** — `useMediaQuery` to switch scale values dynamically
+3. **Container query** — Scale based on preview container width, not viewport
+
+### G4) Acceptance criteria
+- Preview zooms out more on smaller screens (≤1600px)
+- No horizontal scrollbar in preview container
+- Selection overlay and action bar positions remain accurate after scaling

@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import * as Dialog from '@radix-ui/react-dialog'
+import * as Dialog from '@defalt/ui/primitives/Dialog'
 import { X, Crown, ExternalLink } from 'lucide-react'
 import { AppButton } from '@defalt/ui/primitives/AppButton'
 import { useAuth } from '../hooks/useAuth'
@@ -32,8 +32,8 @@ export function SettingsModal({ open, onOpenChange }: SettingsModalProps) {
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 z-40 bg-gradient-to-br from-black/20 to-black/10 backdrop-blur-[2px] data-[state=open]:animate-fadeIn data-[state=closed]:animate-fadeOut" />
-        <Dialog.Content className="fixed left-1/2 top-[10%] z-50 w-[min(520px,calc(100vw-2rem))] -translate-x-1/2 rounded-lg bg-surface shadow-xl focus:outline-none data-[state=open]:animate-contentShow">
+        <Dialog.Overlay />
+        <Dialog.Content>
           <div className="flex items-center justify-between px-6 py-4 border-b border-border">
             <Dialog.Title className="text-lg font-semibold text-foreground">
               Settings

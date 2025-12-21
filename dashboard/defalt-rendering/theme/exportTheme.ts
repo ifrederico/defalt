@@ -802,15 +802,6 @@ export async function applyAnnouncementBarCustomization(themeDir: string, config
   opacity: 0.8;
 }
 
-.announcement-bar__link {
-  color: inherit;
-  text-decoration: none;
-}
-
-.announcement-bar__link:hover {
-  opacity: 0.8;
-}
-
 .announcement-bar__separator {
   opacity: 0.5;
   margin: 0 0.25em;
@@ -855,17 +846,12 @@ export async function applyAnnouncementBarCustomization(themeDir: string, config
       const tagFilter = toTagFilter(internalTag)
 
       const manualText = typeof announcement.text === 'string' ? announcement.text.trim() : ''
-      const manualLink = typeof announcement.link === 'string' ? announcement.link.trim() : ''
 
       const manualMarkup = (() => {
         if (!manualText) {
           return ''
         }
         const safeText = escapeHandlebarsString(manualText)
-        const safeLink = manualLink ? escapeHandlebarsString(manualLink) : ''
-        if (safeLink) {
-          return `<a href="${safeLink}" class="announcement-bar__link announcement-bar__item" style="${typographyStyle}">${safeText}</a>`
-        }
         return `<span class="announcement-bar__item" style="${typographyStyle}">${safeText}</span>`
       })()
 
@@ -877,7 +863,7 @@ export async function applyAnnouncementBarCustomization(themeDir: string, config
       const manualContent = manualMarkup ? `${separator}${manualMarkup}` : ''
 
       // Ghost-first rendering: use page HTML content when a page exists for the tag.
-      // Manual text/link renders when no page is found.
+      // Manual text renders when no page is found.
       return `{{#get "pages" filter="${escapeHandlebarsString(tagFilter)}" limit="1" include="tags"}}
   {{#if pages}}
     ${ghostContent}

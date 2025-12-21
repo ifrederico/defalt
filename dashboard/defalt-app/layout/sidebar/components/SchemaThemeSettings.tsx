@@ -60,7 +60,7 @@ export function SchemaThemeSettings({
                     setting,
                     currentValue,
                     (next) => handleFieldChange(setting.id, next),
-                    { isDisabled, size: 'small' }
+                    { isDisabled }
                   )}
                 </div>
               )

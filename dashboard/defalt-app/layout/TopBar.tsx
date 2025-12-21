@@ -11,7 +11,7 @@ import {
 } from 'lucide-react'
 import { useState } from 'react'
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu'
-import { AppButton, Dropdown } from '@defalt/ui'
+import { AppButton, Select } from '@defalt/ui'
 import { useWorkspaceContext } from '../contexts/useWorkspaceContext'
 import { useHistoryContext } from '../contexts/useHistoryContext'
 import type { PreviewZoom } from '../hooks/usePreview'
@@ -86,7 +86,7 @@ export function TopBar({ canDownload = true, onClearCache }: TopBarProps) {
         <span className="hidden md:inline text-placeholder">/</span>
 
         <div className="relative w-[180px] -translate-y-[1px]">
-          <Dropdown
+          <Select
             selected={currentPage}
             items={pageOrder.map((page) => ({
               value: page,
@@ -104,7 +104,7 @@ export function TopBar({ canDownload = true, onClearCache }: TopBarProps) {
           <>
             <span className="text-placeholder">/</span>
             <div className="relative w-[180px] -translate-y-[1px]">
-              <Dropdown
+              <Select
                 selected={availablePosts[selectedPostIndex]?.id || availablePosts[0]?.id}
                 items={availablePosts.map((post) => ({
                   value: post.id,
@@ -126,7 +126,7 @@ export function TopBar({ canDownload = true, onClearCache }: TopBarProps) {
           <>
             <span className="text-placeholder">/</span>
             <div className="relative w-[180px] -translate-y-[1px]">
-              <Dropdown
+              <Select
                 selected={availablePages[selectedPageIndex]?.id || availablePages[0]?.id}
                 items={availablePages.map((page) => ({
                   value: page.id,
@@ -198,8 +198,8 @@ export function TopBar({ canDownload = true, onClearCache }: TopBarProps) {
 
         <div className="hidden md:block w-px h-6 bg-hover" />
 
-        <div className="hidden md:block relative w-[80px]">
-          <Dropdown
+        <div className="hidden md:block relative w-[96px]">
+          <Select
             selected={previewZoom}
             items={zoomOptions.map((zoom) => ({
               value: zoom,
@@ -207,7 +207,7 @@ export function TopBar({ canDownload = true, onClearCache }: TopBarProps) {
             }))}
             onSelect={setPreviewZoom}
             triggerClassName="flex h-[30px] w-full items-center justify-center gap-1.5 rounded-md bg-subtle px-3 text-md text-foreground transition-colors hover:bg-subtle/80 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ring-offset-surface tabular-nums"
-            contentClassName="bg-surface rounded-md shadow-lg overflow-hidden min-w-[80px] z-[100]"
+            contentClassName="bg-surface rounded-md shadow-lg overflow-hidden min-w-[96px] z-[100]"
             itemClassName="flex items-center justify-end gap-2 px-3 py-2 text-md text-foreground transition-colors hover:bg-subtle outline-none data-[highlighted]:bg-subtle tabular-nums"
           />
         </div>

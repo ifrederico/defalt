@@ -42,7 +42,9 @@ function App({ onSignIn }: AppProps) {
 
   return (
     <AppProviders>
-      <AppContent />
+      <div className="shade app-container">
+        <AppContent />
+      </div>
     </AppProviders>
   )
 }

@@ -31,6 +31,17 @@ const EDITOR_STYLES = `
     box-shadow: 0 10px 24px rgba(15, 23, 42, 0.18);
     font-family: ui-sans-serif, system-ui, -apple-system, sans-serif;
     font-size: 12px;
+    opacity: 1;
+    pointer-events: auto;
+  }
+  .df-action-bar.df-action-bar--scrolling {
+    opacity: 0;
+    pointer-events: none;
+  }
+  .df-action-bar__separator {
+    width: 1px;
+    height: 18px;
+    background: rgba(148, 163, 184, 0.35);
   }
   .df-action-bar button {
     all: unset;
@@ -54,6 +65,63 @@ const EDITOR_STYLES = `
   .df-action-bar button:disabled:hover {
     background: transparent;
     color: #e2e8f0;
+  }
+  .df-action-bar__popover {
+    position: absolute;
+    right: 0;
+    top: calc(100% + 8px);
+    z-index: 21;
+    width: min(520px, 90vw);
+    padding: 10px 12px;
+    border-radius: 8px;
+    background: rgba(15, 23, 42, 0.98);
+    border: 1px solid rgba(148, 163, 184, 0.25);
+    box-shadow: 0 16px 40px rgba(15, 23, 42, 0.35);
+  }
+  .df-action-bar__popover-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    color: #cbd5f5;
+    font-size: 12px;
+    margin-bottom: 8px;
+  }
+  .df-action-bar__code + .df-action-bar__popover-header {
+    margin-top: 10px;
+  }
+  .df-action-bar__copy {
+    all: unset;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 11px;
+    background: rgba(148, 163, 184, 0.2);
+    color: #e2e8f0;
+    cursor: pointer;
+  }
+  .df-action-bar__copy:hover {
+    background: rgba(148, 163, 184, 0.35);
+    color: #ffffff;
+  }
+  .df-action-bar__copy:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background: rgba(148, 163, 184, 0.1);
+  }
+  .df-action-bar__code {
+    margin: 0;
+    padding: 10px 12px;
+    border-radius: 6px;
+    max-height: 240px;
+    overflow: auto;
+    background: rgba(2, 6, 23, 0.65);
+    color: #e2e8f0;
+    font-size: 11px;
+    line-height: 1.5;
+    white-space: pre;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
   }
 `
 

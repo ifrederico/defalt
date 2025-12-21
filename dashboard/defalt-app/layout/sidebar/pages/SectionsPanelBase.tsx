@@ -407,10 +407,10 @@ export const SectionsPanelBase = memo(function SectionsPanelBase({
                           <DropdownMenu.Trigger asChild>
                             <button
                               type="button"
-                              className="group flex w-full items-center gap-1 rounded-md bg-surface px-2 py-2 font-md font-normal text-foreground transition-colors hover:bg-subtle cursor-pointer"
+                            className="group flex w-full items-center gap-1 rounded-md bg-surface px-2 py-2 text-base font-medium text-[#626D79] transition-colors hover:text-foreground hover:bg-subtle cursor-pointer"
                             >
                               <span className="w-4 shrink-0" />
-                              <span className="flex h-7 w-7 items-center justify-center text-secondary">
+                              <span className="flex h-7 w-7 items-center justify-center">
                                 <CirclePlus size={16} strokeWidth={1.5} />
                               </span>
                               <span className="flex-1 truncate text-left">Add section</span>
@@ -421,7 +421,7 @@ export const SectionsPanelBase = memo(function SectionsPanelBase({
                               side="right"
                               align="start"
                               sideOffset={6}
-                              className="w-64 rounded-md border border-border bg-surface shadow-xl"
+                              className="w-64 rounded-md border border-border bg-surface shadow-xl z-[200]"
                             >
 	                              <div className="py-2">
 	                                <DropdownMenu.Item
@@ -586,7 +586,7 @@ export const SectionsPanelBase = memo(function SectionsPanelBase({
                             <GripVertical size={16} strokeWidth={1.5} />
                           </span>
                         </div>
-                        <span className="font-md text-foreground">{item.label}</span>
+                        <span className="text-base font-medium text-foreground">{item.label}</span>
                       </div>
                     </div>
                   )

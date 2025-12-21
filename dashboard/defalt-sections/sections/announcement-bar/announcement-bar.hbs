@@ -42,15 +42,6 @@
   opacity: 0.8;
 }
 
-.announcement-bar__link {
-  color: inherit;
-  text-decoration: none;
-}
-
-.announcement-bar__link:hover {
-  opacity: 0.8;
-}
-
 .announcement-bar__separator {
   opacity: 0.5;
   margin: 0 0.25em;
@@ -89,18 +80,10 @@
           {{else}}
             {{!-- No Ghost page - use manual text or placeholder --}}
             {{#if ../text}}
-              {{#if ../link}}
-                <a
-                  href="{{../link}}"
-                  class="announcement-bar__link announcement-bar__item"
-                  style="font-size: {{#if (eq ../typographySize 'small')}}1.2rem{{else if (eq ../typographySize 'large')}}1.6rem{{else if (eq ../typographySize 'x-large')}}1.8rem{{else}}1.4rem{{/if}}; font-weight: {{#if (eq ../typographyWeight 'light')}}300{{else if (eq ../typographyWeight 'bold')}}700{{else}}500{{/if}}; letter-spacing: {{#if (eq ../typographySpacing 'tight')}}-0.02em{{else if (eq ../typographySpacing 'wide')}}0.05em{{else}}0{{/if}}; text-transform: {{#if (eq ../typographyCase 'uppercase')}}uppercase{{else}}none{{/if}};"
-                >{{../text}}</a>
-              {{else}}
-                <span
-                  class="announcement-bar__item"
-                  style="font-size: {{#if (eq ../typographySize 'small')}}1.2rem{{else if (eq ../typographySize 'large')}}1.6rem{{else if (eq ../typographySize 'x-large')}}1.8rem{{else}}1.4rem{{/if}}; font-weight: {{#if (eq ../typographyWeight 'light')}}300{{else if (eq ../typographyWeight 'bold')}}700{{else}}500{{/if}}; letter-spacing: {{#if (eq ../typographySpacing 'tight')}}-0.02em{{else if (eq ../typographySpacing 'wide')}}0.05em{{else}}0{{/if}}; text-transform: {{#if (eq ../typographyCase 'uppercase')}}uppercase{{else}}none{{/if}};"
-                >{{../text}}</span>
-              {{/if}}
+              <span
+                class="announcement-bar__item"
+                style="font-size: {{#if (eq ../typographySize 'small')}}1.2rem{{else if (eq ../typographySize 'large')}}1.6rem{{else if (eq ../typographySize 'x-large')}}1.8rem{{else}}1.4rem{{/if}}; font-weight: {{#if (eq ../typographyWeight 'light')}}300{{else if (eq ../typographyWeight 'bold')}}700{{else}}500{{/if}}; letter-spacing: {{#if (eq ../typographySpacing 'tight')}}-0.02em{{else if (eq ../typographySpacing 'wide')}}0.05em{{else}}0{{/if}}; text-transform: {{#if (eq ../typographyCase 'uppercase')}}uppercase{{else}}none{{/if}};"
+              >{{../text}}</span>
             {{else if ../../isPreview}}
               <span class="announcement-bar__item" style="font-size: {{#if (eq ../typographySize 'small')}}1.2rem{{else if (eq ../typographySize 'large')}}1.6rem{{else if (eq ../typographySize 'x-large')}}1.8rem{{else}}1.4rem{{/if}}; font-weight: {{#if (eq ../typographyWeight 'light')}}300{{else if (eq ../typographyWeight 'bold')}}700{{else}}500{{/if}}; letter-spacing: {{#if (eq ../typographySpacing 'tight')}}-0.02em{{else if (eq ../typographySpacing 'wide')}}0.05em{{else}}0{{/if}}; text-transform: {{#if (eq ../typographyCase 'uppercase')}}uppercase{{else}}none{{/if}};">Tag a Ghost page with {{../tag}}</span>
             {{/if}}

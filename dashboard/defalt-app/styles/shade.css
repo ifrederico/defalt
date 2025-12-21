@@ -1,0 +1,96 @@
+/* Shade-inspired base tokens and resets scoped to the app container. */
+.shade {
+  --defalt-primary: #15171A;
+  --defalt-primary-hover: #2E3338;
+  --defalt-font-accent: #15171A;
+  --defalt-font-background: #F4F5F6;
+  --defalt-highlight: #30CF43;
+  --defalt-highlight-rgb: 48, 207, 67;
+
+  --color-foreground: #15171A;
+  --color-foreground-rgb: 21, 23, 26;
+  --color-secondary: #7C8B9A;
+  --color-muted: #95A1AD;
+  --color-placeholder: #AEB7C1;
+
+  --color-surface: #FFFFFF;
+  --color-subtle-rgb: 241 243 244;
+  --color-subtle: #F1F3F4;
+  --color-hover: #EBEEF0;
+  --color-inverse: #15171A;
+  --color-inverse-subtle: #2E3338;
+
+  --color-border: #DDE1E5;
+  --color-border-strong: #CED4D9;
+  --color-ring: #95A1AD;
+
+  --color-error: #F50B23;
+  --color-error-light: #FFE0E0;
+  --color-error-border: #F9394C;
+
+  --color-success: #30CF43;
+  --color-success-light: #E1F9E4;
+  --color-success-border: #58DA67;
+
+  --color-warning: #F97316;
+  --color-warning-light: #FFEDD5;
+
+  --color-info: #14B8FF;
+  --color-info-light: #DBF4FF;
+  --color-info-border: #42C6FF;
+}
+
+.shade,
+.shade * {
+  box-sizing: border-box;
+}
+
+.shade *::before,
+.shade *::after {
+  box-sizing: border-box;
+  border-width: 0;
+  border-style: solid;
+  border-color: var(--color-border);
+}
+
+.shade {
+  color: var(--color-foreground);
+  background-color: var(--color-surface);
+  line-height: 1.5;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.shade a {
+  color: inherit;
+  text-decoration: inherit;
+}
+
+.shade img,
+.shade svg,
+.shade video,
+.shade canvas,
+.shade audio,
+.shade iframe,
+.shade embed,
+.shade object {
+  display: block;
+  vertical-align: middle;
+}
+
+.shade.app-container {
+  height: 100vh;
+  width: 100%;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+.shade .no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.shade .no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}

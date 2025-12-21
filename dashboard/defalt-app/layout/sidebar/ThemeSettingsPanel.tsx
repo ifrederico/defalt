@@ -1,12 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { ChangeEvent } from 'react'
-import * as DropdownMenu from '@radix-ui/react-dropdown-menu'
 import * as Separator from '@radix-ui/react-separator'
 import CodeMirror from '@uiw/react-codemirror'
 import { css } from '@codemirror/lang-css'
-import { PanelHeader, ColorPickerSetting, ToggleSwitch, TextInput } from '@defalt/ui'
+import { PanelHeader, ColorPickerSetting, ToggleSwitch, TextInput, Select } from '@defalt/ui'
 import { sanitizeHex } from '@defalt/utils/color/colorUtils'
-import { Check, ChevronDown } from 'lucide-react'
+import { ChevronDown } from 'lucide-react'
 
 const FIELD_STACK = 'space-y-2'
 const LABEL_CLASS = 'font-md font-medium text-foreground'
@@ -438,56 +437,31 @@ function DropdownField({
   const isDisabled = disabled || normalizedOptions.length === 0
   const selectValue = value && normalizedOptions.includes(value) ? value : normalizedOptions[0] ?? value ?? ''
   const dropdownLabel = selectValue || 'Select an option'
+  const selectItems = normalizedOptions.map((option) => ({ label: option, value: option }))
 
   return (
     <div className={FIELD_STACK}>
       <p className={LABEL_CLASS}>{label}</p>
-      <DropdownMenu.Root>
-        <DropdownMenu.Trigger asChild>
-          <button
-            type="button"
-            ref={triggerRef}
-            disabled={isDisabled}
-            className={`flex h-[38px] w-full items-center justify-between gap-1.5 rounded-md px-3 text-md transition-colors focus:outline-none ${
-              isDisabled
-                ? 'cursor-not-allowed bg-subtle text-placeholder'
-                : 'bg-subtle text-foreground hover:bg-subtle/80'
-            }`}
-          >
-            <span className="flex-1 truncate text-left">{dropdownLabel}</span>
-            <ChevronDown size={16} strokeWidth={1.5} className="shrink-0 text-secondary" aria-hidden />
-          </button>
-        </DropdownMenu.Trigger>
-        <DropdownMenu.Portal>
-          <DropdownMenu.Content
-            sideOffset={2}
-            align="start"
-            className="rounded-md bg-surface shadow-[0px_20px_80px_rgba(15,23,42,0.12)]"
-            style={menuWidth ? { width: `${menuWidth}px`, minWidth: `${menuWidth}px` } : undefined}
-          >
-            {normalizedOptions.map((option) => {
-              const isActive = option === selectValue
-              return (
-                <DropdownMenu.Item
-                  key={option}
-                  disabled={isDisabled}
-                  onSelect={() => {
-                    if (!isDisabled && option !== selectValue) {
-                      onChange(option)
-                    }
-                  }}
-                  className={`flex items-center justify-between gap-2 rounded-md px-3 py-2 font-md outline-none transition-colors ${
-                    isActive ? 'text-foreground hover:bg-subtle' : 'text-foreground hover:bg-subtle'
-                  }`}
-                >
-                  <span className="truncate">{option}</span>
-                  {isActive && <Check size={14} strokeWidth={1.5} className="text-muted" />}
-                </DropdownMenu.Item>
-              )
-            })}
-          </DropdownMenu.Content>
-        </DropdownMenu.Portal>
-      </DropdownMenu.Root>
+      <Select
+        selected={selectValue}
+        items={selectItems}
+        onSelect={(next) => {
+          if (!isDisabled && next !== selectValue) {
+            onChange(next)
+          }
+        }}
+        disabled={isDisabled}
+        triggerRef={triggerRef}
+        triggerClassName={`flex h-[38px] w-full items-center justify-between gap-1.5 rounded-md px-3 text-md transition-colors focus:outline-none ${
+          isDisabled
+            ? 'cursor-not-allowed bg-subtle text-placeholder'
+            : 'bg-subtle text-foreground hover:bg-subtle/80'
+        }`}
+        contentClassName="rounded-md bg-surface shadow-[0px_20px_80px_rgba(15,23,42,0.12)] z-[200]"
+        contentStyle={menuWidth ? { width: `${menuWidth}px`, minWidth: `${menuWidth}px` } : undefined}
+        itemClassName="flex items-center justify-between gap-2 rounded-md px-3 py-2 font-md text-foreground outline-none transition-colors hover:bg-subtle"
+        triggerLabel={selectItems.length === 0 ? dropdownLabel : undefined}
+      />
       {helperText ? <p className={HELPER_CLASS}>{helperText}</p> : null}
       {errorMessage ? <p className="text-sm leading-5 text-rose-600">{errorMessage}</p> : null}
     </div>
@@ -603,7 +577,6 @@ function ToggleField({ label, value, onChange, helperText, disabled = false }: T
         checked={value}
         onChange={handleChange}
         ariaLabel={label}
-        size="small"
         disabled={disabled}
       />
     </div>

@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from 'react'
-import * as Dialog from '@radix-ui/react-dialog'
+import * as Dialog from '@defalt/ui/primitives/Dialog'
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu'
 import { Sparkles, Check, Loader2, X, Key, Infinity as InfinityIcon, Trash2, ExternalLink, ChevronLeft, Brain, ArrowUp } from 'lucide-react'
 import { AppButton, FloatingTooltip, TextInput } from '@defalt/ui'
@@ -224,8 +224,8 @@ ${generatedSection.css || ''}
                 </Dialog.Trigger>
               </FloatingTooltip>
             <Dialog.Portal>
-              <Dialog.Overlay className="fixed inset-0 z-40 bg-gradient-to-br from-black/20 to-black/10 backdrop-blur-[2px] data-[state=open]:animate-fadeIn data-[state=closed]:animate-fadeOut" />
-              <Dialog.Content className="fixed left-1/2 top-[10%] z-50 w-[min(480px,calc(100vw-2rem))] -translate-x-1/2 rounded-lg bg-surface shadow-xl focus:outline-none data-[state=open]:animate-contentShow">
+              <Dialog.Overlay />
+              <Dialog.Content className="w-[min(480px,calc(100vw-2rem))]">
                 <div className="flex items-center justify-between px-6 py-4 border-b border-border">
                   <Dialog.Title className="text-lg font-semibold text-foreground">
                     API Key Settings

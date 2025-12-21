@@ -34,6 +34,4 @@ Thumbs.db
 .theme-export-workspace/
 
 # Local study repos (do not commit)
-dashboard/ghost-main/
-dashboard/ghost-adminx-temp/
-dashboard/puck-main/
+dashboard/ghost-study/

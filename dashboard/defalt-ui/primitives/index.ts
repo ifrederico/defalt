@@ -6,7 +6,27 @@ export { Tooltip } from './Tooltip'
 export { FloatingTooltip, type FloatingTooltipProps } from './FloatingTooltip'
 export { ToggleSwitch, type ToggleSwitchProps } from './ToggleSwitch'
 export { SliderField, type SliderFieldProps } from './SliderField'
-export { Dropdown, type DropdownProps, type DropdownItem } from './Dropdown'
+export { Select, type SelectProps, type SelectItem } from './Select'
+export * as Dialog from './Dialog'
+export { Tabs, TabsList, TabsTrigger, TabsContent } from './Tabs'
+export {
+  SimplePagination,
+  SimplePaginationPages,
+  SimplePaginationNavigation,
+  SimplePaginationPreviousButton,
+  SimplePaginationNextButton
+} from './SimplePagination'
+export {
+  Table,
+  TableHeader,
+  TableBody,
+  TableFooter,
+  TableHead,
+  TableHeadButton,
+  TableRow,
+  TableCell,
+  TableCaption
+} from './Table'
 export { AppButton, type AppButtonProps } from './AppButton'
 export { Spinner } from './Spinner'
 export { LoadingState } from './LoadingState'
