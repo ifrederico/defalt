@@ -13,10 +13,7 @@ import {
   type SectionInstance,
   type SectionConfigSchema
 } from '@defalt/sections/engine'
-import {
-  formatInternalTag,
-  parseGhostCardIdSuffix
-} from '@defalt/sections/utils/tagUtils'
+import { parseGhostCardIdSuffix } from '@defalt/sections/utils/tagUtils'
 import { SECTION_ICON_MAP, GhostIcon } from '@defalt/utils/config/sectionIcons'
 import { sanitizeNumericValue, resolveNumericValue } from '@defalt/utils/helpers/numericHelpers'
 import { deepClone } from '@defalt/utils/helpers/deepClone'
@@ -26,6 +23,7 @@ import {
   type SidebarItem
 } from '@defalt/utils/config/sectionRegistry'
 import {
+  applyDefaultTagsForSection,
   buildCustomSectionInstanceId,
   collectTagSources,
   findTagCollision,
@@ -62,6 +60,9 @@ const GHOST_CARD_TAG_BASE = '#cards'
 
 const generateCustomSectionId = (definitionId: string, existingIds: Set<string>) =>
   buildCustomSectionInstanceId(definitionId, existingIds)
+
+const isPlainRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null && !Array.isArray(value)
 
 const getNextGhostCardsSuffix = (sections: Record<string, SectionInstance>) => {
   let maxSuffix = 0
@@ -397,12 +398,11 @@ export function useSectionManager({
       if (definitionId === 'ghostCards') {
         const ghostCardsMeta = buildGhostCardsInstanceMeta(customSectionsRef.current, existingIds)
         instanceId = ghostCardsMeta.instanceId
-        customConfig = { tag: ghostCardsMeta.tag } as SectionConfigSchema
       }
 
       const entry = getCustomSectionEntry(definitionId)
       if (entry) {
-        customConfig = entry.resolveDefaultTags(instanceId) as SectionConfigSchema
+        customConfig = { tags: entry.resolveDefaultTags(instanceId) } as SectionConfigSchema
       }
 
       const instance = buildSectionInstance(definitionId, instanceId, customConfig)
@@ -490,6 +490,110 @@ export function useSectionManager({
       )
     },
     [customSectionsRef, executeCommand, getHistoryPageId, markAsDirty, setCustomSections, setTemplateItems, templateItemsRef]
+  )
+
+  const duplicateTemplateSection = useCallback(
+    (sectionId: string) => {
+      const sourceItems = templateItemsRef.current
+      const sourceIndex = sourceItems.findIndex((item) => item.id === sectionId)
+      if (sourceIndex === -1) {
+        return
+      }
+
+      const sourceSection = customSectionsRef.current[sectionId]
+      if (!sourceSection) {
+        return
+      }
+
+      const definitionId = sourceSection.definitionId
+      const existingIds = new Set(sourceItems.map((item) => item.id))
+      const instanceId = generateCustomSectionId(definitionId, existingIds)
+
+      const clonedConfig = deepClone(sourceSection.config) as SectionConfigSchema
+      const normalizedConfig = applyDefaultTagsForSection(definitionId, instanceId, clonedConfig) ?? clonedConfig
+      const instance = buildSectionInstance(definitionId, instanceId, normalizedConfig as SectionConfigSchema)
+      if (!instance) {
+        showToast('Could not duplicate section', 'Invalid configuration.', 'error')
+        return
+      }
+
+      const prevTemplateItems = cloneSidebarItems(sourceItems)
+      const prevCustomSections = cloneCustomSectionsState(customSectionsRef.current)
+      const prevPadding = cloneSectionPaddingState(sectionPaddingRef.current)
+      const prevMargins = cloneSectionMarginState(sectionMarginsRef.current)
+      const prevVisibility = cloneVisibilityState(sectionVisibilityRef.current)
+
+      const nextTemplateItems = cloneSidebarItems(sourceItems)
+      const insertIndex = Math.min(sourceIndex + 1, nextTemplateItems.length)
+      nextTemplateItems.splice(insertIndex, 0, {
+        id: instanceId,
+        label: resolveCustomSectionLabel(instanceId, definitionId),
+        definitionId,
+        icon: definitionIconMap[definitionId] || GhostIcon
+      })
+
+      const nextCustomSections = {
+        ...prevCustomSections,
+        [instanceId]: instance
+      }
+
+      if (tagStateRef) {
+        const sources = collectTagSources(
+          nextCustomSections,
+          tagStateRef.current?.announcementBars ?? []
+        )
+        const collision = findTagCollision(sources)
+        if (collision) {
+          const labels = collision.sources.map((source) => source.label).join(', ')
+          showToast(
+            'Tag already used',
+            `${collision.tag} is already used by ${labels}.`,
+            'error'
+          )
+          return
+        }
+      }
+
+      const nextPadding = cloneSectionPaddingState(sectionPaddingRef.current)
+      if (nextPadding[sectionId]) {
+        nextPadding[instanceId] = { ...nextPadding[sectionId] }
+      } else if (!nextPadding[instanceId]) {
+        nextPadding[instanceId] = { ...DEFAULT_CUSTOM_SECTION_PADDING }
+      }
+
+      const nextMargins = cloneSectionMarginState(sectionMarginsRef.current)
+      if (nextMargins[sectionId]) {
+        nextMargins[instanceId] = { ...nextMargins[sectionId] }
+      }
+
+      const nextVisibility = cloneVisibilityState(sectionVisibilityRef.current)
+      if (sectionVisibilityRef.current[sectionId] !== undefined) {
+        nextVisibility[instanceId] = sectionVisibilityRef.current[sectionId]
+      }
+
+      executeCommand(
+        new AddSectionCommand({
+          pageId: getHistoryPageId(),
+          label: instance.label,
+          applyState: () => {
+            setTemplateItems(nextTemplateItems)
+            setCustomSections(nextCustomSections)
+            setSectionPadding(nextPadding)
+            setSectionMargins(nextMargins)
+            setSectionVisibility(nextVisibility)
+          },
+          revertState: () => {
+            setTemplateItems(prevTemplateItems)
+            setCustomSections(prevCustomSections)
+            setSectionPadding(prevPadding)
+            setSectionMargins(prevMargins)
+            setSectionVisibility(prevVisibility)
+          },
+          markDirty: markAsDirty
+        })
+      )
+    },
+    [customSectionsRef, definitionIconMap, executeCommand, getHistoryPageId, markAsDirty, sectionMarginsRef, sectionPaddingRef, sectionVisibilityRef, setCustomSections, setSectionMargins, setSectionPadding, setSectionVisibility, setTemplateItems, showToast, tagStateRef, templateItemsRef]
   )
 
   // Padding functions
@@ -708,28 +812,26 @@ export function useSectionManager({
         const record = nextConfig as Record<string, unknown>
         const next: Record<string, unknown> = { ...record }
 
-        if ('tag' in next) {
-          const formatted = formatInternalTag(next.tag)
-          if (formatted) {
-            next.tag = formatted
-          } else {
-            delete next.tag
-          }
-        }
+        delete next.tag
+        delete next.tagLeft
+        delete next.tagRight
 
-        if (current.definitionId === 'ghostGrid') {
-          if ('tagLeft' in next) {
-            const formatted = formatInternalTag(next.tagLeft)
+        const entry = getCustomSectionEntry(current.definitionId)
+        const nextTags = isPlainRecord(next.tags) ? { ...(next.tags as Record<string, unknown>) } : {}
+        if (entry) {
+          entry.tagKeys.forEach((key) => {
+            const formatted = entry.normalizeTagValue(key, nextTags[key])
             if (formatted) {
-              next.tagLeft = formatted
+              nextTags[key] = formatted
+            } else {
+              delete nextTags[key]
             }
-          }
-          if ('tagRight' in next) {
-            const formatted = formatInternalTag(next.tagRight)
-            if (formatted) {
-              next.tagRight = formatted
-            }
-          }
+          })
+        }
+        if (Object.keys(nextTags).length > 0) {
+          next.tags = nextTags
+        } else {
+          delete next.tags
         }
 
         return next
@@ -928,6 +1030,7 @@ export function useSectionManager({
     // Add/Remove functions
     addTemplateSection,
     removeTemplateSection,
+    duplicateTemplateSection,
 
     // Padding functions
     updateSectionPadding,

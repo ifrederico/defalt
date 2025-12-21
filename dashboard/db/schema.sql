@@ -18,6 +18,19 @@ CREATE INDEX IF NOT EXISTS idx_member_themes_ghost_member_id ON member_themes(gh
 -- Index for finding active theme
 CREATE INDEX IF NOT EXISTS idx_member_themes_active ON member_themes(ghost_member_id, is_active) WHERE is_active = true;
 
+-- Member settings storage (Ghost API credentials)
+CREATE TABLE IF NOT EXISTS member_settings (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  ghost_member_id VARCHAR(255) NOT NULL UNIQUE,
+  ghost_api_url TEXT,
+  ghost_content_key TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- Index for fast lookups by member
+CREATE INDEX IF NOT EXISTS idx_member_settings_ghost_member_id ON member_settings(ghost_member_id);
+
 -- Trigger to auto-update updated_at
 CREATE OR REPLACE FUNCTION update_updated_at_column()
 RETURNS TRIGGER AS $$
@@ -26,6 +39,12 @@ BEGIN
   RETURN NEW;
 END;
 $$ language 'plpgsql';
+
+DROP TRIGGER IF EXISTS update_member_settings_updated_at ON member_settings;
+CREATE TRIGGER update_member_settings_updated_at
+  BEFORE UPDATE ON member_settings
+  FOR EACH ROW
+  EXECUTE FUNCTION update_updated_at_column();
 
 DROP TRIGGER IF EXISTS update_member_themes_updated_at ON member_themes;
 CREATE TRIGGER update_member_themes_updated_at

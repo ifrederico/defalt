@@ -9,10 +9,8 @@
 import express, { type Request, type Response } from 'express'
 import path from 'path'
 import fs from 'fs/promises'
-import { createWriteStream } from 'fs'
 import os from 'os'
 import crypto from 'crypto'
-import archiver from 'archiver'
 import { fileURLToPath } from 'url'
 import pg from 'pg'
 
@@ -63,12 +61,6 @@ async function initDatabase() {
 
       CREATE INDEX IF NOT EXISTS idx_member_settings_ghost_member_id ON member_settings(ghost_member_id);
 
-      DROP TRIGGER IF EXISTS update_member_settings_updated_at ON member_settings;
-      CREATE TRIGGER update_member_settings_updated_at
-        BEFORE UPDATE ON member_settings
-        FOR EACH ROW
-        EXECUTE FUNCTION update_updated_at_column();
-
       CREATE OR REPLACE FUNCTION update_updated_at_column()
       RETURNS TRIGGER AS $$
       BEGIN
@@ -76,6 +68,12 @@ async function initDatabase() {
         RETURN NEW;
       END;
       $$ language 'plpgsql';
+
+      DROP TRIGGER IF EXISTS update_member_settings_updated_at ON member_settings;
+      CREATE TRIGGER update_member_settings_updated_at
+        BEFORE UPDATE ON member_settings
+        FOR EACH ROW
+        EXECUTE FUNCTION update_updated_at_column();
 
       DROP TRIGGER IF EXISTS update_member_themes_updated_at ON member_themes;
       CREATE TRIGGER update_member_themes_updated_at
@@ -92,28 +90,20 @@ async function initDatabase() {
 }
 
 import {
-  generateHomeTemplate,
-  readThemePackageName,
-  applyPackageJsonCustomization,
-  applyCustomCssCustomization,
-  applyNavigationCustomization,
-  applyFooterCustomization,
-  applyDefaultTemplateCustomization,
-  applyAnnouncementBarCustomization,
-  applyCustomSectionTemplates,
-  applyMainSectionCustomization,
-  applyPageTemplateCustomization,
-  applyPostTemplateCustomization
-} from './defalt-rendering/theme/exportTheme.ts'
-import {
   THEME_DOCUMENT_FILENAME,
   normalizeThemeDocument,
-  type SectionConfig,
   type ThemeDocument
 } from './defalt-utils/config/themeConfig.ts'
 import { themeExportRequestSchema, type ThemeExportRequest } from './defalt-utils/config/themeValidation.ts'
-import { canAccessSection, isPlusTier, type SubscriptionTier } from './defalt-utils/types/subscription.ts'
-import { getPremiumFeatures } from './defalt-utils/config/premiumConfig.ts'
+import {
+  applyThemeExportCustomizations,
+  cleanupUnusedPartials,
+  createThemeArchive,
+  resolveExportTierOverride,
+  syncThemeToWorkspace,
+  validatePremiumFeatures
+} from './defalt-utils/export/themeExport.ts'
+import { type SubscriptionTier } from './defalt-utils/types/subscription.ts'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
@@ -133,10 +123,36 @@ interface GhostMember {
   email: string
   name: string | null
   paid: boolean
+  subscriptions?: Array<{
+    status?: string
+    plan?: {
+      nickname?: string | null
+      amount?: number | null
+    } | null
+  }>
 }
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
+}
+
+function isLifetimeMember(member: GhostMember | null): boolean {
+  if (!member?.subscriptions?.length) return false
+  return member.subscriptions.some((sub) => {
+    const status = sub?.status
+    if (status !== 'active' && status !== 'trialing') {
+      return false
+    }
+    const nickname = sub?.plan?.nickname
+    const amount = sub?.plan?.amount
+    return nickname === 'Complimentary' || amount === 0
+  })
+}
+
+function resolveSubscriptionTier(member: GhostMember | null): SubscriptionTier {
+  if (!member) return 'free'
+  if (isLifetimeMember(member)) return 'plus_lifetime'
+  return member.paid ? 'plus_monthly' : 'free'
 }
 
 type JsonDiffSummary = {
@@ -465,7 +481,7 @@ app.get('/api/themes', async (req: Request, res: Response) => {
     )
     return res.json(result.rows.map((row) => ({
       ...row,
-      theme_json: normalizeThemeDocument(row.theme_json)
+      theme_json: row.theme_json
     })))
   } catch (error) {
     console.error('Error fetching themes:', error)
@@ -523,7 +539,7 @@ app.get('/api/themes/:id', async (req: Request, res: Response) => {
     const row = result.rows[0]
     return res.json({
       ...row,
-      theme_json: normalizeThemeDocument(row.theme_json)
+      theme_json: row.theme_json
     })
   } catch (error) {
     console.error('Error fetching theme:', error)
@@ -626,149 +642,6 @@ app.delete('/api/themes/:id', async (req: Request, res: Response) => {
 // =============================================================================
 const MAX_JSON_SIZE_BYTES = 2 * 1024 * 1024
 
-const PREMIUM_SECTION_PARTIALS: Record<string, string> = {
-  about: 'defalt-about.hbs',
-  faq: 'defalt-faq.hbs',
-  grid: 'defalt-grid.hbs',
-  testimonials: 'defalt-testimonials.hbs',
-  'image-with-text': 'defalt-image-with-text.hbs',
-  hero: 'defalt-hero.hbs'
-}
-
-function collectSectionConfigs(document: ThemeDocument): SectionConfig[] {
-  const sections: Array<SectionConfig | undefined> = []
-
-  if (document.header?.sections) {
-    sections.push(...Object.values(document.header.sections))
-  }
-  if (document.footer?.sections) {
-    sections.push(...Object.values(document.footer.sections))
-  }
-  Object.values(document.pages || {}).forEach(pageConfig => {
-    if (pageConfig?.sections) {
-      sections.push(...Object.values(pageConfig.sections))
-    }
-  })
-
-  return sections.filter((section): section is SectionConfig => Boolean(section))
-}
-
-function isAnnouncementBarEnabled(document: ThemeDocument): boolean {
-  const headerSettings = document.header?.sections?.header?.settings
-
-  const announcementBars = headerSettings?.announcementBars
-  return Array.isArray(announcementBars) && announcementBars.length > 0
-}
-
-async function validatePremiumFeatures(
-  document: ThemeDocument
-): Promise<{ error: string | null, tier: SubscriptionTier }> {
-  // For now, grant plus_monthly to all users (Ghost handles subscription)
-  const tier: SubscriptionTier = 'plus_monthly'
-
-  const sections = collectSectionConfigs(document)
-
-  for (const section of sections) {
-    const definitionId = section?.settings?.definitionId
-    if (definitionId && !canAccessSection(definitionId, tier)) {
-      return {
-        error: `${definitionId} section requires Plus subscription.`,
-        tier
-      }
-    }
-  }
-
-  return { error: null, tier }
-}
-
-async function syncThemeToWorkspace(
-  themeRoot: string,
-  workspaceThemeDir: string
-): Promise<void> {
-  const workspaceRoot = path.dirname(workspaceThemeDir)
-
-  await fs.mkdir(workspaceRoot, { recursive: true })
-  await fs.mkdir(workspaceThemeDir, { recursive: true })
-
-  await fs.cp(themeRoot, workspaceThemeDir, {
-    recursive: true,
-    force: true,
-    filter: (src) => {
-      const relative = path.relative(themeRoot, src)
-      if (!relative) return true
-      if (relative.startsWith('dist')) return false
-      return true
-    }
-  })
-}
-
-async function cleanupUnusedPartials(
-  workspaceThemeDir: string,
-  document: ThemeDocument,
-  tier: SubscriptionTier
-): Promise<void> {
-  const partialsDir = path.join(workspaceThemeDir, 'partials')
-  const sections = collectSectionConfigs(document)
-
-  const hasGhostCards = sections.some(s => s?.settings?.definitionId === 'ghostCards')
-  const hasGhostGrid = sections.some(s => s?.settings?.definitionId === 'ghostGrid')
-  const hasImageWithText = sections.some(s => s?.settings?.definitionId === 'image-with-text')
-  const hasHero = sections.some(s => s?.settings?.definitionId === 'hero')
-  const hasAnnouncementBar = isAnnouncementBarEnabled(document)
-
-  if (!hasGhostCards) {
-    await fs.rm(path.join(partialsDir, 'defalt-ghost-cards.hbs'), { force: true })
-  }
-  if (!hasGhostGrid) {
-    await fs.rm(path.join(partialsDir, 'defalt-ghost-grid.hbs'), { force: true })
-  }
-  if (!hasImageWithText) {
-    await fs.rm(path.join(partialsDir, 'defalt-image-with-text.hbs'), { force: true })
-  }
-  if (!hasHero) {
-    await fs.rm(path.join(partialsDir, 'defalt-hero.hbs'), { force: true })
-  }
-  if (!hasAnnouncementBar) {
-    await fs.rm(path.join(partialsDir, 'announcement-bar.hbs'), { force: true })
-  }
-
-  if (!isPlusTier(tier)) {
-    const premiumFeatures = getPremiumFeatures()
-    for (const featureId of premiumFeatures) {
-      const partialName = PREMIUM_SECTION_PARTIALS[featureId]
-      if (partialName) {
-        await fs.rm(path.join(partialsDir, partialName), { force: true })
-      }
-    }
-  }
-}
-
-async function createThemeArchive(themeDir: string, outputDir: string): Promise<string> {
-  const packageName = await readThemePackageName(themeDir)
-  const zipPath = path.join(outputDir, `${packageName}.zip`)
-  await fs.mkdir(outputDir, { recursive: true })
-
-  await new Promise<void>((resolve, reject) => {
-    const output = createWriteStream(zipPath)
-    const archive = archiver('zip', { zlib: { level: 9 } })
-
-    output.on('close', resolve)
-    output.on('error', reject)
-    archive.on('error', reject)
-
-    archive.pipe(output)
-    archive.glob('**/*', {
-      cwd: themeDir,
-      dot: true,
-      ignore: ['node_modules/**', 'dist/**', '.DS_Store', '*.zip']
-    })
-
-    void archive.finalize()
-  })
-
-  return zipPath
-}
-
 app.post('/api/theme/export', async (req, res) => {
   let workspaceRoot: string | null = null
 
@@ -786,6 +659,18 @@ app.post('/api/theme/export', async (req, res) => {
     }
 
     const providedDocument = validatedPayload.document
+
+    const tierOverride = resolveExportTierOverride()
+    let tier: SubscriptionTier
+    if (tierOverride) {
+      tier = tierOverride
+    } else {
+      const member = await getGhostMember(req)
+      if (!member) {
+        return res.status(401).json({ error: 'Authentication required', message: 'Please sign in to export themes.' })
+      }
+      tier = resolveSubscriptionTier(member)
+    }
 
     const projectRoot = __dirname
     const themeDirName = 'source-complete'
@@ -816,56 +701,30 @@ app.post('/api/theme/export', async (req, res) => {
       })
     }
 
-    const { error: validationError, tier } = await validatePremiumFeatures(document)
+    const { error: validationError } = await validatePremiumFeatures(document, tier)
     if (validationError) {
       return res.status(403).json({ error: 'Premium feature access denied', message: validationError })
     }
 
     const pageConfig = homepageConfig
-    const { content, partialFiles } = generateHomeTemplate(pageConfig, headerConfig, footerConfig)
-    await fs.writeFile(path.join(workspaceThemeDir, 'home.hbs'), content, 'utf-8')
-
-    if (partialFiles.length > 0) {
-      const partialsDir = path.join(workspaceThemeDir, 'partials')
-      await fs.mkdir(partialsDir, { recursive: true })
-
-      for (const partial of partialFiles) {
-        const partialPath = path.join(partialsDir, partial.name)
-        await fs.writeFile(partialPath, partial.content, 'utf-8')
-      }
-    }
 
     try {
-      await applyPackageJsonCustomization(workspaceThemeDir, document)
-    } catch (error) {
-      return res.status(400).json({
-        error: 'Invalid packageJson',
-        message: error instanceof Error ? error.message : String(error)
+      await applyThemeExportCustomizations({
+        workspaceThemeDir,
+        document,
+        pageConfig,
+        headerConfig,
+        footerConfig
       })
+    } catch (error) {
+      if (error instanceof Error && error.message.startsWith('Invalid packageJson')) {
+        return res.status(400).json({
+          error: 'Invalid packageJson',
+          message: error.message
+        })
+      }
+      throw error
     }
-    await applyCustomCssCustomization(workspaceThemeDir, document)
-
-    const themeConfigForAssets = {
-      sections: {
-        header: headerConfig,
-        ...pageConfig.sections,
-        ...footerConfig.sections
-      },
-      order: {
-        template: Array.isArray(pageConfig.order) ? [...pageConfig.order] : [],
-        footer: Array.isArray(footerConfig.order) ? [...footerConfig.order] : []
-      },
-      footerMargin: footerConfig.margin
-    }
-
-    await applyDefaultTemplateCustomization(workspaceThemeDir, themeConfigForAssets)
-    await applyAnnouncementBarCustomization(workspaceThemeDir, themeConfigForAssets, document)
-    await applyMainSectionCustomization(workspaceThemeDir, themeConfigForAssets)
-    await applyCustomSectionTemplates(workspaceThemeDir, themeConfigForAssets)
-    await applyNavigationCustomization(workspaceThemeDir, themeConfigForAssets, document)
-    await applyFooterCustomization(workspaceThemeDir, themeConfigForAssets)
-    await applyPageTemplateCustomization(workspaceThemeDir, document.pages.page)
-    await applyPostTemplateCustomization(workspaceThemeDir, document.pages.post)
 
     await cleanupUnusedPartials(workspaceThemeDir, document, tier)
 

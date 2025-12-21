@@ -335,6 +335,8 @@ export interface SectionDefinition<TConfig extends z.ZodType = z.ZodType> {
   settingsSchema: SettingSchema[]
   /** Block schemas for repeatable items */
   blocksSchema?: BlockSchema[]
+  /** Config keys intentionally handled outside the settingsSchema UI */
+  uiHiddenConfigKeys?: string[]
   /** Factory function for default config */
   createConfig: () => z.infer<TConfig>
   /** Path to Handlebars template (relative to sections/) */

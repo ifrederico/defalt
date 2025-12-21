@@ -13,15 +13,24 @@ import {
   transparentBackgroundShape
 } from '../../engine/commonSettings.js'
 
+const TITLE_SIZE_VALUES = ['small', 'normal', 'large'] as const
+const TITLE_SIZE_OPTIONS = [
+  { label: 'Small', value: TITLE_SIZE_VALUES[0] },
+  { label: 'Normal', value: TITLE_SIZE_VALUES[1] },
+  { label: 'Large', value: TITLE_SIZE_VALUES[2] }
+] as const
+
 // Zod config schema
 export const ghostGridConfigSchema = z.object({
-  tagLeft: z.string().default('#grid-left'),
-  tagRight: z.string().default('#grid-right'),
+  tags: z.object({
+    left: z.string().default('#grid-left'),
+    right: z.string().default('#grid-right')
+  }).default({}),
   ...contentWidthPxShape,
   pageTitle: z.boolean().default(false),
   ...textAlignmentShape,
   ...transparentBackgroundShape,
-  titleSize: z.enum(['small', 'normal', 'large']).default('normal'),
+  titleSize: z.enum(TITLE_SIZE_VALUES).default('normal'),
   stackOnMobile: z.boolean().default(true),
   gap: z.number().min(0).max(100).default(40)
 })
@@ -39,11 +48,7 @@ export const ghostGridSettingsSchema: SettingSchema[] = [
     type: 'select',
     id: 'titleSize',
     label: 'Title size',
-    options: [
-      { label: 'Small', value: 'small' },
-      { label: 'Normal', value: 'normal' },
-      { label: 'Large', value: 'large' }
-    ]
+    options: [...TITLE_SIZE_OPTIONS]
   },
   { type: 'header', id: 'layout-header', label: 'Layout' },
   { type: 'checkbox', id: 'stackOnMobile', label: 'Stack on mobile' },

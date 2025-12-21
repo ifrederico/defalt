@@ -2,6 +2,7 @@ import * as Separator from '@radix-ui/react-separator'
 import { SliderField, SettingSection } from '@defalt/ui'
 import { SECTION_ID_MAP, PADDING_BLOCK_SECTIONS } from '@defalt/utils/config/themeConfig'
 import { resolveMarginPair } from '@defalt/utils/helpers/numericHelpers'
+import { SPACING_SLIDER_PROPS } from '../../spacing'
 
 export type SectionSpacingMode = 'auto' | 'padding-block' | 'padding' | 'margin'
 
@@ -49,10 +50,7 @@ export function SectionPaddingSettings({ sectionId, padding, margin, defaultMarg
             <SliderField
               label="Block"
               value={padding.top}
-              min={0}
-              max={200}
-              step={1}
-              unit="px"
+              {...SPACING_SLIDER_PROPS}
               onChange={(value) => onChange('top', value)}
               onCommit={(value) => onCommit('top', value)}
             />
@@ -61,20 +59,14 @@ export function SectionPaddingSettings({ sectionId, padding, margin, defaultMarg
               <SliderField
                 label="Top"
                 value={padding.top}
-                min={0}
-                max={200}
-                step={1}
-                unit="px"
+                {...SPACING_SLIDER_PROPS}
                 onChange={(value) => onChange('top', value)}
                 onCommit={(value) => onCommit('top', value)}
               />
               <SliderField
                 label="Bottom"
                 value={padding.bottom}
-                min={0}
-                max={200}
-                step={1}
-                unit="px"
+                {...SPACING_SLIDER_PROPS}
                 onChange={(value) => onChange('bottom', value)}
                 onCommit={(value) => onCommit('bottom', value)}
               />
@@ -93,10 +85,7 @@ export function SectionPaddingSettings({ sectionId, padding, margin, defaultMarg
             <SliderField
               label="Top"
               value={marginTopValue}
-              min={0}
-              max={200}
-              step={1}
-              unit="px"
+              {...SPACING_SLIDER_PROPS}
               onChange={(value) => onMarginChange?.('top', value)}
               onCommit={(value) => onMarginCommit?.('top', value)}
             />
@@ -105,10 +94,7 @@ export function SectionPaddingSettings({ sectionId, padding, margin, defaultMarg
             <SliderField
               label="Bottom"
               value={marginBottomValue}
-              min={0}
-              max={200}
-              step={1}
-              unit="px"
+              {...SPACING_SLIDER_PROPS}
               onChange={(value) => onMarginChange?.('bottom', value)}
               onCommit={(value) => onMarginCommit?.('bottom', value)}
             />

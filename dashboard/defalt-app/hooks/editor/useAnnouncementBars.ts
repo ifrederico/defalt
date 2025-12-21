@@ -2,6 +2,7 @@ import { useCallback } from 'react'
 import {
   DEFAULT_ANNOUNCEMENT_BAR_CONFIG,
   DEFAULT_ANNOUNCEMENT_CONTENT_CONFIG,
+  MAX_ANNOUNCEMENT_BARS,
   normalizeAnnouncementBarConfig,
   normalizeAnnouncementContentConfig,
   type AnnouncementBarConfig,
@@ -78,6 +79,11 @@ export function useAnnouncementBars({
     const prevBars = cloneAnnouncementBars(announcementBarsRef.current)
     const existingIds = new Set(prevBars.map((bar) => bar.id))
 
+    if (prevBars.length >= MAX_ANNOUNCEMENT_BARS) {
+      showToast('Limit reached', `You can add up to ${MAX_ANNOUNCEMENT_BARS} announcement bars.`, 'error')
+      return null
+    }
+
     let id = 'announcement-bar'
     let suffix = 2
     while (existingIds.has(id)) {
@@ -111,7 +117,7 @@ export function useAnnouncementBars({
     )
 
     return id
-  }, [announcementBarsRef, executeCommand, markAsDirty, setAnnouncementBars])
+  }, [announcementBarsRef, executeCommand, markAsDirty, setAnnouncementBars, showToast])
 
   const removeAnnouncementBar = useCallback(
     (id: string) => {
@@ -256,10 +262,15 @@ export function useAnnouncementBars({
   const hydrateAnnouncementBars = useCallback(
     (data: AnnouncementBarsHydrationData) => {
       const rawBars = Array.isArray(data.announcementBars) ? data.announcementBars : []
+      const limitedBars = rawBars.slice(0, MAX_ANNOUNCEMENT_BARS)
       const seenIds = new Set<string>()
       let hadInvalid = false
 
-      const nextBars: AnnouncementBarInstance[] = rawBars.map((bar) => {
+      if (rawBars.length > MAX_ANNOUNCEMENT_BARS) {
+        showToast('Limit reached', `Only the first ${MAX_ANNOUNCEMENT_BARS} announcement bars were loaded.`, 'error')
+      }
+
+      const nextBars: AnnouncementBarInstance[] = limitedBars.map((bar) => {
         const baseId = typeof bar.id === 'string' && bar.id.trim().length ? bar.id.trim() : 'announcement-bar'
         let id = baseId
         if (seenIds.has(id)) {

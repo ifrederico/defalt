@@ -4,33 +4,27 @@ import { AboutSectionsPanel } from './sidebar/pages/AboutSectionsPanel'
 import { PostSectionsPanel } from './sidebar/pages/PostSectionsPanel'
 import type { SectionsPanelProps } from './sidebar/pages/SectionsPanelBase'
 import { ThemeSettingsPanel } from './sidebar/ThemeSettingsPanel'
-import { CodePanel } from './sidebar/CodePanel'
 import { AIPanel } from './sidebar/AIPanel'
+import { SidebarToggle } from '@defalt/ui'
 import { useThemeContext } from '../contexts/useThemeContext'
 import { useWorkspaceContext } from '../contexts/useWorkspaceContext'
-import { useActiveTab, useActiveDetail, useSidebarExpanded, useUIActions } from '../stores'
+import { useActiveTab, useActiveDetail, useLeftSidebarCollapsed, useUIActions } from '../stores'
 
 export type EditorSidebarProps = {
   currentPage: 'home' | 'about' | 'post'
 }
 
 export function EditorSidebar({
-  currentPage
+  currentPage,
 }: EditorSidebarProps) {
   const activeTab = useActiveTab()
   const activeDetail = useActiveDetail()
-  const sidebarExpanded = useSidebarExpanded()
-  const { toggleSidebar, setActiveDetail } = useUIActions()
+  const leftSidebarCollapsed = useLeftSidebarCollapsed()
+  const { toggleLeftSidebar, setActiveDetail } = useUIActions()
   const theme = useThemeContext()
   const workspace = useWorkspaceContext()
 
   const {
-    packageJson,
-    onPackageJsonChange,
-    navigationLayoutValue,
-    navigationLayoutOptions,
-    navigationLayoutError,
-    onNavigationLayoutChange,
     headerAndFooterColorValue,
     headerAndFooterColorOptions,
     onHeaderAndFooterColorChange,
@@ -86,8 +80,12 @@ export function EditorSidebar({
 	    onRemoveAnnouncementBar,
 	    onToggleAnnouncementBarHidden,
 	    onAnnouncementBarConfigChange,
-	    onAnnouncementContentConfigChange,
-	    stickyHeaderValue,
+    onAnnouncementContentConfigChange,
+    navigationLayoutValue,
+    navigationLayoutOptions,
+    navigationLayoutError,
+    onNavigationLayoutChange,
+    stickyHeaderValue,
 	    stickyHeaderOptions,
 	    onStickyHeaderChange,
     isSearchEnabled,
@@ -299,32 +297,45 @@ export function EditorSidebar({
         onCustomCSSChange={onCustomCSSChange}
       />
     )
-  } else if (activeTab === 'ai') {
-    content = <AIPanel />
   } else {
-    content = (
-      <CodePanel
-        packageJson={packageJson}
-        onPackageJsonChange={onPackageJsonChange}
-        sidebarExpanded={sidebarExpanded}
-        onToggleSidebar={toggleSidebar}
-      />
-    )
+    content = <AIPanel />
   }
 
+  const isCollapsed = leftSidebarCollapsed
+  const toggleClassName = isCollapsed
+    ? 'opacity-100'
+    : 'opacity-0 group-hover:opacity-100'
+
   return (
-    <aside
-      className="bg-surface transition-[width] duration-300 relative border-r border-border"
-      style={{ width: sidebarExpanded ? 'calc(100vw - 52px)' : '300px' }}
+    <div
+      className={`group relative flex-shrink-0 transition-[width] duration-300 ${isCollapsed ? 'w-0' : 'w-[300px]'}`}
     >
-      <div className="h-full flex flex-col py-2">
-        {content}
-      </div>
-      <div
-        id="koenig-drag-drop-ghost-container"
-        className="pointer-events-none fixed inset-0 z-[10000]"
-        aria-hidden="true"
-      />
-    </aside>
+      {isCollapsed && (
+        <div
+          className="absolute inset-y-0 left-0 w-8 z-10"
+          aria-hidden="true"
+        />
+      )}
+      <aside
+        className={`relative z-20 h-full w-[300px] bg-surface border-r border-border transition-transform duration-300 ${
+          isCollapsed ? '-translate-x-full group-hover:translate-x-0 shadow-md-heavy' : 'translate-x-0'
+        }`}
+      >
+        <SidebarToggle
+          position="left"
+          collapsed={isCollapsed}
+          onToggle={toggleLeftSidebar}
+          className={`transition-opacity duration-200 ${toggleClassName}`}
+        />
+        <div className="h-full flex flex-col py-2">
+          {content}
+        </div>
+        <div
+          id="koenig-drag-drop-ghost-container"
+          className="pointer-events-none fixed inset-0 z-[10000]"
+          aria-hidden="true"
+        />
+      </aside>
+    </div>
   )
 }

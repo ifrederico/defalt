@@ -13,14 +13,23 @@ import {
   transparentBackgroundShape
 } from '../../engine/commonSettings.js'
 
+const TITLE_SIZE_VALUES = ['small', 'normal', 'large'] as const
+const TITLE_SIZE_OPTIONS = [
+  { label: 'Small', value: TITLE_SIZE_VALUES[0] },
+  { label: 'Normal', value: TITLE_SIZE_VALUES[1] },
+  { label: 'Large', value: TITLE_SIZE_VALUES[2] }
+] as const
+
 // Zod config schema
 export const ghostCardsConfigSchema = z.object({
-  tag: z.string().default('#cards'),
+  tags: z.object({
+    primary: z.string().default('#cards')
+  }).default({}),
   ...contentWidthPxShape,
   pageTitle: z.boolean().default(false),
   ...textAlignmentShape,
   ...transparentBackgroundShape,
-  titleSize: z.enum(['small', 'normal', 'large']).default('normal')
+  titleSize: z.enum(TITLE_SIZE_VALUES).default('normal')
 })
 
 export type GhostCardsSectionConfig = z.infer<typeof ghostCardsConfigSchema>
@@ -36,11 +45,7 @@ export const ghostCardsSettingsSchema: SettingSchema[] = [
     type: 'select',
     id: 'titleSize',
     label: 'Title size',
-    options: [
-      { label: 'Small', value: 'small' },
-      { label: 'Normal', value: 'normal' },
-      { label: 'Large', value: 'large' }
-    ]
+    options: [...TITLE_SIZE_OPTIONS]
   },
   { type: 'header', id: 'primary-cards-header', label: 'Primary Cards', helpUrl: 'https://ghost.org/help/cards/' },
   {

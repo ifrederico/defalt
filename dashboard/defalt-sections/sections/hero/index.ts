@@ -16,6 +16,7 @@ export const definition: SectionDefinition<typeof heroConfigSchema> = {
   paddingControls: 'vertical',
   configSchema: heroConfigSchema,
   settingsSchema: heroSettingsSchema,
+  uiHiddenConfigKeys: ['tags'],
   blocksSchema: undefined,
   createConfig: () => heroDefaults,
   templatePath: 'hero/hero.hbs'

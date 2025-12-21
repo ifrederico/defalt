@@ -166,7 +166,9 @@ export { announcementBarDefaults } from '../sections/announcement-bar/defaults.j
 export {
   type HeaderSectionConfig,
   headerConfigSchema,
-  headerSettingsSchema
+  headerSettingsSchema,
+  NAVIGATION_LAYOUT_OPTIONS,
+  NAVIGATION_LAYOUT_VALUES
 } from '../sections/header/schema.js'
 export { headerDefaults } from '../sections/header/defaults.js'
 

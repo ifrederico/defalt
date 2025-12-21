@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 import * as Separator from '@radix-ui/react-separator'
 import { sourceThemeSettingsGroups, type SourceThemeConfig } from '@defalt/sections/engine'
 import { SliderField, SettingSection } from '@defalt/ui'
+import { SPACING_SLIDER_PROPS } from '../spacing'
 import { renderSettingInput } from './settingsRenderUtils'
 
 type SchemaThemeSettingsProps = {
@@ -73,10 +74,7 @@ export function SchemaThemeSettings({
           <SliderField
             label="Block"
             value={padding.top}
-            min={0}
-            max={200}
-            step={1}
-            unit="px"
+            {...SPACING_SLIDER_PROPS}
             onChange={(value) => onPaddingChange('top', value)}
             onCommit={(value) => onPaddingCommit('top', value)}
           />

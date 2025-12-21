@@ -25,7 +25,9 @@ import {
 // Zod config schema
 export const heroConfigSchema = z.object({
   // Ghost tag for content filtering
-  tag: z.string().default('#hero'),
+  tags: z.object({
+    primary: z.string().default('#hero')
+  }).default({}),
 
   // Appearance
   ...contentWidthPxShape,

@@ -27,9 +27,9 @@ type CustomSectionRegistryEntry = {
   baseId: string
   label: string
   maxInstances: number
-  tagFields: string[]
+  tagKeys: string[]
   resolveDefaultTags: (instanceId: string) => Record<string, string>
-  normalizeTagValue: (field: string, value: unknown) => string
+  normalizeTagValue: (key: string, value: unknown) => string
 }
 
 type TagSource = {
@@ -50,6 +50,9 @@ export type TagState = {
 }
 
 const MAX_CUSTOM_INSTANCES = 5
+
+const isPlainRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null && !Array.isArray(value)
 
 const TEMPLATE_DEFAULT_ORDER_BY_PAGE: Record<string, string[]> = {
   home: ['subheader', 'featured', 'main'],
@@ -100,8 +103,8 @@ const resolveGhostGridTagsFromId = (instanceId: string): Record<string, string> 
   const suffix = resolveCustomSectionIndex(baseId, instanceId)
   const suffixLabel = suffix > 1 ? `-${suffix}` : ''
   return {
-    tagLeft: `#grid-left${suffixLabel}`,
-    tagRight: `#grid-right${suffixLabel}`
+    left: `#grid-left${suffixLabel}`,
+    right: `#grid-right${suffixLabel}`
   }
 }
 
@@ -111,8 +114,8 @@ const CUSTOM_SECTION_REGISTRY: Record<string, CustomSectionRegistryEntry> = {
     baseId: 'hero',
     label: 'Hero',
     maxInstances: MAX_CUSTOM_INSTANCES,
-    tagFields: ['tag'],
-    resolveDefaultTags: (instanceId) => ({ tag: resolveHeroTagFromId(instanceId) }),
+    tagKeys: ['primary'],
+    resolveDefaultTags: (instanceId) => ({ primary: resolveHeroTagFromId(instanceId) }),
     normalizeTagValue: (_field, value) => formatInternalTag(value)
   },
   'image-with-text': {
@@ -120,8 +123,8 @@ const CUSTOM_SECTION_REGISTRY: Record<string, CustomSectionRegistryEntry> = {
     baseId: 'image-with-text',
     label: 'Image with text',
     maxInstances: MAX_CUSTOM_INSTANCES,
-    tagFields: ['tag'],
-    resolveDefaultTags: (instanceId) => ({ tag: resolveImageWithTextTagFromId(instanceId) }),
+    tagKeys: ['primary'],
+    resolveDefaultTags: (instanceId) => ({ primary: resolveImageWithTextTagFromId(instanceId) }),
     normalizeTagValue: (_field, value) => formatInternalTag(value)
   },
   ghostCards: {
@@ -129,8 +132,8 @@ const CUSTOM_SECTION_REGISTRY: Record<string, CustomSectionRegistryEntry> = {
     baseId: 'ghost-cards',
     label: 'Ghost cards',
     maxInstances: MAX_CUSTOM_INSTANCES,
-    tagFields: ['tag'],
-    resolveDefaultTags: (instanceId) => ({ tag: resolveGhostCardsTagFromId(instanceId) }),
+    tagKeys: ['primary'],
+    resolveDefaultTags: (instanceId) => ({ primary: resolveGhostCardsTagFromId(instanceId) }),
     normalizeTagValue: (_field, value) => formatInternalTag(value)
   },
   ghostGrid: {
@@ -138,7 +141,7 @@ const CUSTOM_SECTION_REGISTRY: Record<string, CustomSectionRegistryEntry> = {
     baseId: 'ghost-grid',
     label: 'Ghost grid',
     maxInstances: MAX_CUSTOM_INSTANCES,
-    tagFields: ['tagLeft', 'tagRight'],
+    tagKeys: ['left', 'right'],
     resolveDefaultTags: (instanceId) => resolveGhostGridTagsFromId(instanceId),
     normalizeTagValue: (_field, value) => formatInternalTag(value)
   }
@@ -248,6 +251,26 @@ export const resolveSectionLabel = (sectionId: string, context?: SectionLabelCon
   return normalized
 }
 
+export const isFixedSection = (sectionId: string): boolean => {
+  const normalized = normalizeSectionId(sectionId)
+  if (normalized === 'announcement-bar' || normalized.startsWith('announcement-bar-')) {
+    return true
+  }
+  if (normalized === 'header' || normalized === 'footer') {
+    return true
+  }
+  if (normalized === 'page' || normalized === 'post') {
+    return true
+  }
+  if (TEMPLATE_SECTION_LABELS[normalized]) {
+    return true
+  }
+  if (FOOTER_SECTION_LABELS[normalized]) {
+    return true
+  }
+  return false
+}
+
 export const getTemplateOrder = (page: string): string[] => {
   const order = TEMPLATE_DEFAULT_ORDER_BY_PAGE[page] ?? TEMPLATE_DEFAULT_ORDER_BY_PAGE.default
   return [...order]
@@ -285,23 +308,40 @@ export const applyDefaultTagsForSection = (
     ? { ...(customConfig as Record<string, unknown>) }
     : {}
   const defaults = entry.resolveDefaultTags(instanceId)
+  const baseDefaults = entry.resolveDefaultTags(entry.baseId)
+  const nextTags = isPlainRecord(next.tags) ? { ...(next.tags as Record<string, unknown>) } : {}
 
-  entry.tagFields.forEach((field) => {
-    const rawValue = next[field]
-    const normalized = entry.normalizeTagValue(field, rawValue)
-    const defaultTag = defaults[field]
+  delete (next as Record<string, unknown>).tag
+  delete (next as Record<string, unknown>).tagLeft
+  delete (next as Record<string, unknown>).tagRight
+
+  entry.tagKeys.forEach((key) => {
+    const rawValue = nextTags[key]
+    const normalized = entry.normalizeTagValue(key, rawValue)
+    const defaultTag = defaults[key]
+    const baseDefault = baseDefaults[key]
 
     if (normalized) {
-      next[field] = normalized
+      if (baseDefault && defaultTag && normalized === baseDefault && defaultTag !== baseDefault) {
+        nextTags[key] = defaultTag
+      } else {
+        nextTags[key] = normalized
+      }
       return
     }
 
     if (defaultTag) {
-      next[field] = defaultTag
+      nextTags[key] = defaultTag
     } else {
-      delete next[field]
+      delete nextTags[key]
     }
   })
+
+  if (Object.keys(nextTags).length > 0) {
+    next.tags = nextTags
+  } else {
+    delete (next as Record<string, unknown>).tags
+  }
 
   return next
 }
@@ -319,10 +359,11 @@ export const collectTagSources = (
     }
     const label = resolveCustomSectionLabel(sectionId, entry.definitionId)
     const config = section.config as Record<string, unknown>
-    entry.tagFields.forEach((field) => {
-      const normalized = entry.normalizeTagValue(field, config[field])
+    const tags = isPlainRecord(config.tags) ? config.tags as Record<string, unknown> : {}
+    entry.tagKeys.forEach((key) => {
+      const normalized = entry.normalizeTagValue(key, tags[key])
       if (normalized) {
-        sources.push({ tag: normalized, sectionId, field, label })
+        sources.push({ tag: normalized, sectionId, field: `tags.${key}`, label })
       }
     })
   })

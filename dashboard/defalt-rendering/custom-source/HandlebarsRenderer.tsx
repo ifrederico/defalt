@@ -1,4 +1,5 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import type { MutableRefObject } from 'react'
 import Handlebars from 'handlebars'
 import { registerGhostHelpers } from './handlebars/helpers'
 import {
@@ -19,19 +20,19 @@ import {
 } from './handlebars/dataResolvers'
 import { loadTemplates, filterTemplatesByVisibility, filterFooterPartial } from './handlebars/templateLoader'
 import {
-  injectHtmlIntoIframe,
+  injectHtmlIntoFrame,
   reorderTemplateInDOM,
   reorderFooterInDOM,
-  highlightSection,
-  highlightHoveredSection,
   scrollToSection,
   applyCustomCss,
   syncAnnouncementBars,
   syncTemplateSections,
   updateColorVariables,
   setupSectionSelection,
+  setupPreviewNavigation,
+  syncSelectedSectionAttribute,
 } from './handlebars/domManipulation'
-import { applyHeaderCustomizations, type StickyHeaderMode } from './handlebars/headerCustomization'
+import { applyHeaderCustomizations, type HeaderCustomizationOptions, type StickyHeaderMode } from './handlebars/headerCustomization'
 import {
   DEFAULT_ANNOUNCEMENT_BAR_CONFIG,
   DEFAULT_ANNOUNCEMENT_CONTENT_CONFIG,
@@ -60,6 +61,14 @@ import {
   toTagFilter
 } from '../derived/sectionDerived'
 import { getFooterOrder, getTemplateOrder } from '@defalt/utils/config/sectionRegistry'
+import { AutoFrame } from '../components/AutoFrame'
+import { EditorStyles } from '../components/AutoFrame/EditorStyles'
+import { useFrame } from '../components/AutoFrame/useFrame'
+import { SelectionOverlay } from '../components/SelectionOverlay'
+import { SectionActionBar } from '../components/SectionActionBar'
+
+const isPlainRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null && !Array.isArray(value)
 
 interface HandlebarsRendererProps {
   accentColor: string
@@ -71,7 +80,7 @@ interface HandlebarsRendererProps {
   stickyHeaderMode?: StickyHeaderMode
   showSearch?: boolean
   typographyCase?: 'default' | 'uppercase'
-  sectionPadding?: Record<string, { top: number, bottom: number }>
+  sectionPadding?: Record<string, { top: number, bottom: number, left?: number, right?: number }>
   sectionMargins?: Record<string, { top?: number, bottom?: number }>
   hiddenSections?: Record<string, boolean>
   templateOrder?: string[]
@@ -88,6 +97,9 @@ interface HandlebarsRendererProps {
   scrollToSectionId?: string | null
   onScrollComplete?: () => void
   onSectionSelect?: (sectionId: string) => void
+  onDuplicateSection?: (sectionId: string) => void
+  onRemoveSection?: (sectionId: string) => void
+  onToggleSectionVisibility?: (sectionId: string) => void
 }
 
 export function HandlebarsRenderer({
@@ -116,16 +128,18 @@ export function HandlebarsRenderer({
   hoveredSectionId,
   scrollToSectionId,
   onScrollComplete,
-  onSectionSelect
+  onSectionSelect,
+  onDuplicateSection,
+  onRemoveSection,
+  onToggleSectionVisibility
 }: HandlebarsRendererProps) {
-  const iframeRef = useRef<HTMLIFrameElement>(null)
   const templateOrderRef = useRef(templateOrder)
   const footerOrderRef = useRef(footerOrder)
-  const sectionSelectionCleanupRef = useRef<(() => void) | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [renderedHtml, setRenderedHtml] = useState('')
   const [templates, setTemplates] = useState<Record<string, string> | null>(null)
+  const [frameHoverSectionId, setFrameHoverSectionId] = useState<string | null>(null)
 
   const sanitizedAccentColor = useMemo(
     () => sanitizeHexColor(accentColor, '#AC1E3E'),
@@ -271,7 +285,8 @@ export function HandlebarsRenderer({
             }
 
             if (section.definitionId === 'hero') {
-              const rawTag = baseConfig.tag
+              const tags = isPlainRecord(baseConfig.tags) ? baseConfig.tags : {}
+              const rawTag = tags.primary
               const internalTag = formatInternalTag(rawTag) || resolveHeroDefaultTag(section.id)
               const imageOnRight = baseConfig.invert === true || baseConfig.imagePosition === 'right'
               const { imageColumn, textColumn } = resolveImageColumns(baseConfig.imageWidth)
@@ -285,7 +300,8 @@ export function HandlebarsRenderer({
             }
 
             if (section.definitionId === 'image-with-text') {
-              const rawTag = baseConfig.tag
+              const tags = isPlainRecord(baseConfig.tags) ? baseConfig.tags : {}
+              const rawTag = tags.primary
               const internalTag = formatInternalTag(rawTag) || resolveImageWithTextDefaultTag(section.id)
               const imageOnRight = baseConfig.invert === true || baseConfig.imagePosition === 'right'
               const { imageColumn, textColumn } = resolveImageColumns(baseConfig.imageWidth)
@@ -299,7 +315,8 @@ export function HandlebarsRenderer({
             }
 
 	            if (section.definitionId === 'ghostCards') {
-	              const rawTag = baseConfig.tag
+	              const tags = isPlainRecord(baseConfig.tags) ? baseConfig.tags : {}
+	              const rawTag = tags.primary
 	              const internalTag = formatInternalTag(rawTag) || resolveGhostCardsDefaultTag(section.id)
 	              const tagFilter = toTagFilter(internalTag)
 	              renderConfig.internalTag = internalTag
@@ -307,8 +324,9 @@ export function HandlebarsRenderer({
 	            }
 
 	            if (section.definitionId === 'ghostGrid') {
-	              const left = formatInternalTag(baseConfig.tagLeft) || '#grid-left'
-	              const right = formatInternalTag(baseConfig.tagRight) || '#grid-right'
+	              const tags = isPlainRecord(baseConfig.tags) ? baseConfig.tags : {}
+	              const left = formatInternalTag(tags.left) || '#grid-left'
+	              const right = formatInternalTag(tags.right) || '#grid-right'
 	              const leftFilter = toTagFilter(left)
 	              const rightFilter = toTagFilter(right)
               renderConfig.internalTagLeft = left
@@ -325,7 +343,7 @@ export function HandlebarsRenderer({
 	              section.definitionId,
 	              templatePath,
 	              renderConfig,
-	              { padding, pages: previewPages }
+	              { padding, pages: previewPages, applyInlinePadding: false }
             )
           } catch (err) {
             console.warn(`[HandlebarsRenderer] Failed to render ${section.definitionId}:`, err)
@@ -618,284 +636,21 @@ export function HandlebarsRenderer({
     onLoadingChange?.(isLoading)
   }, [isLoading, onLoadingChange])
 
-  // Track if initial injection has happened
-  const hasInjectedRef = useRef(false)
-
-  // Effect to inject HTML ONLY when renderedHtml changes (full iframe write)
-  useEffect(() => {
-    if (!renderedHtml) {
-      return
-    }
-    hasInjectedRef.current = true
-    injectHtmlIntoIframe(renderedHtml, iframeRef, {
-      templateOrder: templateOrderRef.current,
-      footerOrder: footerOrderRef.current,
-	      headerOptions: {
-	        stickyHeaderMode,
-	        showSearch,
-	        typographyCase,
-	        sectionPadding,
-	        sectionMargins,
-	        subheaderStyle: subheaderStyleForPreview,
-	        showFeaturedPosts: showFeaturedForPreview,
-	      },
-	      announcementBars: renderedAnnouncementBars,
-	      customCss: sanitizedCustomCss,
-	      customSections: mergedCustomSections,
-	      sectionIds: onSectionSelect ? sectionIdsForPreview : undefined,
-      onSelectSection: onSectionSelect,
-      selectedSectionId: selectedSectionId ?? null,
-      onNavigate,
-    })
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- Only full inject on renderedHtml change
-  }, [renderedHtml])
-
-  // Effect for incremental header/style updates (no full iframe rewrite)
-  useEffect(() => {
-    if (!hasInjectedRef.current) return
-    const iframe = iframeRef.current
-    if (!iframe) return
-    const doc = iframe.contentDocument || iframe.contentWindow?.document
-    if (!doc || doc.readyState !== 'complete') return
-
-    const win = doc.defaultView
-    const update = () => {
-	      applyHeaderCustomizations(doc, {
-	        stickyHeaderMode,
-	        showSearch,
-	        typographyCase,
-	        sectionPadding,
-	        sectionMargins,
-	        subheaderStyle: subheaderStyleForPreview,
-	        showFeaturedPosts: showFeaturedForPreview,
-	      })
-	      syncAnnouncementBars(doc, renderedAnnouncementBars)
-	      applyCustomCss(doc, sanitizedCustomCss)
-	    }
-
-    if (win) {
-      win.requestAnimationFrame(update)
-    } else {
-      update()
-    }
-	  }, [stickyHeaderMode, showSearch, typographyCase, sectionPadding, sectionMargins, subheaderStyleForPreview, showFeaturedForPreview, renderedAnnouncementBars, sanitizedCustomCss])
-
-  // Effect for incremental color/layout updates (no full iframe rewrite)
-  // This prevents scroll jumps when only colors change
-  useEffect(() => {
-    if (!hasInjectedRef.current) return
-    const iframe = iframeRef.current
-    if (!iframe) return
-    const doc = iframe.contentDocument || iframe.contentWindow?.document
-    if (!doc || doc.readyState !== 'complete') return
-
-    const win = doc.defaultView
-    const update = () => {
-      updateColorVariables(doc, sanitizedAccentColor, sanitizedBackgroundColor, pageLayout)
-    }
-
-    if (win) {
-      win.requestAnimationFrame(update)
-    } else {
-      update()
-    }
-  }, [sanitizedAccentColor, sanitizedBackgroundColor, pageLayout])
-
-  // Effect to sync custom sections (e.g., after reset or adding/removing sections)
-  useEffect(() => {
-    if (!hasInjectedRef.current) return
-    const iframe = iframeRef.current
-    if (!iframe) return
-    const doc = iframe.contentDocument || iframe.contentWindow?.document
-    if (!doc || doc.readyState !== 'complete') return
-
-    const win = doc.defaultView
-    const update = () => {
-      syncTemplateSections(doc, mergedCustomSections)
-    }
-
-    if (win) {
-      win.requestAnimationFrame(update)
-    } else {
-      update()
-    }
-  }, [mergedCustomSections])
-
-  // Separate effect to reorder template when templateOrder changes (without re-rendering)
-  useEffect(() => {
-    if (!hasInjectedRef.current) return
-    const iframe = iframeRef.current
-    if (!iframe) return
-
-    const doc = iframe.contentDocument || iframe.contentWindow?.document
-    if (!doc || doc.readyState !== 'complete') return
-
-    const win = doc.defaultView
-    if (win) {
-      win.requestAnimationFrame(() => reorderTemplateInDOM(doc, filteredTemplateOrder))
-    } else {
-      reorderTemplateInDOM(doc, filteredTemplateOrder)
-    }
-  }, [filteredTemplateOrder])
-
-  // Separate effect to reorder footer when footerOrder changes (without re-rendering)
-  useEffect(() => {
-    if (!hasInjectedRef.current) return
-    const iframe = iframeRef.current
-    if (!iframe) return
-
-    const doc = iframe.contentDocument || iframe.contentWindow?.document
-    if (!doc || doc.readyState !== 'complete') return
-
-    const win = doc.defaultView
-    if (win) {
-      win.requestAnimationFrame(() => reorderFooterInDOM(doc, footerOrder))
-    } else {
-      reorderFooterInDOM(doc, footerOrder)
-    }
-  }, [footerOrder])
-
-  // Effect to update section selection callback when it changes
-  // This prevents stale closures where the old callback captures outdated state
-  useEffect(() => {
-    if (!hasInjectedRef.current) return
-    const iframe = iframeRef.current
-    if (!iframe) return
-    const doc = iframe.contentDocument || iframe.contentWindow?.document
-    if (!doc || doc.readyState !== 'complete') return
-
-    // Clean up previous section selection handlers
-    if (sectionSelectionCleanupRef.current) {
-      sectionSelectionCleanupRef.current()
-      sectionSelectionCleanupRef.current = null
-    }
-
-    // Set up new section selection with updated callback
-    if (onSectionSelect && sectionIdsForPreview.length > 0) {
-      sectionSelectionCleanupRef.current = setupSectionSelection(doc, sectionIdsForPreview, onSectionSelect)
-    }
-  }, [onSectionSelect, sectionIdsForPreview])
-
-  // Track previous selection to determine if we should scroll
-  const prevSelectedSectionIdRef = useRef<string | null>(null)
-
-  // Effect to highlight selected section
-  useEffect(() => {
-    const iframe = iframeRef.current
-    if (!iframe) return
-
-    const doc = iframe.contentDocument || iframe.contentWindow?.document
-    if (!doc) return
-    const win = doc.defaultView
-
-    // Only scroll when selection actually changes, not on padding/margin updates
-    const selectionChanged = prevSelectedSectionIdRef.current !== selectedSectionId
-    prevSelectedSectionIdRef.current = selectedSectionId ?? null
-
-    // Wait for document to be ready
-    const applyHighlight = () => {
-      highlightSection(doc, selectedSectionId ?? null, { scroll: selectionChanged })
-    }
-
-    let cleanupLoad: (() => void) | null = null
-
-    if (doc.readyState === 'complete') {
-      if (win) {
-        win.requestAnimationFrame(applyHighlight)
-      } else {
-        applyHighlight()
-      }
-    } else {
-      const handleLoad = () => applyHighlight()
-      iframe.addEventListener('load', handleLoad, { once: true })
-      cleanupLoad = () => iframe.removeEventListener('load', handleLoad)
-    }
-
-    if (win) {
-      win.addEventListener('resize', applyHighlight)
-    }
-
-    return () => {
-      cleanupLoad?.()
-      if (win) {
-        win.removeEventListener('resize', applyHighlight)
-      }
-    }
-  }, [selectedSectionId])
-
-  // Re-apply selection highlight when padding/margins change (keeps overlay synced).
-  useEffect(() => {
-    if (!selectedSectionId) return
-    const iframe = iframeRef.current
-    if (!iframe) return
-
-    const doc = iframe.contentDocument || iframe.contentWindow?.document
-    if (!doc || doc.readyState !== 'complete') return
-
-    const win = doc.defaultView
-    const applyHighlight = () => {
-      highlightSection(doc, selectedSectionId, { scroll: false })
-    }
-
-    if (win) {
-      win.requestAnimationFrame(applyHighlight)
-    } else {
-      applyHighlight()
-    }
-  }, [selectedSectionId, sectionPadding, sectionMargins])
-
-  // Effect to highlight hovered section from sidebar
-  useEffect(() => {
-    const iframe = iframeRef.current
-    if (!iframe) return
-
-    const doc = iframe.contentDocument || iframe.contentWindow?.document
-    if (!doc) return
-
-    const applyHoverHighlight = () => {
-      highlightHoveredSection(doc, hoveredSectionId ?? null)
-    }
-
-    if (doc.readyState === 'complete') {
-      applyHoverHighlight()
-    } else {
-      iframe.addEventListener('load', applyHoverHighlight, { once: true })
-      return () => iframe.removeEventListener('load', applyHoverHighlight)
-    }
-  }, [hoveredSectionId])
-
-  // Effect to scroll to section on delayed hover (1.5s like Shopify)
-  useEffect(() => {
-    if (!scrollToSectionId) return
-
-    const iframe = iframeRef.current
-    if (!iframe) return
-
-    const doc = iframe.contentDocument || iframe.contentWindow?.document
-    if (!doc) return
-
-    const doScroll = () => {
-      scrollToSection(doc, scrollToSectionId)
-      onScrollComplete?.()
-    }
-
-    if (doc.readyState === 'complete') {
-      doScroll()
-    } else {
-      iframe.addEventListener('load', doScroll, { once: true })
-      return () => iframe.removeEventListener('load', doScroll)
-    }
-  }, [scrollToSectionId, onScrollComplete])
-
-  // Cleanup section selection handlers on unmount
-  useEffect(() => {
-    return () => {
-      if (sectionSelectionCleanupRef.current) {
-        sectionSelectionCleanupRef.current()
-        sectionSelectionCleanupRef.current = null
-      }
-    }
-  }, [])
+  const headerOptions = useMemo(() => ({
+    stickyHeaderMode,
+    showSearch,
+    typographyCase,
+    sectionPadding,
+    sectionMargins,
+    subheaderStyle: subheaderStyleForPreview,
+    showFeaturedPosts: showFeaturedForPreview,
+  }), [stickyHeaderMode, showSearch, typographyCase, sectionPadding, sectionMargins, subheaderStyleForPreview, showFeaturedForPreview])
+  const resolvedHoverSectionId = hoveredSectionId ?? frameHoverSectionId
+  const overlayLayoutKey = useMemo(() => ({
+    sectionPadding,
+    sectionMargins,
+    announcementBars: renderedAnnouncementBars,
+  }), [sectionPadding, sectionMargins, renderedAnnouncementBars])
 
   return (
     <div style={{ position: 'relative', width: '100%', height: '100%' }}>
@@ -912,22 +667,263 @@ export function HandlebarsRenderer({
         borderRadius: '4px 4px 0 0',
         boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
       }}>
-        <iframe
-          ref={iframeRef}
+        <AutoFrame
           title="Theme preview"
-          style={{
+          style={{ position: 'relative', width: '100%', height: '100%' }}
+          iframeStyle={{
             position: 'absolute',
-            width: '115%',
-            height: '115%',
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '100%',
             border: 'none',
             backgroundColor: '#ffffff',
-            transform: 'scale(0.86957)',
+            transform: 'none',
             transformOrigin: 'top left'
           }}
-        />
+        >
+          <EditorStyles />
+          <PreviewFrameContent
+            renderedHtml={renderedHtml}
+            templateOrderRef={templateOrderRef}
+            footerOrderRef={footerOrderRef}
+            headerOptions={headerOptions}
+            announcementBars={renderedAnnouncementBars}
+            customCss={sanitizedCustomCss}
+            customSections={mergedCustomSections}
+            selectedSectionId={selectedSectionId ?? null}
+            filteredTemplateOrder={filteredTemplateOrder}
+            footerOrder={footerOrder}
+            sectionIdsForPreview={sectionIdsForPreview}
+            onSectionSelect={onSectionSelect}
+            onFrameHoverChange={setFrameHoverSectionId}
+            scrollToSectionId={scrollToSectionId ?? null}
+            onScrollComplete={onScrollComplete}
+            onNavigate={onNavigate}
+            accentColor={sanitizedAccentColor}
+            backgroundColor={sanitizedBackgroundColor}
+            pageLayout={pageLayout}
+          />
+          <SelectionOverlay
+            selectedSectionId={selectedSectionId ?? null}
+            hoveredSectionId={resolvedHoverSectionId ?? null}
+            renderKey={renderedHtml}
+            layoutKey={overlayLayoutKey}
+          />
+          <SectionActionBar
+            selectedSectionId={selectedSectionId ?? null}
+            hiddenSections={hiddenSections}
+            customSectionIds={customTemplateSections.map((section) => section.id)}
+            aiSectionIds={aiSections.map((section) => section.id)}
+            onToggleVisibility={onToggleSectionVisibility}
+            onDuplicateSection={onDuplicateSection}
+            onRemoveSection={onRemoveSection}
+            renderKey={renderedHtml}
+            layoutKey={overlayLayoutKey}
+          />
+        </AutoFrame>
       </div>
     </div>
   )
+}
+
+type PreviewFrameContentProps = {
+  renderedHtml: string
+  templateOrderRef: MutableRefObject<string[]>
+  footerOrderRef: MutableRefObject<string[]>
+  headerOptions: HeaderCustomizationOptions
+  announcementBars: Array<{ id: string; html: string; hidden: boolean }>
+  customCss?: string
+  customSections: Array<{ id: string; html: string; hidden: boolean }>
+  selectedSectionId: string | null
+  filteredTemplateOrder: string[]
+  footerOrder: string[]
+  sectionIdsForPreview: string[]
+  onSectionSelect?: (sectionId: string) => void
+  onFrameHoverChange?: (sectionId: string | null) => void
+  scrollToSectionId: string | null
+  onScrollComplete?: () => void
+  onNavigate?: (href: string) => boolean
+  accentColor: string
+  backgroundColor: string
+  pageLayout: 'narrow' | 'normal'
+}
+
+function PreviewFrameContent({
+  renderedHtml,
+  templateOrderRef,
+  footerOrderRef,
+  headerOptions,
+  announcementBars,
+  customCss,
+  customSections,
+  selectedSectionId,
+  filteredTemplateOrder,
+  footerOrder,
+  sectionIdsForPreview,
+  onSectionSelect,
+  onFrameHoverChange,
+  scrollToSectionId,
+  onScrollComplete,
+  onNavigate,
+  accentColor,
+  backgroundColor,
+  pageLayout,
+}: PreviewFrameContentProps) {
+  const { document: frameDocument, frameRoot } = useFrame()
+  const hasInjectedRef = useRef(false)
+  const sectionSelectionCleanupRef = useRef<(() => void) | null>(null)
+  const previewNavigationCleanupRef = useRef<(() => void) | null>(null)
+  const prevSelectedSectionIdRef = useRef<string | null>(null)
+
+  useEffect(() => {
+    hasInjectedRef.current = false
+  }, [frameDocument, frameRoot])
+
+  useEffect(() => {
+    if (!renderedHtml || !frameDocument || !frameRoot) {
+      return
+    }
+    hasInjectedRef.current = true
+    injectHtmlIntoFrame(renderedHtml, frameDocument, frameRoot, {
+      templateOrder: templateOrderRef.current,
+      footerOrder: footerOrderRef.current,
+      headerOptions,
+      announcementBars,
+      customCss,
+      customSections,
+      selectedSectionId: selectedSectionId ?? null,
+    })
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- Only re-inject on HTML changes
+  }, [renderedHtml, frameDocument, frameRoot])
+
+  useEffect(() => {
+    if (!frameDocument) {
+      return
+    }
+    if (previewNavigationCleanupRef.current) {
+      previewNavigationCleanupRef.current()
+      previewNavigationCleanupRef.current = null
+    }
+    previewNavigationCleanupRef.current = setupPreviewNavigation(frameDocument, onNavigate)
+    return () => {
+      if (previewNavigationCleanupRef.current) {
+        previewNavigationCleanupRef.current()
+        previewNavigationCleanupRef.current = null
+      }
+    }
+  }, [frameDocument, onNavigate])
+
+  useEffect(() => {
+    if (!hasInjectedRef.current || !frameDocument) return
+    const win = frameDocument.defaultView
+    const update = () => {
+      applyHeaderCustomizations(frameDocument, headerOptions)
+      syncAnnouncementBars(frameDocument, announcementBars)
+      applyCustomCss(frameDocument, customCss)
+    }
+
+    if (win) {
+      win.requestAnimationFrame(update)
+    } else {
+      update()
+    }
+  }, [frameDocument, headerOptions, announcementBars, customCss])
+
+  useEffect(() => {
+    if (!hasInjectedRef.current || !frameDocument) return
+    const win = frameDocument.defaultView
+    const update = () => {
+      updateColorVariables(frameDocument, accentColor, backgroundColor, pageLayout)
+    }
+
+    if (win) {
+      win.requestAnimationFrame(update)
+    } else {
+      update()
+    }
+  }, [frameDocument, accentColor, backgroundColor, pageLayout])
+
+  useEffect(() => {
+    if (!hasInjectedRef.current || !frameDocument) return
+    const win = frameDocument.defaultView
+    const update = () => {
+      syncTemplateSections(frameDocument, customSections)
+      applyHeaderCustomizations(frameDocument, headerOptions)
+    }
+
+    if (win) {
+      win.requestAnimationFrame(update)
+    } else {
+      update()
+    }
+  }, [frameDocument, customSections, headerOptions])
+
+  useEffect(() => {
+    if (!hasInjectedRef.current || !frameDocument) return
+    const win = frameDocument.defaultView
+    if (win) {
+      win.requestAnimationFrame(() => reorderTemplateInDOM(frameDocument, filteredTemplateOrder))
+    } else {
+      reorderTemplateInDOM(frameDocument, filteredTemplateOrder)
+    }
+  }, [frameDocument, filteredTemplateOrder])
+
+  useEffect(() => {
+    if (!hasInjectedRef.current || !frameDocument) return
+    const win = frameDocument.defaultView
+    if (win) {
+      win.requestAnimationFrame(() => reorderFooterInDOM(frameDocument, footerOrder))
+    } else {
+      reorderFooterInDOM(frameDocument, footerOrder)
+    }
+  }, [frameDocument, footerOrder])
+
+  useEffect(() => {
+    if (!hasInjectedRef.current || !frameDocument || !renderedHtml) return
+
+    if (sectionSelectionCleanupRef.current) {
+      sectionSelectionCleanupRef.current()
+      sectionSelectionCleanupRef.current = null
+    }
+
+    if (onSectionSelect && sectionIdsForPreview.length > 0) {
+      sectionSelectionCleanupRef.current = setupSectionSelection(frameDocument, sectionIdsForPreview, onSectionSelect, onFrameHoverChange)
+    }
+
+    return () => {
+      if (sectionSelectionCleanupRef.current) {
+        sectionSelectionCleanupRef.current()
+        sectionSelectionCleanupRef.current = null
+      }
+    }
+  }, [frameDocument, renderedHtml, onSectionSelect, onFrameHoverChange, sectionIdsForPreview])
+
+  useEffect(() => {
+    if (!frameDocument) return
+    syncSelectedSectionAttribute(frameDocument, selectedSectionId ?? null)
+  }, [frameDocument, selectedSectionId])
+
+  useEffect(() => {
+    if (!hasInjectedRef.current || !frameDocument) return
+
+    const selectionChanged = prevSelectedSectionIdRef.current !== selectedSectionId
+    prevSelectedSectionIdRef.current = selectedSectionId ?? null
+
+    if (!selectionChanged || !selectedSectionId) {
+      return
+    }
+
+    scrollToSection(frameDocument, selectedSectionId)
+  }, [frameDocument, selectedSectionId])
+
+  useEffect(() => {
+    if (!frameDocument || !scrollToSectionId || !hasInjectedRef.current) return
+    scrollToSection(frameDocument, scrollToSectionId)
+    onScrollComplete?.()
+  }, [frameDocument, scrollToSectionId, onScrollComplete])
+
+  return null
 }
 
 // Helper to render the theme

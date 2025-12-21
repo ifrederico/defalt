@@ -17,15 +17,13 @@ import { UpgradeModal } from '../components/UpgradeModal'
 import { AppButton } from '@defalt/ui/primitives/AppButton'
 import type { StickyHeaderMode } from '@defalt/rendering/custom-source/HandlebarsRenderer'
 import { useUIActions } from '../stores'
+import { NAVIGATION_LAYOUT_VALUES } from '@defalt/sections/engine'
 
 export function WorkspaceProvider({ children }: { children: ReactNode }) {
   const {
     packageJson,
     onPackageJsonChange: setPackageJson,
     resetPackageJson,
-    navigationLayoutValue,
-    navigationLayoutOptions,
-    navigationLayoutError: headerSettingsError,
     headerAndFooterColorValue,
     titleFontValue,
     bodyFontValue,
@@ -71,6 +69,10 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     title: '',
     message: ''
   })
+  const [schemaResetDialog, setSchemaResetDialog] = useState<{ open: boolean; sourceLabel: string }>({
+    open: false,
+    sourceLabel: 'Workspace'
+  })
   const [aiSections, setAiSections] = useState<Array<{ id: string, name: string, html: string }>>(() => {
     if (typeof window === 'undefined') return []
     try {
@@ -114,6 +116,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     accentColor,
     bgColor,
     customCSS,
+    navigationLayout,
     stickyHeaderMode,
     isHeaderSearchEnabled,
     headerTypographyCase,
@@ -123,6 +126,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     isDraftMode,
     workspaceHydrated,
     cloudSyncStatus,
+    handleNavigationLayoutChange,
     handleStickyHeaderChange,
     handleSearchToggle,
     handleTypographyCaseChange,
@@ -138,6 +142,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     reorderTemplateItems,
     addTemplateSection,
     removeTemplateSection,
+    duplicateTemplateSection,
     toggleSectionVisibility,
     sectionPadding,
     previewSectionPaddingChange,
@@ -162,8 +167,19 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     handleSave,
     applyWorkspaceBackup,
     resetWorkspace,
-    cancelActiveSave
+    cancelActiveSave,
+    schemaResetEvent,
+    dismissSchemaResetEvent
   } = workspace
+
+  useEffect(() => {
+    if (!schemaResetEvent) {
+      return
+    }
+    const sourceLabel = schemaResetEvent.source === 'draft-storage' ? 'Draft' : 'Saved'
+    setSchemaResetDialog({ open: true, sourceLabel })
+    dismissSchemaResetEvent()
+  }, [schemaResetEvent, dismissSchemaResetEvent])
 
   const {
     previewData,
@@ -217,6 +233,10 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
   const handleRemoveTemplateSection = useCallback((sectionId: string) => {
     removeTemplateSection(sectionId)
   }, [removeTemplateSection])
+
+  const handleDuplicateTemplateSection = useCallback((sectionId: string) => {
+    duplicateTemplateSection(sectionId)
+  }, [duplicateTemplateSection])
 
   const handlePageChange = useCallback((page: WorkspacePage) => {
     cancelActiveSave()
@@ -275,6 +295,8 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     showFeaturedPostsRef.current = showFeaturedPosts
   }, [showFeaturedPosts])
 
+  const navigationLayoutOptions = useMemo<string[]>(() => [...NAVIGATION_LAYOUT_VALUES], [])
+  const navigationLayoutError = null
   const stickyHeaderOptions = useMemo<StickyHeaderMode[]>(() => ['Always', 'Scroll up', 'Never'], [])
 
   useEffect(() => {
@@ -392,9 +414,9 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
   // headerTypographyCase is in Workspace.
 
   const headerSettingsSummary = useMemo(() => ({
-    navigationLayoutValue,
+    navigationLayoutValue: navigationLayout,
     navigationLayoutOptions,
-    navigationLayoutError: headerSettingsError,
+    navigationLayoutError,
     stickyHeaderValue: stickyHeaderMode,
     stickyHeaderOptions,
     isSearchEnabled: isHeaderSearchEnabled,
@@ -404,9 +426,9 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     backgroundImageEnabled,
     showFeaturedPosts,
   }), [
-    navigationLayoutValue,
+    navigationLayout,
     navigationLayoutOptions,
-    headerSettingsError,
+    navigationLayoutError,
     stickyHeaderMode,
     stickyHeaderOptions,
     isHeaderSearchEnabled,
@@ -639,6 +661,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
   const sectionState = useMemo(() => ({
     templateDefinitions,
     onAddTemplateSection: handleAddTemplateSection,
+    onDuplicateTemplateSection: handleDuplicateTemplateSection,
     onRemoveTemplateSection: handleRemoveTemplateSection,
     customSections,
     aiSections,
@@ -662,9 +685,13 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     templateOrder: memoizedTemplateOrder,
     footerOrder: memoizedFooterOrder,
     customTemplateSections: customTemplateSectionList,
-  }), [templateDefinitions, handleAddTemplateSection, handleRemoveTemplateSection, customSections, aiSections, addAiSection, removeAiSection, renameAiSection, reorderAiSections, sectionPadding, handleSectionPaddingChange, handleSectionPaddingCommit, sectionMargins, handleSectionMarginChange, handleSectionMarginCommit, updateCustomSectionConfig, sectionVisibility, templateItems, footerItems, reorderTemplateItems, reorderFooterItems, handleToggleSectionVisibility, memoizedTemplateOrder, memoizedFooterOrder, customTemplateSectionList])
+  }), [templateDefinitions, handleAddTemplateSection, handleDuplicateTemplateSection, handleRemoveTemplateSection, customSections, aiSections, addAiSection, removeAiSection, renameAiSection, reorderAiSections, sectionPadding, handleSectionPaddingChange, handleSectionPaddingCommit, sectionMargins, handleSectionMarginChange, handleSectionMarginCommit, updateCustomSectionConfig, sectionVisibility, templateItems, footerItems, reorderTemplateItems, reorderFooterItems, handleToggleSectionVisibility, memoizedTemplateOrder, memoizedFooterOrder, customTemplateSectionList])
 
   const headerControlState = useMemo(() => ({
+    navigationLayoutValue: navigationLayout,
+    navigationLayoutOptions,
+    navigationLayoutError,
+    onNavigationLayoutChange: handleNavigationLayoutChange,
     stickyHeaderValue: stickyHeaderMode,
     stickyHeaderOptions,
     onStickyHeaderChange: handleStickyHeaderChange,
@@ -678,7 +705,25 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     onToggleAnnouncementBarHidden: toggleAnnouncementBarHidden,
     onAnnouncementBarConfigChange: updateAnnouncementBarConfig,
     onAnnouncementContentConfigChange: updateAnnouncementContentConfig,
-  }), [stickyHeaderMode, stickyHeaderOptions, handleStickyHeaderChange, isHeaderSearchEnabled, handleSearchToggle, headerTypographyCase, handleTypographyCaseChange, announcementBars, addAnnouncementBar, removeAnnouncementBar, toggleAnnouncementBarHidden, updateAnnouncementBarConfig, updateAnnouncementContentConfig])
+  }), [
+    navigationLayout,
+    navigationLayoutOptions,
+    navigationLayoutError,
+    handleNavigationLayoutChange,
+    stickyHeaderMode,
+    stickyHeaderOptions,
+    handleStickyHeaderChange,
+    isHeaderSearchEnabled,
+    handleSearchToggle,
+    headerTypographyCase,
+    handleTypographyCaseChange,
+    announcementBars,
+    addAnnouncementBar,
+    removeAnnouncementBar,
+    toggleAnnouncementBarHidden,
+    updateAnnouncementBarConfig,
+    updateAnnouncementContentConfig
+  ])
 
   const feedSettingsState = useMemo(() => ({
     pageLayout,
@@ -763,6 +808,27 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
               <AlertDialog.Action asChild>
                 <AppButton variant="secondary">
                   Close
+                </AppButton>
+              </AlertDialog.Action>
+            </div>
+          </AlertDialog.Content>
+        </AlertDialog.Portal>
+      </AlertDialog.Root>
+
+      <AlertDialog.Root open={schemaResetDialog.open} onOpenChange={(open) => setSchemaResetDialog(prev => ({ ...prev, open }))}>
+        <AlertDialog.Portal>
+          <AlertDialog.Overlay className="fixed inset-0 bg-inverse/50 z-50" />
+          <AlertDialog.Content className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-surface p-6 rounded-md shadow-lg z-50 w-[400px] max-w-full">
+            <AlertDialog.Title className="text-lg font-bold text-foreground mb-2">
+              Theme schema updated
+            </AlertDialog.Title>
+            <AlertDialog.Description className="text-secondary mb-4">
+              {schemaResetDialog.sourceLabel} data was reset to defaults to match the new schema. A local backup was saved when possible.
+            </AlertDialog.Description>
+            <div className="flex justify-end">
+              <AlertDialog.Action asChild>
+                <AppButton variant="secondary">
+                  OK
                 </AppButton>
               </AlertDialog.Action>
             </div>

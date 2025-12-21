@@ -75,6 +75,7 @@ export interface SectionManagerReturn {
   // Add/Remove functions
   addTemplateSection: (definitionId: string) => void
   removeTemplateSection: (sectionId: string) => void
+  duplicateTemplateSection: (sectionId: string) => void
 
   // Padding functions
   updateSectionPadding: (
@@ -153,7 +154,7 @@ export interface AnnouncementBarsReturn {
   announcementBarsRef: MutableRefObject<AnnouncementBarInstance[]>
 
   // Functions
-  addAnnouncementBar: () => string
+  addAnnouncementBar: () => string | null
   removeAnnouncementBar: (id: string) => void
   toggleAnnouncementBarHidden: (id: string, forceHidden?: boolean) => void
   updateAnnouncementBarConfig: (id: string, updater: (config: AnnouncementBarConfig) => AnnouncementBarConfig) => void

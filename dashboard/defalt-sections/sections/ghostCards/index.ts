@@ -16,6 +16,7 @@ export const definition: SectionDefinition<typeof ghostCardsConfigSchema> = {
   paddingControls: 'vertical',
   configSchema: ghostCardsConfigSchema,
   settingsSchema: ghostCardsSettingsSchema,
+  uiHiddenConfigKeys: ['tags'],
   blocksSchema: undefined,
   createConfig: () => ghostCardsDefaults,
   templatePath: 'ghostCards/ghostCards.hbs'

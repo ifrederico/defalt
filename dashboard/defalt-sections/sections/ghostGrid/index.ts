@@ -15,6 +15,7 @@ export const definition: SectionDefinition<typeof ghostGridConfigSchema> = {
   paddingControls: 'vertical',
   configSchema: ghostGridConfigSchema,
   settingsSchema: ghostGridSettingsSchema,
+  uiHiddenConfigKeys: ['tags'],
   blocksSchema: undefined,
   createConfig: () => ghostGridDefaults,
   templatePath: 'ghostGrid/ghostGrid.hbs'

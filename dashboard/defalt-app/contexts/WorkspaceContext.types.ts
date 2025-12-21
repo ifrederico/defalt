@@ -1,5 +1,34 @@
 import type { PreviewPage, PreviewDataSource, GhostPostItem, PreviewZoom } from '../hooks/usePreview'
 import type { WorkspacePage, CloudSyncStatus } from '../types/workspace'
+import type { AnnouncementBarInstance } from '@defalt/utils/config/themeConfig'
+
+export type HeaderSettingsContext = {
+  navigationLayoutValue: string
+  navigationLayoutOptions: string[]
+  navigationLayoutError: string | null
+  stickyHeaderValue: string
+  stickyHeaderOptions: string[]
+  isSearchEnabled: boolean
+  typographyCase: 'default' | 'uppercase'
+  headerStyleValue: string
+  headerTextValue: string
+  backgroundImageEnabled: boolean
+  showFeaturedPosts: boolean
+}
+
+export type FooterSettingsContext = {
+  showImagesInFeed: boolean
+  showAuthor: boolean
+  showPublishDate: boolean
+  showPublicationInfoSidebar: boolean
+  showPostMetadata: boolean
+  enableDropCapsOnPosts: boolean
+  showRelatedArticles: boolean
+}
+
+export type AnnouncementSettingsContext = {
+  bars: AnnouncementBarInstance[]
+}
 
 export type WorkspaceContextValue = {
   currentPage: WorkspacePage
@@ -51,6 +80,10 @@ export type WorkspaceContextValue = {
   isTogglingVisibility: boolean
 
   // Moved from ThemeContext
+  navigationLayoutValue: string
+  navigationLayoutOptions: string[]
+  navigationLayoutError: string | null
+  onNavigationLayoutChange: (value: string) => void
   stickyHeaderValue: string
   stickyHeaderOptions: string[]
   onStickyHeaderChange: (value: string) => void
@@ -59,7 +92,7 @@ export type WorkspaceContextValue = {
   typographyCase: 'default' | 'uppercase'
   onTypographyCaseChange: (value: 'default' | 'uppercase') => void
   announcementBars: import('@defalt/utils/config/themeConfig').AnnouncementBarInstance[]
-  onAddAnnouncementBar: () => string
+  onAddAnnouncementBar: () => string | null
   onRemoveAnnouncementBar: (id: string) => void
   onToggleAnnouncementBarHidden: (id: string, forceHidden?: boolean) => void
   onAnnouncementBarConfigChange: (id: string, updater: (config: import('@defalt/utils/config/themeConfig').AnnouncementBarConfig) => import('@defalt/utils/config/themeConfig').AnnouncementBarConfig) => void
@@ -76,6 +109,7 @@ export type WorkspaceContextValue = {
 
   templateDefinitions: import('@defalt/sections/engine').SectionDefinition[]
   onAddTemplateSection: (definitionId: string) => void
+  onDuplicateTemplateSection: (sectionId: string) => void
   onRemoveTemplateSection: (sectionId: string) => void
   customSections: Record<string, import('@defalt/sections/engine').SectionInstance>
   aiSections: Array<{ id: string, name: string, html: string }>
@@ -97,9 +131,9 @@ export type WorkspaceContextValue = {
   reorderFooterItems: (startIndex: number, endIndex: number) => void
   toggleSectionVisibility: (id: string, forceHidden?: boolean, options?: { silent?: boolean }) => void
 
-  headerSettings: import('./ThemeContext.types').HeaderSettingsContext
-  footerSettings: import('./ThemeContext.types').FooterSettingsContext
-  announcementSettings: import('./ThemeContext.types').AnnouncementSettingsContext
+  headerSettings: HeaderSettingsContext
+  footerSettings: FooterSettingsContext
+  announcementSettings: AnnouncementSettingsContext
 
   // Additional properties for HandlebarsRenderer
   pageLayout: 'narrow' | 'normal'

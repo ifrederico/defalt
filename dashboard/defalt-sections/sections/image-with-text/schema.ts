@@ -22,7 +22,9 @@ import {
 // Zod config schema
 export const imageWithTextConfigSchema = z.object({
   // Ghost tag for content filtering
-  tag: z.string().default('#image-text'),
+  tags: z.object({
+    primary: z.string().default('#image-text')
+  }).default({}),
 
   // Appearance
   ...contentWidthPxShape,

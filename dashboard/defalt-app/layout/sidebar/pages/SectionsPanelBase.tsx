@@ -88,7 +88,7 @@ export type SectionsPanelProps = {
   typographyCase: 'default' | 'uppercase'
   onTypographyCaseChange: (value: 'default' | 'uppercase') => void
   announcementBars: AnnouncementBarInstance[]
-  onAddAnnouncementBar: () => string
+  onAddAnnouncementBar: () => string | null
   onRemoveAnnouncementBar: (id: string) => void
   onToggleAnnouncementBarHidden: (id: string, forceHidden?: boolean) => void
   onAnnouncementBarConfigChange: (id: string, updater: (config: AnnouncementBarConfig) => AnnouncementBarConfig) => void
@@ -347,6 +347,9 @@ export const SectionsPanelBase = memo(function SectionsPanelBase({
 
   const handleAddAnnouncementBar = useCallback(() => {
     const id = onAddAnnouncementBar()
+    if (!id) {
+      return
+    }
     setExpandedAnnouncementBars((current) => ({
       ...current,
       [id]: true

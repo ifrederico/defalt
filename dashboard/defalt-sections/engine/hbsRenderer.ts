@@ -41,6 +41,8 @@ export interface SectionRenderContext {
 export interface RenderSectionOptions extends RenderOptions {
   /** Base path for template fetching (default: '/sections/') */
   basePath?: string
+  /** Skip inline padding styles (used when padding is applied externally) */
+  applyInlinePadding?: boolean
 }
 
 // =============================================================================
@@ -480,13 +482,16 @@ export async function renderSection(
     }
 
     // Add computed styles from resolved padding
-    const hasPadding =
-      padding.top > 0 ||
-      padding.bottom > 0 ||
-      (padding.left ?? 0) > 0 ||
-      (padding.right ?? 0) > 0
-    if (hasPadding) {
-      context.sectionStyle = buildPaddingStyle(padding)
+    const applyInlinePadding = options.applyInlinePadding !== false
+    if (applyInlinePadding) {
+      const hasPadding =
+        padding.top > 0 ||
+        padding.bottom > 0 ||
+        (padding.left ?? 0) > 0 ||
+        (padding.right ?? 0) > 0
+      if (hasPadding) {
+        context.sectionStyle = buildPaddingStyle(padding)
+      }
     }
 
     return template(context)

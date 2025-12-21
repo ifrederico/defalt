@@ -20,6 +20,7 @@ export const definition: SectionDefinition<typeof imageWithTextConfigSchema> = {
   paddingControls: 'vertical',
   configSchema: imageWithTextConfigSchema,
   settingsSchema: imageWithTextSettingsSchema,
+  uiHiddenConfigKeys: ['tags'],
   blocksSchema: undefined,
   createConfig: () => imageWithTextDefaults,
   templatePath: 'image-with-text/image-with-text.hbs'

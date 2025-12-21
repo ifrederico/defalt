@@ -67,13 +67,13 @@ async function fetchWithCache(url: string): Promise<string> {
 }
 
 /**
- * Removes hidden sections from compiled template strings based on the
- * visibility map produced by the editor. This prevents unused sections
- * from being rendered in the preview or exported theme.
+ * Wraps hidden sections in a hidden container based on the
+ * visibility map produced by the editor. This keeps structure consistent
+ * with export while preventing visible output in preview.
  *
  * @param templates - The set of raw template strings keyed by filename.
- * @param hiddenSections - Flags that indicate which sections should be removed.
- * @returns A new templates object with matching sections stripped out.
+ * @param hiddenSections - Flags that indicate which sections should be hidden.
+ * @returns A new templates object with matching sections wrapped.
  */
 export function filterTemplatesByVisibility(
   templates: Record<string, string>,
@@ -85,48 +85,51 @@ export function filterTemplatesByVisibility(
 
   const filtered = { ...templates }
 
-  // Filter default.hbs to remove navigation
+  const wrapHidden = (content: string, regex: RegExp) =>
+    content.replace(regex, (match) => `<div class="hidden" data-preview-hidden="true">\n${match}\n</div>`)
+
+  // Filter default.hbs to wrap navigation
   // Note: announcement bar visibility is now controlled via CSS (app-hide-announcement-bar class)
   // and partial generation during export (empty partial when hidden)
   if (filtered.default) {
     let defaultContent = filtered.default
 
     if (hiddenSections.header) {
-      defaultContent = defaultContent.replace(
-        /\{\{!-- defalt-navigation-start --\}\}[\s\S]*?\{\{!-- defalt-navigation-end --\}\}/g,
-        ''
+      defaultContent = wrapHidden(
+        defaultContent,
+        /\{\{!-- defalt-navigation-start --\}\}[\s\S]*?\{\{!-- defalt-navigation-end --\}\}/g
       )
     }
 
     filtered.default = defaultContent
   }
 
-  // Filter home.hbs to remove subheader and featured sections
+  // Filter home.hbs to wrap subheader and featured sections
   if (filtered.home) {
     let homeContent = filtered.home
 
     // NOTE: "subheader" controls {{> "components/header"}} (Magazine/Search/Highlight/Landing)
     // NOT the same as "header" which controls {{> "components/navigation"}} (nav bar)
     if (hiddenSections.subheader) {
-      homeContent = homeContent.replace(
-        /\{\{!-- defalt-subscribe-start --\}\}[\s\S]*?\{\{!-- defalt-subscribe-end --\}\}/g,
-        ''
+      homeContent = wrapHidden(
+        homeContent,
+        /\{\{!-- defalt-subscribe-start --\}\}[\s\S]*?\{\{!-- defalt-subscribe-end --\}\}/g
       )
     }
 
     // Featured posts section - separate from subheader, only visible with Magazine style
     if (hiddenSections.featured) {
-      homeContent = homeContent.replace(
-        /\{\{#match @custom\.header_style[^}]*\}\}[\s\S]*?\{\{>\s*"components\/featured"[^}]*\}\}[\s\S]*?\{\{\/match\}\}/g,
-        ''
+      homeContent = wrapHidden(
+        homeContent,
+        /\{\{#match @custom\.header_style[^}]*\}\}[\s\S]*?\{\{>\s*"components\/featured"[^}]*\}\}[\s\S]*?\{\{\/match\}\}/g
       )
     }
 
     // Remove main content section
     if (hiddenSections.main) {
-      homeContent = homeContent.replace(
-        /\{\{!-- defalt-main-start --\}\}[\s\S]*?\{\{!-- defalt-main-end --\}\}/g,
-        ''
+      homeContent = wrapHidden(
+        homeContent,
+        /\{\{!-- defalt-main-start --\}\}[\s\S]*?\{\{!-- defalt-main-end --\}\}/g
       )
     }
 
@@ -138,16 +141,16 @@ export function filterTemplatesByVisibility(
     let pageContent = filtered.page
 
     if (hiddenSections.page) {
-      pageContent = pageContent.replace(
-        /\{\{!-- defalt-page-start --\}\}[\s\S]*?\{\{!-- defalt-page-end --\}\}/g,
-        ''
+      pageContent = wrapHidden(
+        pageContent,
+        /\{\{!-- defalt-page-start --\}\}[\s\S]*?\{\{!-- defalt-page-end --\}\}/g
       )
     }
 
     if (hiddenSections['page-content']) {
-      pageContent = pageContent.replace(
-        /\{\{!-- defalt-page-content-start --\}\}[\s\S]*?\{\{!-- defalt-page-content-end --\}\}/g,
-        ''
+      pageContent = wrapHidden(
+        pageContent,
+        /\{\{!-- defalt-page-content-start --\}\}[\s\S]*?\{\{!-- defalt-page-content-end --\}\}/g
       )
     }
 
@@ -159,44 +162,44 @@ export function filterTemplatesByVisibility(
     let postContent = filtered.post
 
     if (hiddenSections.post) {
-      postContent = postContent.replace(
-        /\{\{!-- defalt-post-start --\}\}[\s\S]*?\{\{!-- defalt-post-start-end --\}\}/g,
-        ''
+      postContent = wrapHidden(
+        postContent,
+        /\{\{!-- defalt-post-start --\}\}[\s\S]*?\{\{!-- defalt-post-start-end --\}\}/g
       )
     }
 
     if (hiddenSections['post-article']) {
-      postContent = postContent.replace(
-        /\{\{!-- defalt-post-article-start --\}\}[\s\S]*?\{\{!-- defalt-post-article-end --\}\}/g,
-        ''
+      postContent = wrapHidden(
+        postContent,
+        /\{\{!-- defalt-post-article-start --\}\}[\s\S]*?\{\{!-- defalt-post-article-end --\}\}/g
       )
     }
 
     if (hiddenSections['post-article-header']) {
-      postContent = postContent.replace(
-        /\{\{!-- defalt-post-article-header-start --\}\}[\s\S]*?\{\{!-- defalt-post-article-header-end --\}\}/g,
-        ''
+      postContent = wrapHidden(
+        postContent,
+        /\{\{!-- defalt-post-article-header-start --\}\}[\s\S]*?\{\{!-- defalt-post-article-header-end --\}\}/g
       )
     }
 
     if (hiddenSections['post-article-tag']) {
-      postContent = postContent.replace(
-        /\{\{!-- defalt-post-article-tag-start --\}\}[\s\S]*?\{\{!-- defalt-post-article-tag-end --\}\}/g,
-        ''
+      postContent = wrapHidden(
+        postContent,
+        /\{\{!-- defalt-post-article-tag-start --\}\}[\s\S]*?\{\{!-- defalt-post-article-tag-end --\}\}/g
       )
     }
 
     if (hiddenSections['post-article-title']) {
-      postContent = postContent.replace(
-        /\{\{!-- defalt-post-article-title-start --\}\}[\s\S]*?\{\{!-- defalt-post-article-title-end --\}\}/g,
-        ''
+      postContent = wrapHidden(
+        postContent,
+        /\{\{!-- defalt-post-article-title-start --\}\}[\s\S]*?\{\{!-- defalt-post-article-title-end --\}\}/g
       )
     }
 
     if (hiddenSections['post-article-content']) {
-      postContent = postContent.replace(
-        /\{\{!-- defalt-post-article-content-start --\}\}[\s\S]*?\{\{!-- defalt-post-article-content-end --\}\}/g,
-        ''
+      postContent = wrapHidden(
+        postContent,
+        /\{\{!-- defalt-post-article-content-start --\}\}[\s\S]*?\{\{!-- defalt-post-article-content-end --\}\}/g
       )
     }
 
@@ -227,19 +230,22 @@ export function filterFooterPartial(
 
   let filtered = footerContent
 
-  // Remove footer bar section
+  const wrapHiddenFooter = (content: string, regex: RegExp) =>
+    content.replace(regex, (match) => `<div class="hidden" data-preview-hidden="true">\n${match}\n</div>`)
+
+  // Wrap footer bar section
   if (hiddenSections.footerBar) {
-    filtered = filtered.replace(
-      /\{\{!-- defalt-footer-bar-start --\}\}[\s\S]*?\{\{!-- defalt-footer-bar-end --\}\}/g,
-      ''
+    filtered = wrapHiddenFooter(
+      filtered,
+      /\{\{!-- defalt-footer-bar-start --\}\}[\s\S]*?\{\{!-- defalt-footer-bar-end --\}\}/g
     )
   }
 
-  // Remove footer signup section
+  // Wrap footer signup section
   if (hiddenSections.footerSignup) {
-    filtered = filtered.replace(
-      /\{\{!-- defalt-footer-signup-start --\}\}[\s\S]*?\{\{!-- defalt-footer-signup-end --\}\}/g,
-      ''
+    filtered = wrapHiddenFooter(
+      filtered,
+      /\{\{!-- defalt-footer-signup-start --\}\}[\s\S]*?\{\{!-- defalt-footer-signup-end --\}\}/g
     )
   }
 

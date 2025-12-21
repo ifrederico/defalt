@@ -13,7 +13,8 @@ import { useToast } from './components/ToastContext'
 import { useMediaQuery } from '@defalt/utils/hooks'
 import type { StickyHeaderMode } from '@defalt/rendering/custom-source/handlebars/headerCustomization'
 import { LoadingState } from '@defalt/ui/primitives/LoadingState'
-import { useActiveDetail, useActiveTab, useHoveredSectionId, useScrollToSectionId, useSidebarExpanded, useUIActions } from './stores'
+import { SidebarToggle } from '@defalt/ui'
+import { useActiveDetail, useActiveTab, useHoveredSectionId, useLeftSidebarCollapsed, useScrollToSectionId, useUIActions } from './stores'
 import { normalizeSectionId, resolveCustomSectionLabel, resolveSectionLabel as resolveSectionLabelFromRegistry } from '@defalt/utils/config/sectionRegistry'
 
 export function AppContent() {
@@ -21,8 +22,8 @@ export function AppContent() {
     const activeTab = useActiveTab()
     const hoveredSectionId = useHoveredSectionId()
     const scrollToSectionId = useScrollToSectionId()
-    const sidebarExpanded = useSidebarExpanded()
-    const { selectSection, setScrollToSectionId, clearSelection, setActiveDetail } = useUIActions()
+    const leftSidebarCollapsed = useLeftSidebarCollapsed()
+    const { selectSection, setScrollToSectionId, clearSelection, setActiveDetail, toggleLeftSidebar } = useUIActions()
     const isWideScreen = useMediaQuery('(min-width: 1348px)')
     const ghostOverlayTimeoutRef = useRef<number | null>(null)
 
@@ -70,12 +71,15 @@ export function AppContent() {
         customCSS,
         customSections,
         aiSections,
+        addAiSection,
+        removeAiSection,
         onUpdateCustomSection,
         templateItems,
         footerItems,
         templateDefinitions,
         onAddTemplateSection,
         onRemoveTemplateSection,
+        onDuplicateTemplateSection,
         reorderTemplateItems,
         reorderFooterItems,
         toggleSectionVisibility,
@@ -85,13 +89,13 @@ export function AppContent() {
         onToggleAnnouncementBarHidden,
         onAnnouncementBarConfigChange,
         onAnnouncementContentConfigChange,
-    } = useWorkspaceContext()
-
-    const {
         navigationLayoutValue,
         navigationLayoutOptions,
         navigationLayoutError,
         onNavigationLayoutChange,
+    } = useWorkspaceContext()
+
+    const {
         headerStyleValue,
         postFeedStyleValue,
         postFeedStyleOptions,
@@ -126,6 +130,24 @@ export function AppContent() {
 
 	        return resolveSectionLabelFromRegistry(normalizedId, { headerStyleValue })
 	    }, [aiSections, customSections, headerStyleValue])
+
+    const handleDuplicateSection = useCallback((sectionId: string) => {
+        const aiSection = aiSections.find((section) => section.id === sectionId)
+        if (aiSection) {
+            addAiSection({ id: aiSection.id, name: aiSection.name, html: aiSection.html })
+            return
+        }
+        onDuplicateTemplateSection(sectionId)
+    }, [addAiSection, aiSections, onDuplicateTemplateSection])
+
+    const handleRemoveSection = useCallback((sectionId: string) => {
+        const aiSection = aiSections.find((section) => section.id === sectionId)
+        if (aiSection) {
+            removeAiSection(sectionId)
+            return
+        }
+        onRemoveTemplateSection(sectionId)
+    }, [aiSections, onRemoveTemplateSection, removeAiSection])
 
     const handlePreviewSectionSelect = useCallback((sectionId: string) => {
         const normalizedId = normalizeSectionId(sectionId)
@@ -262,21 +284,35 @@ export function AppContent() {
 
                 {/* Narrow screen: show detail panel only for Sections tab */}
                 {!isWideScreen && activeTab === 'sections' && activeDetail ? (
-                    <aside
-                        className="bg-surface transition-[width] duration-300 relative border-r border-border flex flex-col"
-                        style={{ width: sidebarExpanded ? 'calc(100vw - 52px)' : '300px' }}
+                    <div
+                        className={`group relative flex-shrink-0 transition-[width] duration-300 ${leftSidebarCollapsed ? 'w-0' : 'w-[300px]'}`}
                     >
-                        <SectionDetailPanel
-                            activeDetail={activeDetail}
-                            onBack={clearSelection}
-                            props={sectionsPanelProps}
-                        />
-                    </aside>
+                        {leftSidebarCollapsed && (
+                            <div className="absolute inset-y-0 left-0 w-8 z-10" aria-hidden="true" />
+                        )}
+                        <aside
+                            className={`relative z-20 h-full w-[300px] bg-surface border-r border-border flex flex-col transition-transform duration-300 ${
+                                leftSidebarCollapsed ? '-translate-x-full group-hover:translate-x-0 shadow-md-heavy' : 'translate-x-0'
+                            }`}
+                        >
+                            <SidebarToggle
+                                position="left"
+                                collapsed={leftSidebarCollapsed}
+                                onToggle={toggleLeftSidebar}
+                                className={`transition-opacity duration-200 ${leftSidebarCollapsed ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}
+                            />
+                            <SectionDetailPanel
+                                activeDetail={activeDetail}
+                                onBack={clearSelection}
+                                props={sectionsPanelProps}
+                            />
+                        </aside>
+                    </div>
                 ) : (
                     <EditorSidebar currentPage={currentPage} />
                 )}
 
-                <main className={`${sidebarExpanded ? 'hidden' : 'flex-1'} bg-subtle overflow-hidden`}>
+                <main className="flex-1 bg-subtle overflow-hidden">
                     <div className={`h-full p-4 ${zoomScale === 1 ? 'overflow-auto' : 'overflow-hidden'}`}>
                         <div
                             className="relative bg-surface rounded shadow-sm overflow-auto mx-auto transition-[max-width] duration-300"
@@ -334,6 +370,9 @@ export function AppContent() {
                                     scrollToSectionId={scrollToSectionId}
                                     onScrollComplete={() => setScrollToSectionId(null)}
                                     onSectionSelect={handlePreviewSectionSelect}
+                                    onDuplicateSection={handleDuplicateSection}
+                                    onRemoveSection={handleRemoveSection}
+                                    onToggleSectionVisibility={toggleSectionVisibility}
                                 />
                             </PreviewErrorBoundary>
                         </div>

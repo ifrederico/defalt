@@ -24,6 +24,7 @@ const {
 } = vi.hoisted(() => {
   const defaultHeaderSettings = {
     accentColor: '#ff3366',
+    navigationLayout: 'Logo in the middle',
     stickyHeaderMode: 'Never',
     searchEnabled: true,
     typographyCase: 'default'
@@ -218,7 +219,7 @@ describe('useWorkspace', () => {
       expect(hook.result.current.customSections['ghost-cards']).toBeDefined()
     })
     expect(
-      (hook.result.current.customSections['ghost-cards'].config as { tag?: string }).tag
+      (hook.result.current.customSections['ghost-cards'].config as { tags?: { primary?: string } }).tags?.primary
     ).toBe('#cards')
 
     act(() => {
@@ -229,7 +230,7 @@ describe('useWorkspace', () => {
       expect(hook.result.current.customSections['ghost-cards-2']).toBeDefined()
     })
     expect(
-      (hook.result.current.customSections['ghost-cards-2'].config as { tag?: string }).tag
+      (hook.result.current.customSections['ghost-cards-2'].config as { tags?: { primary?: string } }).tags?.primary
     ).toBe('#cards-2')
 
     hook.unmount()
@@ -246,7 +247,7 @@ describe('useWorkspace', () => {
       expect(hook.result.current.customSections['image-with-text']).toBeDefined()
     })
     expect(
-      (hook.result.current.customSections['image-with-text'].config as { tag?: string }).tag
+      (hook.result.current.customSections['image-with-text'].config as { tags?: { primary?: string } }).tags?.primary
     ).toBe('#image-text')
 
     act(() => {
@@ -257,7 +258,7 @@ describe('useWorkspace', () => {
       expect(hook.result.current.customSections['image-with-text-2']).toBeDefined()
     })
     expect(
-      (hook.result.current.customSections['image-with-text-2'].config as { tag?: string }).tag
+      (hook.result.current.customSections['image-with-text-2'].config as { tags?: { primary?: string } }).tags?.primary
     ).toBe('#image-text-2')
 
     hook.unmount()
@@ -289,10 +290,10 @@ describe('useWorkspace', () => {
     expect(hook.result.current.customSections['ghost-grid']).toBeDefined()
     expect(hook.result.current.customSections['ghost-grid-2']).toBeDefined()
 
-    expect((hook.result.current.customSections['ghost-grid'].config as { tagLeft?: string }).tagLeft).toBe('#grid-left')
-    expect((hook.result.current.customSections['ghost-grid'].config as { tagRight?: string }).tagRight).toBe('#grid-right')
-    expect((hook.result.current.customSections['ghost-grid-2'].config as { tagLeft?: string }).tagLeft).toBe('#grid-left-2')
-    expect((hook.result.current.customSections['ghost-grid-2'].config as { tagRight?: string }).tagRight).toBe('#grid-right-2')
+    expect((hook.result.current.customSections['ghost-grid'].config as { tags?: { left?: string } }).tags?.left).toBe('#grid-left')
+    expect((hook.result.current.customSections['ghost-grid'].config as { tags?: { right?: string } }).tags?.right).toBe('#grid-right')
+    expect((hook.result.current.customSections['ghost-grid-2'].config as { tags?: { left?: string } }).tags?.left).toBe('#grid-left-2')
+    expect((hook.result.current.customSections['ghost-grid-2'].config as { tags?: { right?: string } }).tags?.right).toBe('#grid-right-2')
 
     hook.unmount()
   })

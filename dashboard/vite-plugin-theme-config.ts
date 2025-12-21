@@ -9,7 +9,6 @@ import { loadEnv, type Plugin, type ViteDevServer } from 'vite'
 import type { IncomingMessage, ServerResponse } from 'http'
 import fs from 'fs/promises'
 import path from 'path'
-import { spawn } from 'child_process'
 import crypto from 'crypto'
 import { fileURLToPath } from 'url'
 
@@ -31,20 +30,16 @@ function ensureEnvLoaded(server: ViteDevServer) {
   envLoaded = true
 }
 import {
-  generateHomeTemplate,
-  readThemePackageName,
-  applyPackageJsonCustomization,
-  applyCustomCssCustomization,
-  applyNavigationCustomization,
-  applyFooterCustomization,
-  applyDefaultTemplateCustomization,
-  applyAnnouncementBarCustomization,
-  applyCustomSectionTemplates,
-  applyMainSectionCustomization,
-} from './defalt-rendering/theme/exportTheme'
-import type { TemplatePartial } from './defalt-rendering/theme/exportTheme'
+  applyThemeExportCustomizations,
+  cleanupUnusedPartials,
+  createThemeArchive,
+  resolveExportTierOverride,
+  syncThemeToWorkspace,
+  validatePremiumFeatures
+} from './defalt-utils/export/themeExport'
 import { THEME_DOCUMENT_FILENAME, normalizeThemeDocument } from './defalt-utils/config/themeConfig'
-import type { ThemeDocument, SectionConfig, SectionMargin } from './defalt-utils/config/themeConfig'
+import type { ThemeDocument } from './defalt-utils/config/themeConfig'
+import type { SubscriptionTier } from './defalt-utils/types/subscription'
 import { CSRF_COOKIE_NAME, CSRF_HEADER_NAME } from './defalt-utils/security/constants.js'
 
 // Inline helper functions (previously in server-utils/helpers.ts)
@@ -87,46 +82,6 @@ async function readRequestBody(req: IncomingMessage, limitBytes = 2 * 1024 * 102
 
 const isPlainObject = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value)
-
-type ThemeConfig = {
-  sections: Record<string, SectionConfig>
-  order: {
-    template: string[]
-    footer: string[]
-  }
-  footerMargin?: SectionMargin
-}
-
-async function runCommand(command: string, args: string[], cwd: string) {
-  await new Promise<void>((resolve, reject) => {
-    const childProcess = spawn(command, args, {
-      cwd,
-      stdio: 'inherit',
-      shell: process.platform === 'win32'
-    })
-
-    childProcess.on('error', reject)
-    childProcess.on('close', (code: number | null) => {
-      if (code === 0) {
-        resolve()
-      } else {
-        reject(new Error(`${command} ${args.join(' ')} exited with code ${code}`))
-      }
-    })
-  })
-}
-
-async function ensureDependenciesInstalled(themeDir: string) {
-  const nodeModulesPath = path.join(themeDir, 'node_modules')
-  try {
-    await fs.access(nodeModulesPath)
-    return
-  } catch {
-    // node_modules missing, install dependencies
-  }
-
-  await runCommand('bun', ['install', '--frozen-lockfile'], themeDir)
-}
 
 function ensureAuthorized(req: IncomingMessage, res: ServerResponse, routeName: string): boolean {
   if (!authSecret) {
@@ -270,34 +225,6 @@ export function themeConfigPlugin(): Plugin {
   const themeRoot = path.join(process.cwd(), 'public', 'themes', themeDirName)
   const workspaceRoot = path.join(process.cwd(), '.theme-export-workspace')
   const workspaceThemeDir = path.join(workspaceRoot, themeDirName)
-
-  async function syncThemeToWorkspace() {
-    await fs.mkdir(workspaceRoot, { recursive: true })
-
-    // Clean partials directory to remove stale export artifacts.
-    const partialsDir = path.join(workspaceThemeDir, 'partials')
-    await fs.rm(partialsDir, { recursive: true, force: true })
-
-    await fs.mkdir(workspaceThemeDir, { recursive: true })
-
-    await fs.cp(themeRoot, workspaceThemeDir, {
-      recursive: true,
-      force: true,
-      filter: (src) => {
-        const relative = path.relative(themeRoot, src)
-        if (!relative) {
-          return true
-        }
-        if (relative.startsWith('node_modules')) {
-          return false
-        }
-        if (relative.startsWith('dist')) {
-          return false
-        }
-        return true
-      }
-    })
-  }
 
   return {
     name: 'theme-config-api',
@@ -488,8 +415,7 @@ export function themeConfigPlugin(): Plugin {
             try {
               const themeConfigPath = path.join(process.cwd(), 'public', 'theme-config', THEME_DOCUMENT_FILENAME)
 
-              await syncThemeToWorkspace()
-              await ensureDependenciesInstalled(workspaceThemeDir)
+              await syncThemeToWorkspace(themeRoot, workspaceThemeDir)
 
               let document: ThemeDocument
               if (payload.document && typeof payload.document === 'object') {
@@ -499,64 +425,53 @@ export function themeConfigPlugin(): Plugin {
                 document = normalizeThemeDocument(JSON.parse(configRaw) as ThemeDocument)
               }
 
-              const pageConfig = document.pages.homepage
-              const headerConfig = document.header.sections.header
+              const pageConfig = document.pages?.homepage
+              const headerConfig = document.header?.sections?.header
               const footerConfig = document.footer
 
-              try {
-                await applyPackageJsonCustomization(workspaceThemeDir, document)
-              } catch (error) {
+              if (!pageConfig || !headerConfig || !footerConfig) {
                 sendJson(res, 400, {
-                  error: 'Invalid packageJson',
-                  message: error instanceof Error ? error.message : String(error)
+                  error: 'Invalid theme document',
+                  message: 'Theme document must include homepage, header, and footer configurations.'
                 })
                 return
               }
-              await applyCustomCssCustomization(workspaceThemeDir, document)
 
-              const { content, partialFiles } = generateHomeTemplate(pageConfig, headerConfig, footerConfig)
-              await fs.writeFile(path.join(workspaceThemeDir, 'home.hbs'), content, 'utf-8')
-
-              if (partialFiles.length > 0) {
-                const partialsDir = path.join(workspaceThemeDir, 'partials')
-                await fs.mkdir(partialsDir, { recursive: true })
-                await Promise.all(partialFiles.map(async (partial: TemplatePartial) => {
-                  const partialPath = path.join(partialsDir, partial.name)
-                  await fs.writeFile(partialPath, partial.content, 'utf-8')
-                }))
+              const tierOverride = resolveExportTierOverride()
+              const tier: SubscriptionTier = tierOverride ?? 'free'
+              const { error: validationError } = await validatePremiumFeatures(document, tier)
+              if (validationError) {
+                sendJson(res, 403, { error: 'Premium feature access denied', message: validationError })
+                return
               }
 
-              const themeConfigForAssets: ThemeConfig = {
-                sections: {
-                  header: headerConfig,
-                  ...pageConfig.sections,
-                  ...footerConfig.sections,
-                },
-                order: {
-                  template: Array.isArray(pageConfig.order) ? [...pageConfig.order] : [],
-                  footer: Array.isArray(footerConfig.order) ? [...footerConfig.order] : []
-                },
-                footerMargin: footerConfig.margin
+              try {
+                await applyThemeExportCustomizations({
+                  workspaceThemeDir,
+                  document,
+                  pageConfig,
+                  headerConfig,
+                  footerConfig
+                })
+              } catch (error) {
+                if (error instanceof Error && error.message.startsWith('Invalid packageJson')) {
+                  sendJson(res, 400, { error: 'Invalid packageJson', message: error.message })
+                  return
+                }
+                throw error
               }
 
-              await applyDefaultTemplateCustomization(workspaceThemeDir, themeConfigForAssets)
-              await applyAnnouncementBarCustomization(workspaceThemeDir, themeConfigForAssets, document)
-              await applyMainSectionCustomization(workspaceThemeDir, themeConfigForAssets)
-              await applyCustomSectionTemplates(workspaceThemeDir, themeConfigForAssets)
-              await applyNavigationCustomization(workspaceThemeDir, themeConfigForAssets, document)
-              await applyFooterCustomization(workspaceThemeDir, themeConfigForAssets)
+              await cleanupUnusedPartials(workspaceThemeDir, document, tier)
 
-              await fs.rm(path.join(workspaceThemeDir, 'dist'), { recursive: true, force: true })
-              await runCommand('bun', ['run', 'zip'], workspaceThemeDir)
-
-              const packageName = await readThemePackageName(workspaceThemeDir)
-              const zipPath = path.join(workspaceThemeDir, 'dist', `${packageName}.zip`)
+              const zipPath = await createThemeArchive(workspaceThemeDir, workspaceRoot)
               const zipBuffer = await fs.readFile(zipPath)
 
               res.statusCode = 200
               res.setHeader('Content-Type', 'application/zip')
-              res.setHeader('Content-Disposition', `attachment; filename="${packageName}.zip"`)
+              res.setHeader('Content-Disposition', `attachment; filename="${path.basename(zipPath)}"`)
               res.end(zipBuffer)
+
+              await fs.rm(zipPath, { force: true })
             } catch (error) {
               console.error('Error exporting theme:', error)
               sendJson(res, 500, { error: 'Failed to export theme' })

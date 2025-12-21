@@ -10,7 +10,7 @@ export type SectionDetail = {
   blockIndex?: number
 }
 
-export type ActiveTab = 'sections' | 'settings' | 'code' | 'ai'
+export type ActiveTab = 'sections' | 'settings' | 'ai'
 
 // State shape
 interface UIState {
@@ -25,7 +25,8 @@ interface UIState {
 
   // Sidebar
   activeTab: ActiveTab
-  sidebarExpanded: boolean
+  leftSidebarCollapsed: boolean
+  rightPanelCollapsed: boolean
 }
 
 // Actions shape
@@ -34,8 +35,10 @@ interface UIActions {
   setHoveredSectionId: (id: string | null) => void
   setScrollToSectionId: (id: string | null) => void
   setActiveTab: (tab: ActiveTab) => void
-  setSidebarExpanded: (expanded: boolean) => void
-  toggleSidebar: () => void
+  setLeftSidebarCollapsed: (collapsed: boolean) => void
+  toggleLeftSidebar: () => void
+  setRightPanelCollapsed: (collapsed: boolean) => void
+  toggleRightPanel: () => void
 
   // Convenience action to select a section and open its detail
   selectSection: (id: string, label: string) => void
@@ -52,7 +55,8 @@ const initialState: UIState = {
   hoveredSectionId: null,
   scrollToSectionId: null,
   activeTab: 'sections',
-  sidebarExpanded: false,
+  leftSidebarCollapsed: false,
+  rightPanelCollapsed: false,
 }
 
 // Create store with subscribeWithSelector and persist for fine-grained subscriptions
@@ -72,9 +76,13 @@ export const useUIStore = create<UIStore>()(
 
         setActiveTab: (tab) => set({ activeTab: tab }),
 
-        setSidebarExpanded: (expanded) => set({ sidebarExpanded: expanded }),
+        setLeftSidebarCollapsed: (collapsed) => set({ leftSidebarCollapsed: collapsed }),
 
-        toggleSidebar: () => set((state) => ({ sidebarExpanded: !state.sidebarExpanded })),
+        toggleLeftSidebar: () => set((state) => ({ leftSidebarCollapsed: !state.leftSidebarCollapsed })),
+
+        setRightPanelCollapsed: (collapsed) => set({ rightPanelCollapsed: collapsed }),
+
+        toggleRightPanel: () => set((state) => ({ rightPanelCollapsed: !state.rightPanelCollapsed })),
 
         selectSection: (id, label) => set({ activeDetail: { id, label } }),
 
@@ -82,11 +90,31 @@ export const useUIStore = create<UIStore>()(
       }),
       {
         name: 'defalt-ui-preferences',
-        version: 1,
+        version: 2,
         partialize: (state) => ({
           activeTab: state.activeTab,
-          sidebarExpanded: state.sidebarExpanded,
+          leftSidebarCollapsed: state.leftSidebarCollapsed,
+          rightPanelCollapsed: state.rightPanelCollapsed,
         }),
+        migrate: (state, version) => {
+          if (version === 1) {
+            const previous = state as {
+              activeTab?: ActiveTab | 'code'
+              sidebarExpanded?: boolean
+            }
+            const activeTab = previous.activeTab === 'code' ? 'sections' : previous.activeTab ?? 'sections'
+            return {
+              activeTab,
+              leftSidebarCollapsed: false,
+              rightPanelCollapsed: false,
+            }
+          }
+          return state as {
+            activeTab?: ActiveTab
+            leftSidebarCollapsed?: boolean
+            rightPanelCollapsed?: boolean
+          }
+        },
       }
     )
   )
@@ -99,7 +127,8 @@ export const useActiveDetail = () => useUIStore((state) => state.activeDetail)
 export const useHoveredSectionId = () => useUIStore((state) => state.hoveredSectionId)
 export const useScrollToSectionId = () => useUIStore((state) => state.scrollToSectionId)
 export const useActiveTab = () => useUIStore((state) => state.activeTab)
-export const useSidebarExpanded = () => useUIStore((state) => state.sidebarExpanded)
+export const useLeftSidebarCollapsed = () => useUIStore((state) => state.leftSidebarCollapsed)
+export const useRightPanelCollapsed = () => useUIStore((state) => state.rightPanelCollapsed)
 
 // Action hooks (stable references, never cause re-renders)
 // useShallow prevents infinite loops by doing shallow comparison of the returned object
@@ -109,8 +138,10 @@ export const useUIActions = () => useUIStore(
     setHoveredSectionId: state.setHoveredSectionId,
     setScrollToSectionId: state.setScrollToSectionId,
     setActiveTab: state.setActiveTab,
-    setSidebarExpanded: state.setSidebarExpanded,
-    toggleSidebar: state.toggleSidebar,
+    setLeftSidebarCollapsed: state.setLeftSidebarCollapsed,
+    toggleLeftSidebar: state.toggleLeftSidebar,
+    setRightPanelCollapsed: state.setRightPanelCollapsed,
+    toggleRightPanel: state.toggleRightPanel,
     selectSection: state.selectSection,
     clearSelection: state.clearSelection,
   }))

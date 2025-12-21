@@ -7,12 +7,12 @@ import { sanitizeHexColor } from '../security/sanitizers.js'
 import { deepClone } from '../helpers/deepClone.js'
 import { formatInternalTag } from '../../defalt-sections/utils/tagUtils.js'
 import {
-  applyDefaultTagsForSection,
   getFooterOrder,
   getTemplateOrder,
   normalizeSectionId,
   resolveAnnouncementBlockTag
 } from './sectionRegistry.js'
+import { ANNOUNCEMENT_BAR_PADDING_DEFAULTS } from '../../defalt-sections/sections/announcement-bar/schema.js'
 
 export type PageType = 'home' | 'about' | 'post' | 'page'
 
@@ -31,6 +31,7 @@ export interface SectionMargin {
 }
 
 export type StickyHeaderModeSetting = 'Always' | 'Scroll up' | 'Never'
+export type NavigationLayoutSetting = 'Logo in the middle' | 'Logo on the left' | 'Stacked'
 export type HeaderTypographyCaseSetting = 'default' | 'uppercase'
 export type PageLayoutSetting = 'narrow' | 'normal'
 
@@ -76,14 +77,17 @@ export interface AnnouncementBarInstance {
   content: AnnouncementContentConfig
 }
 
+export const MAX_ANNOUNCEMENT_BARS = 5
+const MAX_ANNOUNCEMENTS_PER_BAR = 5
+
 export const DEFAULT_ANNOUNCEMENT_BAR_CONFIG: AnnouncementBarConfig = {
   width: 'default',
   backgroundColor: '#AC1E3E',
   textColor: '#ffffff',
   dividerThickness: 0,
   dividerColor: '#e5e7eb',
-  paddingTop: 8,
-  paddingBottom: 8
+  paddingTop: ANNOUNCEMENT_BAR_PADDING_DEFAULTS.top,
+  paddingBottom: ANNOUNCEMENT_BAR_PADDING_DEFAULTS.bottom
 }
 
 export const DEFAULT_ANNOUNCEMENT_CONTENT_CONFIG: AnnouncementContentConfig = {
@@ -99,6 +103,7 @@ export interface SectionSettings {
   margin?: SectionMargin
   definitionId?: string
   customConfig?: Record<string, unknown>
+  navigationLayout?: NavigationLayoutSetting
   stickyHeaderMode?: StickyHeaderModeSetting
   searchEnabled?: boolean
   typographyCase?: HeaderTypographyCaseSetting
@@ -131,6 +136,7 @@ export interface FooterConfig {
 export interface ThemeDocument {
   name: string
   version: number
+  schemaVersion: number
   accentColor?: string
   packageJson?: string
   customCSS?: string
@@ -143,6 +149,7 @@ export interface ThemeDocument {
 
 export interface HeaderSettingsSnapshot {
   accentColor: string
+  navigationLayout: NavigationLayoutSetting
   stickyHeaderMode: StickyHeaderModeSetting
   searchEnabled: boolean
   typographyCase: HeaderTypographyCaseSetting
@@ -187,6 +194,7 @@ export const PADDING_BLOCK_SECTIONS = new Set(['subheader', 'main', 'footerBar']
 
 export const DEFAULT_HEADER_SETTINGS: HeaderSettingsSnapshot = {
   accentColor: '#AC1E3E',
+  navigationLayout: 'Logo in the middle',
   stickyHeaderMode: 'Never',
   searchEnabled: true,
   typographyCase: 'default'
@@ -201,9 +209,11 @@ export const DEFAULT_MAIN_SETTINGS: MainSettingsSnapshot = {
 
 export const THEME_DOCUMENT_FILENAME = 'defalt-theme.json'
 const THEME_DOCUMENT_VERSION = 1
+const CURRENT_SCHEMA_VERSION = 1
 const DEFAULT_DOCUMENT_NAME = 'defalt-theme'
 const DRAFT_STORAGE_KEY = `${WORKSPACE_STORAGE_PREFIX}:draft`
 const SAVED_STORAGE_KEY = `${WORKSPACE_STORAGE_PREFIX}:saved`
+const SCHEMA_BACKUP_STORAGE_KEY = 'defalt:schema-backup'
 
 type StorageNormalizationEvent = {
   source: 'draft-storage' | 'saved-storage'
@@ -261,6 +271,7 @@ const createDefaultHeaderSection = (): SectionConfig => ({
   settings: {
     visible: true,
     // Don't set default padding - let template CSS handle it
+    navigationLayout: DEFAULT_HEADER_SETTINGS.navigationLayout,
     stickyHeaderMode: DEFAULT_HEADER_SETTINGS.stickyHeaderMode,
     searchEnabled: DEFAULT_HEADER_SETTINGS.searchEnabled,
     typographyCase: DEFAULT_HEADER_SETTINGS.typographyCase,
@@ -318,6 +329,7 @@ const createDefaultPageConfig = (pageKey: DocumentPageKey): PageConfig => {
 const DEFAULT_THEME_DOCUMENT: ThemeDocument = {
   name: DEFAULT_DOCUMENT_NAME,
   version: THEME_DOCUMENT_VERSION,
+  schemaVersion: CURRENT_SCHEMA_VERSION,
   accentColor: DEFAULT_HEADER_SETTINGS.accentColor,
   header: {
     sections: {
@@ -472,6 +484,13 @@ export const normalizeAnnouncementContentConfig = (
 const normalizeHeaderSection = (section: SectionConfig | undefined): SectionConfig => {
   const defaults = createDefaultHeaderSection()
   const settings = (section?.settings ?? {}) as Record<string, unknown>
+  const resolvedNavigationLayout: NavigationLayoutSetting = (() => {
+    const raw = settings.navigationLayout
+    if (raw === 'Logo in the middle' || raw === 'Logo on the left' || raw === 'Stacked') {
+      return raw
+    }
+    return defaults.settings.navigationLayout ?? DEFAULT_HEADER_SETTINGS.navigationLayout
+  })()
 
   const normalizeAnnouncementBars = (input: unknown): AnnouncementBarInstance[] => {
     if (!Array.isArray(input)) {
@@ -524,7 +543,7 @@ const normalizeHeaderSection = (section: SectionConfig | undefined): SectionConf
         const announcements = contentNormalized.announcements.length > 0
           ? contentNormalized.announcements
           : [defaultAnnouncement]
-        const limitedAnnouncements = announcements.slice(0, 5)
+        const limitedAnnouncements = announcements.slice(0, MAX_ANNOUNCEMENTS_PER_BAR)
         const ensuredAnnouncements = limitedAnnouncements.map((block, index) => {
           const normalizedTag = formatInternalTag(block.tag)
           const defaultTag = resolveAnnouncementBlockTag(id, index)
@@ -546,6 +565,7 @@ const normalizeHeaderSection = (section: SectionConfig | undefined): SectionConf
         }
       })
       .filter((item): item is AnnouncementBarInstance => item !== null)
+      .slice(0, MAX_ANNOUNCEMENT_BARS)
   }
 
   const announcementBars = normalizeAnnouncementBars(settings.announcementBars)
@@ -556,6 +576,7 @@ const normalizeHeaderSection = (section: SectionConfig | undefined): SectionConf
       visible: normalizeBoolean(settings.visible, defaults.settings.visible),
       padding: normalizePadding(settings.padding, defaults.settings.padding),
       paddingBlock: typeof settings.paddingBlock === 'number' ? settings.paddingBlock : undefined,
+      navigationLayout: resolvedNavigationLayout,
       stickyHeaderMode: (settings.stickyHeaderMode as StickyHeaderModeSetting) ?? defaults.settings.stickyHeaderMode,
       searchEnabled: normalizeBoolean(settings.searchEnabled, defaults.settings.searchEnabled ?? true),
       typographyCase: (settings.typographyCase as HeaderTypographyCaseSetting) ?? defaults.settings.typographyCase,
@@ -725,14 +746,6 @@ const normalizePageConfig = (pageKey: DocumentPageKey, page: PageConfig | undefi
       delete filteredSettings.cornerRadius
       delete filteredSettings.customCSS
     }
-    if (typeof filteredSettings.definitionId === 'string') {
-      filteredSettings.customConfig = applyDefaultTagsForSection(
-        filteredSettings.definitionId,
-        key,
-        filteredSettings.customConfig
-      )
-    }
-
     sections[key] = {
       type: defaultSection?.type ?? source.type ?? 'custom',
       settings: {
@@ -766,6 +779,7 @@ export const normalizeThemeDocument = (candidate: unknown): ThemeDocument => {
   const raw = candidate as Partial<ThemeDocument>
   const name = typeof raw.name === 'string' && raw.name.trim().length > 0 ? raw.name.trim() : DEFAULT_DOCUMENT_NAME
   const version = typeof raw.version === 'number' ? raw.version : THEME_DOCUMENT_VERSION
+  const schemaVersion = CURRENT_SCHEMA_VERSION
   const accentColor = typeof raw.accentColor === 'string' ? raw.accentColor : DEFAULT_HEADER_SETTINGS.accentColor
   const packageJson = typeof raw.packageJson === 'string' ? raw.packageJson : undefined
   const customCSS = typeof raw.customCSS === 'string' ? raw.customCSS : undefined
@@ -785,6 +799,7 @@ export const normalizeThemeDocument = (candidate: unknown): ThemeDocument => {
   return {
     name,
     version,
+    schemaVersion,
     accentColor,
     packageJson,
     customCSS,
@@ -796,6 +811,43 @@ export const normalizeThemeDocument = (candidate: unknown): ThemeDocument => {
     footer,
     pages
   }
+}
+
+const backupSchemaMismatch = (document: ThemeDocument, source: StorageNormalizationEvent['source']): void => {
+  const storage = getSavedStorage()
+  if (!storage) {
+    return
+  }
+
+  try {
+    const payload = {
+      capturedAt: new Date().toISOString(),
+      source,
+      schemaVersion: typeof document.schemaVersion === 'number' ? document.schemaVersion : null,
+      document
+    }
+    storage.setItem(SCHEMA_BACKUP_STORAGE_KEY, JSON.stringify(payload))
+  } catch (error) {
+    logError(error, { scope: 'themeConfig.backupSchemaMismatch' })
+  }
+}
+
+const clearPersistedDocuments = (): void => {
+  const draftStorage = getDraftStorage()
+  if (draftStorage) {
+    draftStorage.removeItem(DRAFT_STORAGE_KEY)
+  }
+  const savedStorage = getSavedStorage()
+  if (savedStorage) {
+    savedStorage.removeItem(SAVED_STORAGE_KEY)
+  }
+}
+
+const handleSchemaMismatch = (document: ThemeDocument, source: StorageNormalizationEvent['source']): ThemeDocument => {
+  backupSchemaMismatch(document, source)
+  pendingStorageNormalizationEvent = { source, reason: 'schema' }
+  clearPersistedDocuments()
+  return clone(DEFAULT_THEME_DOCUMENT)
 }
 
 // Read from draft storage (sessionStorage)
@@ -814,12 +866,15 @@ const readDraftDocument = (): ThemeDocument | null => {
     const parsed = JSON.parse(raw) as unknown
     const validated = safeParseThemeDocument(parsed, 'draft-storage', { suppressLog: true })
     if (validated) {
-      return normalizeThemeDocument(validated)
+      const resolved = validated as ThemeDocument
+      if (resolved.schemaVersion !== CURRENT_SCHEMA_VERSION) {
+        return handleSchemaMismatch(resolved, 'draft-storage')
+      }
+      return resolved
     }
-    const normalized = normalizeThemeDocument(parsed)
-    pendingStorageNormalizationEvent = { source: 'draft-storage', reason: 'schema' }
-    storage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(normalized))
-    return normalized
+    pendingStorageNormalizationEvent = { source: 'draft-storage', reason: 'parse' }
+    storage.removeItem(DRAFT_STORAGE_KEY)
+    return null
   } catch (error) {
     logError(error, { scope: 'themeConfig.loadDraftDocument' })
     pendingStorageNormalizationEvent = { source: 'draft-storage', reason: 'parse' }
@@ -844,12 +899,15 @@ const readSavedDocument = (): ThemeDocument => {
     const parsed = JSON.parse(raw) as unknown
     const validated = safeParseThemeDocument(parsed, 'saved-storage', { suppressLog: true })
     if (validated) {
-      return normalizeThemeDocument(validated)
+      const resolved = validated as ThemeDocument
+      if (resolved.schemaVersion !== CURRENT_SCHEMA_VERSION) {
+        return handleSchemaMismatch(resolved, 'saved-storage')
+      }
+      return resolved
     }
-    const normalized = normalizeThemeDocument(parsed)
-    pendingStorageNormalizationEvent = { source: 'saved-storage', reason: 'schema' }
-    storage.setItem(SAVED_STORAGE_KEY, JSON.stringify(normalized))
-    return normalized
+    pendingStorageNormalizationEvent = { source: 'saved-storage', reason: 'parse' }
+    storage.removeItem(SAVED_STORAGE_KEY)
+    return clone(DEFAULT_THEME_DOCUMENT)
   } catch (error) {
     logError(error, { scope: 'themeConfig.loadSavedDocument' })
     pendingStorageNormalizationEvent = { source: 'saved-storage', reason: 'parse' }
@@ -1077,14 +1135,13 @@ export const saveThemeDocument = async (document: ThemeDocument): Promise<void> 
       csrfToken = await requestCsrfToken()
     }
 
-    const normalized = normalizeThemeDocument(document)
     const response = await fetch(apiPath('/api/theme-config'), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         ...(csrfToken ? { 'x-csrf-token': csrfToken } : {})
       },
-      body: JSON.stringify(normalized, null, 2)
+      body: JSON.stringify(document, null, 2)
     })
 
     if (!response.ok) {
@@ -1101,6 +1158,7 @@ export const extractHeaderSettings = (header: SectionConfig, document?: ThemeDoc
   const accentColor = document?.accentColor ?? DEFAULT_HEADER_SETTINGS.accentColor
   return {
     accentColor,
+    navigationLayout: (settings.navigationLayout as NavigationLayoutSetting) ?? DEFAULT_HEADER_SETTINGS.navigationLayout,
     stickyHeaderMode: (settings.stickyHeaderMode as StickyHeaderModeSetting) ?? DEFAULT_HEADER_SETTINGS.stickyHeaderMode,
     searchEnabled: settings.searchEnabled ?? DEFAULT_HEADER_SETTINGS.searchEnabled,
     typographyCase: (settings.typographyCase as HeaderTypographyCaseSetting) ?? DEFAULT_HEADER_SETTINGS.typographyCase

@@ -39,22 +39,16 @@ export function TagsModal({ open, onOpenChange }: TagsModalProps) {
   const sectionTags = useMemo(() => {
     const tags = new Set<string>()
 
-    // Custom sections use tag field
+    // Custom sections use tags config
     for (const section of Object.values(customSections)) {
       const config = section.config as Record<string, unknown>
-      if (config.tag) {
-        const formatted = formatInternalTag(config.tag)
+      const tagsConfig = typeof config.tags === 'object' && config.tags !== null && !Array.isArray(config.tags)
+        ? config.tags as Record<string, unknown>
+        : {}
+      Object.values(tagsConfig).forEach((value) => {
+        const formatted = formatInternalTag(value)
         if (formatted) tags.add(formatted)
-      }
-      // tagLeft/tagRight for ghost-grid
-      if (config.tagLeft) {
-        const formatted = formatInternalTag(config.tagLeft)
-        if (formatted) tags.add(formatted)
-      }
-      if (config.tagRight) {
-        const formatted = formatInternalTag(config.tagRight)
-        if (formatted) tags.add(formatted)
-      }
+      })
     }
 
     // Announcement bars - tags are on blocks (each announcement can have its own tag)

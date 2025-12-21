@@ -9,6 +9,7 @@ import {
   DEFAULT_HEADER_SETTINGS,
   CSS_DEFAULT_PADDING,
   CSS_DEFAULT_MARGIN,
+  DEFAULT_CUSTOM_SECTION_PADDING,
 } from '../../defalt-utils/config/themeConfig.js'
 import { sanitizeCustomCss, sanitizeHexColor } from '../../defalt-utils/security/sanitizers.js'
 import type {
@@ -266,7 +267,7 @@ export function generateHomeTemplate(
       const sectionVisible = sectionConfig?.settings?.visible !== false
       let sectionPartial = ''
 
-      const resolvedPadding = resolveSectionPadding(sectionConfig, { top: 48, bottom: 48, left: 0, right: 0 })
+      const resolvedPadding = resolveSectionPadding(sectionConfig, DEFAULT_CUSTOM_SECTION_PADDING)
       const sectionStyle = buildSectionStyle(resolvedPadding)
 
       if (definitionId === 'hero') {
@@ -280,7 +281,7 @@ export function generateHomeTemplate(
 
         const containerPaddingX = resolveContainerPaddingX(heroConfig.contentWidth)
         const backgroundColor = sanitizeHexColor(heroConfig.backgroundColor, 'transparent')
-        const internalTag = formatInternalTag(heroConfig.tag) || resolveHeroDefaultTag(key)
+        const internalTag = formatInternalTag(heroConfig.tags?.primary) || resolveHeroDefaultTag(key)
         const tagFilter = toTagFilter(internalTag)
         const imageOnRight = heroConfig.invert === true || heroConfig.imagePosition === 'right'
         const { imageColumn, textColumn } = resolveImageColumns(heroConfig.imageWidth)
@@ -301,7 +302,7 @@ export function generateHomeTemplate(
 
 	        const containerPaddingX = resolveContainerPaddingX(cardsConfig.contentWidth)
 	        const backgroundColor = sanitizeHexColor(cardsConfig.backgroundColor, 'transparent')
-	        const internalTag = formatInternalTag(cardsConfig.tag) || resolveGhostCardsDefaultTag(key)
+	        const internalTag = formatInternalTag(cardsConfig.tags?.primary) || resolveGhostCardsDefaultTag(key)
 	        const tagFilter = toTagFilter(internalTag)
 
 	        sectionPartial = `{{> "defalt-ghost-cards" sectionId=${JSON.stringify(key)} sectionStyle=${JSON.stringify(sectionStyle)} contentWidth=${JSON.stringify(cardsConfig.contentWidth)} containerPaddingX=${JSON.stringify(containerPaddingX)} backgroundColor=${JSON.stringify(backgroundColor)} pageTitle=${cardsConfig.pageTitle} textAlignment=${JSON.stringify(cardsConfig.textAlignment)} titleSize=${JSON.stringify(cardsConfig.titleSize)} tagFilter=${JSON.stringify(tagFilter)} internalTag=${JSON.stringify(internalTag)} }}`
@@ -318,8 +319,8 @@ export function generateHomeTemplate(
 
         const containerPaddingX = resolveContainerPaddingX(gridConfig.contentWidth)
         const backgroundColor = sanitizeHexColor(gridConfig.backgroundColor, 'transparent')
-	        const internalTagLeft = formatInternalTag(gridConfig.tagLeft) || '#grid-left'
-	        const internalTagRight = formatInternalTag(gridConfig.tagRight) || '#grid-right'
+	        const internalTagLeft = formatInternalTag(gridConfig.tags?.left) || '#grid-left'
+	        const internalTagRight = formatInternalTag(gridConfig.tags?.right) || '#grid-right'
 	        const leftTagFilter = toTagFilter(internalTagLeft)
 	        const rightTagFilter = toTagFilter(internalTagRight)
 	        const anyTagFilter = `${leftTagFilter},${rightTagFilter}`
@@ -338,7 +339,7 @@ export function generateHomeTemplate(
 
         const containerPaddingX = resolveContainerPaddingX(imageTextConfig.contentWidth)
         const backgroundColor = sanitizeHexColor(imageTextConfig.backgroundColor, 'transparent')
-        const internalTag = formatInternalTag(imageTextConfig.tag) || resolveImageWithTextDefaultTag(key)
+        const internalTag = formatInternalTag(imageTextConfig.tags?.primary) || resolveImageWithTextDefaultTag(key)
         const tagFilter = toTagFilter(internalTag)
         const imageOnRight = imageTextConfig.invert === true || imageTextConfig.imagePosition === 'right'
         const { imageColumn, textColumn } = resolveImageColumns(imageTextConfig.imageWidth)

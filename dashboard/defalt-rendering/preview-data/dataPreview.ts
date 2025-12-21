@@ -1,19 +1,10 @@
 import { PREVIEW_PLACEHOLDER_URL } from '@defalt/utils/constants'
+import { withBasePath } from '@defalt/utils/env/basePath'
 
 const BASE_URL = PREVIEW_PLACEHOLDER_URL
 const SITE_NAME = 'Custom'
 
-const assetManifest = import.meta.glob('./images/**/*', { eager: true, import: 'default' }) as Record<string, string>
-
-const asset = (file: string): string => {
-  const key = `./images/${file}`
-  const resolved = assetManifest[key]
-  if (!resolved) {
-    console.warn(`[preview-data] Missing asset for ${key}`)
-    return ''
-  }
-  return resolved
-}
+const asset = (file: string): string => withBasePath(`/preview-data/images/${file}`)
 
 type NavKey = 'home' | 'issues' | 'about'
 

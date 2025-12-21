@@ -31,11 +31,13 @@ import {
   type EditorState,
   type FooterConfig,
   type HeaderSettingsSnapshot,
-  type MainSettingsSnapshot
+  type MainSettingsSnapshot,
+  type NavigationLayoutSetting
 } from '@defalt/utils/config/themeConfig'
 import {
   buildSectionInstance,
   getSectionDefinition,
+  NAVIGATION_LAYOUT_VALUES,
   type SectionInstance
 } from '@defalt/sections/engine'
 import { applyDefaultTagsForSection, normalizeSectionId, resolveCustomSectionLabel } from '@defalt/utils/config/sectionRegistry'
@@ -109,6 +111,7 @@ export function useWorkspace({
   const [borderThickness, setBorderThickness] = useState(1)
   const [cornerRadius, setCornerRadius] = useState(4)
   const [customCSS, setCustomCSS] = useState('')
+  const [navigationLayout, setNavigationLayout] = useState<NavigationLayoutSetting>('Logo in the middle')
   const [stickyHeaderMode, setStickyHeaderMode] = useState<'Always' | 'Scroll up' | 'Never'>('Never')
   const [isHeaderSearchEnabled, setHeaderSearchEnabled] = useState(true)
   const [headerTypographyCase, setHeaderTypographyCase] = useState<'default' | 'uppercase'>('default')
@@ -118,6 +121,7 @@ export function useWorkspace({
   const [isDraftMode, setIsDraftMode] = useState(false)
   const [lastSaveTime, setLastSaveTime] = useState<number | null>(null)
   const [cloudSyncStatus, setCloudSyncStatus] = useState<CloudSyncStatus>('idle')
+  const [schemaResetEvent, setSchemaResetEvent] = useState<ReturnType<typeof consumeStorageNormalizationEvent> | null>(null)
   const lastSuccessfulSaveVersionRef = useRef(0)
 
   const [isHydrated, setIsHydrated] = useState(false)
@@ -128,6 +132,7 @@ export function useWorkspace({
   const currentPageRef = useRef(currentPage)
   const accentColorRef = useRef(accentColor)
   const bgColorRef = useRef(bgColor)
+  const navigationLayoutRef = useRef(navigationLayout)
   const stickyHeaderModeRef = useRef(stickyHeaderMode)
   const headerSearchEnabledRef = useRef(isHeaderSearchEnabled)
   const headerTypographyCaseRef = useRef(headerTypographyCase)
@@ -144,10 +149,11 @@ export function useWorkspace({
     currentPageRef.current = currentPage
     accentColorRef.current = accentColor
     bgColorRef.current = bgColor
+    navigationLayoutRef.current = navigationLayout
     stickyHeaderModeRef.current = stickyHeaderMode
     headerSearchEnabledRef.current = isHeaderSearchEnabled
     headerTypographyCaseRef.current = headerTypographyCase
-  }, [currentPage, accentColor, bgColor, stickyHeaderMode, isHeaderSearchEnabled, headerTypographyCase])
+  }, [currentPage, accentColor, bgColor, navigationLayout, stickyHeaderMode, isHeaderSearchEnabled, headerTypographyCase])
 
   const markAsDirty = useCallback(() => {
     setHasUnsavedChanges(true)
@@ -268,6 +274,7 @@ export function useWorkspace({
 
 	  const settings: SectionSettings = {
 	    visible: !headerHidden,
+	    navigationLayout: headerSnapshot.navigationLayout,
 	    stickyHeaderMode: headerSnapshot.stickyHeaderMode,
 	    searchEnabled: headerSnapshot.searchEnabled,
 	    typographyCase: headerSnapshot.typographyCase,
@@ -771,7 +778,7 @@ export function useWorkspace({
       if (normalizationEvent.reason === 'parse') {
         showToast('Workspace reset', `${sourceLabel} data was corrupted. Reset to defaults.`, 'error')
       } else {
-        showToast('Workspace updated', `${sourceLabel} data normalized to current schema.`, 'info')
+        setSchemaResetEvent(normalizationEvent)
       }
     }
 
@@ -790,6 +797,7 @@ export function useWorkspace({
 
     setAccentColor(headerSettings.accentColor)
     setBgColor(parsedBgColor)
+    setNavigationLayout(headerSettings.navigationLayout)
     setStickyHeaderMode(headerSettings.stickyHeaderMode as 'Always' | 'Scroll up' | 'Never')
     setHeaderSearchEnabled(headerSettings.searchEnabled)
     setHeaderTypographyCase(headerSettings.typographyCase)
@@ -806,6 +814,10 @@ export function useWorkspace({
     }
     setWorkspaceHydrated(true)
   }, [currentPage, hydrateFromEditorState, loadStoredState, resetPackageJson, setPackageJson, showToast])
+
+  const dismissSchemaResetEvent = useCallback(() => {
+    setSchemaResetEvent(null)
+  }, [])
 
   const scheduleSave = useCallback(() => {
     if (!isHydrated) {
@@ -943,6 +955,41 @@ export function useWorkspace({
   }, [commitConfig, isHydrated])
 
   // Workspace-specific handlers
+  const buildPackageJsonWithNavigationLayout = useCallback((value: NavigationLayoutSetting): string | null => {
+    try {
+      const parsed = JSON.parse(packageJson || '{}') as Record<string, unknown>
+      const configRaw = parsed.config
+      const config = (typeof configRaw === 'object' && configRaw !== null && !Array.isArray(configRaw))
+        ? { ...(configRaw as Record<string, unknown>) }
+        : {}
+      parsed.config = config
+
+      const customRaw = config.custom
+      const custom = (typeof customRaw === 'object' && customRaw !== null && !Array.isArray(customRaw))
+        ? { ...(customRaw as Record<string, unknown>) }
+        : {}
+      config.custom = custom
+
+      const navRaw = custom.navigation_layout
+      const navigationLayout = (typeof navRaw === 'object' && navRaw !== null && !Array.isArray(navRaw))
+        ? { ...(navRaw as Record<string, unknown>) }
+        : {}
+      navigationLayout.type = typeof navigationLayout.type === 'string' ? navigationLayout.type : 'select'
+
+      const existingOptions = navigationLayout.options
+      navigationLayout.options = Array.isArray(existingOptions)
+        ? existingOptions.filter((option): option is string => typeof option === 'string')
+        : [...NAVIGATION_LAYOUT_VALUES]
+      navigationLayout.default = value
+
+      custom.navigation_layout = navigationLayout
+
+      return JSON.stringify(parsed, null, 2)
+    } catch {
+      return null
+    }
+  }, [packageJson])
+
   const handleStickyHeaderChange = useCallback((value: string) => {
     if (value === 'Always' || value === 'Scroll up' || value === 'Never') {
       const previous = stickyHeaderModeRef.current
@@ -957,6 +1004,37 @@ export function useWorkspace({
       }))
     }
   }, [executeCommand, markAsDirty])
+
+  const handleNavigationLayoutChange = useCallback((value: NavigationLayoutSetting) => {
+    if (!NAVIGATION_LAYOUT_VALUES.includes(value)) {
+      return
+    }
+    const previous = navigationLayoutRef.current
+    if (previous === value) {
+      return
+    }
+
+    const nextPackageJson = buildPackageJsonWithNavigationLayout(value)
+    if (!nextPackageJson) {
+      showToast('Invalid package.json', 'Fix JSON in Code tab to edit navigation layout.', 'error')
+      return
+    }
+
+    const previousPackageJson = packageJson
+
+    executeCommand(new GlobalSettingCommand({
+      label: 'Change navigation layout',
+      applyState: () => {
+        setNavigationLayout(value)
+        setPackageJson(nextPackageJson)
+      },
+      revertState: () => {
+        setNavigationLayout(previous)
+        setPackageJson(previousPackageJson)
+      },
+      markDirty: markAsDirty
+    }))
+  }, [buildPackageJsonWithNavigationLayout, executeCommand, markAsDirty, packageJson, setPackageJson, showToast])
 
   const handleSearchToggle = useCallback((enabled: boolean) => {
     const previous = headerSearchEnabledRef.current
@@ -1042,6 +1120,7 @@ export function useWorkspace({
     syncExternalState({
       headerSettings: {
         accentColor,
+        navigationLayout,
         stickyHeaderMode,
         searchEnabled: isHeaderSearchEnabled,
         typographyCase: headerTypographyCase
@@ -1058,6 +1137,7 @@ export function useWorkspace({
     workspaceHydrated,
     syncExternalState,
     accentColor,
+    navigationLayout,
     stickyHeaderMode,
     isHeaderSearchEnabled,
     headerTypographyCase,
@@ -1115,6 +1195,7 @@ export function useWorkspace({
 
     setAccentColor(headerSettings.accentColor)
     setBgColor(parsedBgColor)
+    setNavigationLayout(headerSettings.navigationLayout)
     setStickyHeaderMode(headerSettings.stickyHeaderMode as 'Always' | 'Scroll up' | 'Never')
     setHeaderSearchEnabled(headerSettings.searchEnabled)
     setHeaderTypographyCase(headerSettings.typographyCase)
@@ -1262,6 +1343,7 @@ export function useWorkspace({
     borderThickness,
     cornerRadius,
     customCSS,
+    navigationLayout,
     stickyHeaderMode,
     isHeaderSearchEnabled,
     headerTypographyCase,
@@ -1271,8 +1353,11 @@ export function useWorkspace({
     isDraftMode,
     lastSaveTime,
     cloudSyncStatus,
+    schemaResetEvent,
+    dismissSchemaResetEvent,
 
     // Workspace handlers
+    handleNavigationLayoutChange,
     handleStickyHeaderChange,
     handleSearchToggle,
     handleTypographyCaseChange,
@@ -1293,6 +1378,7 @@ export function useWorkspace({
     reorderTemplateItems: sectionManager.reorderTemplateItems,
     addTemplateSection: sectionManager.addTemplateSection,
     removeTemplateSection: sectionManager.removeTemplateSection,
+    duplicateTemplateSection: sectionManager.duplicateTemplateSection,
     setSectionVisibilityState: sectionManager.setSectionVisibilityState,
     toggleSectionVisibility: sectionManager.toggleSectionVisibility,
     sectionPadding: sectionManager.sectionPadding,

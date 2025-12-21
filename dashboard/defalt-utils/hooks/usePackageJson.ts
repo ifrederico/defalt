@@ -221,88 +221,6 @@ export function usePackageJson() {
     setPackageJsonState('{\n  "name": "source"\n}')
   }, [])
 
-  const navigationLayoutConfig = useMemo<Record<string, unknown> | null>(() => {
-    const field = getCustomField('navigation_layout')
-    return field ? field : null
-  }, [getCustomField])
-
-  const navigationLayoutOptions = useMemo<string[]>(() => {
-    if (!navigationLayoutConfig) {
-      return []
-    }
-
-    const options = navigationLayoutConfig['options']
-    if (!Array.isArray(options)) {
-      return []
-    }
-
-    return options.filter((option): option is string => typeof option === 'string')
-  }, [navigationLayoutConfig])
-
-  const navigationLayoutValue = useMemo(() => {
-    if (!navigationLayoutConfig) {
-      return ''
-    }
-
-    const defaultValue = navigationLayoutConfig['default']
-    if (typeof defaultValue === 'string') {
-      return defaultValue
-    }
-
-    const value = navigationLayoutConfig['value']
-    if (typeof value === 'string') {
-      return value
-    }
-
-    return ''
-  }, [navigationLayoutConfig])
-
-  const effectiveNavigationLayoutValue = useMemo(() => {
-    if (navigationLayoutValue) {
-      return navigationLayoutValue
-    }
-
-    return navigationLayoutOptions[0] ?? 'Logo in the middle'
-  }, [navigationLayoutOptions, navigationLayoutValue])
-
-  const headerSettingsError = useMemo(() => {
-    if (!packageJson) {
-      return 'package.json has not been loaded yet.'
-    }
-
-    if (!parsedPackageJson) {
-      return 'Unable to parse package.json. Fix the JSON in the Code tab to edit header settings.'
-    }
-
-    if (!navigationLayoutConfig) {
-      return 'Navigation layout setting is missing from package.json.'
-    }
-
-    if (navigationLayoutOptions.length === 0) {
-      return 'Navigation layout setting has no options defined in package.json.'
-    }
-
-    return null
-  }, [packageJson, parsedPackageJson, navigationLayoutConfig, navigationLayoutOptions])
-
-  const handleHeaderNavigationLayoutChange = useCallback((nextValue: string) => {
-    updatePackageJson((data) => {
-      const configRaw = data['config']
-      const config = (typeof configRaw === 'object' && configRaw !== null ? configRaw : {}) as Record<string, unknown>
-      data['config'] = config
-
-      const customRaw = config['custom']
-      const custom = (typeof customRaw === 'object' && customRaw !== null ? customRaw : {}) as Record<string, unknown>
-      config['custom'] = custom
-
-      const navigationLayoutRaw = custom['navigation_layout']
-      const navigationLayout = (typeof navigationLayoutRaw === 'object' && navigationLayoutRaw !== null ? navigationLayoutRaw : {}) as Record<string, unknown>
-      custom['navigation_layout'] = navigationLayout
-
-      navigationLayout['default'] = nextValue
-    })
-  }, [updatePackageJson])
-
   const headerAndFooterColorOptions = useMemo(() => getCustomFieldOptions('header_and_footer_color'), [getCustomFieldOptions])
   const headerAndFooterColorValue = useMemo(() => {
     const defaultOption = headerAndFooterColorOptions[0] ?? 'Background color'
@@ -419,13 +337,7 @@ export function usePackageJson() {
     setPackageJson,
     resetPackageJson,
     parsedPackageJson,
-    navigationLayoutConfig,
-    navigationLayoutOptions,
-    navigationLayoutValue,
-    effectiveNavigationLayoutValue,
-    headerSettingsError,
     updatePackageJson,
-    handleHeaderNavigationLayoutChange,
     headerAndFooterColorOptions,
     headerAndFooterColorValue,
     handleHeaderAndFooterColorChange,

@@ -9,7 +9,7 @@ export type HeaderCustomizationOptions = {
   stickyHeaderMode: StickyHeaderMode
   showSearch: boolean
   typographyCase: 'default' | 'uppercase'
-  sectionPadding: Record<string, { top: number, bottom: number }>
+  sectionPadding: Record<string, { top: number, bottom: number, left?: number, right?: number }>
   sectionMargins?: Record<string, { top?: number, bottom?: number }>
   subheaderStyle?: string
   showFeaturedPosts?: boolean
@@ -203,24 +203,29 @@ function applyStickyHeaderBehavior(doc: Document, mode: StickyHeaderMode) {
   handleScroll()
 }
 
-function applySectionPadding(doc: Document, paddingMap: Record<string, { top: number, bottom: number }>) {
+function applySectionPadding(doc: Document, paddingMap: Record<string, { top: number, bottom: number, left?: number, right?: number }>) {
   if (!paddingMap) {
     return
   }
 
   Object.entries(paddingMap).forEach(([key, padding]) => {
     const selectors = SECTION_PADDING_SELECTORS[key]
-    if (!selectors || selectors.length === 0) {
+    const usesDynamicSelector = !selectors || selectors.length === 0
+    const selectorList = usesDynamicSelector ? [`[data-section-id="${key}"]`] : selectors
+
+    if (!selectorList.length) {
       return
     }
 
     const top = Math.max(0, padding?.top ?? 0)
     const bottom = Math.max(0, padding?.bottom ?? 0)
-    const isBlockMode = BLOCK_PADDING_SECTIONS.has(key)
+    const left = Math.max(0, padding?.left ?? 0)
+    const right = Math.max(0, padding?.right ?? 0)
+    const isBlockMode = !usesDynamicSelector && BLOCK_PADDING_SECTIONS.has(key)
     const blockValue = top || bottom
-    const variableConfig = VARIABLE_PADDING_SECTIONS[key]
+    const variableConfig = usesDynamicSelector ? undefined : VARIABLE_PADDING_SECTIONS[key]
 
-    selectors.forEach((selector) => {
+    selectorList.forEach((selector) => {
       const elements = doc.querySelectorAll<HTMLElement>(selector)
       elements.forEach((element) => {
         if (variableConfig) {
@@ -237,6 +242,20 @@ function applySectionPadding(doc: Document, paddingMap: Record<string, { top: nu
           element.style.paddingTop = `${top}px`
           element.style.paddingBottom = `${bottom}px`
           element.style.removeProperty('padding-block')
+        }
+
+        if (usesDynamicSelector) {
+          if (left > 0) {
+            element.style.paddingLeft = `${left}px`
+          } else {
+            element.style.removeProperty('padding-left')
+          }
+
+          if (right > 0) {
+            element.style.paddingRight = `${right}px`
+          } else {
+            element.style.removeProperty('padding-right')
+          }
         }
       })
     })

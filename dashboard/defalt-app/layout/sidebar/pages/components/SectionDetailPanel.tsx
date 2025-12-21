@@ -10,6 +10,9 @@ export type SectionDetailPanelProps = {
 }
 
 export function SectionDetailPanel({ activeDetail, onBack, props }: SectionDetailPanelProps) {
+  const isPlainRecord = (value: unknown): value is Record<string, unknown> =>
+    typeof value === 'object' && value !== null && !Array.isArray(value)
+
   // Look up tags for the active section from its config
   const { activeTag, activeTags, canEditSingleTag } = useMemo(() => {
     // Check for announcement bar block selection (block-level tag)
@@ -32,18 +35,21 @@ export function SectionDetailPanel({ activeDetail, onBack, props }: SectionDetai
     }
 
     const config = customSection.config as Record<string, unknown>
+    const tags = isPlainRecord(config.tags) ? config.tags as Record<string, unknown> : {}
 
-    // Check for multiple tags (tagLeft, tagRight)
-    if (typeof config.tagLeft === 'string' && typeof config.tagRight === 'string') {
+    if (customSection.definitionId === 'ghostGrid') {
       return {
         activeTag: undefined,
-        activeTags: { tagLeft: config.tagLeft, tagRight: config.tagRight },
+        activeTags: {
+          left: typeof tags.left === 'string' ? tags.left : '',
+          right: typeof tags.right === 'string' ? tags.right : ''
+        },
         canEditSingleTag: false
       }
     }
 
     // Check for single tag
-    const tagValue = typeof config.tag === 'string' ? config.tag : ''
+    const tagValue = typeof tags.primary === 'string' ? tags.primary : ''
     return { activeTag: tagValue, activeTags: undefined, canEditSingleTag: true }
   }, [activeDetail.id, activeDetail.blockIndex, props.announcementBars, props.customSections])
 
@@ -62,13 +68,16 @@ export function SectionDetailPanel({ activeDetail, onBack, props }: SectionDetai
       }))
       return
     }
-    // Custom sections use 'tag' field
+    // Custom sections use tags.primary
     const customSection = props.customSections[activeDetail.id]
     if (customSection) {
-      props.onUpdateCustomSection(activeDetail.id, (config) => ({
-        ...config,
-        tag: newTag
-      }))
+      props.onUpdateCustomSection(activeDetail.id, (config) => {
+        const next = { ...(config as Record<string, unknown>) }
+        const tags = isPlainRecord(next.tags) ? { ...(next.tags as Record<string, unknown>) } : {}
+        tags.primary = newTag
+        next.tags = tags
+        return next
+      })
     }
   }, [activeDetail.id, activeDetail.blockIndex, props])
 
@@ -78,25 +87,31 @@ export function SectionDetailPanel({ activeDetail, onBack, props }: SectionDetai
     const sectionId = activeDetail.id
     return [
       {
-        id: 'tagLeft',
+        id: 'left',
         label: 'Left column',
-        value: activeTags.tagLeft,
+        value: activeTags.left,
         onChange: (newTag: string) => {
-          props.onUpdateCustomSection(sectionId, (config) => ({
-            ...config,
-            tagLeft: newTag
-          }))
+          props.onUpdateCustomSection(sectionId, (config) => {
+            const next = { ...(config as Record<string, unknown>) }
+            const tags = isPlainRecord(next.tags) ? { ...(next.tags as Record<string, unknown>) } : {}
+            tags.left = newTag
+            next.tags = tags
+            return next
+          })
         }
       },
       {
-        id: 'tagRight',
+        id: 'right',
         label: 'Right column',
-        value: activeTags.tagRight,
+        value: activeTags.right,
         onChange: (newTag: string) => {
-          props.onUpdateCustomSection(sectionId, (config) => ({
-            ...config,
-            tagRight: newTag
-          }))
+          props.onUpdateCustomSection(sectionId, (config) => {
+            const next = { ...(config as Record<string, unknown>) }
+            const tags = isPlainRecord(next.tags) ? { ...(next.tags as Record<string, unknown>) } : {}
+            tags.right = newTag
+            next.tags = tags
+            return next
+          })
         }
       }
     ]

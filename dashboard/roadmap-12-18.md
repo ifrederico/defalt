@@ -1,12 +1,12 @@
-# Roadmap (2025-12-18) — Puck patterns → Defalt refactor plan
+# Roadmap (2025-12-18) — Defalt refactor plan
 
-Purpose: implementer-ready backlog (file list + callsites + acceptance checks) to copy the best structural patterns from Puck into Defalt.
+Purpose: implementer-ready backlog (file list + callsites + acceptance checks) to apply best-practice structural patterns to Defalt.
 
-Reference: Puck Editor (puckeditor/puck). Relevant upstream paths:
-- `packages/core/lib/migrate.ts` (explicit migrations list)
-- `packages/core/lib/data/map-fields.ts` (schema-driven traversal)
-- `packages/core/lib/resolve-component-data.ts` + `types/Config.tsx` (`resolveData` in component config)
-- `packages/core/store/slices/*` (slice-based state)
+Reference patterns:
+- Explicit migrations list
+- Schema-driven field traversal
+- Component data resolution with config types
+- Slice-based state management
 
 ## Status update (code check)
 - [x] Back-compat tag normalization removed; no migrations planned (older docs require reset).
@@ -85,7 +85,7 @@ Implementation:
 Acceptance:
 - Preview/export/normalization accept the same color value set.
 
-## D) Phase 3 — `settingsSchema` walker (Defalt equivalent of Puck `map-fields`)
+## D) Phase 3 — `settingsSchema` walker (schema field traversal)
 
 Goal: one traversal for UI schema defaults/coercions/validation.
 

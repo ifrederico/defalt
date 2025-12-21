@@ -1,43 +1,7 @@
-import type {
-  AnnouncementBarInstance
-} from '@defalt/utils/config/themeConfig'
-
-export type HeaderSettingsContext = {
-  navigationLayoutValue: string
-  navigationLayoutOptions: string[]
-  navigationLayoutError: string | null
-  stickyHeaderValue: string
-  stickyHeaderOptions: string[]
-  isSearchEnabled: boolean
-  typographyCase: 'default' | 'uppercase'
-  headerStyleValue: string
-  headerTextValue: string
-  backgroundImageEnabled: boolean
-  showFeaturedPosts: boolean
-}
-
-export type FooterSettingsContext = {
-  showImagesInFeed: boolean
-  showAuthor: boolean
-  showPublishDate: boolean
-  showPublicationInfoSidebar: boolean
-  showPostMetadata: boolean
-  enableDropCapsOnPosts: boolean
-  showRelatedArticles: boolean
-}
-
-export type AnnouncementSettingsContext = {
-  bars: AnnouncementBarInstance[]
-}
-
 export type ThemeContextValue = {
   packageJson: string
   onPackageJsonChange: (value: string) => void
   resetPackageJson: () => void
-  navigationLayoutValue: string
-  navigationLayoutOptions: string[]
-  navigationLayoutError: string | null
-  onNavigationLayoutChange: (value: string) => void
   headerAndFooterColorValue: string
   headerAndFooterColorOptions: string[]
   onHeaderAndFooterColorChange: (value: string) => void

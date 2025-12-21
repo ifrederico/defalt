@@ -1,4 +1,3 @@
-import type { MutableRefObject } from 'react'
 import {
   FOOTER_INNER_SELECTOR,
   FOOTER_ROOT_SELECTOR,
@@ -49,6 +48,10 @@ body.app-hide-footer-signup .gh-footer-signup {
 }
 
 [data-section-hidden="true"] {
+  display: none !important;
+}
+
+.hidden {
   display: none !important;
 }
 
@@ -120,7 +123,7 @@ function collectCommentRange(doc: Document, key: string): Node[] {
   return nodes
 }
 
-function ensurePreviewStyles(doc: Document) {
+export function ensurePreviewStyles(doc: Document) {
   if (doc.getElementById(PREVIEW_STYLES_ID)) {
     return
   }
@@ -257,8 +260,13 @@ export function reorderTemplateInDOM(doc: Document, order: string[]) {
       toSelectorList(selectorDef).forEach((selector) => {
         const matches = Array.from(doc.querySelectorAll(selector))
         matches.forEach((match) => {
-          if (viewport.contains(match) && !elements.includes(match)) {
-            elements.push(match)
+          if (!viewport.contains(match)) {
+            return
+          }
+          const wrapped = match.closest('[data-preview-hidden="true"]')
+          const target = wrapped && viewport.contains(wrapped) ? wrapped : match
+          if (!elements.includes(target)) {
+            elements.push(target)
           }
         })
       })
@@ -356,7 +364,8 @@ export function reorderFooterInDOM(doc: Document, order: string[]) {
 
     const element = footerInner.querySelector(selector) ?? doc.querySelector(selector)
     if (element) {
-      sections[key] = element
+      const wrapped = element.closest('[data-preview-hidden="true"]')
+      sections[key] = (wrapped && footerInner.contains(wrapped)) ? wrapped : element
     }
   })
 
@@ -390,6 +399,10 @@ export function setupPortalPreview(doc: Document) {
   }
 
   portalLinks.forEach((link) => {
+    if (link.dataset.portalPreviewBound === 'true') {
+      return
+    }
+    link.dataset.portalPreviewBound = 'true'
     link.classList.add('gh-portal-close')
     link.addEventListener('click', (event) => {
       event.preventDefault()
@@ -404,10 +417,10 @@ export function setupPortalPreview(doc: Document) {
  */
 export function setupPreviewNavigation(doc: Document, onNavigate?: (href: string) => boolean) {
   if (!onNavigate) {
-    return
+    return () => {}
   }
 
-  doc.addEventListener('click', (event) => {
+  const handleClick = (event: MouseEvent) => {
     if (event.defaultPrevented || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
       return
     }
@@ -431,13 +444,20 @@ export function setupPreviewNavigation(doc: Document, onNavigate?: (href: string
     if (handled) {
       event.preventDefault()
     }
-  })
+  }
+
+  doc.addEventListener('click', handleClick)
+
+  return () => {
+    doc.removeEventListener('click', handleClick)
+  }
 }
 
 export function setupSectionSelection(
   doc: Document,
   sectionIds: string[],
-  onSelectSection?: (sectionId: string) => void
+  onSelectSection?: (sectionId: string) => void,
+  onHoverSection?: (sectionId: string | null) => void
 ) {
   if (!onSelectSection || sectionIds.length === 0) {
     return () => {}
@@ -458,8 +478,6 @@ export function setupSectionSelection(
   if (entries.length === 0) {
     return () => {}
   }
-
-  ensureHighlightStyles(doc)
 
   const normalizeSectionId = (sectionId: string): string => sectionId
 
@@ -516,41 +534,23 @@ export function setupSectionSelection(
     })
   }
 
-  let hoveredEl: Element | null = null
   let currentHoverId: string | null = null
 
   const clearHover = () => {
-    if (!hoveredEl) return
-    if (hoveredEl.classList.contains(SECTION_OVERLAY_CLASS)) {
-      hoveredEl.remove()
-    } else {
-      hoveredEl.classList.remove(SECTION_HOVER_CLASS)
+    if (currentHoverId === null) {
+      return
     }
-    hoveredEl = null
     currentHoverId = null
+    onHoverSection?.(null)
   }
 
-  const applyHover = (el: Element, sectionId: string) => {
+  const applyHover = (sectionId: string) => {
     // Prevent re-applying if already hovering this section
     if (currentHoverId === sectionId) return
 
     clearHover()
     currentHoverId = sectionId
-
-    const target = getHighlightTarget(sectionId, el)
-    if (target.classList.contains(SECTION_HIGHLIGHT_CLASS)) {
-      return
-    }
-    // Check if element has margins - if so, use overlay to include them
-    const computedStyle = getComputedStyle(el)
-    const hasMargins = (parseFloat(computedStyle.marginTop) || 0) > 0 ||
-                       (parseFloat(computedStyle.marginBottom) || 0) > 0
-    if ((target !== el && FOOTER_SECTION_IDS.has(sectionId.toLowerCase())) || hasMargins) {
-      hoveredEl = createOverlayForSection(target as HTMLElement, el, [SECTION_OVERLAY_CLASS, SECTION_HOVER_CLASS], hasMargins)
-    } else {
-      hoveredEl = target
-      target.classList.add(SECTION_HOVER_CLASS)
-    }
+    onHoverSection?.(sectionId)
   }
 
   const handleClick = (event: MouseEvent) => {
@@ -601,7 +601,7 @@ export function setupSectionSelection(
         const footerBar = doc.querySelector('.gh-footer-bar')
         if (footerBar && isInMarginArea(footerBar, event.clientX, event.clientY)) {
           if (currentHoverId !== 'footerBar') {
-            applyHover(footerBar, 'footerBar')
+            applyHover('footerBar')
           }
           return
         }
@@ -609,7 +609,7 @@ export function setupSectionSelection(
       // Show hover for announcement-bar
       if (match.id === 'announcement-bar') {
         if (currentHoverId !== 'announcement-bar') {
-          applyHover(match.element, 'announcement-bar')
+          applyHover('announcement-bar')
         }
         return
       }
@@ -618,7 +618,7 @@ export function setupSectionSelection(
     }
     // Compare against ID to prevent overlay recreation loop
     if (match.id !== currentHoverId) {
-      applyHover(match.element, match.id)
+      applyHover(match.id)
     }
   }, 50)
 
@@ -685,7 +685,7 @@ export function updateColorVariables(
   const root = doc.documentElement
   if (!root) return
 
-  const layoutWidth = pageLayout === 'narrow' ? '1000px' : '1200px'
+  const layoutWidth = pageLayout === 'narrow' ? '720px' : '1120px'
 
   root.style.setProperty('--ghost-accent-color', accentColor)
   root.style.setProperty('--background-color', backgroundColor)
@@ -698,34 +698,89 @@ export function updateColorVariables(
 }
 
 /**
- * Injects rendered Handlebars output into the preview iframe and applies
+ * Injects rendered Handlebars output into the preview document and applies
  * all editor-driven customizations (hidden sections, custom CSS, portal mock).
  *
- * @param iframeRef - Reference to the iframe hosting the preview.
- * @param html - Rendered HTML string to write into the iframe.
+ * @param html - Rendered HTML string to render into the preview document.
+ * @param doc - Preview iframe document.
+ * @param frameRoot - Portal root element preserved inside the iframe body.
  * @param options - Flags/configurations used during injection.
  */
-export function injectHtmlIntoIframe(
+function syncAttributes(source: Element, target: Element) {
+  const existingAttributes = Array.from(target.attributes)
+  existingAttributes.forEach((attr) => {
+    target.removeAttribute(attr.name)
+  })
+
+  Array.from(source.attributes).forEach((attr) => {
+    target.setAttribute(attr.name, attr.value)
+  })
+}
+
+function cloneNodeForDocument(doc: Document, node: Node): Node {
+  if (node.nodeType === Node.ELEMENT_NODE) {
+    const element = node as Element
+    if (element.tagName === 'SCRIPT') {
+      const source = element as HTMLScriptElement
+      const script = doc.createElement('script')
+      Array.from(source.attributes).forEach((attr) => {
+        script.setAttribute(attr.name, attr.value)
+      })
+      script.textContent = source.textContent
+      return script
+    }
+  }
+  return doc.importNode(node, true)
+}
+
+export function injectHtmlIntoFrame(
   html: string,
-  iframeRef: MutableRefObject<HTMLIFrameElement | null>,
+  doc: Document,
+  frameRoot: HTMLElement,
   options: InjectPreviewOptions
 ) {
-  const iframe = iframeRef.current
-  if (!iframe) return
+  if (!doc || !frameRoot) return
 
-  const doc = iframe.contentDocument || iframe.contentWindow?.document
-  if (!doc) return
+  const parser = new DOMParser()
+  const parsed = parser.parseFromString(html, 'text/html')
 
   // Save scroll position before any updates
   const scrollTop = doc.documentElement?.scrollTop || doc.body?.scrollTop || 0
   const scrollLeft = doc.documentElement?.scrollLeft || doc.body?.scrollLeft || 0
 
-  // Always do a full document write (simple and reliable)
-  doc.open()
-  doc.write(html)
-  doc.close()
+  // Sync <html> and <body> attributes
+  if (parsed.documentElement) {
+    syncAttributes(parsed.documentElement, doc.documentElement)
+  }
+  if (parsed.body) {
+    syncAttributes(parsed.body, doc.body)
+  }
 
-  // Wait for iframe to fully load before manipulating DOM
+  doc.title = parsed.title || doc.title
+
+  // Replace head content
+  if (doc.head) {
+    doc.head.innerHTML = ''
+    Array.from(parsed.head.childNodes).forEach((node) => {
+      doc.head.appendChild(cloneNodeForDocument(doc, node))
+    })
+  }
+
+  // Replace body content but preserve the portal root
+  const existingNodes = Array.from(doc.body.childNodes).filter((node) => node !== frameRoot)
+  existingNodes.forEach((node) => node.remove())
+
+  const fragment = doc.createDocumentFragment()
+  Array.from(parsed.body.childNodes).forEach((node) => {
+    fragment.appendChild(cloneNodeForDocument(doc, node))
+  })
+  if (frameRoot.parentElement === doc.body) {
+    doc.body.insertBefore(fragment, frameRoot)
+  } else {
+    doc.body.appendChild(fragment)
+    doc.body.appendChild(frameRoot)
+  }
+
   const applyPostProcessing = () => {
     ensurePreviewStyles(doc)
     applyCustomCss(doc, options.customCss)
@@ -733,61 +788,35 @@ export function injectHtmlIntoIframe(
     reorderTemplateInDOM(doc, options.templateOrder)
     reorderFooterInDOM(doc, options.footerOrder)
     setupPortalPreview(doc)
-    setupPreviewNavigation(doc, options.onNavigate)
     applyHeaderCustomizations(doc, options.headerOptions)
     syncAnnouncementBars(doc, options.announcementBars ?? [])
-    if (options.sectionIds && options.sectionIds.length && options.onSelectSection) {
-      setupSectionSelection(doc, options.sectionIds, options.onSelectSection)
-    }
     if (typeof options.selectedSectionId !== 'undefined') {
-      highlightSection(doc, options.selectedSectionId ?? null)
+      syncSelectedSectionAttribute(doc, options.selectedSectionId ?? null)
     }
   }
 
-  // Use DOMContentLoaded or readystatechange to ensure DOM is parsed
-  if (doc.readyState === 'complete') {
-    // Already loaded, apply immediately
-    const win = doc.defaultView
-    if (win) {
-      win.requestAnimationFrame(applyPostProcessing)
-    } else {
-      applyPostProcessing()
-    }
+  const win = doc.defaultView
+  if (win) {
+    win.requestAnimationFrame(applyPostProcessing)
   } else {
-    // Wait for load
-    iframe.addEventListener('load', () => {
-      const updatedDoc = iframe.contentDocument
-      if (updatedDoc) {
-        const win = updatedDoc.defaultView
-        if (win) {
-          win.requestAnimationFrame(applyPostProcessing)
-        } else {
-          applyPostProcessing()
-        }
-      }
-    }, { once: true })
+    applyPostProcessing()
   }
 
   // Restore scroll position after content is loaded
-  // Use multiple rAF frames and disable smooth scrolling for instant restoration
   if (scrollTop > 0 || scrollLeft > 0) {
-    const win = doc.defaultView
     if (win) {
       const restoreScroll = () => {
-        // Temporarily disable smooth scrolling
         const originalBehavior = doc.documentElement?.style.scrollBehavior
         if (doc.documentElement) {
           doc.documentElement.style.scrollBehavior = 'auto'
         }
 
-        // Use scrollTo for more reliable restoration
         win.scrollTo({
           top: scrollTop,
           left: scrollLeft,
           behavior: 'instant'
         })
 
-        // Restore original scroll behavior after a frame
         win.requestAnimationFrame(() => {
           if (doc.documentElement && originalBehavior !== undefined) {
             doc.documentElement.style.scrollBehavior = originalBehavior
@@ -795,7 +824,6 @@ export function injectHtmlIntoIframe(
         })
       }
 
-      // Wait for two animation frames to ensure content is painted
       win.requestAnimationFrame(() => {
         win.requestAnimationFrame(restoreScroll)
       })
@@ -866,12 +894,17 @@ export function syncAnnouncementBars(doc: Document, bars: Array<{ id: string; ht
   const nav = doc.querySelector<HTMLElement>('#gh-navigation, .gh-navigation')
   const viewport = doc.querySelector<HTMLElement>('.gh-viewport')
 
-  if (nav && nav.parentNode) {
-    // Insert in reverse order so first bar stays on top.
-    for (let i = parsedBars.length - 1; i >= 0; i -= 1) {
-      nav.parentNode.insertBefore(parsedBars[i].sectionElement, nav)
+  if (nav) {
+    const hiddenWrapper = nav.closest('.hidden')
+    const insertTarget = hiddenWrapper?.parentNode ?? nav.parentNode
+    if (insertTarget) {
+      const beforeNode = hiddenWrapper ?? nav
+      // Insert in reverse order so first bar stays on top.
+      for (let i = parsedBars.length - 1; i >= 0; i -= 1) {
+        insertTarget.insertBefore(parsedBars[i].sectionElement, beforeNode)
+      }
+      return
     }
-    return
   }
 
   if (viewport) {
@@ -977,52 +1010,15 @@ function hidePortalMock() {
   }
 }
 
-// Section highlight styles
-const SECTION_HIGHLIGHT_STYLE_ID = 'gh-editor-section-highlight'
-const SECTION_HIGHLIGHT_CLASS = 'gh-editor-section-highlighted'
-const SECTION_HOVER_CLASS = 'gh-editor-section-hover'
-const SECTION_OVERLAY_CLASS = 'gh-editor-section-overlay'
-const SECTION_HIGHLIGHT_COLOR = '#4dd831'
-const SECTION_HOVER_COLOR = 'rgba(77, 216, 49, 0.6)'
 const SELECTED_SECTION_ID_ATTRIBUTE = 'data-gh-editor-selected-section-id'
 // Canonical footer ids (lowercase) for preview-only overlays
 const FOOTER_SECTION_IDS = new Set(['footer', 'footerbar', 'footersignup'])
 
-function ensureHighlightStyles(doc: Document) {
-  let styleEl = doc.getElementById(SECTION_HIGHLIGHT_STYLE_ID) as HTMLStyleElement | null
-
-  const css = `
-    .${SECTION_OVERLAY_CLASS} {
-      position: absolute;
-      left: 0;
-      right: 0;
-      pointer-events: none;
-      border-radius: 0;
-      z-index: 2;
-    }
-    .${SECTION_HIGHLIGHT_CLASS} {
-      position: relative;
-      z-index: 1;
-      border-radius: 0;
-      outline: 2px solid ${SECTION_HIGHLIGHT_COLOR} !important;
-      outline-offset: -3px;
-    }
-    .${SECTION_HOVER_CLASS} {
-      position: relative;
-      z-index: 1;
-      border-radius: 0;
-      outline: 2px solid ${SECTION_HOVER_COLOR} !important;
-      outline-offset: -3px;
-    }
-  `
-
-  if (!styleEl) {
-    styleEl = doc.createElement('style')
-    styleEl.id = SECTION_HIGHLIGHT_STYLE_ID
-    styleEl.type = 'text/css'
-    styleEl.textContent = css
-    const head = doc.head || doc.body
-    head.appendChild(styleEl)
+export function syncSelectedSectionAttribute(doc: Document, sectionId: string | null) {
+  if (sectionId) {
+    doc.documentElement?.setAttribute(SELECTED_SECTION_ID_ATTRIBUTE, sectionId)
+  } else {
+    doc.documentElement?.removeAttribute(SELECTED_SECTION_ID_ATTRIBUTE)
   }
 }
 
@@ -1035,52 +1031,6 @@ function getHighlightTarget(sectionId: string, element: Element): Element {
     }
   }
   return element
-}
-
-function createOverlayForSection(
-  container: HTMLElement | null,
-  refElement: Element,
-  classNames: string[],
-  useViewportWidth = false
-): HTMLElement {
-  const doc = refElement.ownerDocument
-  const overlay = doc.createElement('div')
-  overlay.classList.add(...classNames)
-
-  // Get computed margins to include them in the overlay
-  const computedStyle = getComputedStyle(refElement)
-  const marginTop = parseFloat(computedStyle.marginTop) || 0
-  const marginBottom = parseFloat(computedStyle.marginBottom) || 0
-
-  if (useViewportWidth || !container) {
-    const refRect = refElement.getBoundingClientRect()
-    const scrollTop = (doc.documentElement?.scrollTop ?? 0) || (doc.body?.scrollTop ?? 0)
-    overlay.style.position = 'absolute'
-    overlay.style.top = `${refRect.top + scrollTop - marginTop}px`
-    overlay.style.left = '0'
-    overlay.style.right = '0'
-    overlay.style.width = '100%'
-    overlay.style.pointerEvents = 'none'
-    doc.body.appendChild(overlay)
-    overlay.style.height = `${refRect.height + marginTop + marginBottom}px`
-    return overlay
-  }
-
-  const containerRect = container.getBoundingClientRect()
-  const refRect = refElement.getBoundingClientRect()
-  const scrollTop = container.scrollTop ?? 0
-  const top = refRect.top - containerRect.top + scrollTop - marginTop
-  overlay.style.top = `${top}px`
-  overlay.style.height = `${refRect.height + marginTop + marginBottom}px`
-  overlay.style.position = 'absolute'
-  overlay.style.left = '0'
-  overlay.style.right = '0'
-  overlay.style.pointerEvents = 'none'
-  if (getComputedStyle(container).position === 'static') {
-    container.style.position = 'relative'
-  }
-  container.appendChild(overlay)
-  return overlay
 }
 
 /**
@@ -1104,130 +1054,4 @@ export function scrollToSection(doc: Document, sectionId: string | null) {
     behavior: 'smooth',
     block: 'nearest',
   })
-}
-
-export function highlightSection(
-  doc: Document,
-  sectionId: string | null,
-  options?: { scroll?: boolean }
-) {
-  const shouldScroll = options?.scroll ?? true
-
-  if (sectionId) {
-    doc.documentElement?.setAttribute(SELECTED_SECTION_ID_ATTRIBUTE, sectionId)
-  } else {
-    doc.documentElement?.removeAttribute(SELECTED_SECTION_ID_ATTRIBUTE)
-  }
-
-  // Remove existing highlights
-  const existing = doc.querySelectorAll(`.${SECTION_HIGHLIGHT_CLASS}, .${SECTION_OVERLAY_CLASS}`)
-  existing.forEach((el) => {
-    el.classList.remove(SECTION_HIGHLIGHT_CLASS)
-    if (el.classList.contains(SECTION_OVERLAY_CLASS)) {
-      el.remove()
-    }
-  })
-
-  if (!sectionId) {
-    return
-  }
-
-  // Ensure highlight styles are present
-  ensureHighlightStyles(doc)
-
-  // Find the section element
-  const selectors = getSectionSelector(sectionId)
-  let element: Element | null = null
-
-  for (const selector of selectors) {
-    element = doc.querySelector(selector)
-    if (element) break
-  }
-
-  if (!element) {
-    return
-  }
-
-  const target = getHighlightTarget(sectionId, element)
-
-  // Check if element has margins - if so, use overlay to include them
-  const computedStyle = getComputedStyle(element)
-  const hasMargins = (parseFloat(computedStyle.marginTop) || 0) > 0 ||
-                     (parseFloat(computedStyle.marginBottom) || 0) > 0
-
-  // Add highlight class (use overlay for footer or sections with margins)
-  if ((target !== element && FOOTER_SECTION_IDS.has(sectionId.toLowerCase())) || hasMargins) {
-    createOverlayForSection(target as HTMLElement, element, [SECTION_OVERLAY_CLASS, SECTION_HIGHLIGHT_CLASS], hasMargins)
-  } else {
-    target.classList.add(SECTION_HIGHLIGHT_CLASS)
-  }
-
-  // Scroll into view only when explicitly requested (e.g., new selection, not padding updates)
-  if (shouldScroll) {
-    target.scrollIntoView({
-      behavior: 'smooth',
-      block: 'nearest',
-    })
-  }
-}
-
-/**
- * Highlights a section in the preview iframe on hover (from sidebar).
- * Uses a subtler highlight style than selection.
- *
- * @param doc - Document instance inside the preview iframe
- * @param sectionId - The section ID to highlight (null to clear hover highlight)
- */
-export function highlightHoveredSection(
-  doc: Document,
-  sectionId: string | null
-) {
-  // Remove existing hover highlights (but not selection highlights)
-  const existing = doc.querySelectorAll(`.${SECTION_HOVER_CLASS}`)
-  existing.forEach((el) => {
-    if (el.classList.contains(SECTION_OVERLAY_CLASS)) {
-      el.remove()
-    } else {
-      el.classList.remove(SECTION_HOVER_CLASS)
-    }
-  })
-
-  if (!sectionId) {
-    return
-  }
-
-  // Ensure highlight styles are present
-  ensureHighlightStyles(doc)
-
-  // Find the section element
-  const selectors = getSectionSelector(sectionId)
-  let element: Element | null = null
-
-  for (const selector of selectors) {
-    element = doc.querySelector(selector)
-    if (element) break
-  }
-
-  if (!element) {
-    return
-  }
-
-  const target = getHighlightTarget(sectionId, element)
-
-  // Don't apply hover if already selected
-  if (target.classList.contains(SECTION_HIGHLIGHT_CLASS)) {
-    return
-  }
-
-  // Check if element has margins - if so, use overlay to include them
-  const computedStyle = getComputedStyle(element)
-  const hasMargins = (parseFloat(computedStyle.marginTop) || 0) > 0 ||
-                     (parseFloat(computedStyle.marginBottom) || 0) > 0
-
-  // Add hover class (use overlay for footer or sections with margins)
-  if ((target !== element && FOOTER_SECTION_IDS.has(sectionId.toLowerCase())) || hasMargins) {
-    createOverlayForSection(target as HTMLElement, element, [SECTION_OVERLAY_CLASS, SECTION_HOVER_CLASS], hasMargins)
-  } else {
-    target.classList.add(SECTION_HOVER_CLASS)
-  }
 }

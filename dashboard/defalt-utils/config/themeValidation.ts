@@ -31,6 +31,7 @@ const pageConfigSchema = z.object({
 const themeDocumentSchema = z.object({
   name: z.string().optional(),
   version: z.number().optional(),
+  schemaVersion: z.number().optional(),
   accentColor: z.string().optional(),
   packageJson: z.string().optional(),
   header: z.object({

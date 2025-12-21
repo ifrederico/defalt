@@ -8,22 +8,41 @@
 import { z } from 'zod'
 import type { SettingSchema } from '../../engine/schemaTypes.js'
 
+export const NAVIGATION_LAYOUT_VALUES = ['Logo in the middle', 'Logo on the left', 'Stacked'] as const
+const STICKY_HEADER_VALUES = ['Always', 'Scroll up', 'Never'] as const
+const HEADER_TYPOGRAPHY_CASE_VALUES = ['default', 'uppercase'] as const
+
+export const NAVIGATION_LAYOUT_OPTIONS = NAVIGATION_LAYOUT_VALUES.map((value) => ({
+  label: value,
+  value
+})) as const
+
+const STICKY_HEADER_OPTIONS = STICKY_HEADER_VALUES.map((value) => ({
+  label: value,
+  value
+})) as const
+
+const HEADER_TYPOGRAPHY_CASE_OPTIONS = [
+  { label: 'Case sensitive', value: HEADER_TYPOGRAPHY_CASE_VALUES[0], icon: 'CaseSensitive' },
+  { label: 'Uppercase', value: HEADER_TYPOGRAPHY_CASE_VALUES[1], icon: 'CaseUpper' }
+] as const
+
 // =============================================================================
 // Zod Config Schema
 // =============================================================================
 
 export const headerConfigSchema = z.object({
   // Navigation layout - matches Ghost Source theme options
-  navigationLayout: z.enum(['Logo in the middle', 'Logo on the left', 'Stacked']).default('Logo in the middle'),
+  navigationLayout: z.enum(NAVIGATION_LAYOUT_VALUES).default('Logo in the middle'),
 
   // Sticky header behavior
-  stickyHeader: z.enum(['Always', 'Scroll up', 'Never']).default('Scroll up'),
+  stickyHeader: z.enum(STICKY_HEADER_VALUES).default('Scroll up'),
 
   // Search icon visibility
   searchEnabled: z.boolean().default(true),
 
   // Typography case
-  typographyCase: z.enum(['default', 'uppercase']).default('default')
+  typographyCase: z.enum(HEADER_TYPOGRAPHY_CASE_VALUES).default('default')
 })
 
 export type HeaderSectionConfig = z.infer<typeof headerConfigSchema>
@@ -42,22 +61,14 @@ const appearanceSettings: SettingSchema[] = [
     type: 'select',
     id: 'navigationLayout',
     label: 'Layout',
-    options: [
-      { label: 'Logo in the middle', value: 'Logo in the middle' },
-      { label: 'Logo on the left', value: 'Logo on the left' },
-      { label: 'Stacked', value: 'Stacked' }
-    ],
+    options: [...NAVIGATION_LAYOUT_OPTIONS],
     info: 'Choose how your logo and navigation items are arranged.'
   },
   {
     type: 'select',
     id: 'stickyHeader',
     label: 'Sticky header',
-    options: [
-      { label: 'Always', value: 'Always' },
-      { label: 'Scroll up', value: 'Scroll up' },
-      { label: 'Never', value: 'Never' }
-    ]
+    options: [...STICKY_HEADER_OPTIONS]
   }
 ]
 
@@ -85,10 +96,7 @@ const typographySettings: SettingSchema[] = [
     id: 'typographyCase',
     label: 'Case',
     iconOnly: true,
-    options: [
-      { label: 'Case sensitive', value: 'default', icon: 'CaseSensitive' },
-      { label: 'Uppercase', value: 'uppercase', icon: 'CaseUpper' }
-    ]
+    options: [...HEADER_TYPOGRAPHY_CASE_OPTIONS]
   }
 ]
 

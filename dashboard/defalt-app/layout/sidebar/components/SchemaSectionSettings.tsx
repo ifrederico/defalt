@@ -3,6 +3,7 @@ import * as Separator from '@radix-ui/react-separator'
 import { ChevronUp, ChevronDown, CircleHelp } from 'lucide-react'
 import { getSectionDefinition, type PaddingControls, type SectionConfigSchema } from '@defalt/sections/engine'
 import { SliderField, SettingSection } from '@defalt/ui'
+import { SPACING_SLIDER_PROPS } from '../spacing'
 import { groupSettingsByHeader, renderSettingInput } from './settingsRenderUtils'
 
 type SchemaSectionSettingsProps = {
@@ -127,20 +128,14 @@ export function SchemaSectionSettings({
                 <SliderField
                   label="Top"
                   value={padding.top}
-                  min={0}
-                  max={200}
-                  step={1}
-                  unit="px"
+                  {...SPACING_SLIDER_PROPS}
                   onChange={(value) => onPaddingChange?.('top', value)}
                   onCommit={(value) => onPaddingCommit?.('top', value)}
                 />
                 <SliderField
                   label="Bottom"
                   value={padding.bottom}
-                  min={0}
-                  max={200}
-                  step={1}
-                  unit="px"
+                  {...SPACING_SLIDER_PROPS}
                   onChange={(value) => onPaddingChange?.('bottom', value)}
                   onCommit={(value) => onPaddingCommit?.('bottom', value)}
                 />
@@ -149,20 +144,14 @@ export function SchemaSectionSettings({
                     <SliderField
                       label="Left"
                       value={padding.left ?? 0}
-                      min={0}
-                      max={200}
-                      step={1}
-                      unit="px"
+                      {...SPACING_SLIDER_PROPS}
                       onChange={(value) => onPaddingChange?.('left', value)}
                       onCommit={(value) => onPaddingCommit?.('left', value)}
                     />
                     <SliderField
                       label="Right"
                       value={padding.right ?? 0}
-                      min={0}
-                      max={200}
-                      step={1}
-                      unit="px"
+                      {...SPACING_SLIDER_PROPS}
                       onChange={(value) => onPaddingChange?.('right', value)}
                       onCommit={(value) => onPaddingCommit?.('right', value)}
                     />
@@ -287,20 +276,14 @@ export function SchemaSectionSettings({
             <SliderField
               label="Top"
               value={padding.top}
-              min={0}
-              max={200}
-              step={1}
-              unit="px"
+              {...SPACING_SLIDER_PROPS}
               onChange={(value) => onPaddingChange?.('top', value)}
               onCommit={(value) => onPaddingCommit?.('top', value)}
             />
             <SliderField
               label="Bottom"
               value={padding.bottom}
-              min={0}
-              max={200}
-              step={1}
-              unit="px"
+              {...SPACING_SLIDER_PROPS}
               onChange={(value) => onPaddingChange?.('bottom', value)}
               onCommit={(value) => onPaddingCommit?.('bottom', value)}
             />
@@ -309,20 +292,14 @@ export function SchemaSectionSettings({
                 <SliderField
                   label="Left"
                   value={padding.left ?? 0}
-                  min={0}
-                  max={200}
-                  step={1}
-                  unit="px"
+                  {...SPACING_SLIDER_PROPS}
                   onChange={(value) => onPaddingChange?.('left', value)}
                   onCommit={(value) => onPaddingCommit?.('left', value)}
                 />
                 <SliderField
                   label="Right"
                   value={padding.right ?? 0}
-                  min={0}
-                  max={200}
-                  step={1}
-                  unit="px"
+                  {...SPACING_SLIDER_PROPS}
                   onChange={(value) => onPaddingChange?.('right', value)}
                   onCommit={(value) => onPaddingCommit?.('right', value)}
                 />
