@@ -1044,8 +1044,83 @@ export function scrollToSection(doc: Document, sectionId: string | null) {
   if (!element) return
 
   const target = getHighlightTarget(sectionId, element)
-  target.scrollIntoView({
-    behavior: 'smooth',
-    block: 'nearest',
-  })
+  const win = doc.defaultView
+  if (!win) {
+    target.scrollIntoView({ behavior: 'auto', block: 'nearest' })
+    return
+  }
+
+  const scrollTargetTop = getNearestScrollTop(doc, target)
+  const scrollingElement = doc.scrollingElement ?? doc.documentElement
+  const startTop = scrollingElement.scrollTop
+  if (Math.abs(scrollTargetTop - startTop) < 1) return
+
+  smoothScrollTo(win, startTop, scrollTargetTop, scrollingElement.scrollLeft, SCROLL_DURATION_MS)
+}
+
+const SCROLL_DURATION_MS = 300
+
+const easeOutCubic = (t: number) => 1 - Math.pow(1 - t, 3)
+
+const activeScrollTokens = new WeakMap<Window, { cancelled: boolean }>()
+
+function smoothScrollTo(
+  win: Window,
+  startTop: number,
+  targetTop: number,
+  startLeft: number,
+  durationMs: number
+) {
+  const token = { cancelled: false }
+  const previousToken = activeScrollTokens.get(win)
+  if (previousToken) previousToken.cancelled = true
+  activeScrollTokens.set(win, token)
+
+  if (durationMs <= 0) {
+    win.scrollTo({ top: targetTop, left: startLeft })
+    return
+  }
+
+  const startTime = win.performance.now()
+  const deltaTop = targetTop - startTop
+
+  const step = (now: number) => {
+    if (token.cancelled) return
+    const elapsed = now - startTime
+    const progress = Math.min(1, elapsed / durationMs)
+    const eased = easeOutCubic(progress)
+    win.scrollTo({ top: startTop + deltaTop * eased, left: startLeft })
+    if (progress < 1) {
+      win.requestAnimationFrame(step)
+    }
+  }
+
+  win.requestAnimationFrame(step)
+}
+
+function getNearestScrollTop(doc: Document, target: Element): number {
+  const win = doc.defaultView
+  const scrollingElement = doc.scrollingElement ?? doc.documentElement
+  if (!win) return scrollingElement.scrollTop
+
+  const rect = target.getBoundingClientRect()
+  const viewportHeight = win.innerHeight
+  const startTop = scrollingElement.scrollTop
+  const styles = win.getComputedStyle(doc.documentElement)
+  const scrollPaddingTop = parseFloat(styles.scrollPaddingTop || '0') || 0
+  const scrollPaddingBottom = parseFloat(styles.scrollPaddingBottom || '0') || 0
+
+  let nextTop = startTop
+
+  const topThreshold = scrollPaddingTop
+  const bottomThreshold = viewportHeight - scrollPaddingBottom
+
+  if (rect.top < topThreshold) {
+    nextTop = startTop + (rect.top - topThreshold)
+  } else if (rect.bottom > bottomThreshold) {
+    nextTop = startTop + (rect.bottom - bottomThreshold)
+  }
+
+  const maxTop = Math.max(0, scrollingElement.scrollHeight - viewportHeight)
+  return Math.min(Math.max(nextTop, 0), maxTop)
 }

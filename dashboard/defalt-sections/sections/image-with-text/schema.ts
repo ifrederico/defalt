@@ -31,6 +31,9 @@ export const imageWithTextConfigSchema = z.object({
   pageTitle: z.boolean().default(true),
   ...textAlignmentShape,
   ...transparentBackgroundShape,
+  innerBackgroundColor: z.string().default('transparent'),
+  innerBackgroundPadding: z.number().min(0).max(120).default(0),
+  innerBackgroundRadius: z.number().min(0).max(96).default(0),
   ...imageAppearanceShape,
 
   // Layout
@@ -46,6 +49,11 @@ export const imageWithTextSettingsSchema: SettingSchema[] = [
   { type: 'checkbox', id: 'pageTitle', label: 'Page title' },
   createTextAlignmentSetting('Title alignment'),
   transparentBackgroundSetting,
+
+  { type: 'header', id: 'content-card-header', label: 'Content card' },
+  { type: 'color', id: 'innerBackgroundColor', label: 'Background', allowTransparent: true },
+  { type: 'range', id: 'innerBackgroundPadding', label: 'Padding', min: 0, max: 120, step: 1, unit: 'px' },
+  { type: 'range', id: 'innerBackgroundRadius', label: 'Radius', min: 0, max: 96, step: 1, unit: 'px' },
 
   { type: 'header', id: 'layout-header', label: 'Layout' },
   invertSetting,

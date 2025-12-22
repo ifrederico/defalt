@@ -374,6 +374,9 @@ export function generateHomeTemplate(
 
         const containerPaddingX = resolveContainerPaddingX(imageTextConfig.contentWidth)
         const backgroundColor = sanitizeHexColor(imageTextConfig.backgroundColor, 'transparent')
+        const innerBackgroundColor = sanitizeHexColor(imageTextConfig.innerBackgroundColor, 'transparent')
+        const innerBackgroundPadding = Math.max(0, Math.min(120, Math.round(imageTextConfig.innerBackgroundPadding)))
+        const innerBackgroundRadius = Math.max(0, Math.min(96, Math.round(imageTextConfig.innerBackgroundRadius)))
         const internalTag = formatInternalTag(imageTextConfig.tags?.primary) || resolveImageWithTextDefaultTag(key)
         const tagFilter = toTagFilter(internalTag)
         const imageOnRight = imageTextConfig.invert === true || imageTextConfig.imagePosition === 'right'
@@ -381,7 +384,7 @@ export function generateHomeTemplate(
         const imageAspectRatio = resolveImageAspectRatio(imageTextConfig.imageAspect)
         const imageBorderRadius = Math.max(0, Math.min(96, Math.round(imageTextConfig.imageBorderRadius)))
 
-        sectionPartial = `{{> "defalt-image-with-text" sectionId=${JSON.stringify(key)} sectionStyle=${JSON.stringify(sectionStyle)} contentWidth=${JSON.stringify(imageTextConfig.contentWidth)} containerPaddingX=${JSON.stringify(containerPaddingX)} backgroundColor=${JSON.stringify(backgroundColor)} textAlignment=${JSON.stringify(imageTextConfig.textAlignment)} pageTitle=${imageTextConfig.pageTitle} imageOnRight=${imageOnRight} imageColumn=${JSON.stringify(imageColumn)} textColumn=${JSON.stringify(textColumn)} imageAspectRatio=${JSON.stringify(imageAspectRatio)} imageBorderRadius=${imageBorderRadius} tagFilter=${JSON.stringify(tagFilter)} internalTag=${JSON.stringify(internalTag)} }}`
+        sectionPartial = `{{> "defalt-image-with-text" sectionId=${JSON.stringify(key)} sectionStyle=${JSON.stringify(sectionStyle)} contentWidth=${JSON.stringify(imageTextConfig.contentWidth)} containerPaddingX=${JSON.stringify(containerPaddingX)} backgroundColor=${JSON.stringify(backgroundColor)} innerBackgroundColor=${JSON.stringify(innerBackgroundColor)} innerBackgroundPadding=${innerBackgroundPadding} innerBackgroundRadius=${innerBackgroundRadius} textAlignment=${JSON.stringify(imageTextConfig.textAlignment)} pageTitle=${imageTextConfig.pageTitle} imageOnRight=${imageOnRight} imageColumn=${JSON.stringify(imageColumn)} textColumn=${JSON.stringify(textColumn)} imageAspectRatio=${JSON.stringify(imageAspectRatio)} imageBorderRadius=${imageBorderRadius} tagFilter=${JSON.stringify(tagFilter)} internalTag=${JSON.stringify(internalTag)} }}`
       }
 
       if (sectionVisible) {

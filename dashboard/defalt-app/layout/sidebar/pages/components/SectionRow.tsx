@@ -74,6 +74,7 @@ export const SectionRow = memo(function SectionRow({
   const handleHighlighted = handleHovered || handleFocused
   const labelWeightClass = isSelected ? 'font-semibold' : 'font-medium'
   const rowToneClass = isSelected || rowHovered ? 'text-foreground' : 'text-[#626D79]'
+  const hoverScrollDelayMs = 300
 
   // @dnd-kit sortable setup with Puck-style transition
   const { ref: sortableRef, isDragging, isDropTarget } = useSortable({
@@ -156,11 +157,11 @@ export const SectionRow = memo(function SectionRow({
         if (!isParentDragging) {
           setRowHovered(true)
           onSectionHover?.(item.id)
-          // Start scroll timer (750ms delay)
+          // Start scroll timer (300ms delay)
           if (onScrollToSection) {
             scrollTimerRef.current = setTimeout(() => {
               onScrollToSection(item.id)
-            }, 750)
+            }, hoverScrollDelayMs)
           }
         }
       }}
