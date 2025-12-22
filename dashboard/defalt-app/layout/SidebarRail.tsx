@@ -1,5 +1,5 @@
 import { useState, useCallback, memo, useEffect, useMemo } from 'react'
-import { PanelsTopLeft, Settings, CircleUserRound, MessageCircleQuestion, CloudCog, CloudCheck, X, RefreshCw, Tags } from 'lucide-react'
+import { PanelsTopLeft, Settings, CircleUserRound, CloudCog, CloudCheck, X, RefreshCw, Tags } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import * as Dialog from '@defalt/ui/primitives/Dialog'
 import { FloatingTooltip } from '@defalt/ui'
@@ -66,12 +66,6 @@ export function SidebarRail() {
   }, [lastGhostFetch, tick])
 
   const isConnected = dataSource === 'ghost' && lastGhostFetch !== null
-
-  const handleSupport = useCallback(() => {
-    if (typeof window !== 'undefined') {
-      window.open('mailto:support@defalt.org?subject=Get%20help', '_blank')
-    }
-  }, [])
 
   const handleSectionsClick = useCallback(() => setActiveTab('sections'), [setActiveTab])
   const handleSettingsClick = useCallback(() => setActiveTab('settings'), [setActiveTab])
@@ -172,12 +166,6 @@ export function SidebarRail() {
 
         {/* Divider */}
         <div className="w-6 h-px bg-hover my-2"></div>
-
-        <IconButton
-          icon={MessageCircleQuestion}
-          label="Get help"
-          onClick={handleSupport}
-        />
 
         <IconButton
           icon={CircleUserRound}

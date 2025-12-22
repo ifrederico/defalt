@@ -4,6 +4,8 @@ import {
   Ellipsis,
   Archive,
   UploadCloud,
+  Eye,
+  MessageCircleQuestion,
   RotateCcw,
   Trash2,
   Undo2,
@@ -12,11 +14,12 @@ import {
   ChevronRight,
   Check
 } from 'lucide-react'
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu'
 import { AppButton, Select } from '@defalt/ui'
 import { useWorkspaceContext } from '../contexts/useWorkspaceContext'
 import { useHistoryContext } from '../contexts/useHistoryContext'
+import { useToast } from '../components/ToastContext'
 import type { PreviewZoom } from '../hooks/usePreview'
 import type { WorkspacePage } from '../types/workspace'
 
@@ -37,6 +40,7 @@ const zoomOptions: PreviewZoom[] = [50, 75, 100, 125, 150]
 
 export function TopBar({ canDownload = true, onClearCache }: TopBarProps) {
   const [menuOpen, setMenuOpen] = useState(false)
+  const { showToast } = useToast()
   const {
     currentPage,
     setCurrentPage,
@@ -91,6 +95,42 @@ export function TopBar({ canDownload = true, onClearCache }: TopBarProps) {
     'flex items-center gap-2 px-3 py-2 text-md text-foreground transition-colors outline-none data-[highlighted]:bg-subtle data-[disabled]:text-placeholder data-[disabled]:pointer-events-none'
   const subTriggerClass =
     'flex items-center gap-2 px-3 py-2 text-md text-foreground transition-colors outline-none data-[highlighted]:bg-subtle data-[state=open]:bg-subtle data-[disabled]:text-placeholder data-[disabled]:pointer-events-none'
+  const handleSupport = useCallback(() => {
+    if (typeof window === 'undefined') {
+      return
+    }
+    window.open('mailto:support@defalt.org?subject=Get%20help', '_blank')
+  }, [])
+  const handleViewPreview = useCallback(() => {
+    if (typeof window === 'undefined') {
+      return
+    }
+    const iframe = document.querySelector('iframe[title="Theme preview"]') as HTMLIFrameElement | null
+    const frameDoc = iframe?.contentDocument
+    if (!frameDoc) {
+      showToast('Preview not ready', 'Wait for the preview to load and try again.', 'error')
+      return
+    }
+    const htmlClone = frameDoc.documentElement.cloneNode(true) as HTMLHtmlElement
+    const portalRoot = htmlClone.querySelector('[data-defalt-frame]')
+    if (portalRoot) {
+      portalRoot.remove()
+    }
+    const head = htmlClone.querySelector('head')
+    if (head && !head.querySelector('base')) {
+      const base = frameDoc.createElement('base')
+      base.setAttribute('href', `${window.location.origin}/`)
+      head.insertBefore(base, head.firstChild)
+    }
+    const previewWindow = window.open('', '_blank')
+    if (!previewWindow) {
+      showToast('Popup blocked', 'Allow popups to open the preview.', 'error')
+      return
+    }
+    previewWindow.document.open()
+    previewWindow.document.write(`<!DOCTYPE html>${htmlClone.outerHTML}`)
+    previewWindow.document.close()
+  }, [showToast])
 
   return (
     <header
@@ -337,6 +377,30 @@ export function TopBar({ canDownload = true, onClearCache }: TopBarProps) {
               sideOffset={4}
               align="end"
             >
+              <DropdownMenu.Item
+                onSelect={(event) => {
+                  event.preventDefault()
+                  setMenuOpen(false)
+                  handleSupport()
+                }}
+                className="h-9 px-2 rounded-md outline-none flex items-center gap-2 font-md text-foreground hover:bg-subtle data-[highlighted]:bg-subtle cursor-pointer"
+              >
+                <MessageCircleQuestion size={16} strokeWidth={1.5} />
+                <span>Get help</span>
+              </DropdownMenu.Item>
+
+              <DropdownMenu.Item
+                onSelect={(event) => {
+                  event.preventDefault()
+                  setMenuOpen(false)
+                  handleViewPreview()
+                }}
+                className="h-9 px-2 rounded-md outline-none flex items-center gap-2 font-md text-foreground hover:bg-subtle data-[highlighted]:bg-subtle cursor-pointer"
+              >
+                <Eye size={16} strokeWidth={1.5} />
+                <span>View</span>
+              </DropdownMenu.Item>
+
               <DropdownMenu.Item
                 onSelect={(event) => {
                   event.preventDefault()
