@@ -144,6 +144,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     removeTemplateSection,
     duplicateTemplateSection,
     toggleSectionVisibility,
+    setSectionsVisibilityState,
     sectionPadding,
     previewSectionPaddingChange,
     commitSectionPaddingChange,
@@ -682,10 +683,11 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     reorderTemplateItems,
     reorderFooterItems,
     toggleSectionVisibility: handleToggleSectionVisibility,
+    setSectionsVisibilityState,
     templateOrder: memoizedTemplateOrder,
     footerOrder: memoizedFooterOrder,
     customTemplateSections: customTemplateSectionList,
-  }), [templateDefinitions, handleAddTemplateSection, handleDuplicateTemplateSection, handleRemoveTemplateSection, customSections, aiSections, addAiSection, removeAiSection, renameAiSection, reorderAiSections, sectionPadding, handleSectionPaddingChange, handleSectionPaddingCommit, sectionMargins, handleSectionMarginChange, handleSectionMarginCommit, updateCustomSectionConfig, sectionVisibility, templateItems, footerItems, reorderTemplateItems, reorderFooterItems, handleToggleSectionVisibility, memoizedTemplateOrder, memoizedFooterOrder, customTemplateSectionList])
+  }), [templateDefinitions, handleAddTemplateSection, handleDuplicateTemplateSection, handleRemoveTemplateSection, customSections, aiSections, addAiSection, removeAiSection, renameAiSection, reorderAiSections, sectionPadding, handleSectionPaddingChange, handleSectionPaddingCommit, sectionMargins, handleSectionMarginChange, handleSectionMarginCommit, updateCustomSectionConfig, sectionVisibility, templateItems, footerItems, reorderTemplateItems, reorderFooterItems, handleToggleSectionVisibility, setSectionsVisibilityState, memoizedTemplateOrder, memoizedFooterOrder, customTemplateSectionList])
 
   const headerControlState = useMemo(() => ({
     navigationLayoutValue: navigationLayout,

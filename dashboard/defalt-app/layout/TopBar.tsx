@@ -7,7 +7,10 @@ import {
   RotateCcw,
   Trash2,
   Undo2,
-  Redo2
+  Redo2,
+  ChevronDown,
+  ChevronRight,
+  Check
 } from 'lucide-react'
 import { useState } from 'react'
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu'
@@ -15,23 +18,20 @@ import { AppButton, Select } from '@defalt/ui'
 import { useWorkspaceContext } from '../contexts/useWorkspaceContext'
 import { useHistoryContext } from '../contexts/useHistoryContext'
 import type { PreviewZoom } from '../hooks/usePreview'
+import type { WorkspacePage } from '../types/workspace'
 
 const GHOST_URL = import.meta.env.VITE_GHOST_URL ?? '/'
-
-type PageType = 'home' | 'about' | 'post'
 
 type TopBarProps = {
   canDownload?: boolean
   onClearCache?: () => void
 }
 
-const pageLabels: Record<PageType, string> = {
+const pageLabels: Record<WorkspacePage, string> = {
   home: 'Homepage',
   about: 'Page',
   post: 'Post',
 }
-
-const pageOrder: PageType[] = ['home', 'about', 'post']
 
 const zoomOptions: PreviewZoom[] = [50, 75, 100, 125, 150]
 
@@ -55,6 +55,7 @@ export function TopBar({ canDownload = true, onClearCache }: TopBarProps) {
     openResetDialog,
     // Ghost data
     dataSource,
+    ghostDataLoading,
     availablePosts,
     availablePages,
     selectedPostIndex,
@@ -66,9 +67,30 @@ export function TopBar({ canDownload = true, onClearCache }: TopBarProps) {
   const undoDisabled = !canUndo || isInteractionBlocked
   const redoDisabled = !canRedo || isInteractionBlocked
   const showGhostSelectors = dataSource === 'ghost'
-  const showPostSelector = showGhostSelectors && currentPage === 'post' && availablePosts.length > 0
-  const showPageSelector = showGhostSelectors && currentPage === 'about' && availablePages.length > 0
-  const showGhostPlaceholder = showGhostSelectors && !showPostSelector && !showPageSelector
+  const resolvedPostIndex = availablePosts.length > 0
+    ? Math.min(selectedPostIndex, availablePosts.length - 1)
+    : -1
+  const resolvedPageIndex = availablePages.length > 0
+    ? Math.min(selectedPageIndex, availablePages.length - 1)
+    : -1
+  const selectedPost = resolvedPostIndex >= 0 ? availablePosts[resolvedPostIndex] : null
+  const selectedPage = resolvedPageIndex >= 0 ? availablePages[resolvedPageIndex] : null
+  const currentPageLabel = (() => {
+    if (!showGhostSelectors) {
+      return pageLabels[currentPage]
+    }
+    if (currentPage === 'about' && selectedPage) {
+      return `Page: ${selectedPage.slug || selectedPage.title || 'Untitled'}`
+    }
+    if (currentPage === 'post' && selectedPost) {
+      return `Post: ${selectedPost.slug || selectedPost.title || 'Untitled'}`
+    }
+    return pageLabels[currentPage]
+  })()
+  const menuItemClass =
+    'flex items-center gap-2 px-3 py-2 text-md text-foreground transition-colors outline-none data-[highlighted]:bg-subtle data-[disabled]:text-placeholder data-[disabled]:pointer-events-none'
+  const subTriggerClass =
+    'flex items-center gap-2 px-3 py-2 text-md text-foreground transition-colors outline-none data-[highlighted]:bg-subtle data-[state=open]:bg-subtle data-[disabled]:text-placeholder data-[disabled]:pointer-events-none'
 
   return (
     <header
@@ -86,79 +108,161 @@ export function TopBar({ canDownload = true, onClearCache }: TopBarProps) {
         <span className="hidden md:inline text-placeholder">/</span>
 
         <div className="relative w-[180px] -translate-y-[1px]">
-          <Select
-            selected={currentPage}
-            items={pageOrder.map((page) => ({
-              value: page,
-              label: pageLabels[page],
-            }))}
-            onSelect={setCurrentPage}
-            triggerClassName="flex h-[38px] w-full items-center justify-between gap-1.5 rounded-md bg-subtle px-3 text-md text-foreground transition-colors hover:bg-subtle/80 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ring-offset-surface"
-            contentClassName="bg-surface rounded-md shadow-lg overflow-hidden min-w-[180px] z-[100]"
-            itemClassName="flex items-center gap-2 px-3 py-2 text-md text-foreground transition-colors hover:bg-subtle outline-none data-[highlighted]:bg-subtle"
-          />
-        </div>
-
-        {/* Content selector dropdown - shows when viewing post/page with Ghost API */}
-        {showPostSelector && (
-          <>
-            <span className="text-placeholder">/</span>
-            <div className="relative w-[180px] -translate-y-[1px]">
-              <Select
-                selected={availablePosts[selectedPostIndex]?.id || availablePosts[0]?.id}
-                items={availablePosts.map((post) => ({
-                  value: post.id,
-                  label: post.slug.length > 9 ? `${post.slug.slice(0, 9)}…` : post.slug
-                }))}
-                onSelect={(id) => {
-                  const index = availablePosts.findIndex((p) => p.id === id)
-                  if (index !== -1) setSelectedPostIndex(index)
-                }}
-                triggerClassName="flex h-[38px] w-full items-center justify-between gap-1.5 rounded-md bg-subtle px-3 text-md text-foreground transition-colors hover:bg-subtle/80 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ring-offset-surface"
-                contentClassName="bg-surface rounded-md shadow-lg overflow-hidden min-w-[180px] max-h-[300px] overflow-y-auto z-[100]"
-                itemClassName="flex items-center gap-2 px-3 py-2 text-md text-foreground transition-colors hover:bg-subtle outline-none data-[highlighted]:bg-subtle"
-              />
-            </div>
-          </>
-        )}
-
-        {showPageSelector && (
-          <>
-            <span className="text-placeholder">/</span>
-            <div className="relative w-[180px] -translate-y-[1px]">
-              <Select
-                selected={availablePages[selectedPageIndex]?.id || availablePages[0]?.id}
-                items={availablePages.map((page) => ({
-                  value: page.id,
-                  label: page.slug.length > 9 ? `${page.slug.slice(0, 9)}…` : page.slug
-                }))}
-                onSelect={(id) => {
-                  const index = availablePages.findIndex((p) => p.id === id)
-                  if (index !== -1) setSelectedPageIndex(index)
-                }}
-                triggerClassName="flex h-[38px] w-full items-center justify-between gap-1.5 rounded-md bg-subtle px-3 text-md text-foreground transition-colors hover:bg-subtle/80 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ring-offset-surface"
-                contentClassName="bg-surface rounded-md shadow-lg overflow-hidden min-w-[180px] max-h-[300px] overflow-y-auto z-[100]"
-                itemClassName="flex items-center gap-2 px-3 py-2 text-md text-foreground transition-colors hover:bg-subtle outline-none data-[highlighted]:bg-subtle"
-              />
-            </div>
-          </>
-        )}
-
-        {showGhostPlaceholder && (
-          <>
-            <span className="text-placeholder">/</span>
-            <div className="relative w-[180px] -translate-y-[1px]">
+          <DropdownMenu.Root>
+            <DropdownMenu.Trigger asChild>
               <button
                 type="button"
-                disabled
-                className="flex h-[38px] w-full items-center justify-between gap-1.5 rounded-md bg-subtle px-3 text-md text-placeholder cursor-not-allowed"
-                aria-label="Select Ghost content (enabled on Post/Page)"
+                className="flex h-[38px] w-full items-center justify-between gap-1.5 rounded-md bg-subtle px-3 text-md text-foreground transition-colors hover:bg-subtle/80 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ring-offset-surface"
               >
-                <span className="truncate">…</span>
+                <span className="flex-1 text-left truncate">{currentPageLabel}</span>
+                <ChevronDown size={16} strokeWidth={2} className="text-foreground shrink-0 ml-auto opacity-60" />
               </button>
-            </div>
-          </>
-        )}
+            </DropdownMenu.Trigger>
+            <DropdownMenu.Portal>
+              <DropdownMenu.Content
+                className="bg-surface rounded-md shadow-lg overflow-hidden min-w-[180px] z-[100]"
+                sideOffset={4}
+                align="start"
+                onCloseAutoFocus={(event) => event.preventDefault()}
+              >
+                <DropdownMenu.Item
+                  onSelect={() => setCurrentPage('home')}
+                  className={menuItemClass}
+                >
+                  <span className="flex-1 text-left truncate">{pageLabels.home}</span>
+                  {currentPage === 'home' ? (
+                    <Check size={16} strokeWidth={2} className="text-foreground" />
+                  ) : (
+                    <span className="w-4" />
+                  )}
+                </DropdownMenu.Item>
+
+                {showGhostSelectors ? (
+                  <>
+                    <DropdownMenu.Sub>
+                      <DropdownMenu.SubTrigger className={subTriggerClass}>
+                        <span className="flex-1 text-left truncate">{pageLabels.about}</span>
+                        <ChevronRight size={16} strokeWidth={2} className="text-foreground opacity-60" />
+                      </DropdownMenu.SubTrigger>
+                      <DropdownMenu.Portal>
+                        <DropdownMenu.SubContent
+                          className="bg-surface rounded-md shadow-lg overflow-hidden min-w-[180px] max-h-[300px] overflow-y-auto z-[100]"
+                          sideOffset={6}
+                          alignOffset={-4}
+                          onCloseAutoFocus={(event) => event.preventDefault()}
+                        >
+                          {ghostDataLoading && availablePages.length === 0 && (
+                            <DropdownMenu.Item disabled className={menuItemClass}>
+                              <span className="flex-1 text-left truncate">Loading pages…</span>
+                              <span className="w-4" />
+                            </DropdownMenu.Item>
+                          )}
+                          {!ghostDataLoading && availablePages.length === 0 && (
+                            <DropdownMenu.Item disabled className={menuItemClass}>
+                              <span className="flex-1 text-left truncate">No pages found</span>
+                              <span className="w-4" />
+                            </DropdownMenu.Item>
+                          )}
+                          {availablePages.map((page, index) => (
+                            <DropdownMenu.Item
+                              key={page.id}
+                              onSelect={() => {
+                                setSelectedPageIndex(index)
+                                setCurrentPage('about')
+                              }}
+                              className={menuItemClass}
+                            >
+                              <span className="flex-1 text-left truncate">
+                                {page.slug || page.title || 'Untitled'}
+                              </span>
+                              {currentPage === 'about' && resolvedPageIndex === index ? (
+                                <Check size={16} strokeWidth={2} className="text-foreground" />
+                              ) : (
+                                <span className="w-4" />
+                              )}
+                            </DropdownMenu.Item>
+                          ))}
+                        </DropdownMenu.SubContent>
+                      </DropdownMenu.Portal>
+                    </DropdownMenu.Sub>
+
+                    <DropdownMenu.Sub>
+                      <DropdownMenu.SubTrigger className={subTriggerClass}>
+                        <span className="flex-1 text-left truncate">{pageLabels.post}</span>
+                        <ChevronRight size={16} strokeWidth={2} className="text-foreground opacity-60" />
+                      </DropdownMenu.SubTrigger>
+                      <DropdownMenu.Portal>
+                        <DropdownMenu.SubContent
+                          className="bg-surface rounded-md shadow-lg overflow-hidden min-w-[180px] max-h-[300px] overflow-y-auto z-[100]"
+                          sideOffset={6}
+                          alignOffset={-4}
+                          onCloseAutoFocus={(event) => event.preventDefault()}
+                        >
+                          {ghostDataLoading && availablePosts.length === 0 && (
+                            <DropdownMenu.Item disabled className={menuItemClass}>
+                              <span className="flex-1 text-left truncate">Loading posts…</span>
+                              <span className="w-4" />
+                            </DropdownMenu.Item>
+                          )}
+                          {!ghostDataLoading && availablePosts.length === 0 && (
+                            <DropdownMenu.Item disabled className={menuItemClass}>
+                              <span className="flex-1 text-left truncate">No posts found</span>
+                              <span className="w-4" />
+                            </DropdownMenu.Item>
+                          )}
+                          {availablePosts.map((post, index) => (
+                            <DropdownMenu.Item
+                              key={post.id}
+                              onSelect={() => {
+                                setSelectedPostIndex(index)
+                                setCurrentPage('post')
+                              }}
+                              className={menuItemClass}
+                            >
+                              <span className="flex-1 text-left truncate">
+                                {post.slug || post.title || 'Untitled'}
+                              </span>
+                              {currentPage === 'post' && resolvedPostIndex === index ? (
+                                <Check size={16} strokeWidth={2} className="text-foreground" />
+                              ) : (
+                                <span className="w-4" />
+                              )}
+                            </DropdownMenu.Item>
+                          ))}
+                        </DropdownMenu.SubContent>
+                      </DropdownMenu.Portal>
+                    </DropdownMenu.Sub>
+                  </>
+                ) : (
+                  <>
+                    <DropdownMenu.Item
+                      onSelect={() => setCurrentPage('about')}
+                      className={menuItemClass}
+                    >
+                      <span className="flex-1 text-left truncate">{pageLabels.about}</span>
+                      {currentPage === 'about' ? (
+                        <Check size={16} strokeWidth={2} className="text-foreground" />
+                      ) : (
+                        <span className="w-4" />
+                      )}
+                    </DropdownMenu.Item>
+                    <DropdownMenu.Item
+                      onSelect={() => setCurrentPage('post')}
+                      className={menuItemClass}
+                    >
+                      <span className="flex-1 text-left truncate">{pageLabels.post}</span>
+                      {currentPage === 'post' ? (
+                        <Check size={16} strokeWidth={2} className="text-foreground" />
+                      ) : (
+                        <span className="w-4" />
+                      )}
+                    </DropdownMenu.Item>
+                  </>
+                )}
+              </DropdownMenu.Content>
+            </DropdownMenu.Portal>
+          </DropdownMenu.Root>
+        </div>
 
         <span className="text-md text-placeholder">
           {isDraftMode ? 'Draft' : 'Saved'}

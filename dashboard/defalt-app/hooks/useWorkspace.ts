@@ -1380,6 +1380,7 @@ export function useWorkspace({
     removeTemplateSection: sectionManager.removeTemplateSection,
     duplicateTemplateSection: sectionManager.duplicateTemplateSection,
     setSectionVisibilityState: sectionManager.setSectionVisibilityState,
+    setSectionsVisibilityState: sectionManager.setSectionsVisibilityState,
     toggleSectionVisibility: sectionManager.toggleSectionVisibility,
     sectionPadding: sectionManager.sectionPadding,
     updateSectionPadding: sectionManager.updateSectionPadding,

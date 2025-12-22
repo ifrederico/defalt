@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
-import { getSectionSelector } from '../../custom-source/handlebars/sectionSelectors'
 import { useFrame } from '../AutoFrame/useFrame'
+import { TEMPLATE_CONTAINER_SELECTOR } from '../../custom-source/handlebars/sectionSelectors'
+import { getOverlayStyle, resolveSectionElement } from '../overlayUtils'
 
 const FOOTER_SECTION_IDS = new Set(['footer', 'footerbar', 'footersignup'])
 
@@ -18,27 +19,18 @@ type SelectionOverlayProps = {
   layoutKey?: unknown
 }
 
-const resolveSectionElement = (doc: Document, sectionId: string): Element | null => {
-  const selectors = getSectionSelector(sectionId)
-  for (const selector of selectors) {
-    const match = doc.querySelector(selector)
-    if (match) {
-      return match
-    }
-  }
-  return null
-}
-
-const computeOverlayRect = (doc: Document, element: Element, sectionId: string): OverlayRect | null => {
+const computeOverlayRect = (
+  doc: Document,
+  element: Element,
+  sectionId: string
+): OverlayRect | null => {
   const win = doc.defaultView
-  const rect = element.getBoundingClientRect()
+  const rect = getOverlayStyle(element as HTMLElement)
   const computed = win ? win.getComputedStyle(element) : getComputedStyle(element)
   const marginTop = parseFloat(computed.marginTop) || 0
   const marginBottom = parseFloat(computed.marginBottom) || 0
-  const scrollX = win?.scrollX ?? doc.documentElement.scrollLeft ?? doc.body?.scrollLeft ?? 0
-  const scrollY = win?.scrollY ?? doc.documentElement.scrollTop ?? doc.body?.scrollTop ?? 0
   const fullWidth = FOOTER_SECTION_IDS.has(sectionId.toLowerCase()) || marginTop > 0 || marginBottom > 0
-  const top = rect.top + scrollY - marginTop
+  const top = rect.top - marginTop
   const height = rect.height + marginTop + marginBottom
   if (height <= 0) {
     return null
@@ -48,7 +40,7 @@ const computeOverlayRect = (doc: Document, element: Element, sectionId: string):
     const width = doc.documentElement.clientWidth || rect.width
     return {
       top,
-      left: scrollX,
+      left: 0,
       width,
       height,
     }
@@ -56,7 +48,7 @@ const computeOverlayRect = (doc: Document, element: Element, sectionId: string):
 
   return {
     top,
-    left: rect.left + scrollX,
+    left: rect.left,
     width: rect.width,
     height,
   }
@@ -81,14 +73,26 @@ export function SelectionOverlay({
 
     if (selectedSectionId) {
       const element = resolveSectionElement(frameDocument, selectedSectionId)
-      setSelectedRect(element ? computeOverlayRect(frameDocument, element, selectedSectionId) : null)
+      setSelectedRect(
+        element
+          ? computeOverlayRect(frameDocument, element, selectedSectionId)
+          : null
+      )
     } else {
       setSelectedRect(null)
     }
 
-    if (hoveredSectionId && hoveredSectionId !== selectedSectionId) {
+    if (
+      hoveredSectionId &&
+      hoveredSectionId !== selectedSectionId &&
+      hoveredSectionId.toLowerCase() !== 'footer'
+    ) {
       const element = resolveSectionElement(frameDocument, hoveredSectionId)
-      setHoverRect(element ? computeOverlayRect(frameDocument, element, hoveredSectionId) : null)
+      setHoverRect(
+        element
+          ? computeOverlayRect(frameDocument, element, hoveredSectionId)
+          : null
+      )
     } else {
       setHoverRect(null)
     }
@@ -99,6 +103,19 @@ export function SelectionOverlay({
   }, [updateRects, renderKey, layoutKey])
 
   useEffect(() => {
+    if (!frameDocument || !selectedSectionId) {
+      return
+    }
+    const element = resolveSectionElement(frameDocument, selectedSectionId)
+    if (!element) {
+      return
+    }
+    const observer = new ResizeObserver(() => updateRects())
+    observer.observe(element)
+    return () => observer.disconnect()
+  }, [frameDocument, selectedSectionId, updateRects])
+
+  useEffect(() => {
     const win = frameDocument?.defaultView
     if (!win) {
       return
@@ -107,11 +124,17 @@ export function SelectionOverlay({
     const handleScroll = () => updateRects()
     const handleResize = () => updateRects()
 
-    win.addEventListener('scroll', handleScroll, { passive: true })
+    const scrollTargets: Array<Window | HTMLElement> = [win]
+    const viewport = frameDocument.querySelector<HTMLElement>(TEMPLATE_CONTAINER_SELECTOR)
+    if (viewport && viewport !== frameDocument.documentElement && viewport !== frameDocument.body) {
+      scrollTargets.push(viewport)
+    }
+
+    scrollTargets.forEach((target) => target.addEventListener('scroll', handleScroll, { passive: true }))
     win.addEventListener('resize', handleResize)
 
     return () => {
-      win.removeEventListener('scroll', handleScroll)
+      scrollTargets.forEach((target) => target.removeEventListener('scroll', handleScroll))
       win.removeEventListener('resize', handleResize)
     }
   }, [frameDocument, updateRects])

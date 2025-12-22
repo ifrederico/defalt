@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { MouseEvent } from 'react'
 import { CodeXml, Copy, Trash2, Eye, EyeOff, Clipboard } from 'lucide-react'
-import { getSectionSelector, TEMPLATE_CONTAINER_SELECTOR } from '../../custom-source/handlebars/sectionSelectors'
+import { FOOTER_ROOT_SELECTOR, TEMPLATE_CONTAINER_SELECTOR } from '../../custom-source/handlebars/sectionSelectors'
 import { isFixedSection } from '@defalt/utils/config/sectionRegistry'
 import { useFrame } from '../AutoFrame/useFrame'
+import { getOverlayStyle, resolveSectionElement, type OverlayStyle } from '../overlayUtils'
 import {
   heroConfigSchema,
   ghostCardsConfigSchema,
@@ -40,26 +41,20 @@ type SectionActionBarProps = {
   layoutKey?: unknown
 }
 
-type PositionStyle = {
-  top: number
-  left: number
-}
-
-const resolveSectionElement = (doc: Document, sectionId: string): Element | null => {
-  const selectors = getSectionSelector(sectionId)
-  for (const selector of selectors) {
-    const match = doc.querySelector(selector)
-    if (match) {
-      return match
-    }
-  }
-  return null
-}
+const ACTION_BAR_SPACE = 8
+const ACTION_BAR_SIDE = ACTION_BAR_SPACE
+const ACTION_BAR_MIN_TOP = 12
 
 const isAnnouncementSection = (sectionId: string) =>
   sectionId === 'announcement-bar' || sectionId.startsWith('announcement-bar-')
+const isFooterParentSection = (sectionId: string) => sectionId.toLowerCase() === 'footer'
+const isFooterChildSection = (sectionId: string) => {
+  const normalized = sectionId.toLowerCase()
+  return normalized === 'footerbar' || normalized === 'footer-bar' || normalized === 'footersignup' || normalized === 'footer-signup'
+}
 
 const TEMPLATE_SNIPPET_CACHE = new Map<string, string>()
+const TEMPLATE_SNIPPET_CACHE_VERSION = 'clean-v3'
 const PARTIAL_FILENAME_MAP: Record<string, string> = {
   hero: 'defalt-hero.hbs',
   ghostCards: 'defalt-ghost-cards.hbs',
@@ -107,6 +102,37 @@ const resolveGhostGridDefaultTags = (instanceId: string): { left: string; right:
     right: `#grid-right${suffix}`
   }
 }
+
+const stripPreviewBlocks = (template: string): string => {
+  const withoutPagesElse = template.replace(
+    /\{\{#if\s+pages\}\}([\s\S]*?)\{\{else\}\}[\s\S]*?\{\{\/if\}\}/g,
+    '{{#if pages}}$1{{/if}}'
+  )
+  const withoutPostsElse = withoutPagesElse.replace(
+    /\{\{#if\s+posts\}\}([\s\S]*?)\{\{else\}\}[\s\S]*?\{\{\/if\}\}/g,
+    '{{#if posts}}$1{{/if}}'
+  )
+  const withoutElsePreview = withoutPostsElse.replace(
+    /\{\{else\}\}\s*\{\{#if\s+isPreview\}\}[\s\S]*?\{\{\/if\}\}/g,
+    ''
+  )
+  return withoutElsePreview.replace(/\{\{#if\s+isPreview\}\}[\s\S]*?\{\{\/if\}\}/g, '')
+}
+
+const stripPlaceholderCss = (template: string): string =>
+  template.replace(
+    /(^|\n)\s*[^\n{]*placeholder[^\n{]*\{[\s\S]*?\}\s*/g,
+    '\n'
+  )
+
+const tidyTemplateWhitespace = (template: string): string =>
+  template
+    .replace(/\n{3,}/g, '\n\n')
+    .replace(/\n\s*\n<\/style>/g, '\n</style>')
+    .trim()
+
+const sanitizeTemplateForCopy = (template: string): string =>
+  tidyTemplateWhitespace(stripPlaceholderCss(stripPreviewBlocks(template)))
 
 const buildSectionSnippet = (section: SectionInstance, padding?: SectionPadding): string => {
   const sectionStyle = buildSectionStyle(resolvePadding(padding))
@@ -185,12 +211,13 @@ export function SectionActionBar({
 }: SectionActionBarProps) {
   const { document: frameDocument } = useFrame()
   const barRef = useRef<HTMLDivElement>(null)
-  const [position, setPosition] = useState<PositionStyle | null>(null)
-  const [isScrolling, setIsScrolling] = useState(false)
+  const copyTimeoutRef = useRef<number | null>(null)
+  const [overlayStyle, setOverlayStyle] = useState<OverlayStyle | null>(null)
+  const [targetEl, setTargetEl] = useState<HTMLElement | null>(null)
   const [isCodeOpen, setIsCodeOpen] = useState(false)
-  const [copiedTarget, setCopiedTarget] = useState<'include' | 'partial' | null>(null)
   const [partialSnippet, setPartialSnippet] = useState<string>('')
   const [isLoadingSnippet, setIsLoadingSnippet] = useState(false)
+  const [copyStatus, setCopyStatus] = useState<{ target: 'include' | 'partial'; status: 'success' | 'error' } | null>(null)
 
   const selectedId = selectedSectionId ?? null
   const isHidden = selectedId ? Boolean(hiddenSections?.[selectedId]) : false
@@ -214,53 +241,117 @@ export function SectionActionBar({
   const canToggleVisibility = Boolean(selectedId && onToggleVisibility)
 
   const updatePosition = useCallback(() => {
-    if (!selectedId || !frameDocument || !barRef.current) {
-      setPosition(null)
+    if (!selectedId || !frameDocument) {
+      setOverlayStyle(null)
+      setTargetEl(null)
       return
     }
 
     if (isAnnouncementSection(selectedId) || isHidden) {
-      setPosition(null)
+      setOverlayStyle(null)
+      setTargetEl(null)
       return
     }
 
     const target = resolveSectionElement(frameDocument, selectedId)
     if (!target) {
-      setPosition(null)
+      setOverlayStyle(null)
+      setTargetEl(null)
       return
     }
 
-    const barRect = barRef.current.getBoundingClientRect()
-    const rect = target.getBoundingClientRect()
-    const win = frameDocument.defaultView
-    const scrollX = win?.scrollX ?? frameDocument.documentElement.scrollLeft ?? frameDocument.body?.scrollLeft ?? 0
-    const scrollY = win?.scrollY ?? frameDocument.documentElement.scrollTop ?? frameDocument.body?.scrollTop ?? 0
+    const element = target as HTMLElement
+    let nextStyle = getOverlayStyle(element)
 
-    const top = rect.top + scrollY - barRect.height - 8
-
-    const viewportWidth = frameDocument.documentElement.clientWidth || win?.innerWidth || rect.width
-    const minLeft = scrollX + 8
-    const maxLeft = scrollX + viewportWidth - barRect.width - 8
-    let left = rect.right + scrollX - barRect.width
-    if (maxLeft >= minLeft) {
-      left = Math.min(Math.max(left, minLeft), maxLeft)
-    } else {
-      left = minLeft
+    if (isFooterChildSection(selectedId)) {
+      const footerRoot = frameDocument.querySelector<HTMLElement>(FOOTER_ROOT_SELECTOR)
+      if (footerRoot) {
+        const footerStyle = getOverlayStyle(footerRoot)
+        nextStyle = {
+          ...nextStyle,
+          left: footerStyle.left,
+          width: footerStyle.width,
+        }
+      }
     }
 
-    setPosition({ top, left })
+    if (isFooterParentSection(selectedId)) {
+      const computed = frameDocument.defaultView?.getComputedStyle(element)
+      const marginTop = computed ? Number.parseFloat(computed.marginTop) || 0 : 0
+      if (marginTop > 0) {
+        nextStyle = {
+          ...nextStyle,
+          top: nextStyle.top - marginTop,
+        }
+      }
+    }
+
+    setTargetEl((current) => (current !== element ? element : current))
+    setOverlayStyle(nextStyle)
   }, [frameDocument, selectedId, isHidden])
+
+  const applyActionBarPosition = useCallback(() => {
+    const node = barRef.current
+    if (!node) {
+      return
+    }
+
+    const barHeight = node.offsetHeight || 0
+    const desiredTop = -(barHeight + ACTION_BAR_SPACE)
+
+    node.style.left = ''
+    node.style.top = `${desiredTop}px`
+    node.style.transformOrigin = 'right top'
+
+    const rect = node.getBoundingClientRect()
+    const exceedsBoundsTop = rect.y < ACTION_BAR_MIN_TOP
+
+    if (exceedsBoundsTop) {
+      node.style.top = `${ACTION_BAR_MIN_TOP}px`
+    }
+  }, [])
+
+  const syncActionsPosition = useCallback((node: HTMLDivElement | null) => {
+    barRef.current = node
+    applyActionBarPosition()
+  }, [applyActionBarPosition])
 
   useEffect(() => {
     updatePosition()
-  }, [updatePosition, renderKey, layoutKey, isHidden, canDuplicate, canDelete])
+  }, [updatePosition, renderKey, layoutKey, isHidden])
 
   useEffect(() => {
+    applyActionBarPosition()
+  }, [applyActionBarPosition, overlayStyle, selectedId])
+
+  useEffect(() => {
+    if (!targetEl) {
+      return
+    }
+    const observer = new ResizeObserver(() => updatePosition())
+    observer.observe(targetEl)
+    return () => observer.disconnect()
+  }, [targetEl, updatePosition])
+
+  useEffect(() => {
+    if (copyTimeoutRef.current !== null) {
+      window.clearTimeout(copyTimeoutRef.current)
+      copyTimeoutRef.current = null
+    }
     setIsCodeOpen(false)
-    setCopiedTarget(null)
     setPartialSnippet('')
     setIsLoadingSnippet(false)
+    setCopyStatus(null)
   }, [selectedId])
+
+  useEffect(() => {
+    return () => {
+      if (copyTimeoutRef.current !== null) {
+        window.clearTimeout(copyTimeoutRef.current)
+        copyTimeoutRef.current = null
+      }
+    }
+  }, [])
 
   useEffect(() => {
     if (!isCodeOpen || !frameDocument) {
@@ -288,8 +379,9 @@ export function SectionActionBar({
       return
     }
 
-    if (TEMPLATE_SNIPPET_CACHE.has(templatePath)) {
-      setPartialSnippet(TEMPLATE_SNIPPET_CACHE.get(templatePath) ?? '')
+    const cacheKey = `${templatePath}::${TEMPLATE_SNIPPET_CACHE_VERSION}`
+    if (TEMPLATE_SNIPPET_CACHE.has(cacheKey)) {
+      setPartialSnippet(TEMPLATE_SNIPPET_CACHE.get(cacheKey) ?? '')
       return
     }
 
@@ -303,9 +395,10 @@ export function SectionActionBar({
           throw new Error(`Template fetch failed: ${response.status}`)
         }
         const content = await response.text()
+        const sanitized = sanitizeTemplateForCopy(content)
         if (cancelled) return
-        TEMPLATE_SNIPPET_CACHE.set(templatePath, content)
-        setPartialSnippet(content)
+        TEMPLATE_SNIPPET_CACHE.set(cacheKey, sanitized)
+        setPartialSnippet(sanitized)
       } catch {
         if (!cancelled) {
           setPartialSnippet('')
@@ -330,7 +423,6 @@ export function SectionActionBar({
     }
 
     let rafId: number | null = null
-    let scrollTimeout: number | null = null
     const schedulePositionUpdate = () => {
       if (rafId !== null) {
         return
@@ -342,15 +434,7 @@ export function SectionActionBar({
     }
 
     const handleScroll = () => {
-      setIsScrolling(true)
       schedulePositionUpdate()
-      if (scrollTimeout !== null) {
-        win.clearTimeout(scrollTimeout)
-      }
-      scrollTimeout = win.setTimeout(() => {
-        setIsScrolling(false)
-        schedulePositionUpdate()
-      }, 60)
     }
 
     const handleResize = () => {
@@ -372,9 +456,6 @@ export function SectionActionBar({
       if (rafId !== null) {
         win.cancelAnimationFrame(rafId)
       }
-      if (scrollTimeout !== null) {
-        win.clearTimeout(scrollTimeout)
-      }
     }
   }, [frameDocument, updatePosition, renderKey])
 
@@ -382,12 +463,21 @@ export function SectionActionBar({
     return null
   }
 
-  const style = position ?? {
-    top: 0,
-    left: 0,
-    visibility: 'hidden',
-    pointerEvents: 'none',
-  }
+  const wrapperStyle = overlayStyle
+    ? {
+        top: overlayStyle.top,
+        left: overlayStyle.left,
+        width: overlayStyle.width,
+        height: overlayStyle.height,
+      }
+    : {
+        top: 0,
+        left: 0,
+        width: 0,
+        height: 0,
+        visibility: 'hidden',
+        pointerEvents: 'none',
+      }
 
   const handleDuplicate = (event: MouseEvent<HTMLButtonElement>) => {
     event.preventDefault()
@@ -422,6 +512,28 @@ export function SectionActionBar({
     setIsCodeOpen((current) => !current)
   }
 
+  const notifyCopySuccess = (target: 'include' | 'partial') => {
+    if (copyTimeoutRef.current !== null) {
+      window.clearTimeout(copyTimeoutRef.current)
+    }
+    setCopyStatus({ target, status: 'success' })
+    copyTimeoutRef.current = window.setTimeout(() => {
+      setCopyStatus(null)
+      copyTimeoutRef.current = null
+    }, 1200)
+  }
+
+  const notifyCopyFailure = (target: 'include' | 'partial') => {
+    if (copyTimeoutRef.current !== null) {
+      window.clearTimeout(copyTimeoutRef.current)
+    }
+    setCopyStatus({ target, status: 'error' })
+    copyTimeoutRef.current = window.setTimeout(() => {
+      setCopyStatus(null)
+      copyTimeoutRef.current = null
+    }, 1200)
+  }
+
   const handleCopySnippet = (event: MouseEvent<HTMLButtonElement>) => {
     event.preventDefault()
     event.stopPropagation()
@@ -430,9 +542,12 @@ export function SectionActionBar({
     }
     const clipboard = frameDocument?.defaultView?.navigator?.clipboard ?? navigator.clipboard
     if (clipboard?.writeText) {
-      void clipboard.writeText(includeSnippet)
-      setCopiedTarget('include')
-      window.setTimeout(() => setCopiedTarget(null), 1200)
+      void clipboard
+        .writeText(includeSnippet)
+        .then(() => notifyCopySuccess('include'))
+        .catch(() => {
+          notifyCopyFailure('include')
+        })
       return
     }
     if (frameDocument) {
@@ -444,11 +559,14 @@ export function SectionActionBar({
       frameDocument.body.appendChild(textarea)
       textarea.select()
       try {
-        frameDocument.execCommand('copy')
-        setCopiedTarget('include')
-        window.setTimeout(() => setCopiedTarget(null), 1200)
+        const copied = frameDocument.execCommand('copy')
+        if (copied) {
+          notifyCopySuccess('include')
+        } else {
+          notifyCopyFailure('include')
+        }
       } catch {
-        // ignore
+        notifyCopyFailure('include')
       } finally {
         frameDocument.body.removeChild(textarea)
       }
@@ -463,9 +581,12 @@ export function SectionActionBar({
     }
     const clipboard = frameDocument?.defaultView?.navigator?.clipboard ?? navigator.clipboard
     if (clipboard?.writeText) {
-      void clipboard.writeText(partialSnippet)
-      setCopiedTarget('partial')
-      window.setTimeout(() => setCopiedTarget(null), 1200)
+      void clipboard
+        .writeText(partialSnippet)
+        .then(() => notifyCopySuccess('partial'))
+        .catch(() => {
+          notifyCopyFailure('partial')
+        })
       return
     }
     if (frameDocument) {
@@ -477,11 +598,14 @@ export function SectionActionBar({
       frameDocument.body.appendChild(textarea)
       textarea.select()
       try {
-        frameDocument.execCommand('copy')
-        setCopiedTarget('partial')
-        window.setTimeout(() => setCopiedTarget(null), 1200)
+        const copied = frameDocument.execCommand('copy')
+        if (copied) {
+          notifyCopySuccess('partial')
+        } else {
+          notifyCopyFailure('partial')
+        }
       } catch {
-        // ignore
+        notifyCopyFailure('partial')
       } finally {
         frameDocument.body.removeChild(textarea)
       }
@@ -489,81 +613,116 @@ export function SectionActionBar({
   }
 
   return (
-    <div
-      ref={barRef}
-      className={`df-action-bar${isScrolling ? ' df-action-bar--scrolling' : ''}`}
-      style={style}
-    >
-      {canShowCode && (
-        <button
-          type="button"
-          aria-label="Show section code"
-          aria-expanded={isCodeOpen}
-          onClick={handleToggleCode}
+    <div className="df-action-bar-overlay" style={wrapperStyle}>
+      <div className="df-action-bar-overlay-inner" style={{ top: 0 }}>
+        <div
+          ref={syncActionsPosition}
+          className="df-action-bar"
+          style={{
+            top: 0,
+            right: 16,
+            paddingLeft: ACTION_BAR_SIDE,
+            paddingRight: ACTION_BAR_SIDE,
+          }}
         >
-          <CodeXml size={16} />
-        </button>
-      )}
-      {canShowCode && <span className="df-action-bar__separator" aria-hidden="true" />}
-      <button
-        type="button"
-        aria-label={isHidden ? 'Show section' : 'Hide section'}
-        onClick={handleToggleVisibility}
-        disabled={!canToggleVisibility}
-      >
-        {isHidden ? <EyeOff size={16} /> : <Eye size={16} />}
-      </button>
-      <button
-        type="button"
-        aria-label="Duplicate section"
-        onClick={handleDuplicate}
-        disabled={!canDuplicate}
-      >
-        <Copy size={16} />
-      </button>
-      <button
-        type="button"
-        aria-label="Delete section"
-        onClick={handleDelete}
-        disabled={!canDelete}
-      >
-        <Trash2 size={16} />
-      </button>
-      {isCodeOpen && canShowCode && (
-        <div className="df-action-bar__popover" onClick={(event) => event.stopPropagation()}>
-          <div className="df-action-bar__popover-header">
-            <span>home.hbs</span>
+          {canShowCode && (
             <button
               type="button"
-              className="df-action-bar__copy"
-              onClick={handleCopySnippet}
-              aria-label={copiedTarget === 'include' ? 'Copied' : 'Copy home.hbs snippet'}
+              aria-label="Show section code"
+              aria-expanded={isCodeOpen}
+              onClick={handleToggleCode}
             >
-              <Clipboard size={14} />
+              <CodeXml size={16} />
             </button>
-          </div>
-          <pre className="df-action-bar__code">{includeSnippet}</pre>
-          <div className="df-action-bar__popover-header">
-            <span>
-              {selectedCustomSection?.definitionId
-                ? `partials/${PARTIAL_FILENAME_MAP[selectedCustomSection.definitionId] ?? 'partial.hbs'}`
-                : 'partials/partial.hbs'}
-            </span>
-            <button
-              type="button"
-              className="df-action-bar__copy"
-              onClick={handleCopyPartial}
-              disabled={!partialSnippet}
-              aria-label={copiedTarget === 'partial' ? 'Copied' : 'Copy partial snippet'}
-            >
-              <Clipboard size={14} />
-            </button>
-          </div>
-          <pre className="df-action-bar__code">
-            {isLoadingSnippet ? 'Loading template…' : (partialSnippet || 'Template unavailable.')}
-          </pre>
+          )}
+          {canShowCode && <span className="df-action-bar__separator" aria-hidden="true" />}
+          <button
+            type="button"
+            aria-label={isHidden ? 'Show section' : 'Hide section'}
+            onClick={handleToggleVisibility}
+            disabled={!canToggleVisibility}
+          >
+            {isHidden ? <EyeOff size={16} /> : <Eye size={16} />}
+          </button>
+          <button
+            type="button"
+            aria-label="Duplicate section"
+            onClick={handleDuplicate}
+            disabled={!canDuplicate}
+          >
+            <Copy size={16} />
+          </button>
+          <button
+            type="button"
+            aria-label="Delete section"
+            onClick={handleDelete}
+            disabled={!canDelete}
+          >
+            <Trash2 size={16} />
+          </button>
+          {isCodeOpen && canShowCode && (
+            <div className="df-action-bar__popover" onClick={(event) => event.stopPropagation()}>
+              <div className="df-action-bar__popover-header">
+                <span>home.hbs</span>
+                <div className="df-action-bar__copy-group">
+                  {copyStatus?.target === 'include' && (
+                    <span
+                      className={`df-action-bar__copy-status${
+                        copyStatus.status === 'success'
+                          ? ' df-action-bar__copy-status--success'
+                          : ' df-action-bar__copy-status--error'
+                      }`}
+                    >
+                      {copyStatus.status === 'success' ? '✓ Copied' : 'Copy failed'}
+                    </span>
+                  )}
+                  <button
+                    type="button"
+                    className="df-action-bar__copy"
+                    onClick={handleCopySnippet}
+                    aria-label="Copy home.hbs snippet"
+                  >
+                    <Clipboard size={14} />
+                  </button>
+                </div>
+              </div>
+              <pre className="df-action-bar__code">{includeSnippet}</pre>
+              <div className="df-action-bar__popover-header">
+                <span>
+                  {selectedCustomSection?.definitionId
+                    ? `partials/${PARTIAL_FILENAME_MAP[selectedCustomSection.definitionId] ?? 'partial.hbs'}`
+                    : 'partials/partial.hbs'}
+                </span>
+                <div className="df-action-bar__copy-group">
+                  {copyStatus?.target === 'partial' && (
+                    <span
+                      className={`df-action-bar__copy-status${
+                        copyStatus.status === 'success'
+                          ? ' df-action-bar__copy-status--success'
+                          : ' df-action-bar__copy-status--error'
+                      }`}
+                    >
+                      {copyStatus.status === 'success' ? '✓ Copied' : 'Copy failed'}
+                    </span>
+                  )}
+                  <button
+                    type="button"
+                    className="df-action-bar__copy"
+                    onClick={handleCopyPartial}
+                    disabled={!partialSnippet}
+                    aria-label="Copy partial snippet"
+                  >
+                    <Clipboard size={14} />
+                  </button>
+                </div>
+              </div>
+              <pre className="df-action-bar__code">
+                {isLoadingSnippet ? 'Loading template…' : (partialSnippet || 'Template unavailable.')}
+              </pre>
+            </div>
+          )}
         </div>
-      )}
+      </div>
     </div>
   )
 }

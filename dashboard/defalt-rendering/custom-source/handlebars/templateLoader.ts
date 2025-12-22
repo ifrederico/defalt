@@ -89,7 +89,7 @@ export function filterTemplatesByVisibility(
     content.replace(regex, (match) => `<div class="hidden" data-preview-hidden="true">\n${match}\n</div>`)
 
   // Filter default.hbs to wrap navigation
-  // Note: announcement bar visibility is now controlled via CSS (app-hide-announcement-bar class)
+  // Note: announcement bar visibility is handled by preview data-section-hidden flags
   // and partial generation during export (empty partial when hidden)
   if (filtered.default) {
     let defaultContent = filtered.default

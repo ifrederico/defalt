@@ -54,6 +54,12 @@ export function AutoFrame({
       root.setAttribute('data-defalt-frame', 'true')
       doc.body.appendChild(root)
     }
+    if (root) {
+      root.style.position = 'fixed'
+      root.style.inset = '0'
+      root.style.zIndex = '2147483647'
+      root.style.pointerEvents = 'none'
+    }
     setFrameDoc(doc)
     setFrameWindow(win)
     setFrameRoot(root)

@@ -61,6 +61,7 @@ export type SectionsPanelProps = {
   onShowPublicationInfoSidebarToggle: (value: boolean) => void
   sectionVisibility: Record<string, boolean>
   toggleSectionVisibility: (id: string, forceHidden?: boolean, options?: { silent?: boolean }) => void
+  setSectionsVisibilityState: (updates: Record<string, boolean>, options?: { silent?: boolean; label?: string }) => void
   templateItems: SidebarItem[]
   footerItems: SidebarItem[]
   templateDefinitions: SectionDefinition[]
@@ -328,6 +329,16 @@ export const SectionsPanelBase = memo(function SectionsPanelBase({
     return ids
   }, [groups, footerChildItems])
 
+  const footerHidden = Boolean(props.sectionVisibility.footer)
+
+  const toggleFooterVisibility = useCallback(() => {
+    const nextHidden = !footerHidden
+    props.setSectionsVisibilityState(
+      { footer: nextHidden, footerBar: nextHidden, footerSignup: nextHidden },
+      { label: 'footer' }
+    )
+  }, [footerHidden, props])
+
   useEffect(() => {
     if (!activeDetail) {
       return
@@ -447,11 +458,17 @@ export const SectionsPanelBase = memo(function SectionsPanelBase({
                           const isAnnouncementBar = isAnnouncementBarItem(item.id)
                           const announcementBar = isAnnouncementBar ? announcementBarById.get(item.id) : undefined
                           const announcementBarExpanded = isAnnouncementBar ? (expandedAnnouncementBars[item.id] ?? true) : false
-                          const hidden = isAnnouncementBar ? Boolean(announcementBar?.hidden) : Boolean(props.sectionVisibility[item.id])
+                          const hidden = isAnnouncementBar
+                            ? Boolean(announcementBar?.hidden)
+                            : item.id === 'footer'
+                              ? footerHidden
+                              : Boolean(props.sectionVisibility[item.id])
 
                           const onToggleVisibility = () => {
                             if (isAnnouncementBar) {
                               props.onToggleAnnouncementBarHidden(item.id)
+                            } else if (item.id === 'footer') {
+                              toggleFooterVisibility()
                             } else {
                               props.toggleSectionVisibility(item.id)
                             }
@@ -500,7 +517,7 @@ export const SectionsPanelBase = memo(function SectionsPanelBase({
                                 isSelected={activeDetail?.id === item.id && activeDetail?.blockIndex === undefined}
                                 onSectionHover={setHoveredSectionId}
                                 onScrollToSection={setScrollToSectionId}
-                                showVisibilityToggle={item.id !== 'footer'}
+                                showVisibilityToggle={true}
                               />
                               {isAnnouncementBar && announcementBarExpanded && announcementBar && (
                                 <div className="space-y-0.5 mt-0.5">
@@ -537,7 +554,7 @@ export const SectionsPanelBase = memo(function SectionsPanelBase({
                                       draggable={true}
                                       groupType="footer"
                                       isParentDragging={isDragging}
-                                      hidden={Boolean(props.sectionVisibility[footerItem.id])}
+                                      hidden={footerHidden || Boolean(props.sectionVisibility[footerItem.id])}
                                       onToggleVisibility={() => props.toggleSectionVisibility(footerItem.id)}
                                       onOpenDetail={handleOpenDetail}
                                       canOpenDetail={() => true}

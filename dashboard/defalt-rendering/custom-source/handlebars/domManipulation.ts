@@ -21,32 +21,6 @@ const PREVIEW_STYLES_ID = 'gh-editor-preview-styles'
 const THEME_CSS_LINK_ID = 'gh-editor-theme-css'
 const getThemeCssHref = () => `${getBasePath()}/themes/source-complete/assets/built/screen.css`
 const PREVIEW_INLINE_STYLES = `
-body.app-hide-announcement-bar #gh-announcement-bar,
-body.app-hide-announcement-bar .gh-announcement-bar {
-  display: none !important;
-}
-
-body.app-hide-header #gh-navigation,
-body.app-hide-header .gh-navigation {
-  display: none !important;
-}
-
-body.app-hide-subheader section.gh-header {
-  display: none !important;
-}
-
-body.app-hide-main section.gh-container {
-  display: none !important;
-}
-
-body.app-hide-footer-bar .gh-footer-bar {
-  display: none !important;
-}
-
-body.app-hide-footer-signup .gh-footer-signup {
-  display: none !important;
-}
-
 [data-section-hidden="true"] {
   display: none !important;
 }
@@ -65,11 +39,8 @@ type InjectPreviewOptions = {
   headerOptions: HeaderCustomizationOptions
   announcementBars?: Array<{ id: string; html: string; hidden: boolean }>
   selectedSectionId?: string | null
-  sectionIds?: string[]
-  onSelectSection?: (sectionId: string) => void
   customCss?: string
   customSections?: Array<{ id: string, html: string, hidden: boolean }>
-  onNavigate?: (href: string) => boolean
 }
 
 function escapeSectionId(sectionId: string): string {
@@ -475,7 +446,9 @@ export function setupSectionSelection(
     }))
     .filter((entry) => entry.selectors.length > 0)
 
-  if (entries.length === 0) {
+  const selectableEntries = entries.filter((entry) => entry.id !== 'footer')
+
+  if (selectableEntries.length === 0) {
     return () => {}
   }
 
@@ -511,13 +484,13 @@ export function setupSectionSelection(
     const dataEl = target.closest('[data-section-id]')
     if (dataEl) {
       const attrId = dataEl.getAttribute('data-section-id')
-      if (attrId) {
+      if (attrId && attrId !== 'footer') {
         return { id: attrId, element: dataEl }
       }
     }
     // Collect all matches, then pick the innermost (most specific) one
     const matches: { id: string, element: Element }[] = []
-    for (const entry of entries) {
+    for (const entry of selectableEntries) {
       for (const selector of entry.selectors) {
         const match = target.closest(selector)
         if (match) {
@@ -1020,6 +993,27 @@ export function syncSelectedSectionAttribute(doc: Document, sectionId: string | 
   } else {
     doc.documentElement?.removeAttribute(SELECTED_SECTION_ID_ATTRIBUTE)
   }
+}
+
+export function syncSectionVisibility(
+  doc: Document,
+  sectionIds: string[],
+  hiddenSections?: Record<string, boolean>
+) {
+  const hiddenMap = hiddenSections ?? {}
+  sectionIds.forEach((sectionId) => {
+    const hidden = Boolean(hiddenMap[sectionId])
+    const selectors = getSectionSelector(sectionId)
+    selectors.forEach((selector) => {
+      doc.querySelectorAll(selector).forEach((element) => {
+        if (hidden) {
+          element.setAttribute('data-section-hidden', 'true')
+        } else {
+          element.removeAttribute('data-section-hidden')
+        }
+      })
+    })
+  })
 }
 
 function getHighlightTarget(sectionId: string, element: Element): Element {

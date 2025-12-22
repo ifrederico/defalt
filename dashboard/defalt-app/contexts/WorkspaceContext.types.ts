@@ -130,6 +130,7 @@ export type WorkspaceContextValue = {
   reorderTemplateItems: (startIndex: number, endIndex: number) => void
   reorderFooterItems: (startIndex: number, endIndex: number) => void
   toggleSectionVisibility: (id: string, forceHidden?: boolean, options?: { silent?: boolean }) => void
+  setSectionsVisibilityState: (updates: Record<string, boolean>, options?: { silent?: boolean; label?: string }) => void
 
   headerSettings: HeaderSettingsContext
   footerSettings: FooterSettingsContext

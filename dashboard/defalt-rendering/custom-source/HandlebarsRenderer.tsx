@@ -31,6 +31,7 @@ import {
   setupSectionSelection,
   setupPreviewNavigation,
   syncSelectedSectionAttribute,
+  syncSectionVisibility,
 } from './handlebars/domManipulation'
 import { applyHeaderCustomizations, type HeaderCustomizationOptions, type StickyHeaderMode } from './handlebars/headerCustomization'
 import {
@@ -482,6 +483,11 @@ export function HandlebarsRenderer({
       }
     }
 
+    if (resolved.footer) {
+      resolved.footerBar = true
+      resolved.footerSignup = true
+    }
+
     return resolved
   }, [hiddenSections, currentPage])
 
@@ -649,7 +655,7 @@ export function HandlebarsRenderer({
     subheaderStyle: subheaderStyleForPreview,
     showFeaturedPosts: showFeaturedForPreview,
   }), [stickyHeaderMode, showSearch, typographyCase, sectionPadding, sectionMargins, subheaderStyleForPreview, showFeaturedForPreview])
-  const resolvedHoverSectionId = hoveredSectionId ?? frameHoverSectionId
+  const resolvedHoverSectionId = frameHoverSectionId ?? hoveredSectionId
   const overlayLayoutKey = useMemo(() => ({
     sectionPadding,
     sectionMargins,
@@ -697,6 +703,7 @@ export function HandlebarsRenderer({
             customCss={sanitizedCustomCss}
             customSections={mergedCustomSections}
             selectedSectionId={selectedSectionId ?? null}
+            hiddenSections={resolvedHiddenSections}
             filteredTemplateOrder={filteredTemplateOrder}
             footerOrder={footerOrder}
             sectionIdsForPreview={sectionIdsForPreview}
@@ -744,6 +751,7 @@ type PreviewFrameContentProps = {
   customCss?: string
   customSections: Array<{ id: string; html: string; hidden: boolean }>
   selectedSectionId: string | null
+  hiddenSections: Record<string, boolean>
   filteredTemplateOrder: string[]
   footerOrder: string[]
   sectionIdsForPreview: string[]
@@ -767,6 +775,7 @@ function PreviewFrameContent({
   customCss,
   customSections,
   selectedSectionId,
+  hiddenSections,
   filteredTemplateOrder,
   footerOrder,
   sectionIdsForPreview,
@@ -939,6 +948,11 @@ function PreviewFrameContent({
     if (!frameDocument) return
     syncSelectedSectionAttribute(frameDocument, selectedSectionId ?? null)
   }, [frameDocument, selectedSectionId])
+
+  useEffect(() => {
+    if (!hasInjectedRef.current || !frameDocument) return
+    syncSectionVisibility(frameDocument, sectionIdsForPreview, hiddenSections)
+  }, [frameDocument, hiddenSections, sectionIdsForPreview])
 
   useEffect(() => {
     if (!hasInjectedRef.current || !frameDocument) return

@@ -309,6 +309,44 @@ export function useSectionManager({
     [executeCommand, getHistoryPageId, markAsDirty, sectionVisibilityRef, setSectionVisibility]
   )
 
+  const setSectionsVisibilityState = useCallback(
+    (
+      updates: Record<string, boolean>,
+      options?: { silent?: boolean; label?: string }
+    ) => {
+      const prevVisibility = cloneVisibilityState(sectionVisibilityRef.current)
+      let changed = false
+      const nextVisibility = { ...prevVisibility }
+
+      Object.entries(updates).forEach(([id, hidden]) => {
+        if (prevVisibility[id] !== hidden) {
+          nextVisibility[id] = hidden
+          changed = true
+        }
+      })
+
+      if (!changed) {
+        return
+      }
+
+      if (options?.silent) {
+        setSectionVisibility(nextVisibility)
+        return
+      }
+
+      executeCommand(
+        new VisibilityCommand({
+          pageId: getHistoryPageId(),
+          sectionId: options?.label ?? 'sections',
+          applyState: () => setSectionVisibility(nextVisibility),
+          revertState: () => setSectionVisibility(prevVisibility),
+          markDirty: markAsDirty
+        })
+      )
+    },
+    [executeCommand, getHistoryPageId, markAsDirty, sectionVisibilityRef, setSectionVisibility]
+  )
+
   const syncFeaturedSectionVisibility = useCallback(
     (shouldShow: boolean, options?: { silent?: boolean }) => {
       if (currentPageRef.current !== 'home') {
@@ -1020,6 +1058,7 @@ export function useSectionManager({
 
     // Visibility functions
     setSectionVisibilityState,
+    setSectionsVisibilityState,
     toggleSectionVisibility,
     syncFeaturedSectionVisibility,
 

@@ -10,7 +10,7 @@ import { groupSettingsByHeader, renderSettingInput } from '../../components/sett
 import { SchemaThemeSettings } from '../../components/SchemaThemeSettings'
 import { SectionPaddingSettings, type SectionSpacingMode } from './SectionPaddingSettings'
 import * as Separator from '@radix-ui/react-separator'
-import { Copy, Check, Pencil, X, Check as CheckIcon } from 'lucide-react'
+import { Copy, Pencil, X, Check as CheckIcon } from 'lucide-react'
 import { SettingSection, TextInput } from '@defalt/ui'
 
 export type SectionDetail = {
@@ -405,17 +405,18 @@ function AiSectionSettings({
   html,
   onRename,
 }: AiSectionSettingsProps) {
-  const [copied, setCopied] = useState(false)
+  const [copyStatus, setCopyStatus] = useState<'success' | 'error' | null>(null)
   const [isEditing, setIsEditing] = useState(false)
   const [editName, setEditName] = useState(name)
 
   const handleCopy = useCallback(async () => {
     try {
       await navigator.clipboard.writeText(html)
-      setCopied(true)
-      setTimeout(() => setCopied(false), 2000)
+      setCopyStatus('success')
+      setTimeout(() => setCopyStatus(null), 1200)
     } catch {
-      setCopied(false)
+      setCopyStatus('error')
+      setTimeout(() => setCopyStatus(null), 1200)
     }
   }, [html])
 
@@ -502,19 +503,16 @@ function AiSectionSettings({
             <button
               type="button"
               onClick={handleCopy}
-              className="flex items-center gap-1.5 rounded-md px-2 py-1 font-sm text-secondary hover:bg-hover hover:text-foreground transition-colors"
+              className="relative flex items-center justify-center rounded-md p-1.5 text-secondary hover:bg-hover hover:text-foreground transition-colors"
             >
-              {copied ? (
-                <>
-                  <Check size={14} className="text-success" />
-                  <span className="text-success">Copied!</span>
-                </>
-              ) : (
-                <>
-                  <Copy size={14} />
-                  <span>Copy</span>
-                </>
+              {copyStatus && (
+                <span
+                  className={`absolute right-full mr-2 whitespace-nowrap font-sm ${copyStatus === 'error' ? 'text-error' : 'text-success'}`}
+                >
+                  {copyStatus === 'success' ? '✓ Copied' : 'Failed'}
+                </span>
               )}
+              <Copy size={14} className="shrink-0" />
             </button>
           </div>
           <div className="relative rounded-md border border-border bg-subtle overflow-hidden">

@@ -272,14 +272,12 @@ export function useAIGenerate({ showToast }: UseAIGenerateParams = {}) {
   const copyToClipboard = useCallback(async (content: string) => {
     try {
       await navigator.clipboard.writeText(content)
-      showToast?.('Copied to clipboard', undefined, 'success')
       return true
     } catch (err) {
       logError(err, { scope: 'useAIGenerate.copyToClipboard' })
-      showToast?.('Copy failed', 'Could not copy to clipboard', 'error')
       return false
     }
-  }, [showToast])
+  }, [])
 
   const copyTemplate = useCallback(() => {
     if (state.generatedSection?.template) {
