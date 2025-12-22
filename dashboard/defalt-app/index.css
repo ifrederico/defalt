@@ -220,15 +220,8 @@ input[type="number"] {
   padding: 0;
   border: none;
   background: transparent;
-  cursor: pointer;
+  cursor: default;
   transition: opacity ease-in-out 150ms;
-}
-
-.df-sidebar-toggle[data-collapsed="false"] {
-  top: 50%;
-  bottom: auto;
-  height: 32px;
-  transform: translateY(-50%);
 }
 
 .df-sidebar-toggle:focus-visible {
@@ -260,6 +253,7 @@ input[type="number"] {
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  cursor: pointer;
 }
 
 .df-sidebar-toggle__segment--top {

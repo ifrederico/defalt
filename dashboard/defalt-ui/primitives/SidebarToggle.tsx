@@ -21,13 +21,29 @@ export function SidebarToggle({
       ? 'Expand sidebar'
       : 'Expand panel'
     : position === 'left'
-      ? 'Collapse sidebar'
+    ? 'Collapse sidebar'
       : 'Collapse panel')
+
+  const handleClick: MouseEventHandler<HTMLButtonElement> = (event) => {
+    if (event.detail === 0) {
+      onToggle(event)
+      return
+    }
+
+    const target = event.target as HTMLElement | null
+    if (target?.closest('.df-sidebar-toggle__inner')) {
+      onToggle(event)
+      return
+    }
+
+    event.preventDefault()
+    event.stopPropagation()
+  }
 
   return (
     <button
       type="button"
-      onClick={onToggle}
+      onClick={handleClick}
       className={cn(
         'df-sidebar-toggle',
         position === 'left' ? 'df-sidebar-toggle--left' : 'df-sidebar-toggle--right',
