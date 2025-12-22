@@ -82,7 +82,7 @@ const EDITOR_STYLES = `
     z-index: 21;
     width: min(520px, 90vw);
     padding: 10px 12px;
-    border-radius: 8px;
+    border-radius: 4px;
     background: rgba(15, 23, 42, 0.98);
     border: 1px solid rgba(148, 163, 184, 0.25);
     box-shadow: 0 16px 40px rgba(15, 23, 42, 0.35);
