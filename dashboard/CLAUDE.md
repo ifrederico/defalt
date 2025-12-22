@@ -17,7 +17,6 @@ Copy `.env.example` to `.env` and configure:
 - `VITE_DEV_BYPASS_AUTH` - `true` to skip Ghost auth in dev
 - `VITE_AI_SERVICE_URL` / `VITE_AI_API_KEY` - AI section generator
 - `VITE_UMAMI_WEBSITE_ID` / `VITE_UMAMI_HOST` - analytics
-- `AUTH_SECRET` - CSRF protection for the Vite dev server
 - `PORT` - production server port
 
 Install dependencies with `bun install`.

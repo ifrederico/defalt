@@ -365,8 +365,3 @@ export function getSectionTemplatePath(sectionId: string): string | null {
   const definition = sectionDefinitionMap.get(sectionId)
   return definition?.templatePath ?? null
 }
-
-// Log on import in development
-if (import.meta.env.DEV) {
-  console.log(`[sectionRegistry] Loaded ${sectionDefinitions.length} section(s)`)
-}

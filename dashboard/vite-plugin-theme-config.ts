@@ -17,14 +17,12 @@ const __dirname = path.dirname(__filename)
 
 // Lazy-load env to avoid top-level execution during config bundling
 let envLoaded = false
-let authSecret: string | undefined
 let ghostUrl: string | undefined
 let secureCookie = false
 
 function ensureEnvLoaded(server: ViteDevServer) {
   if (envLoaded) return
-  const env = loadEnv(server.config.mode, __dirname, ['VITE_', 'AUTH_'])
-  authSecret = env.AUTH_SECRET?.trim() || undefined
+  const env = loadEnv(server.config.mode, __dirname, ['VITE_'])
   ghostUrl = env.VITE_GHOST_URL?.trim() || undefined
   secureCookie = server.config.mode === 'production'
   envLoaded = true
@@ -45,21 +43,6 @@ import { CSRF_COOKIE_NAME, CSRF_HEADER_NAME } from './defalt-utils/security/cons
 // Inline helper functions (previously in server-utils/helpers.ts)
 const headerValue = (value: string | string[] | undefined): string | undefined =>
   Array.isArray(value) ? value[0] : value
-
-function extractAuthToken(req: IncomingMessage): string {
-  const authHeader = headerValue(req.headers?.authorization)
-  if (authHeader) {
-    const trimmed = authHeader.trim()
-    if (trimmed.startsWith('Bearer ')) return trimmed.slice(7).trim()
-    if (trimmed.length > 0) return trimmed
-  }
-  const fallbackHeaders = ['x-auth-secret', 'x-auth-key', 'x-access-token'] as const
-  for (const key of fallbackHeaders) {
-    const value = headerValue(req.headers?.[key])
-    if (value?.trim()) return value.trim()
-  }
-  return ''
-}
 
 async function readRequestBody(req: IncomingMessage, limitBytes = 2 * 1024 * 1024): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -82,21 +65,6 @@ async function readRequestBody(req: IncomingMessage, limitBytes = 2 * 1024 * 102
 
 const isPlainObject = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value)
-
-function ensureAuthorized(req: IncomingMessage, res: ServerResponse, routeName: string): boolean {
-  if (!authSecret) {
-    return true
-  }
-
-  if (extractAuthToken(req) === authSecret) {
-    return true
-  }
-
-  res.statusCode = 401
-  res.setHeader('Content-Type', 'application/json')
-  res.end(JSON.stringify({ error: `Unauthorized request to ${routeName}` }))
-  return false
-}
 
 const parseCookies = (cookieHeader: string | undefined): Record<string, string> => {
   if (!cookieHeader) {
@@ -294,9 +262,6 @@ export function themeConfigPlugin(): Plugin {
 
           if (normalizedUrl === '/api/theme-config') {
             if (req.method === 'DELETE') {
-              if (!ensureAuthorized(req, res, '/api/theme-config')) {
-                return
-              }
               if (!ensureCsrf(req, res, '/api/theme-config')) {
                 return
               }
@@ -319,9 +284,6 @@ export function themeConfigPlugin(): Plugin {
             }
 
             if (req.method === 'POST') {
-              if (!ensureAuthorized(req, res, '/api/theme-config')) {
-                return
-              }
               if (!ensureCsrf(req, res, '/api/theme-config')) {
                 return
               }
@@ -372,9 +334,6 @@ export function themeConfigPlugin(): Plugin {
           }
 
           if (normalizedUrl === '/api/theme/export' && req.method === 'POST') {
-            if (!ensureAuthorized(req, res, '/api/theme/export')) {
-              return
-            }
             if (!ensureCsrf(req, res, '/api/theme/export')) {
               return
             }
