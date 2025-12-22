@@ -117,7 +117,7 @@ export {
 // Premium Config
 // =============================================================================
 
-export { isPremium, isFree, getPremiumFeatures, getFreeFeatures } from '@defalt/utils/config/premiumConfig.js'
+export { isPremium, getPremiumFeatures } from '@defalt/utils/config/premiumConfig.js'
 
 // =============================================================================
 // Section Config Types (from individual section schemas)

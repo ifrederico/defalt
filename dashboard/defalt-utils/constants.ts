@@ -9,7 +9,6 @@ export const STORAGE_KEYS = {
   DATA_SOURCE: 'ghost-data-source',
   AI_SECTIONS: 'defalt-ai-sections',
   // Workspace state
-  CLOUD_LOADED: 'ghost-theme-editor:cloud-loaded',
   CSRF_TOKEN: 'ghost-theme-editor:csrf-token'
 }
 

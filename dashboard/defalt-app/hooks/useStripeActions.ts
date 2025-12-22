@@ -8,15 +8,7 @@ export function useStripeActions() {
     }
   }, [])
 
-  const openBillingPortal = useCallback(async () => {
-    const portalUrl = import.meta.env.VITE_GHOST_URL
-    if (portalUrl) {
-      window.location.href = `${portalUrl}/#/portal/account`
-    }
-  }, [])
-
   return {
-    startCheckout,
-    openBillingPortal
+    startCheckout
   }
 }

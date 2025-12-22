@@ -1093,11 +1093,6 @@ export function useWorkspace({
     markAsDirty()
   }, [markAsDirty])
 
-  const handlePackageJsonChange = useCallback((value: string) => {
-    setPackageJson(value)
-    markAsDirty()
-  }, [setPackageJson, markAsDirty])
-
   const rehydrateWorkspace = useCallback(() => {
     setWorkspaceHydrated(false)
     reloadWorkspace()
@@ -1364,7 +1359,6 @@ export function useWorkspace({
     handleAccentColorChange,
     handleBackgroundColorChange,
     handleCustomCSSChange,
-    handlePackageJsonChange,
 
     // Section manager exports
     sectionVisibility: sectionManager.sectionVisibility,

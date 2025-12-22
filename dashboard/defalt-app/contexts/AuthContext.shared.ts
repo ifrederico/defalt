@@ -1,5 +1,5 @@
 import { createContext } from 'react'
-export type AuthStatus = 'initializing' | 'guest' | 'authenticated' | 'unauthenticated' | 'error'
+export type AuthStatus = 'initializing' | 'authenticated' | 'unauthenticated'
 
 export type AuthUser = {
   id: string

@@ -50,10 +50,6 @@ export function useExport({
   onShowUpgradeModal
 }: UseExportParams) {
   const [isDownloading, setIsDownloading] = useState(false)
-  const [isDownloadConfirmOpen, setDownloadConfirmOpen] = useState(false)
-  const [isConfigDownloadConfirmOpen, setConfigDownloadConfirmOpen] = useState(false)
-  const [isImportDialogOpen, setImportDialogOpen] = useState(false)
-  const [pendingBackup, setPendingBackup] = useState<{ data: NormalizedWorkspaceBackup, fileName: string } | null>(null)
   const fileInputRef = useRef<HTMLInputElement | null>(null)
 
   const performConfigDownload = useCallback(async () => {
@@ -85,20 +81,10 @@ export function useExport({
 
   const requestConfigDownload = useCallback(() => {
     if (hasUnsavedChanges) {
-      setConfigDownloadConfirmOpen(true)
       return
     }
     void performConfigDownload()
   }, [hasUnsavedChanges, performConfigDownload])
-
-  const confirmConfigDownload = useCallback(() => {
-    setConfigDownloadConfirmOpen(false)
-    void performConfigDownload()
-  }, [performConfigDownload])
-
-  const cancelConfigDownload = useCallback(() => {
-    setConfigDownloadConfirmOpen(false)
-  }, [])
 
   const performThemeDownload = useCallback(async () => {
     if (isDownloading) {
@@ -206,15 +192,6 @@ export function useExport({
     void performThemeDownload()
   }, [performThemeDownload])
 
-  const confirmThemeDownload = useCallback(() => {
-    setDownloadConfirmOpen(false)
-    void performThemeDownload()
-  }, [performThemeDownload])
-
-  const cancelThemeDownload = useCallback(() => {
-    setDownloadConfirmOpen(false)
-  }, [])
-
   const triggerUpload = useCallback(() => {
     fileInputRef.current?.click()
   }, [])
@@ -233,55 +210,24 @@ export function useExport({
         showError('Invalid Backup File', 'Selected file is not a valid Defalt config backup.')
         return
       }
-      setPendingBackup({ data: backup, fileName: file.name })
-      setImportDialogOpen(true)
+      try {
+        applyWorkspaceBackup(backup.document)
+      } catch (error) {
+        logError(error, { scope: 'useExport.applyWorkspaceBackup' })
+        showError('Import Failed', 'Could not apply the selected backup.')
+      }
     } catch (error) {
       logError(error, { scope: 'useExport.handleBackupFileChange' })
       showError('File Read Error', 'Could not read the selected file.')
     }
-  }, [showError])
-
-  const confirmImportBackup = useCallback(() => {
-    if (!pendingBackup) {
-      setImportDialogOpen(false)
-      return
-    }
-    try {
-      applyWorkspaceBackup(pendingBackup.data.document)
-      setImportDialogOpen(false)
-      setPendingBackup(null)
-    } catch (error) {
-      logError(error, { scope: 'useExport.confirmImportBackup' })
-      showError('Import Failed', 'Could not apply the selected backup.')
-      setImportDialogOpen(false)
-      setPendingBackup(null)
-    }
-  }, [applyWorkspaceBackup, pendingBackup, showError])
-
-  const cancelImportBackup = useCallback(() => {
-    setImportDialogOpen(false)
-    setPendingBackup(null)
-  }, [])
+  }, [applyWorkspaceBackup, showError])
 
   return {
     isDownloading,
-    isDownloadConfirmOpen,
-    setDownloadConfirmOpen,
-    isConfigDownloadConfirmOpen,
-    setConfigDownloadConfirmOpen,
-    isImportDialogOpen,
-    setImportDialogOpen,
-    pendingBackup,
     fileInputRef,
     handleThemeDownloadRequest: requestThemeDownload,
-    handleConfirmThemeDownload: confirmThemeDownload,
-    handleCancelThemeDownload: cancelThemeDownload,
     handleDownloadBackup: requestConfigDownload,
-    handleConfirmConfigDownload: confirmConfigDownload,
-    handleCancelConfigDownload: cancelConfigDownload,
     handleUploadConfigClick: triggerUpload,
-    handleBackupFileChange,
-    handleConfirmImportBackup: confirmImportBackup,
-    handleCancelImportBackup: cancelImportBackup
+    handleBackupFileChange
   }
 }

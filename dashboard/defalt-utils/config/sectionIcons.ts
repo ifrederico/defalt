@@ -32,7 +32,7 @@ export const SECTION_ICON_MAP: Record<string, LucideIcon> = {
  * Set of section IDs that are built-in Ghost Source theme sections.
  * These always get the GhostIcon.
  */
-export const GHOST_SECTION_IDS = new Set([
+const GHOST_SECTION_IDS = new Set([
   'subheader',
   'featured',
   'footerbar',
