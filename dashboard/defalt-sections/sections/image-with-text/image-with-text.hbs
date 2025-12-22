@@ -1,143 +1,6 @@
 {{!-- Image With Text Section --}}
 
-<style>
-.gd-image-text-section {
-  --content-width: var(--gd-image-text-content-width, 1120px);
-  --image-column: var(--gd-image-text-image-column, 1fr);
-  --text-column: var(--gd-image-text-text-column, 1fr);
-  width: 100%;
-  background-color: var(--gd-image-text-background, transparent);
-}
-
-.gd-image-text-container {
-  max-width: var(--content-width);
-  margin: 0 auto;
-  padding: 0 var(--gd-image-text-padding-x, var(--container-gap, 24px));
-}
-
-.gd-image-text-content {
-  display: grid;
-  grid-template-columns: var(--image-column) var(--text-column);
-  gap: clamp(32px, 5vw, 64px);
-  align-items: center;
-}
-
-.gd-image-text-content.gd-image-text-content--image-right {
-  grid-template-columns: var(--text-column) var(--image-column);
-}
-
-.gd-image-text-content.gd-image-text-content--image-right .gd-image-text-image {
-  order: 2;
-}
-
-.gd-image-text-content.gd-image-text-content--image-right .gd-image-text-text {
-  order: 1;
-}
-
-@media (max-width: 768px) {
-  .gd-image-text-content,
-  .gd-image-text-content.gd-image-text-content--image-right {
-    grid-template-columns: 1fr;
-  }
-
-  /* Always keep image above text on mobile */
-  .gd-image-text-content.gd-image-text-content--image-right .gd-image-text-image,
-  .gd-image-text-content.gd-image-text-content--image-right .gd-image-text-text {
-    order: 0;
-  }
-}
-
-.gd-image-text-image {
-  width: 100%;
-  border-radius: var(--gd-image-text-image-radius, 0px);
-  overflow: hidden;
-  background-color: rgba(0, 0, 0, 0.05);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.gd-image-text-image.gd-image-text-image--fixed {
-  aspect-ratio: var(--gd-image-text-image-aspect);
-}
-
-.gd-image-text-image img {
-  width: 100%;
-  display: block;
-  height: auto;
-  object-fit: cover;
-}
-
-.gd-image-text-image.gd-image-text-image--fixed img {
-  height: 100%;
-}
-
-.gd-image-text-placeholder {
-  opacity: 0.65;
-  font-size: 3rem;
-}
-
-.gd-image-text-text {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.gd-image-text-heading {
-  margin: 0;
-  font-family: var(--gh-font-heading, var(--font-sans));
-  font-size: clamp(2.8rem, 1.36vw + 2.25rem, 4rem);
-  font-weight: 700;
-  letter-spacing: -0.03em;
-  line-height: 1.1;
-  color: inherit;
-}
-
-.gd-image-text-description {
-  margin: 0;
-  font-size: 1.8rem;
-  line-height: 1.4;
-  letter-spacing: -0.015em;
-  opacity: 0.85;
-  color: inherit;
-}
-
-.gd-image-text-buttons {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 1.5rem;
-  margin-top: 8px;
-}
-
-.gd-image-text-buttons.gh-content {
-  font-size: inherit;
-  letter-spacing: inherit;
-}
-
-.gd-image-text-buttons.gh-content > * + * {
-  margin-top: 0;
-}
-
-.gd-image-text-buttons .kg-card.kg-cta-card {
-  flex: 1 0 100%;
-}
-
-.gd-image-text-align-left .gd-image-text-text {
-  text-align: left;
-  align-items: flex-start;
-}
-
-.gd-image-text-align-center .gd-image-text-text {
-  text-align: center;
-  align-items: center;
-}
-
-.gd-image-text-align-right .gd-image-text-text {
-  text-align: right;
-  align-items: flex-end;
-}
-</style>
+{{> "sections/image-with-text/image-with-text.styles"}}
 
 {{#get "pages" filter=tagFilter limit="1" include="tags,authors"}}
   {{#if pages}}
@@ -151,16 +14,12 @@
         {{#foreach pages}}
 	          <div class="gd-image-text-content{{#if ../imageOnRight}} gd-image-text-content--image-right{{/if}}">
 	            <div class="gd-image-text-image{{#if ../imageAspectRatio}} gd-image-text-image--fixed{{/if}}">
-	              {{#if feature_image}}
-	                <img src="{{img_url feature_image size="xl"}}" alt="{{#if feature_image_alt}}{{feature_image_alt}}{{else}}{{title}}{{/if}}" />
-	              {{else}}
-	                {{#if ../isPreview}}
-	                  <img src="{{#if ../placeholderImageUrl}}{{../placeholderImageUrl}}{{else}}/sections/placeholder.jpg{{/if}}" alt="" />
-	                {{else}}
-	                  <div class="gd-image-text-placeholder" aria-hidden="true"></div>
-	                {{/if}}
-	              {{/if}}
-	            </div>
+              {{#if feature_image}}
+                <img src="{{img_url feature_image size="xl"}}" alt="{{#if feature_image_alt}}{{feature_image_alt}}{{else}}{{title}}{{/if}}" />
+              {{else}}
+                <div class="gd-image-text-placeholder" aria-hidden="true"></div>
+              {{/if}}
+            </div>
             <div class="gd-image-text-text">
               {{#if ../pageTitle}}
                 <h2 class="gd-image-text-heading">{{title}}</h2>
@@ -184,28 +43,5 @@
         {{/foreach}}
       </div>
     </section>
-  {{else}}
-    {{#if isPreview}}
-      <section
-        class="gd-image-text-section gd-image-text-align-{{textAlignment}}"
-        data-section-type="image-with-text"
-        data-section-id="{{sectionId}}"
-        style="{{sectionStyle}}; --gd-image-text-background: {{backgroundColor}}; --gd-image-text-content-width: {{contentWidth}}; --gd-image-text-padding-x: {{containerPaddingX}}; --gd-image-text-image-column: {{imageColumn}}; --gd-image-text-text-column: {{textColumn}}; --gd-image-text-image-radius: {{imageBorderRadius}}px;{{#if imageAspectRatio}} --gd-image-text-image-aspect: {{imageAspectRatio}};{{/if}}"
-      >
-	        <div class="gd-image-text-container">
-	          <div class="gd-image-text-content{{#if imageOnRight}} gd-image-text-content--image-right{{/if}}">
-	            <div class="gd-image-text-image{{#if imageAspectRatio}} gd-image-text-image--fixed{{/if}}">
-	              <img src="{{#if placeholderImageUrl}}{{placeholderImageUrl}}{{else}}/sections/placeholder.jpg{{/if}}" alt="" />
-	            </div>
-            <div class="gd-image-text-text">
-              {{#if pageTitle}}
-                <h2 class="gd-image-text-heading">Image with text</h2>
-              {{/if}}
-              <p class="gd-image-text-description">Tag a published Ghost page with <code>{{internalTag}}</code>.</p>
-            </div>
-          </div>
-        </div>
-      </section>
-    {{/if}}
   {{/if}}
 {{/get}}

@@ -54,7 +54,7 @@ const isFooterChildSection = (sectionId: string) => {
 }
 
 const TEMPLATE_SNIPPET_CACHE = new Map<string, string>()
-const TEMPLATE_SNIPPET_CACHE_VERSION = 'clean-v3'
+const TEMPLATE_SNIPPET_CACHE_VERSION = 'clean-v4'
 const PARTIAL_FILENAME_MAP: Record<string, string> = {
   hero: 'defalt-hero.hbs',
   ghostCards: 'defalt-ghost-cards.hbs',
@@ -103,6 +103,8 @@ const resolveGhostGridDefaultTags = (instanceId: string): { left: string; right:
   }
 }
 
+const escapeRegExp = (value: string): string => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+
 const stripPreviewBlocks = (template: string): string => {
   const withoutPagesElse = template.replace(
     /\{\{#if\s+pages\}\}([\s\S]*?)\{\{else\}\}[\s\S]*?\{\{\/if\}\}/g,
@@ -133,6 +135,27 @@ const tidyTemplateWhitespace = (template: string): string =>
 
 const sanitizeTemplateForCopy = (template: string): string =>
   tidyTemplateWhitespace(stripPlaceholderCss(stripPreviewBlocks(template)))
+
+const inlineStylePartialForCopy = async (templatePath: string, template: string): Promise<string> => {
+  if (!templatePath.endsWith('.hbs')) {
+    return template
+  }
+  const styleTemplatePath = templatePath.replace(/\.hbs$/, '.styles.hbs')
+  const stylePartialName = `sections/${templatePath.replace(/\.hbs$/, '.styles')}`
+  const regex = new RegExp(`\\{\\{>\\s*["']${escapeRegExp(stylePartialName)}["']\\s*\\}\\}`, 'g')
+
+  try {
+    const url = withBasePath(`/sections/${styleTemplatePath}`)
+    const response = await fetch(url)
+    if (!response.ok) {
+      return template
+    }
+    const styleContent = await response.text()
+    return template.replace(regex, styleContent.trim())
+  } catch {
+    return template
+  }
+}
 
 const buildSectionSnippet = (section: SectionInstance, padding?: SectionPadding): string => {
   const sectionStyle = buildSectionStyle(resolvePadding(padding))
@@ -395,7 +418,8 @@ export function SectionActionBar({
           throw new Error(`Template fetch failed: ${response.status}`)
         }
         const content = await response.text()
-        const sanitized = sanitizeTemplateForCopy(content)
+        const inlined = await inlineStylePartialForCopy(templatePath, content)
+        const sanitized = sanitizeTemplateForCopy(inlined)
         if (cancelled) return
         TEMPLATE_SNIPPET_CACHE.set(cacheKey, sanitized)
         setPartialSnippet(sanitized)

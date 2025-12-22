@@ -1,96 +1,39 @@
-# Defalt
+# ◇ Defalt
 
-A visual theme editor for Ghost CMS. Customize the Ghost Source theme with live preview and one-click export.
+## https://defalt.org
 
-## Features
+## A visual theme editor for Ghost
+### Drag, drop, customize. Export when ready.
 
-- **Live Preview** - See changes instantly in a real Ghost theme preview
-- **Drag & Drop** - Reorder sections with drag and drop
-- **One-Click Export** - Download a ready-to-upload Ghost theme ZIP
-- **Ghost Memberships** - Authentication via Ghost's built-in member system
-- **Section Visibility** - Show/hide sections per page type
-- **Custom CSS** - Add custom styles with live validation
+Defalt lets you customize the Ghost Source theme without touching code. See your changes live, rearrange sections, tweak colors, and download a ready-to-upload theme when you're done.
 
-## Tech Stack
+## What you can do
 
-- **Frontend**: React 19, TypeScript, Vite, Tailwind CSS
-- **UI**: Radix UI, Lucide Icons
-- **Rendering**: Handlebars (compiles actual Ghost templates in browser)
-- **Backend**: Express, PostgreSQL
-- **Auth**: Ghost member cookies
-- **Deployment**: Railway (Ghost + Dashboard)
+- See changes instantly in a live preview
+- Drag sections around to reorder them
+- Show or hide sections per page type
+- Write custom CSS (we'll tell you if something's wrong)
+- Export a ZIP and upload it to Ghost
 
-## Quick Start
+## Contributions
+
+Not accepting contributions right now. Check back later!
+
+## Can I self-host this?
+
+Defalt is built as a platform, not a standalone tool. It runs alongside Ghost and uses Ghost's member authentication.
+
+For local development:
 
 ```bash
-# Clone and install
-git clone https://github.com/ifrederico/defalt.git
-cd defalt/dashboard
+cd dashboard
 bun install
-
-# Configure environment
 cp .env.example .env
-# Edit .env with your Ghost URL
-
-# Start development server
 bun run dev
 ```
 
-Open http://localhost:5173
-
-## Environment Variables
-
-See [.env.example](.env.example) for all options. Minimum required:
-
-```bash
-VITE_GHOST_URL=https://your-ghost-site.com
-```
-
-For local development without Ghost auth:
-```bash
-VITE_DEV_BYPASS_AUTH=true
-```
-
-## Project Structure
-
-```
-defalt/
-├── dashboard/          # Main React app
-│   ├── defalt-app/     # App shell, routing, contexts
-│   ├── defalt-ui/      # Shared UI components
-│   ├── defalt-sections/# Section definitions & settings
-│   ├── defalt-rendering/# Handlebars preview engine
-│   └── defalt-utils/   # Utilities, security, API
-├── ghost/              # Ghost CMS Docker image
-└── caddy-proxy/        # Reverse proxy config
-```
-
-## Deployment
-
-### Railway (recommended)
-
-Both Ghost and Dashboard deploy to Railway. See [dashboard/CLAUDE.md](dashboard/CLAUDE.md) for detailed deployment docs.
-
-### Self-hosted
-
-1. Build the dashboard: `bun run build:all`
-2. Run with: `bun start`
-3. Point at your Ghost instance via `VITE_GHOST_URL`
-
-## Contributing
-
-Contributions welcome! Please:
-
-1. Fork the repo
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit changes
-4. Push and open a PR
+Set `VITE_DEV_BYPASS_AUTH=true` in `.env` to skip auth during development.
 
 ## License
 
-MIT - see [LICENSE](LICENSE)
-
-## Links
-
-- [Live Demo](https://defalt.org)
-- [Ghost CMS](https://ghost.org)
+MIT

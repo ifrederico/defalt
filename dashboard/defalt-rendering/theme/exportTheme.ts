@@ -60,6 +60,14 @@ function getSectionTemplatePath(sectionId: string): string | null {
   return SECTION_TEMPLATE_PATHS[sectionId] ?? null
 }
 
+function getSectionStyleTemplatePath(sectionId: string): string | null {
+  const templatePath = getSectionTemplatePath(sectionId)
+  if (!templatePath) {
+    return null
+  }
+  return templatePath.replace(/\.hbs$/, '.styles.hbs')
+}
+
 function escapeRegExp(value: string): string {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 }
@@ -78,6 +86,33 @@ async function readSectionTemplate(sectionId: string): Promise<string | null> {
   } catch {
     return null
   }
+}
+
+async function readSectionStyleTemplate(sectionId: string): Promise<string | null> {
+  const templatePath = getSectionStyleTemplatePath(sectionId)
+  if (!templatePath) {
+    return null
+  }
+  const fullPath = path.join(SECTIONS_SOURCE_DIR, templatePath)
+  try {
+    return await fs.readFile(fullPath, 'utf-8')
+  } catch {
+    return null
+  }
+}
+
+function inlineSectionStylePartial(
+  template: string,
+  templatePath: string,
+  styleContent: string | null
+): string {
+  if (!styleContent) {
+    return template
+  }
+
+  const partialName = `sections/${templatePath.replace(/\.hbs$/, '.styles')}`
+  const regex = new RegExp(`\\{\\{>\\s*["']${escapeRegExp(partialName)}["']\\s*\\}\\}`, 'g')
+  return template.replace(regex, styleContent.trim())
 }
 
 type ThemeConfig = {
@@ -961,10 +996,16 @@ export async function applyCustomSectionTemplates(themeDir: string, config: Them
     if (!requiredSectionTypes.has(mapping.id)) {
       continue
     }
-    const content = await readSectionTemplate(mapping.id)
-    if (!content) {
+    const templatePath = getSectionTemplatePath(mapping.id)
+    if (!templatePath) {
       continue
     }
+    const rawContent = await readSectionTemplate(mapping.id)
+    if (!rawContent) {
+      continue
+    }
+    const styleContent = await readSectionStyleTemplate(mapping.id)
+    const content = inlineSectionStylePartial(rawContent, templatePath, styleContent)
     await fs.writeFile(path.join(partialsDir, mapping.filename), content, 'utf-8')
   }
 }

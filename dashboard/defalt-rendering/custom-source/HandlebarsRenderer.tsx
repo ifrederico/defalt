@@ -47,6 +47,7 @@ import type { SectionInstance } from '@defalt/sections/engine'
 import {
   renderSection,
   preloadTemplates,
+  registerSectionPartials,
   getSectionTemplatePath,
   getSectionDefinition,
   sectionDefinitions as engineSectionDefinitions
@@ -67,6 +68,25 @@ import { EditorStyles } from '../components/AutoFrame/EditorStyles'
 import { useFrame } from '../components/AutoFrame/useFrame'
 import { SelectionOverlay } from '../components/SelectionOverlay'
 import { SectionActionBar } from '../components/SectionActionBar'
+
+const PREVIEW_TEMPLATE_PATHS: Record<string, string> = {
+  hero: 'hero/hero.preview.hbs',
+  ghostCards: 'ghostCards/ghostCards.preview.hbs',
+  ghostGrid: 'ghostGrid/ghostGrid.preview.hbs',
+  'image-with-text': 'image-with-text/image-with-text.preview.hbs',
+  'announcement-bar': 'announcement-bar/announcement-bar.preview.hbs'
+}
+
+const SECTION_STYLE_PARTIALS = [
+  { name: 'sections/hero/hero.styles', templatePath: 'hero/hero.styles.hbs' },
+  { name: 'sections/ghostCards/ghostCards.styles', templatePath: 'ghostCards/ghostCards.styles.hbs' },
+  { name: 'sections/ghostGrid/ghostGrid.styles', templatePath: 'ghostGrid/ghostGrid.styles.hbs' },
+  { name: 'sections/image-with-text/image-with-text.styles', templatePath: 'image-with-text/image-with-text.styles.hbs' },
+  { name: 'sections/announcement-bar/announcement-bar.styles', templatePath: 'announcement-bar/announcement-bar.styles.hbs' }
+]
+
+const resolvePreviewTemplatePath = (sectionId: string): string | null =>
+  PREVIEW_TEMPLATE_PATHS[sectionId] ?? getSectionTemplatePath(sectionId)
 
 const isPlainRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value)
@@ -237,19 +257,37 @@ export function HandlebarsRenderer({
   useEffect(() => {
     const templates = engineSectionDefinitions
       .filter((def): def is (typeof def & { templatePath: string }) => typeof def.templatePath === 'string' && def.templatePath.length > 0)
-      .map(def => ({ sectionId: def.id, templatePath: def.templatePath }))
+      .map(def => ({
+        sectionId: def.id,
+        templatePath: PREVIEW_TEMPLATE_PATHS[def.id] ?? def.templatePath
+      }))
 
-    if (templates.length === 0) {
-      setTemplatesReady(true)
-      return
+    let cancelled = false
+
+    const tasks: Array<Promise<unknown>> = [
+      registerSectionPartials(SECTION_STYLE_PARTIALS)
+    ]
+
+    if (templates.length > 0) {
+      tasks.push(preloadTemplates(templates))
     }
 
-    preloadTemplates(templates)
-      .then(() => setTemplatesReady(true))
+    Promise.all(tasks)
+      .then(() => {
+        if (!cancelled) {
+          setTemplatesReady(true)
+        }
+      })
       .catch((err) => {
         console.warn('[HandlebarsRenderer] Failed to preload section templates:', err)
-        setTemplatesReady(true) // Continue anyway; templates load on demand
+        if (!cancelled) {
+          setTemplatesReady(true) // Continue anyway; templates load on demand
+        }
       })
+
+    return () => {
+      cancelled = true
+    }
   }, [])
 
   // Render custom sections using the new engine (async)
@@ -268,7 +306,7 @@ export function HandlebarsRenderer({
       for (const section of customTemplateSections) {
         if (cancelled) return
 
-        const templatePath = getSectionTemplatePath(section.definitionId)
+        const templatePath = resolvePreviewTemplatePath(section.definitionId)
         const sectionDef = getSectionDefinition(section.definitionId)
         const paddingControls = sectionDef?.paddingControls ?? 'vertical'
         const shouldUseGlobalPadding = paddingControls !== 'none'
@@ -401,7 +439,7 @@ export function HandlebarsRenderer({
     let cancelled = false
 
     const renderAnnouncementBars = async () => {
-      const templatePath = getSectionTemplatePath('announcement-bar')
+      const templatePath = resolvePreviewTemplatePath('announcement-bar')
       if (!templatePath) {
         console.warn('[HandlebarsRenderer] No template path for announcement-bar')
         if (!cancelled) {

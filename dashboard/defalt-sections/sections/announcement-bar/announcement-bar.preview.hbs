@@ -1,24 +1,24 @@
-{{!-- Announcement Bar Section - Engine V2: Block Architecture --}}
+{{!-- Announcement Bar Section (Preview) --}}
 {{!-- Content is fetched from Ghost pages using each block's tag --}}
 
 {{> "sections/announcement-bar/announcement-bar.styles"}}
 
-{{#if (length announcements)}}
-  <section
-    class="announcement-bar{{#if (eq width 'narrow')}} announcement-bar--narrow{{/if}}"
-    data-section-type="announcement-bar"
-    data-section-id="{{default sectionId 'announcement-bar'}}"
-    style="
-      {{sectionStyle}};
-      --announcement-bar-background-color: {{backgroundColor}};
-      --announcement-bar-text-color: {{textColor}};
-      --announcement-bar-divider-thickness: {{dividerThickness}}px;
-      --announcement-bar-divider-color: {{dividerColor}};
-    "
-  >
-    <div class="announcement-bar__content">
-      {{!-- Engine V2: Loop over announcements blocks --}}
-      {{!-- Priority: 1) Ghost page content via tag, 2) Manual text --}}
+<section
+  class="announcement-bar{{#if (eq width 'narrow')}} announcement-bar--narrow{{/if}}"
+  data-section-type="announcement-bar"
+  data-section-id="{{default sectionId 'announcement-bar'}}"
+  style="
+    {{sectionStyle}};
+    --announcement-bar-background-color: {{backgroundColor}};
+    --announcement-bar-text-color: {{textColor}};
+    --announcement-bar-divider-thickness: {{dividerThickness}}px;
+    --announcement-bar-divider-color: {{dividerColor}};
+  "
+>
+  <div class="announcement-bar__content">
+    {{!-- Engine V2: Loop over announcements blocks --}}
+    {{!-- Priority: 1) Ghost page content via tag, 2) Manual text, 3) Placeholder --}}
+    {{#if (length announcements)}}
       {{#each announcements}}
         {{#unless @first}}<span class="announcement-bar__separator">·</span>{{/unless}}
         {{#get "pages" filter=tagFilter limit="1" include="tags"}}
@@ -33,16 +33,21 @@
               </div>
             {{/foreach}}
           {{else}}
-            {{!-- No Ghost page - use manual text --}}
+            {{!-- No Ghost page - use manual text or placeholder --}}
             {{#if ../text}}
               <span
                 class="announcement-bar__item"
                 style="font-size: {{#if (eq ../typographySize 'small')}}1.2rem{{else if (eq ../typographySize 'large')}}1.6rem{{else if (eq ../typographySize 'x-large')}}1.8rem{{else}}1.4rem{{/if}}; font-weight: {{#if (eq ../typographyWeight 'light')}}300{{else if (eq ../typographyWeight 'bold')}}700{{else}}500{{/if}}; letter-spacing: {{#if (eq ../typographySpacing 'tight')}}-0.02em{{else if (eq ../typographySpacing 'wide')}}0.05em{{else}}0{{/if}}; text-transform: {{#if (eq ../typographyCase 'uppercase')}}uppercase{{else}}none{{/if}};"
               >{{../text}}</span>
+            {{else}}
+              <span class="announcement-bar__item" style="font-size: {{#if (eq ../typographySize 'small')}}1.2rem{{else if (eq ../typographySize 'large')}}1.6rem{{else if (eq ../typographySize 'x-large')}}1.8rem{{else}}1.4rem{{/if}}; font-weight: {{#if (eq ../typographyWeight 'light')}}300{{else if (eq ../typographyWeight 'bold')}}700{{else}}500{{/if}}; letter-spacing: {{#if (eq ../typographySpacing 'tight')}}-0.02em{{else if (eq ../typographySpacing 'wide')}}0.05em{{else}}0{{/if}}; text-transform: {{#if (eq ../typographyCase 'uppercase')}}uppercase{{else}}none{{/if}};">Tag a Ghost page with {{../tag}}</span>
             {{/if}}
           {{/if}}
         {{/get}}
       {{/each}}
-    </div>
-  </section>
-{{/if}}
+    {{!-- Empty state --}}
+    {{else}}
+      <span class="announcement-bar__item" style="font-size: 1.4rem;">Add announcements in the sidebar.</span>
+    {{/if}}
+  </div>
+</section>

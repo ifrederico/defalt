@@ -1,41 +1,39 @@
-# Defalt Dashboard
+# Dashboard
 
-Editor app for the Defalt Ghost theme.
+The editor app. This is where the magic happens.
 
-## Quickstart
+## Getting started
 
 ```bash
 bun install
 cp .env.example .env
 ```
 
-Set `VITE_GHOST_URL` in `.env`, then:
+Set `VITE_GHOST_URL` to your Ghost site, then:
 
 ```bash
 bun run dev
 ```
 
-Open `http://localhost:5173/app/`.
+Open http://localhost:5173/app/ and you're in.
 
-## Useful env vars
+## Environment variables
 
-- `VITE_GHOST_URL` (required): Ghost site URL for auth + content.
-- `VITE_BASE_PATH` (optional): subpath for hosting (default `/app/`).
-- `VITE_DEV_BYPASS_AUTH` (optional): set to `true` to skip Ghost auth in dev.
-- `DATABASE_URL` (optional): enables theme storage in Postgres.
+- `VITE_GHOST_URL` — Your Ghost site URL (required)
+- `VITE_DEV_BYPASS_AUTH` — Set to `true` to skip auth during development
+- `VITE_BASE_PATH` — Change if you're not hosting at `/app/`
+- `DATABASE_URL` — Postgres connection for theme storage
 
-## Common commands
+## Commands
 
 ```bash
-bun run dev           # Vite dev server
-bun run dev:server    # Express server (watch mode)
-bun run build         # TypeScript + Vite build
-bun run start         # Production server
-bun run build:theme   # Build the Ghost theme in public/themes/source-complete
-bun run test          # Vitest
+bun run dev           # Start the dev server
+bun run build         # Build everything
+bun run build:theme   # Just build the Ghost theme
+bun run test          # Run tests
 ```
 
 ## Notes
 
-- Export uses `/api/theme/export` and requires an authenticated Ghost member.
-- If you host at root, set `VITE_BASE_PATH=/` and use `http://localhost:5173/`.
+- Export needs an authenticated Ghost member (uses `/api/theme/export`)
+- Hosting at root? Set `VITE_BASE_PATH=/`

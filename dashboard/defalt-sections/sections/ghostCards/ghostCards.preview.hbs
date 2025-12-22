@@ -1,0 +1,102 @@
+{{!-- Ghost Cards Section (Preview) --}}
+
+{{> "sections/ghostCards/ghostCards.styles"}}
+
+<style>
+.gd-ghost-placeholder-header {
+  margin-bottom: 0;
+  opacity: 0.5;
+}
+
+.gd-ghost-placeholder-header .gh-article-title {
+  color: rgba(21, 21, 21, 0.55);
+}
+
+.gd-ghost-placeholder-image {
+  width: 100%;
+  max-width: 520px;
+  height: auto;
+  border-radius: 12px;
+  display: block;
+  margin: 0 auto 16px;
+}
+
+.gd-ghost-cards-placeholder {
+  border: 1px solid #d4d4d450;
+  border-radius: 12px;
+  padding: 24px;
+  background-color: #fafafa;
+  text-align: center;
+  color: #6b7280;
+}
+
+.gd-ghost-cards-placeholder-title {
+  margin-bottom: 8px;
+  font-weight: 600;
+  color: #151515;
+}
+
+.gd-ghost-cards-placeholder code {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 6px;
+  margin: 0 2px;
+  border-radius: 4px;
+  background-color: #ffffff;
+  border: 1px solid #e0e0e0;
+  font-size: 12px;
+  font-family: inherit;
+}
+</style>
+
+{{#get "pages" filter=tagFilter limit="3" include="tags,authors"}}
+  {{#if pages}}
+    <section
+      class="gd-ghost-cards-section gh-outer{{#unless pageTitle}} gd-ghost-cards-hide-header{{/unless}} gd-ghost-cards-header-{{textAlignment}} gd-ghost-title-{{titleSize}}"
+      data-section-type="ghost-cards"
+      data-section-id="{{sectionId}}"
+      style="{{sectionStyle}}; --gd-ghost-cards-background: {{backgroundColor}}; --gd-ghost-cards-content-width: {{contentWidth}}; --gd-ghost-cards-padding-x: {{containerPaddingX}};"
+    >
+      <div class="gh-inner">
+        <div class="gd-ghost-cards-inner">
+          {{#foreach pages}}
+            <article class="gh-article">
+              <header class="gh-article-header">
+                <h1 class="gh-article-title is-title">{{title}}</h1>
+                {{#if custom_excerpt}}
+                  <p class="gh-article-excerpt is-body">{{custom_excerpt}}</p>
+                {{/if}}
+              </header>
+              <div class="gh-content is-body">
+                {{{html}}}
+              </div>
+            </article>
+          {{/foreach}}
+        </div>
+      </div>
+    </section>
+  {{else}}
+    <section
+      class="gd-ghost-cards-section gh-outer{{#unless pageTitle}} gd-ghost-cards-hide-header{{/unless}} gd-ghost-cards-header-{{textAlignment}} gd-ghost-title-{{titleSize}}"
+      data-section-type="ghost-cards"
+      data-section-id="{{sectionId}}"
+      style="{{sectionStyle}}; --gd-ghost-cards-background: {{backgroundColor}}; --gd-ghost-cards-content-width: {{contentWidth}}; --gd-ghost-cards-padding-x: {{containerPaddingX}};"
+    >
+      <div class="gh-inner">
+        <div class="gd-ghost-cards-inner">
+          <article class="gh-article">
+            <div class="gd-ghost-cards-placeholder">
+              <header class="gh-article-header gd-ghost-placeholder-header">
+                <h1 class="gh-article-title is-title">Ghost cards</h1>
+              </header>
+              {{#if placeholderImageUrl}}
+                <img class="gd-ghost-placeholder-image" src="{{placeholderImageUrl}}" alt="" />
+              {{/if}}
+              <div class="gd-ghost-cards-placeholder-title">Tag a published Ghost page with <code>{{internalTag}}</code></div>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+  {{/if}}
+{{/get}}

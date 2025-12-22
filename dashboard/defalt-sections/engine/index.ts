@@ -94,6 +94,7 @@ export {
 
   // Template management
   preloadTemplates,
+  registerSectionPartials,
 } from './hbsRenderer.js'
 
 // =============================================================================

@@ -1,6 +1,71 @@
-{{!-- Ghost Grid Section --}}
+{{!-- Ghost Grid Section (Preview) --}}
 
 {{> "sections/ghostGrid/ghostGrid.styles"}}
+
+<style>
+.gd-ghost-grid-placeholder {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--gd-ghost-grid-gap, 40px);
+  opacity: 0.9;
+}
+
+.gd-ghost-grid-placeholder-column {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+@media (max-width: 768px) {
+  .gd-ghost-grid-stack .gd-ghost-grid-placeholder {
+    grid-template-columns: 1fr;
+  }
+}
+
+.gd-ghost-grid-placeholder-card {
+  border: 1px solid #d4d4d450;
+  border-radius: 12px;
+  padding: 24px;
+  background-color: #fafafa;
+  text-align: center;
+  color: #6b7280;
+}
+
+.gd-ghost-grid-placeholder-title {
+  margin-bottom: 8px;
+  font-weight: 600;
+  color: #151515;
+}
+
+.gd-ghost-grid-placeholder-card code {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 6px;
+  margin: 0 2px;
+  border-radius: 4px;
+  background-color: #ffffff;
+  border: 1px solid #e0e0e0;
+  font-size: 12px;
+  font-family: inherit;
+}
+
+.gd-ghost-placeholder-header {
+  margin-bottom: 0;
+  opacity: 0.5;
+}
+
+.gd-ghost-placeholder-header .gh-article-title {
+  color: rgba(21, 21, 21, 0.55);
+}
+
+.gd-ghost-placeholder-image {
+  width: 100%;
+  height: auto;
+  border-radius: 12px;
+  display: block;
+  margin: 0 auto 12px;
+}
+</style>
 
 {{#get "pages" filter=anyTagFilter limit="1" include="tags" as |anyPages|}}
   {{#if anyPages.[0]}}
@@ -69,5 +134,41 @@
         </section>
       {{/get}}
     {{/get}}
+  {{else}}
+    <section
+      class="gd-ghost-grid-section gh-outer{{#unless pageTitle}} gd-ghost-grid-hide-header{{/unless}} gd-ghost-grid-header-{{textAlignment}} gd-ghost-title-{{titleSize}}{{#if stackOnMobile}} gd-ghost-grid-stack{{/if}}"
+      data-section-type="ghost-grid"
+      data-section-id="{{sectionId}}"
+      style="{{sectionStyle}}; --gd-ghost-grid-background: {{backgroundColor}}; --gd-ghost-grid-content-width: {{contentWidth}}; --gd-ghost-grid-padding-x: {{containerPaddingX}}; --gd-ghost-grid-gap: {{gap}}px;"
+    >
+      <div class="gh-inner">
+        <div class="gd-ghost-grid-inner">
+          <div class="gd-ghost-grid-placeholder">
+            <div class="gd-ghost-grid-placeholder-column">
+              <article class="gd-ghost-grid-placeholder-card">
+                <header class="gh-article-header gd-ghost-placeholder-header">
+                  <h1 class="gh-article-title is-title">Left</h1>
+                </header>
+                {{#if placeholderImageUrl}}
+                  <img class="gd-ghost-placeholder-image" src="{{placeholderImageUrl}}" alt="" />
+                {{/if}}
+                <div class="gd-ghost-grid-placeholder-title">Tag a published page with <code>{{internalTagLeft}}</code></div>
+              </article>
+            </div>
+            <div class="gd-ghost-grid-placeholder-column">
+              <article class="gd-ghost-grid-placeholder-card">
+                <header class="gh-article-header gd-ghost-placeholder-header">
+                  <h1 class="gh-article-title is-title">Right</h1>
+                </header>
+                {{#if placeholderImageUrl}}
+                  <img class="gd-ghost-placeholder-image" src="{{placeholderImageUrl}}" alt="" />
+                {{/if}}
+                <div class="gd-ghost-grid-placeholder-title">Tag a published page with <code>{{internalTagRight}}</code></div>
+              </article>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
   {{/if}}
 {{/get}}

@@ -50,6 +50,7 @@ export interface RenderSectionOptions extends RenderOptions {
 // =============================================================================
 
 const templateCache = new Map<string, HandlebarsTemplateDelegate>()
+const partialCache = new Map<string, string>()
 const hbs = Handlebars.create()
 
 // =============================================================================
@@ -402,8 +403,9 @@ async function fetchAndCompileTemplate(
   templatePath: string,
   basePath: string
 ): Promise<HandlebarsTemplateDelegate> {
-  // Check cache first
-  const cached = templateCache.get(sectionId)
+  // Check cache first (include templatePath to avoid preview/live collisions)
+  const cacheKey = `${sectionId}::${templatePath}`
+  const cached = templateCache.get(cacheKey)
   if (cached) {
     return cached
   }
@@ -421,13 +423,45 @@ async function fetchAndCompileTemplate(
 
     // Compile template
     const compiled = hbs.compile(source)
-    templateCache.set(sectionId, compiled)
+    templateCache.set(cacheKey, compiled)
 
     return compiled
   } catch (error) {
     console.error(`[hbsRenderer] Error loading template for section "${sectionId}":`, error)
     throw error
   }
+}
+
+/**
+ * Register shared section partials (styles, fragments) by name.
+ */
+export async function registerSectionPartials(
+  partials: Array<{ name: string; templatePath: string }>,
+  basePath?: string
+): Promise<void> {
+  if (partials.length === 0) return
+
+  registerSectionHelpers()
+
+  const resolvedBasePath = basePath ?? getSectionsBasePath()
+
+  await Promise.all(partials.map(async ({ name, templatePath }) => {
+    const fullPath = `${resolvedBasePath}${templatePath}`
+    try {
+      const response = await fetch(fullPath)
+      if (!response.ok) {
+        throw new Error(`Failed to fetch partial: ${response.status} ${response.statusText}`)
+      }
+      const content = await response.text()
+      if (partialCache.get(name) === content) {
+        return
+      }
+      hbs.registerPartial(name, content)
+      partialCache.set(name, content)
+    } catch (error) {
+      console.warn(`[hbsRenderer] Error loading partial "${name}":`, error)
+    }
+  }))
 }
 
 // =============================================================================
