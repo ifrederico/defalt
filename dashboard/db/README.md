@@ -34,13 +34,15 @@ psql "postgres://USER:PASSWORD@PROXY_HOST:PROXY_PORT/DBNAME" -f dashboard/db/sch
 
 From the repo root:
 ```bash
-psql "${DATABASE_URL}" -f dashboard/db/schema.sql
+psql "${DATABASE_URL}" -f db/schema.sql
 ```
 
 If you don't use `DATABASE_URL`, pass a full connection string:
 ```bash
-psql "postgres://USER:PASSWORD@HOST:PORT/DBNAME" -f dashboard/db/schema.sql
+psql "postgres://USER:PASSWORD@HOST:PORT/DBNAME" -f db/schema.sql
 ```
+
+If this repo is checked out under a monorepo as `dashboard/`, prefix the path accordingly.
 
 ## Notes
 

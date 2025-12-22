@@ -2,6 +2,8 @@
 
 Purpose: implementer-ready backlog (file list + callsites + acceptance checks) to apply best-practice structural patterns to Defalt.
 
+Note: paths use the old monorepo prefix (`dashboard/`). Drop the prefix when working from this repo root.
+
 Reference patterns:
 - Explicit migrations list
 - Schema-driven field traversal

@@ -6,13 +6,19 @@ Technical documentation for the dashboard module. See [../AGENTS.md](../AGENTS.m
 
 Copy `.env.example` to `.env` and configure:
 
-**Required for development:**
-- `VITE_APP_URL` - Dashboard app URL (dev default `http://localhost:5173/app`)
-- `VITE_BASE_PATH` - Base path for dashboard routing (dev default `/app/`)
-- `DATABASE_URL` - PostgreSQL connection string (for theme storage)
+**Required to run end-to-end:**
+- `VITE_GHOST_URL` - Ghost site URL (member auth + content)
+
+**Recommended for local dev:**
+- `VITE_BASE_PATH` - Base path for routing/assets (dev scripts default to `/app/`)
 
 **Optional:**
-- `AUTH_SECRET` - CSRF protection (optional)
+- `DATABASE_URL` - PostgreSQL connection string (theme storage; without it storage is disabled)
+- `VITE_DEV_BYPASS_AUTH` - `true` to skip Ghost auth in dev
+- `VITE_AI_SERVICE_URL` / `VITE_AI_API_KEY` - AI section generator
+- `VITE_UMAMI_WEBSITE_ID` / `VITE_UMAMI_HOST` - analytics
+- `AUTH_SECRET` - CSRF protection for the Vite dev server
+- `PORT` - production server port
 
 Install dependencies with `bun install`.
 
@@ -41,11 +47,19 @@ bun run preview       # Preview production build
 
 **Dev Server Endpoints** (via vite-plugin-theme-config):
 - `GET /api/auth/csrf` - CSRF token endpoint
-- `POST /api/theme-config` - Save unified theme document
+- `GET /api/member` - Ghost member proxy (dev only)
+- `GET /api/theme-config` - Read theme document
+- `POST /api/theme-config` - Save theme document
 - `DELETE /api/theme-config` - Delete theme document
 - `POST /api/theme/export` - Export theme ZIP
+Note: `/api/ghost/content` proxy is disabled and returns 410.
 
 **Express Server Endpoints** (server.ts):
+- `GET /api/auth/csrf` - CSRF token endpoint
+- `GET /api/theme-config` - Read theme document
+- `POST /api/theme-config` - Save theme document
+- `DELETE /api/theme-config` - Delete theme document
+- `POST /api/theme/export` - Export theme ZIP
 - `GET /api/themes` - List user themes
 - `GET /api/themes/:id` - Get single theme
 - `POST /api/themes` - Create/update theme
@@ -78,14 +92,12 @@ defalt-utils ─▶ (no defalt-* dependencies)
 ### Key Systems
 
 **Manual Router**: [RootApp.tsx](defalt-app/RootApp.tsx) implements a manual router with these routes:
-- `/` - Splash page
+- `/` - Landing screen (sign-in CTA)
 - `/dashboard` - Main editor (App.tsx)
-- `/dashboard/account` - Account settings page
-- `/admin` - Admin page
 
-Auth state automatically redirects unauthenticated users to Ghost sign-in. Uses window.history.pushState for navigation.
+Unauthenticated users see the landing screen; sign-in triggers Ghost login. Navigation listens to `popstate`.
 
-**Authentication**: Ghost member authentication via cookies:
+**Authentication**: Ghost member auth via cookies:
 - `MemberContext` - Ghost member data from cookies
 - `AuthContext` - Auth status wrapper around MemberContext
 - Members managed through Ghost portal, not custom auth
@@ -178,19 +190,17 @@ Contexts in `defalt-app/contexts/` use base classes (`*Base.ts`) for shared logi
 - `defalt-rendering/` - Handlebars renderer, preview data, template generation, drag-drop
 - `defalt-utils/` - Core utilities (config, security, history, API helpers)
 - `db/` - Database schema (PostgreSQL)
-- `types/` - TypeScript type declarations
-- `ghost-source-code/` - Vendored Ghost editor snippets (read-only reference, do not import)
 - `public/themes/source-complete/` - Ghost Source theme (templates, assets, app.css)
 - `public/theme-config/` - JSON config files
 
 ### Tech Stack
 
 - React 19 + TypeScript + Vite 7
-- Radix UI components (Dialog, Dropdown, Popover, Tabs, Slider, Switch, Toggle Group, Separator, Tooltip, Alert Dialog)
+- Radix UI components (Dialog, Dropdown Menu, Popover, Tabs, Slider, Switch, Toggle Group, Separator, Alert Dialog)
 - Tailwind CSS + PostCSS
 - Handlebars runtime
 - CodeMirror (CSS/JSON editing)
-- Lucide React + Radix Icons
+- Lucide React
 - react-colorful (color picker)
 - sonner (toast notifications)
 - Express 5 (production server)
@@ -208,4 +218,3 @@ Railway with Docker. Services:
 - **Ghost**: Ghost CMS with bundled defalt theme
 - **Caddy**: Reverse proxy routing `/app/*` to dashboard, rest to Ghost
 - **PostgreSQL**: Theme storage
-- behavior[27;2;13~ CLick to reset theme. Nothing there.[27;2;13~Click on add section on header.[27;2;13~Add Annoucement bar[27;2;13~Click on the annoucenebar bar[27;2;13~click on the little tag[27;2;13~appears #ann...-bar and not #annoucement. Click the tags on the railbar, #announcement-bar is there too.

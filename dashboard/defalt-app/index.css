@@ -224,6 +224,13 @@ input[type="number"] {
   transition: opacity ease-in-out 150ms;
 }
 
+.df-sidebar-toggle[data-collapsed="false"] {
+  top: 50%;
+  bottom: auto;
+  height: 32px;
+  transform: translateY(-50%);
+}
+
 .df-sidebar-toggle:focus-visible {
   outline: 2px solid var(--color-ring);
   outline-offset: 2px;

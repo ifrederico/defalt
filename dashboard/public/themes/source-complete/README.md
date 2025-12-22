@@ -1,5 +1,7 @@
 # Source
 
+Note (Defalt): this directory is a vendored snapshot used by the dashboard export pipeline. For day-to-day work, prefer the repo root scripts (`bun run build:theme`). The “latest development version” claim below refers to upstream Ghost Source, not this repo.
+
 The default theme for [Ghost](http://github.com/tryghost/ghost/). This is the latest development version of Source! If you're just looking to download the latest release, head over to the [releases](https://github.com/TryGhost/Source/releases) page.
 
 &nbsp;

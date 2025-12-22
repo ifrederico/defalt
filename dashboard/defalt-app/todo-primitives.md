@@ -15,5 +15,5 @@
 - [ ] Header
 - [ ] ViewHeader
 - [ ] Page
-- [ ] RightSidebarMenu
+- [ ] RightSidebar
 - [ ] H1 / H2 / H3 / H4 / HTable

@@ -1,11 +1,12 @@
 # Defalt dashboard audit (combined)
 
 Audit dates: 2025-12-16 (CC), 2025-12-17 (Deep)
-Updated: 2025-12-20 (status pass + triage)
+Updated: 2025-12-22 (doc audit refresh)
 
 Notes:
 - File:line refs match this repo state and will drift.
 - Audit focus: unused exports, broken refs, stale data, unreachable code, redundant code, and source-of-truth issues.
+- Path prefixes use the old monorepo layout (`dashboard/`). Drop the prefix when working from this repo root.
 
 ## Decisions (locked)
 - Container width: incremental preview updates must match initial render (720/1120).
@@ -21,7 +22,6 @@ Notes:
 
 ## Executive summary (highest ROI problems)
 - Settings have multiple sources of truth (schema defaults + UI defaults + editor injection + normalization).
-- Export gating bypassed (tier forced to plus).
 
 ## Findings by module
 
@@ -58,9 +58,8 @@ Custom sections:
 `hasFeature(feature)` ignores the parameter:
 - `void feature`. `dashboard/defalt-app/contexts/SubscriptionContext.tsx:68`.
 Decision: plus gets access to everything; free can add/experiment but export should block premium sections.
-Export currently bypasses gating:
-- `tier: 'plus_monthly'` unconditionally. `dashboard/server.ts:676`.
-Decision: server should derive tier from member data (not client).
+Export gating enforced server-side:
+- Tier is derived from Ghost member data unless `DEFALT_EXPORT_TIER` is set. `dashboard/server.ts:650`.
 
 
 ## 4) defalt-utils
