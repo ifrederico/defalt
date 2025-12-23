@@ -58,64 +58,6 @@ body.page-changelog .gh-content > *:last-child:not(.kg-width-full) {
 .heading-lg { --factor: 1.25; }
 .heading-xl { --factor: 1.5; }
 
-/* Changelog Section
-/* ---------------------------------------------------------- */
-.gd-changelog-section {
-    padding-top: 0;
-    padding-bottom: var(--container-gap);
-}
-
-.gd-changelog-section .gh-inner {
-    max-width: 720px;
-}
-
-.gd-changelog-entry {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: baseline;
-    gap: 0 16px;
-    margin-bottom: 48px;
-    border-bottom: 1px solid var(--color-border);
-}
-
-.gd-changelog-entry:last-child {
-    border-bottom: none;
-    margin-bottom: 0;
-}
-
-.gd-changelog-entry .gh-content {
-    display: contents;
-}
-
-.gd-changelog-entry .gh-content h2:first-child {
-    font-size: 2.4rem;
-    margin: 0;
-    order: 1;
-}
-
-.gd-changelog-date {
-    font-size: 1.5rem;
-    color: var(--color-secondary-text);
-    order: 2;
-}
-
-.gd-changelog-entry .gh-content h3 {
-    width: 100%;
-    margin: 0 0 12px 0;
-    order: 3;
-}
-
-.gd-changelog-entry .gh-content ul {
-    width: 100%;
-    margin: 0 0 16px 0;
-    padding-left: 20px;
-    order: 4;
-}
-
-.gd-changelog-entry .gh-content li {
-    margin: 0 0 4px 0;
-}
-
 /* Pricing Section
 /* ---------------------------------------------------------- */
 .page-pricing .gh-article-header,
