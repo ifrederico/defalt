@@ -503,6 +503,16 @@ body.page-pricing .gh-content > *:last-child:not(.kg-width-full) {
 /* Dark Mode
 /* ---------------------------------------------------------- */
 
+[data-theme="dark"] .gh-content a {
+    color: color-mix(in srgb, var(--ghost-accent-color) 35%, #fff);
+}
+
+@supports not (color: color-mix(in srgb, black 50%, white)) {
+    [data-theme="dark"] .gh-content a {
+        color: var(--color-darker-gray);
+    }
+}
+
 [data-theme="dark"] .gh-navigation {
     background-color: var(--background-color);
 }
