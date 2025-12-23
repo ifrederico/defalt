@@ -2,8 +2,7 @@
 /* ---------------------------------------------------------- */
 
 /* Page template overrides - reduce bottom margin gap */
-body.page-pricing .gh-content > *:last-child:not(.kg-width-full),
-body.page-changelog .gh-content > *:last-child:not(.kg-width-full) {
+body.page-pricing .gh-content > *:last-child:not(.kg-width-full) {
     margin-bottom: 2vw;
 }
 
@@ -61,9 +60,7 @@ body.page-changelog .gh-content > *:last-child:not(.kg-width-full) {
 /* Pricing Section
 /* ---------------------------------------------------------- */
 .page-pricing .gh-article-header,
-.page-pricing .gh-article > .gh-content,
-.page-changelog .gh-article-header,
-.page-changelog .gh-article > .gh-content {
+.page-pricing .gh-article > .gh-content {
     text-align: center;
 }
 
