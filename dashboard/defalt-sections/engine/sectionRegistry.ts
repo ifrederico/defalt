@@ -95,7 +95,7 @@ const getEnumValues = (schema: z.ZodTypeAny): string[] | null => {
 
 const getObjectShape = (schema: z.ZodTypeAny): Record<string, z.ZodTypeAny> | null => {
   const unwrapped = unwrapSchema(schema)
-  const def = (unwrapped as { _def?: { typeName?: string, shape?: (() => Record<string, z.ZodTypeAny>) | Record<string, z.ZodTypeAny> } })._def
+  const def = (unwrapped as unknown as { _def?: { typeName?: string, shape?: (() => Record<string, z.ZodTypeAny>) | Record<string, z.ZodTypeAny> } })._def
   if (def?.typeName === 'ZodObject' && def.shape) {
     return typeof def.shape === 'function' ? def.shape() : def.shape
   }
@@ -104,7 +104,7 @@ const getObjectShape = (schema: z.ZodTypeAny): Record<string, z.ZodTypeAny> | nu
 
 const getArrayElement = (schema: z.ZodTypeAny): z.ZodTypeAny | null => {
   const unwrapped = unwrapSchema(schema)
-  const def = (unwrapped as { _def?: { typeName?: string, type?: z.ZodTypeAny } })._def
+  const def = (unwrapped as unknown as { _def?: { typeName?: string, type?: z.ZodTypeAny } })._def
   if (def?.typeName === 'ZodArray' && def.type) {
     return def.type
   }

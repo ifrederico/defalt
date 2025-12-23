@@ -24,7 +24,7 @@ const TITLE_SIZE_OPTIONS = [
 export const ghostCardsConfigSchema = z.object({
   tags: z.object({
     primary: z.string().default('#cards')
-  }).default({}),
+  }).default({ primary: '#cards' }),
   ...contentWidthPxShape,
   pageTitle: z.boolean().default(false),
   ...textAlignmentShape,

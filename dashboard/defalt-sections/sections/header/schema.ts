@@ -15,12 +15,12 @@ const HEADER_TYPOGRAPHY_CASE_VALUES = ['default', 'uppercase'] as const
 export const NAVIGATION_LAYOUT_OPTIONS = NAVIGATION_LAYOUT_VALUES.map((value) => ({
   label: value,
   value
-})) as const
+}))
 
 const STICKY_HEADER_OPTIONS = STICKY_HEADER_VALUES.map((value) => ({
   label: value,
   value
-})) as const
+}))
 
 const HEADER_TYPOGRAPHY_CASE_OPTIONS = [
   { label: 'Case sensitive', value: HEADER_TYPOGRAPHY_CASE_VALUES[0], icon: 'CaseSensitive' },

@@ -25,7 +25,7 @@ export const ghostGridConfigSchema = z.object({
   tags: z.object({
     left: z.string().default('#grid-left'),
     right: z.string().default('#grid-right')
-  }).default({}),
+  }).default({ left: '#grid-left', right: '#grid-right' }),
   ...contentWidthPxShape,
   pageTitle: z.boolean().default(false),
   ...textAlignmentShape,

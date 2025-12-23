@@ -24,7 +24,7 @@ export const imageWithTextConfigSchema = z.object({
   // Ghost tag for content filtering
   tags: z.object({
     primary: z.string().default('#image-text')
-  }).default({}),
+  }).default({ primary: '#image-text' }),
 
   // Appearance
   ...contentWidthPxShape,

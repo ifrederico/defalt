@@ -1,9 +1,10 @@
 import type { PreviewPage, PreviewDataSource, GhostPostItem, PreviewZoom } from '../hooks/usePreview'
 import type { WorkspacePage, CloudSyncStatus } from '../types/workspace'
 import type { AnnouncementBarInstance } from '@defalt/utils/config/themeConfig'
+import type { NavigationLayoutSetting } from '@defalt/utils/config/themeConfig'
 
 export type HeaderSettingsContext = {
-  navigationLayoutValue: string
+  navigationLayoutValue: NavigationLayoutSetting
   navigationLayoutOptions: string[]
   navigationLayoutError: string | null
   stickyHeaderValue: string
@@ -80,10 +81,10 @@ export type WorkspaceContextValue = {
   isTogglingVisibility: boolean
 
   // Moved from ThemeContext
-  navigationLayoutValue: string
+  navigationLayoutValue: NavigationLayoutSetting
   navigationLayoutOptions: string[]
   navigationLayoutError: string | null
-  onNavigationLayoutChange: (value: string) => void
+  onNavigationLayoutChange: (value: NavigationLayoutSetting) => void
   stickyHeaderValue: string
   stickyHeaderOptions: string[]
   onStickyHeaderChange: (value: string) => void

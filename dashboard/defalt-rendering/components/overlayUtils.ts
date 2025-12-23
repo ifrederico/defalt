@@ -54,12 +54,12 @@ const getDeepScrollPosition = (element: HTMLElement): ScrollPosition => {
   let current: HTMLElement | null = element
 
   while (current && current !== element.ownerDocument.documentElement) {
-    const parent = current.parentElement
-    if (parent) {
-      totalScroll.x += parent.scrollLeft
-      totalScroll.y += parent.scrollTop
+    const parentEl: HTMLElement | null = current.parentElement
+    if (parentEl) {
+      totalScroll.x += parentEl.scrollLeft
+      totalScroll.y += parentEl.scrollTop
     }
-    current = parent
+    current = parentEl
   }
 
   return totalScroll

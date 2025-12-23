@@ -5,7 +5,7 @@ import CodeMirror from '@uiw/react-codemirror'
 import { css } from '@codemirror/lang-css'
 import { PanelHeader, ColorPickerSetting, ToggleSwitch, TextInput, Select } from '@defalt/ui'
 import { sanitizeHex } from '@defalt/utils/color/colorUtils'
-import { ChevronDown } from 'lucide-react'
+import type { NavigationLayoutSetting } from '@defalt/utils/config/themeConfig'
 
 const FIELD_STACK = 'space-y-2'
 const LABEL_CLASS = 'font-md font-medium text-foreground'
@@ -20,10 +20,10 @@ export type ThemeSettingsPanelProps = {
   onAccentColorChange: (value: string) => void
   backgroundColor: string
   onBackgroundColorChange: (value: string) => void
-  navigationLayoutValue: string
+  navigationLayoutValue: NavigationLayoutSetting
   navigationLayoutOptions: string[]
   navigationLayoutError: string | null
-  onNavigationLayoutChange: (value: string) => void
+  onNavigationLayoutChange: (value: NavigationLayoutSetting) => void
   headerAndFooterColorValue: string
   headerAndFooterColorOptions: string[]
   onHeaderAndFooterColorChange: (value: string) => void
@@ -156,7 +156,11 @@ export function ThemeSettingsPanel({
                 label="Navigation layout"
                 value={navigationLayoutValue}
                 options={navigationLayoutOptions}
-                onChange={onNavigationLayoutChange}
+                onChange={(value) => {
+                  if (navigationLayoutOptions.includes(value)) {
+                    onNavigationLayoutChange(value as NavigationLayoutSetting)
+                  }
+                }}
                 helperText="Choose how your logo and navigation items are arranged."
                 errorMessage={navigationLayoutError}
                 disabled={Boolean(navigationLayoutError)}

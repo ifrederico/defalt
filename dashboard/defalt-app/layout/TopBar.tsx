@@ -189,7 +189,6 @@ export function TopBar({ canDownload = true, onClearCache }: TopBarProps) {
                           className="bg-surface rounded-md shadow-lg overflow-hidden min-w-[180px] max-h-[300px] overflow-y-auto z-[100]"
                           sideOffset={6}
                           alignOffset={-4}
-                          onCloseAutoFocus={(event) => event.preventDefault()}
                         >
                           {ghostDataLoading && availablePages.length === 0 && (
                             <DropdownMenu.Item disabled className={menuItemClass}>
@@ -236,7 +235,6 @@ export function TopBar({ canDownload = true, onClearCache }: TopBarProps) {
                           className="bg-surface rounded-md shadow-lg overflow-hidden min-w-[180px] max-h-[300px] overflow-y-auto z-[100]"
                           sideOffset={6}
                           alignOffset={-4}
-                          onCloseAutoFocus={(event) => event.preventDefault()}
                         >
                           {ghostDataLoading && availablePosts.length === 0 && (
                             <DropdownMenu.Item disabled className={menuItemClass}>

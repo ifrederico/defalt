@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import type { MouseEvent } from 'react'
+import type { CSSProperties, MouseEvent as ReactMouseEvent } from 'react'
 import { CodeXml, Copy, Trash2, Eye, EyeOff, Clipboard } from 'lucide-react'
 import { FOOTER_ROOT_SELECTOR, TEMPLATE_CONTAINER_SELECTOR } from '../../custom-source/handlebars/sectionSelectors'
 import { isFixedSection } from '@defalt/utils/config/sectionRegistry'
@@ -383,7 +383,7 @@ export function SectionActionBar({
     if (!isCodeOpen || !frameDocument) {
       return
     }
-    const handleClick = (event: MouseEvent) => {
+    const handleClick = (event: globalThis.MouseEvent) => {
       const target = event.target as Node | null
       if (barRef.current && target && !barRef.current.contains(target)) {
         setIsCodeOpen(false)
@@ -490,7 +490,7 @@ export function SectionActionBar({
     return null
   }
 
-  const wrapperStyle = overlayStyle
+  const wrapperStyle: CSSProperties = overlayStyle
     ? {
         top: overlayStyle.top,
         left: overlayStyle.left,
@@ -506,7 +506,7 @@ export function SectionActionBar({
         pointerEvents: 'none',
       }
 
-  const handleDuplicate = (event: MouseEvent<HTMLButtonElement>) => {
+  const handleDuplicate = (event: ReactMouseEvent<HTMLButtonElement>) => {
     event.preventDefault()
     event.stopPropagation()
     if (canDuplicate && selectedId) {
@@ -514,7 +514,7 @@ export function SectionActionBar({
     }
   }
 
-  const handleDelete = (event: MouseEvent<HTMLButtonElement>) => {
+  const handleDelete = (event: ReactMouseEvent<HTMLButtonElement>) => {
     event.preventDefault()
     event.stopPropagation()
     if (canDelete && selectedId) {
@@ -522,7 +522,7 @@ export function SectionActionBar({
     }
   }
 
-  const handleToggleVisibility = (event: MouseEvent<HTMLButtonElement>) => {
+  const handleToggleVisibility = (event: ReactMouseEvent<HTMLButtonElement>) => {
     event.preventDefault()
     event.stopPropagation()
     if (canToggleVisibility && selectedId) {
@@ -530,7 +530,7 @@ export function SectionActionBar({
     }
   }
 
-  const handleToggleCode = (event: MouseEvent<HTMLButtonElement>) => {
+  const handleToggleCode = (event: ReactMouseEvent<HTMLButtonElement>) => {
     event.preventDefault()
     event.stopPropagation()
     if (!canShowCode) {
@@ -561,7 +561,7 @@ export function SectionActionBar({
     }, 1200)
   }
 
-  const handleCopySnippet = (event: MouseEvent<HTMLButtonElement>) => {
+  const handleCopySnippet = (event: ReactMouseEvent<HTMLButtonElement>) => {
     event.preventDefault()
     event.stopPropagation()
     if (!includeSnippet) {
@@ -600,7 +600,7 @@ export function SectionActionBar({
     }
   }
 
-  const handleCopyPartial = (event: MouseEvent<HTMLButtonElement>) => {
+  const handleCopyPartial = (event: ReactMouseEvent<HTMLButtonElement>) => {
     event.preventDefault()
     event.stopPropagation()
     if (!partialSnippet) {

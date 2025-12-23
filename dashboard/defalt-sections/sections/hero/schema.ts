@@ -27,7 +27,7 @@ export const heroConfigSchema = z.object({
   // Ghost tag for content filtering
   tags: z.object({
     primary: z.string().default('#hero')
-  }).default({}),
+  }).default({ primary: '#hero' }),
 
   // Appearance
   ...contentWidthPxShape,

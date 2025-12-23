@@ -65,6 +65,7 @@ export interface SectionManagerReturn {
 
   // Visibility functions
   setSectionVisibilityState: (id: string, hidden: boolean, options?: { silent?: boolean }) => void
+  setSectionsVisibilityState: (updates: Record<string, boolean>, options?: { silent?: boolean; label?: string }) => void
   toggleSectionVisibility: (id: string, forceHidden?: boolean, options?: { silent?: boolean }) => void
   syncFeaturedSectionVisibility: (shouldShow: boolean, options?: { silent?: boolean }) => void
 

@@ -21,6 +21,7 @@ import { PointerSensor } from '@dnd-kit/react'
 import { isElement } from '@dnd-kit/dom/utilities'
 import type { SidebarItem } from '@defalt/utils/config/sectionRegistry'
 import { type AnnouncementBarConfig, type AnnouncementContentConfig, type AnnouncementBarInstance } from '@defalt/utils/config/themeConfig'
+import type { NavigationLayoutSetting } from '@defalt/utils/config/themeConfig'
 import type { PreviewData } from '@defalt/rendering/custom-source/handlebars/dataResolvers'
 import { resolveSectionIcon } from '@defalt/utils/config/sectionIcons'
 import { resolveAnnouncementBarLabel } from '@defalt/utils/config/sectionRegistry'
@@ -77,10 +78,10 @@ export type SectionsPanelProps = {
   onSectionMarginCommit: (id: string, direction: 'top' | 'bottom', value: number) => void
   customSections: Record<string, SectionInstance>
   onUpdateCustomSection: (id: string, updater: (config: SectionConfigSchema) => SectionConfigSchema) => void
-  navigationLayoutValue: string
+  navigationLayoutValue: NavigationLayoutSetting
   navigationLayoutOptions: string[]
   navigationLayoutError: string | null
-  onNavigationLayoutChange: (value: string) => void
+  onNavigationLayoutChange: (value: NavigationLayoutSetting) => void
   stickyHeaderValue: string
   stickyHeaderOptions: string[]
   onStickyHeaderChange: (value: string) => void
