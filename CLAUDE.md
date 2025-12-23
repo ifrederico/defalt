@@ -6,7 +6,7 @@ See [AGENTS.md](AGENTS.md) for AI assistant behavior guidelines.
 
 ## Project Overview
 
-Defalt is an open source Ghost Theme Editor (MIT License). It's a web app for customizing the Ghost "Source" theme with live preview and export capabilities.
+Defalt is an open source Ghost Theme Editor. It's a web app for customizing the Ghost "Source" theme with live preview and export capabilities.
 
 ## Repository Structure
 

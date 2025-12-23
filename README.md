@@ -36,4 +36,4 @@ Set `VITE_DEV_BYPASS_AUTH=true` in `.env` to skip auth during development.
 
 ## License
 
-MIT
+[Elastic License 2.0 (ELv2)](LICENSE) - You can use, modify, and distribute the code, but you cannot offer it as a competing hosted service.
