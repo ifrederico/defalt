@@ -9,6 +9,7 @@ import { AuthContext, type AuthStatus, type AuthUser } from './AuthContext.share
 import { useMember } from './MemberContext'
 import { apiPath } from '@defalt/utils/api/apiPath'
 import { logError } from '@defalt/utils/logging/errorLogger'
+import { persistCsrfToken } from '@defalt/utils/security/csrf'
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const { member, isLoading, isAuthenticated, login, logout } = useMember()
@@ -35,12 +36,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       })
       if (!response.ok) {
         logError(new Error(`CSRF request failed: ${response.status}`), { scope: 'AuthContext.refreshCsrfToken' })
+        persistCsrfToken(null)
         return null
       }
       const data = await response.json()
-      return data.token ?? null
+      const token = data.token ?? null
+      persistCsrfToken(token)
+      return token
     } catch (error) {
       logError(error, { scope: 'AuthContext.refreshCsrfToken' })
+      persistCsrfToken(null)
       return null
     }
   }, [])

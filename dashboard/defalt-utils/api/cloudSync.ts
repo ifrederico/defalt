@@ -1,7 +1,7 @@
 import { z } from 'zod'
 import { apiPath } from './apiPath'
 import type { ThemeDocument } from '../config/themeConfig'
-import { getCachedCsrfToken } from '../security/csrf'
+import { getCachedCsrfToken, requestCsrfToken } from '../security/csrf'
 
 export type CloudTheme = {
   id: string
@@ -57,6 +57,46 @@ function parseCloudTheme(data: unknown): CloudTheme | null {
 
 export type CloudResult<T> = { success: true; data: T } | { success: false; error: string }
 
+type FetchWithCsrfRetryParams = {
+  url: string
+  method: 'POST' | 'PUT'
+  body: string
+}
+
+async function fetchWithCsrfRetry(params: FetchWithCsrfRetryParams): Promise<Response> {
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+  const cachedToken = getCachedCsrfToken()
+  if (cachedToken) {
+    headers['x-csrf-token'] = cachedToken
+  }
+
+  const attempt = async (overrideToken?: string | null) => {
+    const nextHeaders = { ...headers }
+    if (overrideToken) {
+      nextHeaders['x-csrf-token'] = overrideToken
+    }
+    return fetch(apiPath(params.url), {
+      method: params.method,
+      headers: nextHeaders,
+      credentials: 'include',
+      body: params.body
+    })
+  }
+
+  let response = await attempt()
+  if (response.status !== 403) {
+    return response
+  }
+
+  const refreshedToken = await requestCsrfToken()
+  if (!refreshedToken) {
+    return response
+  }
+
+  response = await attempt(refreshedToken)
+  return response
+}
+
 export async function fetchUserThemes(): Promise<CloudResult<CloudTheme[]>> {
   try {
     const response = await fetch(apiPath('/api/themes'), {
@@ -83,15 +123,9 @@ export async function fetchActiveTheme(): Promise<CloudResult<CloudTheme | null>
 
 export async function createTheme(document: ThemeDocument, name?: string): Promise<CloudResult<CloudTheme>> {
   try {
-    const csrfToken = getCachedCsrfToken()
-    const headers: Record<string, string> = { 'Content-Type': 'application/json' }
-    if (csrfToken) {
-      headers['x-csrf-token'] = csrfToken
-    }
-    const response = await fetch(apiPath('/api/themes'), {
+    const response = await fetchWithCsrfRetry({
+      url: '/api/themes',
       method: 'POST',
-      headers,
-      credentials: 'include',
       body: JSON.stringify({
         name: name || 'My Theme',
         theme_json: document
@@ -113,15 +147,9 @@ export async function createTheme(document: ThemeDocument, name?: string): Promi
 
 export async function updateTheme(id: string, document: ThemeDocument): Promise<CloudResult<CloudTheme>> {
   try {
-    const csrfToken = getCachedCsrfToken()
-    const headers: Record<string, string> = { 'Content-Type': 'application/json' }
-    if (csrfToken) {
-      headers['x-csrf-token'] = csrfToken
-    }
-    const response = await fetch(apiPath(`/api/themes/${id}`), {
+    const response = await fetchWithCsrfRetry({
+      url: `/api/themes/${id}`,
       method: 'PUT',
-      headers,
-      credentials: 'include',
       body: JSON.stringify({ theme_json: document })
     })
     if (!response.ok) {
