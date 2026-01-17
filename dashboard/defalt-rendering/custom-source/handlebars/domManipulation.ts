@@ -33,7 +33,6 @@ const PREVIEW_INLINE_STYLES = `
 /* Keep Koenig card defaults from screen.css (export parity) */
 `
 
-
 type InjectPreviewOptions = {
   templateOrder: string[]
   footerOrder: string[]
@@ -111,17 +110,20 @@ export function ensurePreviewStyles(doc: Document) {
   // Ensure theme CSS (includes Koenig card styles) is present for Ghost content
   const existingThemeLink = doc.getElementById(THEME_CSS_LINK_ID) as HTMLLinkElement | null
   const foundScreenLink = doc.querySelector<HTMLLinkElement>('link[href*="screen.css"]')
-  if (!existingThemeLink) {
-    if (foundScreenLink) {
-      foundScreenLink.id = THEME_CSS_LINK_ID
-    } else {
-      const themeLink = doc.createElement('link')
-      themeLink.id = THEME_CSS_LINK_ID
-      themeLink.rel = 'stylesheet'
-      themeLink.href = getThemeCssHref()
-      head.prepend(themeLink)
-    }
+  if (existingThemeLink) {
+    return
   }
+
+  if (foundScreenLink) {
+    foundScreenLink.id = THEME_CSS_LINK_ID
+    return
+  }
+
+  const themeLink = doc.createElement('link')
+  themeLink.id = THEME_CSS_LINK_ID
+  themeLink.rel = 'stylesheet'
+  themeLink.href = getThemeCssHref()
+  head.prepend(themeLink)
 }
 
 export function syncTemplateSections(doc: Document, sections: Array<{ id: string, html: string, hidden: boolean }>) {

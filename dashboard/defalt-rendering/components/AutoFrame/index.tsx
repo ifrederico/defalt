@@ -70,7 +70,7 @@ export function AutoFrame({
         title={title}
         style={iframeStyle}
         srcDoc={FRAME_SRC_DOC}
-        sandbox="allow-scripts"
+        sandbox="allow-scripts allow-same-origin"
         onLoad={handleLoad}
       />
       {frameRoot && frameDoc && (

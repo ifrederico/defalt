@@ -5,6 +5,7 @@ import {
   loadPersistedThemeDocument,
   persistThemeDocument,
   normalizeThemeDocument,
+  createDefaultThemeDocument,
   extractHeaderSettings,
   extractMainSettings,
   DEFAULT_HEADER_SETTINGS,
@@ -826,6 +827,9 @@ export function useWorkspace({
       setCloudSyncStatus('syncing')
       clearWorkspaceStorage()
 
+      const defaultDocument = createDefaultThemeDocument()
+      persistSavedThemeDocument(defaultDocument)
+
       const csrf = await ensureCsrfToken()
       try {
         const response = await fetch(apiPath('/api/theme-config'), {
@@ -851,6 +855,14 @@ export function useWorkspace({
         notifyResetError('Could not clear local workspace data.')
       }
 
+      if (isAuthenticated && user) {
+        const cloudResult = await saveThemeToCloud(defaultDocument)
+        if (!cloudResult.success) {
+          logWarning('Failed to reset cloud theme', { scope: 'useWorkspace.resetWorkspace.cloud', error: cloudResult.error })
+          notifyResetError('Could not reset cloud theme.')
+        }
+      }
+
       setCloudSyncStatus('ready')
     } catch (error) {
       setCloudSyncStatus('error')
@@ -864,7 +876,7 @@ export function useWorkspace({
         showToast('Theme reset.', undefined, 'success')
       }
     }
-  }, [ensureCsrfToken, resetHistory, rehydrateWorkspace, showToast])
+  }, [ensureCsrfToken, isAuthenticated, user, resetHistory, rehydrateWorkspace, showToast])
 
   return {
     // Workspace state
