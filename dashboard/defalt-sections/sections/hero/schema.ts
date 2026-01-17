@@ -10,13 +10,14 @@ import type { SettingSchema } from '../../engine/schemaTypes.js'
 import {
   contentWidthPxShape,
   contentWidthPxSetting,
+  createPrimaryTagSchema,
   createTextAlignmentSetting,
   imageAppearanceShape,
   imageAspectSetting,
   imageBorderRadiusSetting,
   imageLayoutShape,
+  imagePositionSetting,
   imageWidthSetting,
-  invertSetting,
   textAlignmentShape,
   transparentBackgroundSetting,
   transparentBackgroundShape
@@ -25,9 +26,7 @@ import {
 // Zod config schema
 export const heroConfigSchema = z.object({
   // Ghost tag for content filtering
-  tags: z.object({
-    primary: z.string().default('#hero')
-  }).default({ primary: '#hero' }),
+  ...createPrimaryTagSchema('#hero'),
 
   // Appearance
   ...contentWidthPxShape,
@@ -51,7 +50,7 @@ export const heroSettingsSchema: SettingSchema[] = [
   transparentBackgroundSetting,
 
   { type: 'header', id: 'layout-header', label: 'Layout' },
-  invertSetting,
+  imagePositionSetting,
   imageWidthSetting,
   imageAspectSetting,
   imageBorderRadiusSetting,

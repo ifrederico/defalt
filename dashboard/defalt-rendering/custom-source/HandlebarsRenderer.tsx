@@ -1,42 +1,28 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
-import type { MutableRefObject } from 'react'
 import Handlebars from 'handlebars'
 import { registerGhostHelpers } from './handlebars/helpers'
 import {
   buildPreviewPosts,
   buildPreviewPages,
-  buildTemplateContext,
-  buildDataFrame,
-  buildPagination,
   resolveSiteUrl,
   resolveSite,
   resolveNavigation,
   buildMeta,
   resolvePageNumber,
+  buildPagination,
   type PageType,
   type PreviewPost,
   type PaginationInfo,
   type PreviewData
 } from './handlebars/dataResolvers'
 import { loadTemplates, filterTemplatesByVisibility, filterFooterPartial } from './handlebars/templateLoader'
-import {
-  injectHtmlIntoFrame,
-  reorderTemplateInDOM,
-  reorderFooterInDOM,
-  scrollToSection,
-  applyCustomCss,
-  syncAnnouncementBars,
-  syncTemplateSections,
-  updateColorVariables,
-  setupSectionSelection,
-  setupPreviewNavigation,
-  syncSelectedSectionAttribute,
-  syncSectionVisibility,
-} from './handlebars/domManipulation'
-import { applyHeaderCustomizations, type HeaderCustomizationOptions, type StickyHeaderMode } from './handlebars/headerCustomization'
+import { type StickyHeaderMode } from './handlebars/headerCustomization'
+import { PreviewFrameContent } from './PreviewFrameContent'
+import { renderTheme } from './renderTheme'
 import {
   DEFAULT_ANNOUNCEMENT_BAR_CONFIG,
   DEFAULT_ANNOUNCEMENT_CONTENT_CONFIG,
+  DEFAULT_ACCENT_COLOR,
   normalizeAnnouncementBarConfig,
   normalizeAnnouncementContentConfig,
   type AnnouncementBarInstance
@@ -63,9 +49,9 @@ import {
   toTagFilter
 } from '../derived/sectionDerived'
 import { getFooterOrder, getTemplateOrder } from '@defalt/utils/config/sectionRegistry'
+import { isPlainRecord } from '@defalt/utils/helpers/typeGuards'
 import { AutoFrame } from '../components/AutoFrame'
 import { EditorStyles } from '../components/AutoFrame/EditorStyles'
-import { useFrame } from '../components/AutoFrame/useFrame'
 import { SelectionOverlay } from '../components/SelectionOverlay'
 import { SectionActionBar } from '../components/SectionActionBar'
 
@@ -87,9 +73,6 @@ const SECTION_STYLE_PARTIALS = [
 
 const resolvePreviewTemplatePath = (sectionId: string): string | null =>
   PREVIEW_TEMPLATE_PATHS[sectionId] ?? getSectionTemplatePath(sectionId)
-
-const isPlainRecord = (value: unknown): value is Record<string, unknown> =>
-  typeof value === 'object' && value !== null && !Array.isArray(value)
 
 interface HandlebarsRendererProps {
   accentColor: string
@@ -167,7 +150,7 @@ export function HandlebarsRenderer({
   }, [])
 
   const sanitizedAccentColor = useMemo(
-    () => sanitizeHexColor(accentColor, '#AC1E3E'),
+    () => sanitizeHexColor(accentColor, DEFAULT_ACCENT_COLOR),
     [accentColor]
   )
   const sanitizedBackgroundColor = useMemo(
@@ -301,113 +284,118 @@ export function HandlebarsRenderer({
     let cancelled = false
 
     const renderSections = async () => {
-      const results: Array<{ id: string; definitionId: string; html: string; hidden: boolean }> = []
-
-      for (const section of customTemplateSections) {
-        if (cancelled) return
-
-        const templatePath = resolvePreviewTemplatePath(section.definitionId)
-        const sectionDef = getSectionDefinition(section.definitionId)
-        const paddingControls = sectionDef?.paddingControls ?? 'vertical'
-        const shouldUseGlobalPadding = paddingControls !== 'none'
-        const padding = shouldUseGlobalPadding ? sectionPadding[section.id] : undefined
-
-        let html: string
-
-        if (templatePath) {
-          // Use the new engine with HBS templates
-          try {
-            const baseConfig = section.config as Record<string, unknown>
-            const contentWidth = baseConfig.contentWidth
-            const containerPaddingX = resolveContainerPaddingX(contentWidth)
-
-            const renderConfig: Record<string, unknown> = {
-              ...baseConfig,
-              sectionId: section.id,
-              containerPaddingX
-            }
-
-            if (section.definitionId === 'hero') {
-              const tags = isPlainRecord(baseConfig.tags) ? baseConfig.tags : {}
-              const rawTag = tags.primary
-              const internalTag = formatInternalTag(rawTag) || resolveHeroDefaultTag(section.id)
-              const imageOnRight = baseConfig.invert === true || baseConfig.imagePosition === 'right'
-              const { imageColumn, textColumn } = resolveImageColumns(baseConfig.imageWidth)
-              const imageAspectRatio = resolveImageAspectRatio(baseConfig.imageAspect)
-              renderConfig.internalTag = internalTag
-              renderConfig.tagFilter = toTagFilter(internalTag)
-              renderConfig.imageOnRight = imageOnRight
-              renderConfig.imageColumn = imageColumn
-              renderConfig.textColumn = textColumn
-              renderConfig.imageAspectRatio = imageAspectRatio
-            }
-
-            if (section.definitionId === 'image-with-text') {
-              const tags = isPlainRecord(baseConfig.tags) ? baseConfig.tags : {}
-              const rawTag = tags.primary
-              const internalTag = formatInternalTag(rawTag) || resolveImageWithTextDefaultTag(section.id)
-              const imageOnRight = baseConfig.invert === true || baseConfig.imagePosition === 'right'
-              const { imageColumn, textColumn } = resolveImageColumns(baseConfig.imageWidth)
-              const imageAspectRatio = resolveImageAspectRatio(baseConfig.imageAspect)
-              renderConfig.internalTag = internalTag
-              renderConfig.tagFilter = toTagFilter(internalTag)
-              renderConfig.imageOnRight = imageOnRight
-              renderConfig.imageColumn = imageColumn
-              renderConfig.textColumn = textColumn
-              renderConfig.imageAspectRatio = imageAspectRatio
-            }
-
-	            if (section.definitionId === 'ghostCards') {
-	              const tags = isPlainRecord(baseConfig.tags) ? baseConfig.tags : {}
-	              const rawTag = tags.primary
-	              const internalTag = formatInternalTag(rawTag) || resolveGhostCardsDefaultTag(section.id)
-	              const tagFilter = toTagFilter(internalTag)
-	              renderConfig.internalTag = internalTag
-	              renderConfig.tagFilter = tagFilter
-	            }
-
-	            if (section.definitionId === 'ghostGrid') {
-	              const tags = isPlainRecord(baseConfig.tags) ? baseConfig.tags : {}
-	              const left = formatInternalTag(tags.left) || '#grid-left'
-	              const right = formatInternalTag(tags.right) || '#grid-right'
-	              const leftFilter = toTagFilter(left)
-	              const rightFilter = toTagFilter(right)
-              renderConfig.internalTagLeft = left
-              renderConfig.internalTagRight = right
-	              renderConfig.leftTagFilter = leftFilter
-	              renderConfig.rightTagFilter = rightFilter
-	              renderConfig.anyTagFilter = `${leftFilter},${rightFilter}`
-	            }
-
-	            renderConfig.isPreview = true
-	            renderConfig.placeholderImageUrl = `${getBasePath()}/sections/placeholder.jpg`
-
-	            html = await renderSection(
-	              section.definitionId,
-	              templatePath,
-	              renderConfig,
-	              { padding, pages: previewPages, applyInlinePadding: false }
-            )
-          } catch (err) {
-            console.warn(`[HandlebarsRenderer] Failed to render ${section.definitionId}:`, err)
-            html = `<section class="gd-section-error">Failed to render section: ${section.definitionId}</section>`
+      const results = await Promise.all(
+        customTemplateSections.map(async (section) => {
+          // Check cancelled flag at start of each async callback
+          if (cancelled) {
+            return null
           }
-        } else {
-          // No template path found for this section
-          console.warn(`[HandlebarsRenderer] No template path found for section: ${section.definitionId}`)
-          html = `<section class="gd-section-error">Unknown section: ${section.definitionId}</section>`
-        }
 
-        results.push({
-          id: section.id,
-          definitionId: section.definitionId,
-          html,
-          hidden: Boolean(hiddenSections[section.id])
+          const templatePath = resolvePreviewTemplatePath(section.definitionId)
+          const sectionDef = getSectionDefinition(section.definitionId)
+          const paddingControls = sectionDef?.paddingControls ?? 'vertical'
+          const shouldUseGlobalPadding = paddingControls !== 'none'
+          const padding = shouldUseGlobalPadding ? sectionPadding[section.id] : undefined
+
+          let html: string
+
+          if (templatePath) {
+            // Use the new engine with HBS templates
+            try {
+              const baseConfig = section.config as Record<string, unknown>
+              const contentWidth = baseConfig.contentWidth
+              const containerPaddingX = resolveContainerPaddingX(contentWidth)
+
+              const renderConfig: Record<string, unknown> = {
+                ...baseConfig,
+                sectionId: section.id,
+                containerPaddingX
+              }
+
+              if (section.definitionId === 'hero') {
+                const tags = isPlainRecord(baseConfig.tags) ? baseConfig.tags : {}
+                const rawTag = tags.primary
+                const internalTag = formatInternalTag(rawTag) || resolveHeroDefaultTag(section.id)
+                const imageOnRight = baseConfig.imagePosition === 'right'
+                const { imageColumn, textColumn } = resolveImageColumns(baseConfig.imageWidth)
+                const imageAspectRatio = resolveImageAspectRatio(baseConfig.imageAspect)
+                renderConfig.internalTag = internalTag
+                renderConfig.tagFilter = toTagFilter(internalTag)
+                renderConfig.imageOnRight = imageOnRight
+                renderConfig.imageColumn = imageColumn
+                renderConfig.textColumn = textColumn
+                renderConfig.imageAspectRatio = imageAspectRatio
+              }
+
+              if (section.definitionId === 'image-with-text') {
+                const tags = isPlainRecord(baseConfig.tags) ? baseConfig.tags : {}
+                const rawTag = tags.primary
+                const internalTag = formatInternalTag(rawTag) || resolveImageWithTextDefaultTag(section.id)
+                const imageOnRight = baseConfig.imagePosition === 'right'
+                const { imageColumn, textColumn } = resolveImageColumns(baseConfig.imageWidth)
+                const imageAspectRatio = resolveImageAspectRatio(baseConfig.imageAspect)
+                renderConfig.internalTag = internalTag
+                renderConfig.tagFilter = toTagFilter(internalTag)
+                renderConfig.imageOnRight = imageOnRight
+                renderConfig.imageColumn = imageColumn
+                renderConfig.textColumn = textColumn
+                renderConfig.imageAspectRatio = imageAspectRatio
+              }
+
+              if (section.definitionId === 'ghostCards') {
+                const tags = isPlainRecord(baseConfig.tags) ? baseConfig.tags : {}
+                const rawTag = tags.primary
+                const internalTag = formatInternalTag(rawTag) || resolveGhostCardsDefaultTag(section.id)
+                const tagFilter = toTagFilter(internalTag)
+                renderConfig.internalTag = internalTag
+                renderConfig.tagFilter = tagFilter
+              }
+
+              if (section.definitionId === 'ghostGrid') {
+                const tags = isPlainRecord(baseConfig.tags) ? baseConfig.tags : {}
+                const left = formatInternalTag(tags.left) || '#grid-left'
+                const right = formatInternalTag(tags.right) || '#grid-right'
+                const leftFilter = toTagFilter(left)
+                const rightFilter = toTagFilter(right)
+                renderConfig.internalTagLeft = left
+                renderConfig.internalTagRight = right
+                renderConfig.leftTagFilter = leftFilter
+                renderConfig.rightTagFilter = rightFilter
+                renderConfig.anyTagFilter = `${leftFilter},${rightFilter}`
+              }
+
+              renderConfig.isPreview = true
+              renderConfig.placeholderImageUrl = `${getBasePath()}/sections/placeholder.jpg`
+
+              html = await renderSection(
+                section.definitionId,
+                templatePath,
+                renderConfig,
+                { padding, pages: previewPages, applyInlinePadding: false }
+              )
+            } catch (err) {
+              console.warn(`[HandlebarsRenderer] Failed to render ${section.definitionId}:`, err)
+              html = `<section class="gd-section-error">Failed to render section: ${section.definitionId}</section>`
+            }
+          } else {
+            // No template path found for this section
+            console.warn(`[HandlebarsRenderer] No template path found for section: ${section.definitionId}`)
+            html = `<section class="gd-section-error">Unknown section: ${section.definitionId}</section>`
+          }
+
+          return {
+            id: section.id,
+            definitionId: section.definitionId,
+            html,
+            hidden: Boolean(hiddenSections[section.id])
+          }
         })
-      }
+      )
 
       if (!cancelled) {
-        setRenderedTemplateSections(results)
+        // Filter out null results (from cancelled renders)
+        const validResults = results.filter((result): result is NonNullable<typeof result> => result !== null)
+        setRenderedTemplateSections(validResults)
       }
     }
 
@@ -778,299 +766,6 @@ export function HandlebarsRenderer({
       </div>
     </div>
   )
-}
-
-type PreviewFrameContentProps = {
-  renderedHtml: string
-  templateOrderRef: MutableRefObject<string[]>
-  footerOrderRef: MutableRefObject<string[]>
-  headerOptions: HeaderCustomizationOptions
-  announcementBars: Array<{ id: string; html: string; hidden: boolean }>
-  customCss?: string
-  customSections: Array<{ id: string; html: string; hidden: boolean }>
-  selectedSectionId: string | null
-  hiddenSections: Record<string, boolean>
-  filteredTemplateOrder: string[]
-  footerOrder: string[]
-  sectionIdsForPreview: string[]
-  onSectionSelect?: (sectionId: string) => void
-  onFrameHoverChange?: (sectionId: string | null) => void
-  scrollToSectionId: string | null
-  onScrollComplete?: () => void
-  onNavigate?: (href: string) => boolean
-  accentColor: string
-  backgroundColor: string
-  pageLayout: 'narrow' | 'normal'
-  onLayoutUpdate?: () => void
-}
-
-function PreviewFrameContent({
-  renderedHtml,
-  templateOrderRef,
-  footerOrderRef,
-  headerOptions,
-  announcementBars,
-  customCss,
-  customSections,
-  selectedSectionId,
-  hiddenSections,
-  filteredTemplateOrder,
-  footerOrder,
-  sectionIdsForPreview,
-  onSectionSelect,
-  onFrameHoverChange,
-  scrollToSectionId,
-  onScrollComplete,
-  onNavigate,
-  accentColor,
-  backgroundColor,
-  pageLayout,
-  onLayoutUpdate,
-}: PreviewFrameContentProps) {
-  const { document: frameDocument, frameRoot } = useFrame()
-  const hasInjectedRef = useRef(false)
-  const sectionSelectionCleanupRef = useRef<(() => void) | null>(null)
-  const previewNavigationCleanupRef = useRef<(() => void) | null>(null)
-  const prevSelectedSectionIdRef = useRef<string | null>(null)
-  const scheduleLayoutUpdate = useCallback(() => {
-    if (!onLayoutUpdate) {
-      return
-    }
-    const win = frameDocument?.defaultView
-    if (!win) {
-      onLayoutUpdate()
-      return
-    }
-    win.requestAnimationFrame(() => {
-      win.requestAnimationFrame(() => {
-        onLayoutUpdate()
-      })
-    })
-  }, [frameDocument, onLayoutUpdate])
-
-  useEffect(() => {
-    hasInjectedRef.current = false
-  }, [frameDocument, frameRoot])
-
-  useEffect(() => {
-    if (!renderedHtml || !frameDocument || !frameRoot) {
-      return
-    }
-    hasInjectedRef.current = true
-    injectHtmlIntoFrame(renderedHtml, frameDocument, frameRoot, {
-      templateOrder: templateOrderRef.current,
-      footerOrder: footerOrderRef.current,
-      headerOptions,
-      announcementBars,
-      customCss,
-      customSections,
-      selectedSectionId: selectedSectionId ?? null,
-    })
-    scheduleLayoutUpdate()
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- Only re-inject on HTML changes
-  }, [renderedHtml, frameDocument, frameRoot])
-
-  useEffect(() => {
-    if (!frameDocument) {
-      return
-    }
-    if (previewNavigationCleanupRef.current) {
-      previewNavigationCleanupRef.current()
-      previewNavigationCleanupRef.current = null
-    }
-    previewNavigationCleanupRef.current = setupPreviewNavigation(frameDocument, onNavigate)
-    return () => {
-      if (previewNavigationCleanupRef.current) {
-        previewNavigationCleanupRef.current()
-        previewNavigationCleanupRef.current = null
-      }
-    }
-  }, [frameDocument, onNavigate])
-
-  useEffect(() => {
-    if (!hasInjectedRef.current || !frameDocument) return
-    const win = frameDocument.defaultView
-    const update = () => {
-      applyHeaderCustomizations(frameDocument, headerOptions)
-      syncAnnouncementBars(frameDocument, announcementBars)
-      applyCustomCss(frameDocument, customCss)
-      scheduleLayoutUpdate()
-    }
-
-    if (win) {
-      win.requestAnimationFrame(update)
-    } else {
-      update()
-    }
-  }, [frameDocument, headerOptions, announcementBars, customCss, scheduleLayoutUpdate])
-
-  useEffect(() => {
-    if (!hasInjectedRef.current || !frameDocument) return
-    const win = frameDocument.defaultView
-    const update = () => {
-      updateColorVariables(frameDocument, accentColor, backgroundColor, pageLayout)
-    }
-
-    if (win) {
-      win.requestAnimationFrame(update)
-    } else {
-      update()
-    }
-  }, [frameDocument, accentColor, backgroundColor, pageLayout])
-
-  useEffect(() => {
-    if (!hasInjectedRef.current || !frameDocument) return
-    const win = frameDocument.defaultView
-    const update = () => {
-      syncTemplateSections(frameDocument, customSections)
-      applyHeaderCustomizations(frameDocument, headerOptions)
-      scheduleLayoutUpdate()
-    }
-
-    if (win) {
-      win.requestAnimationFrame(update)
-    } else {
-      update()
-    }
-  }, [frameDocument, customSections, headerOptions, scheduleLayoutUpdate])
-
-  useEffect(() => {
-    if (!hasInjectedRef.current || !frameDocument) return
-    const win = frameDocument.defaultView
-    if (win) {
-      win.requestAnimationFrame(() => {
-        reorderTemplateInDOM(frameDocument, filteredTemplateOrder)
-        scheduleLayoutUpdate()
-      })
-    } else {
-      reorderTemplateInDOM(frameDocument, filteredTemplateOrder)
-      scheduleLayoutUpdate()
-    }
-  }, [frameDocument, filteredTemplateOrder, scheduleLayoutUpdate])
-
-  useEffect(() => {
-    if (!hasInjectedRef.current || !frameDocument) return
-    const win = frameDocument.defaultView
-    if (win) {
-      win.requestAnimationFrame(() => {
-        reorderFooterInDOM(frameDocument, footerOrder)
-        scheduleLayoutUpdate()
-      })
-    } else {
-      reorderFooterInDOM(frameDocument, footerOrder)
-      scheduleLayoutUpdate()
-    }
-  }, [frameDocument, footerOrder, scheduleLayoutUpdate])
-
-  useEffect(() => {
-    if (!hasInjectedRef.current || !frameDocument || !renderedHtml) return
-
-    if (sectionSelectionCleanupRef.current) {
-      sectionSelectionCleanupRef.current()
-      sectionSelectionCleanupRef.current = null
-    }
-
-    if (onSectionSelect && sectionIdsForPreview.length > 0) {
-      sectionSelectionCleanupRef.current = setupSectionSelection(frameDocument, sectionIdsForPreview, onSectionSelect, onFrameHoverChange)
-    }
-
-    return () => {
-      if (sectionSelectionCleanupRef.current) {
-        sectionSelectionCleanupRef.current()
-        sectionSelectionCleanupRef.current = null
-      }
-    }
-  }, [frameDocument, renderedHtml, onSectionSelect, onFrameHoverChange, sectionIdsForPreview])
-
-  useEffect(() => {
-    if (!frameDocument) return
-    syncSelectedSectionAttribute(frameDocument, selectedSectionId ?? null)
-  }, [frameDocument, selectedSectionId])
-
-  useEffect(() => {
-    if (!hasInjectedRef.current || !frameDocument) return
-    syncSectionVisibility(frameDocument, sectionIdsForPreview, hiddenSections)
-  }, [frameDocument, hiddenSections, sectionIdsForPreview])
-
-  useEffect(() => {
-    if (!hasInjectedRef.current || !frameDocument) return
-
-    const selectionChanged = prevSelectedSectionIdRef.current !== selectedSectionId
-    prevSelectedSectionIdRef.current = selectedSectionId ?? null
-
-    if (!selectionChanged || !selectedSectionId) {
-      return
-    }
-
-    scrollToSection(frameDocument, selectedSectionId)
-  }, [frameDocument, selectedSectionId])
-
-  useEffect(() => {
-    if (!frameDocument || !scrollToSectionId || !hasInjectedRef.current) return
-    scrollToSection(frameDocument, scrollToSectionId)
-    onScrollComplete?.()
-  }, [frameDocument, scrollToSectionId, onScrollComplete])
-
-  return null
-}
-
-// Helper to render the theme
-function renderTheme(
-  templates: Record<string, string>,
-  previewData: PreviewData,
-  currentPage: string,
-  posts: PreviewPost[],
-  accentColor: string,
-  backgroundColor: string,
-  pageLayout: 'narrow' | 'normal',
-  navigationLayout: string,
-  siteUrl: string,
-  pageNumber: number,
-  customSettingsOverrides: Record<string, unknown>
-): string {
-  // Compile templates
-  const defaultTemplate = Handlebars.compile(templates.default)
-  const postsPerPage = previewData?.config?.posts_per_page ?? 12
-  const pagination = buildPagination(pageNumber, posts.length, postsPerPage)
-  const pagedPosts = posts  // Show all posts on every page in preview mode
-  const renderContext = buildTemplateContext(previewData, currentPage, pagedPosts, siteUrl, pagination)
-  const dataFrame = buildDataFrame(
-    previewData,
-    pagedPosts,
-    accentColor,
-    backgroundColor,
-    pageLayout,
-    navigationLayout,
-    siteUrl,
-    currentPage,
-    customSettingsOverrides
-  )
-
-  let pageTemplate: HandlebarsTemplateDelegate | null = null
-  if (currentPage === 'home' && templates.home) {
-    pageTemplate = Handlebars.compile(templates.home)
-  } else if (currentPage === 'page2' && templates.index) {
-    pageTemplate = Handlebars.compile(templates.index)
-  } else if (currentPage === 'about' && templates.page) {
-    pageTemplate = Handlebars.compile(templates.page)
-  } else if (currentPage === 'post' && templates.post) {
-    pageTemplate = Handlebars.compile(templates.post)
-  }
-
-  if (!pageTemplate) {
-    return ''
-  }
-
-  // Render page content
-  const pageContent = pageTemplate(renderContext, { data: dataFrame })
-
-  // Inject page content into default layout
-  const fullHtml = defaultTemplate({
-    ...renderContext,
-    body: pageContent
-  }, { data: dataFrame })
-
-  return fullHtml
 }
 
 // Export types for use in other files

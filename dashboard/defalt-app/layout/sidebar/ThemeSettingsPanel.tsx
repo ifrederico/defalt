@@ -5,7 +5,7 @@ import CodeMirror from '@uiw/react-codemirror'
 import { css } from '@codemirror/lang-css'
 import { PanelHeader, ColorPickerSetting, ToggleSwitch, TextInput, Select } from '@defalt/ui'
 import { sanitizeHex } from '@defalt/utils/color/colorUtils'
-import type { NavigationLayoutSetting } from '@defalt/utils/config/themeConfig'
+import { DEFAULT_ACCENT_COLOR, type NavigationLayoutSetting } from '@defalt/utils/config/themeConfig'
 
 const FIELD_STACK = 'space-y-2'
 const LABEL_CLASS = 'font-md font-medium text-foreground'
@@ -126,13 +126,13 @@ export function ThemeSettingsPanel({
   const [cssExpanded, setCssExpanded] = useState(false)
 
   const accentColorSwatches = useMemo(() => ([
-    { title: 'Accent', hex: '#AC1E3E', accent: true },
+    { title: 'Accent', hex: DEFAULT_ACCENT_COLOR, accent: true },
     { title: 'Black', hex: '#000000' },
     { title: 'White', hex: '#ffffff' }
   ]), [])
 
   const backgroundColorSwatches = useMemo(() => ([
-    { title: 'Accent', hex: '#AC1E3E', accent: true },
+    { title: 'Accent', hex: DEFAULT_ACCENT_COLOR, accent: true },
     { title: 'Black', hex: '#000000' },
     { title: 'White', hex: '#ffffff' }
   ]), [])

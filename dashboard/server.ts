@@ -23,10 +23,12 @@ const { Pool } = pg
 // Only use SSL for external connections (DATABASE_PUBLIC_URL)
 const dbUrl = process.env.DATABASE_URL
 const needsSsl = dbUrl?.includes('railway.tcp.proxy') || dbUrl?.includes('amazonaws.com')
+// Use strict SSL verification by default; set DEFALT_ALLOW_INSECURE_SSL=true only for testing
+const allowInsecureSsl = process.env.DEFALT_ALLOW_INSECURE_SSL === 'true'
 
 const pool = new Pool({
   connectionString: dbUrl,
-  ssl: needsSsl ? { rejectUnauthorized: false } : false,
+  ssl: needsSsl ? { rejectUnauthorized: !allowInsecureSsl } : false,
   connectionTimeoutMillis: 5000,  // Fail fast if DB unreachable
   idleTimeoutMillis: 30000
 })
@@ -94,6 +96,7 @@ import {
   normalizeThemeDocument,
   type ThemeDocument
 } from './defalt-utils/config/themeConfig.ts'
+import { isPlainObject } from './defalt-utils/helpers/typeGuards.ts'
 import { themeExportRequestSchema, type ThemeExportRequest } from './defalt-utils/config/themeValidation.ts'
 import {
   applyThemeExportCustomizations,
@@ -130,10 +133,6 @@ interface GhostMember {
       amount?: number | null
     } | null
   }>
-}
-
-function isPlainObject(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value)
 }
 
 function isLifetimeMember(member: GhostMember | null): boolean {
@@ -285,6 +284,33 @@ app.get('/api/health', async (_req, res) => {
 // API: CSRF Token
 // =============================================================================
 const CSRF_COOKIE_NAME = 'csrf_token'
+const CSRF_HEADER_NAME = 'x-csrf-token'
+
+// CSRF verification middleware for mutating endpoints
+function verifyCsrf(req: Request, res: Response, next: () => void) {
+  // Skip CSRF for GET, HEAD, OPTIONS
+  if (['GET', 'HEAD', 'OPTIONS'].includes(req.method)) {
+    return next()
+  }
+
+  const cookieHeader = req.headers.cookie || ''
+  const cookies = cookieHeader.split(';').reduce((acc, cookie) => {
+    const [key, value] = cookie.trim().split('=')
+    if (key && value) {
+      acc[key] = value
+    }
+    return acc
+  }, {} as Record<string, string>)
+
+  const cookieToken = cookies[CSRF_COOKIE_NAME]
+  const headerToken = req.headers[CSRF_HEADER_NAME] as string | undefined
+
+  if (!cookieToken || !headerToken || cookieToken !== headerToken) {
+    return res.status(403).json({ error: 'CSRF token mismatch' })
+  }
+
+  next()
+}
 
 app.get('/api/auth/csrf', (_req, res) => {
   const token = crypto.randomBytes(32).toString('hex')
@@ -319,7 +345,7 @@ function validateThemeDocumentPayload(payload: unknown): { valid: boolean, error
   return { valid: true }
 }
 
-app.post('/api/theme-config', (req, res) => {
+app.post('/api/theme-config', verifyCsrf, (req, res) => {
   const validation = validateThemeDocumentPayload(req.body)
   if (!validation.valid) {
     return res.status(400).json({ error: validation.error })
@@ -334,7 +360,7 @@ app.post('/api/theme-config', (req, res) => {
   }
 })
 
-app.delete('/api/theme-config', (_req, res) => {
+app.delete('/api/theme-config', verifyCsrf, (_req, res) => {
   inMemoryThemeConfig = null
   return res.json({ success: true })
 })
@@ -423,7 +449,7 @@ app.get('/api/settings', async (req: Request, res: Response) => {
   }
 })
 
-app.put('/api/settings', async (req: Request, res: Response) => {
+app.put('/api/settings', verifyCsrf, async (req: Request, res: Response) => {
   const member = await getGhostMember(req)
   if (!member) {
     return res.status(401).json({ error: 'Unauthorized' })
@@ -449,7 +475,7 @@ app.put('/api/settings', async (req: Request, res: Response) => {
   }
 })
 
-app.delete('/api/settings', async (req: Request, res: Response) => {
+app.delete('/api/settings', verifyCsrf, async (req: Request, res: Response) => {
   const member = await getGhostMember(req)
   if (!member) {
     return res.status(401).json({ error: 'Unauthorized' })
@@ -489,7 +515,7 @@ app.get('/api/themes', async (req: Request, res: Response) => {
   }
 })
 
-app.post('/api/themes', async (req: Request, res: Response) => {
+app.post('/api/themes', verifyCsrf, async (req: Request, res: Response) => {
   const member = await getGhostMember(req)
   if (!member) {
     return res.status(401).json({ error: 'Unauthorized' })
@@ -547,7 +573,7 @@ app.get('/api/themes/:id', async (req: Request, res: Response) => {
   }
 })
 
-app.put('/api/themes/:id', async (req: Request, res: Response) => {
+app.put('/api/themes/:id', verifyCsrf, async (req: Request, res: Response) => {
   const member = await getGhostMember(req)
   if (!member) {
     return res.status(401).json({ error: 'Unauthorized' })
@@ -617,7 +643,7 @@ app.put('/api/themes/:id', async (req: Request, res: Response) => {
   }
 })
 
-app.delete('/api/themes/:id', async (req: Request, res: Response) => {
+app.delete('/api/themes/:id', verifyCsrf, async (req: Request, res: Response) => {
   const member = await getGhostMember(req)
   if (!member) {
     return res.status(401).json({ error: 'Unauthorized' })
@@ -642,7 +668,7 @@ app.delete('/api/themes/:id', async (req: Request, res: Response) => {
 // =============================================================================
 const MAX_JSON_SIZE_BYTES = 2 * 1024 * 1024
 
-app.post('/api/theme/export', async (req, res) => {
+app.post('/api/theme/export', verifyCsrf, async (req, res) => {
   let workspaceRoot: string | null = null
 
   try {

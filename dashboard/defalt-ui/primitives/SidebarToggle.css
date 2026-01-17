@@ -1,0 +1,131 @@
+/**
+ * SidebarToggle Component Styles
+ *
+ * Animated toggle button for collapsible sidebars.
+ * Uses CSS custom properties for theming compatibility.
+ */
+
+.df-sidebar-toggle {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: default;
+  transition: opacity ease-in-out 150ms;
+}
+
+.df-sidebar-toggle:focus-visible {
+  outline: 2px solid var(--color-ring);
+  outline-offset: 2px;
+}
+
+.df-sidebar-toggle--left {
+  right: -32px;
+}
+
+.df-sidebar-toggle--right {
+  left: -32px;
+  justify-content: flex-end;
+}
+
+.df-sidebar-toggle__segment {
+  width: 2px;
+  height: 10px;
+  transition: transform ease-in-out 150ms, background-color 150ms ease-in-out;
+  background: var(--color-border-strong);
+  transform-origin: center;
+}
+
+.df-sidebar-toggle__inner {
+  width: 18px;
+  height: 32px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.df-sidebar-toggle__segment--top {
+  border-radius: 10px 10px 0 0;
+}
+
+.df-sidebar-toggle__segment--bottom {
+  border-radius: 0 0 10px 10px;
+}
+
+.df-sidebar-toggle__inner:hover .df-sidebar-toggle__segment {
+  background: var(--color-secondary);
+}
+
+/* Left position - expanded state */
+.df-sidebar-toggle[data-position="left"][data-collapsed="false"] .df-sidebar-toggle__inner:hover .df-sidebar-toggle__segment--top {
+  transform: rotate(45deg) translateY(2px) scaleY(1.2);
+}
+
+.df-sidebar-toggle[data-position="left"][data-collapsed="false"] .df-sidebar-toggle__inner:hover .df-sidebar-toggle__segment--bottom {
+  transform: rotate(-45deg) translateY(-2px) scaleY(1.2);
+}
+
+/* Left position - collapsed state */
+.df-sidebar-toggle[data-position="left"][data-collapsed="true"] .df-sidebar-toggle__segment {
+  transform: translateX(2px);
+}
+
+.df-sidebar-toggle[data-position="left"][data-collapsed="true"] .df-sidebar-toggle__inner:hover .df-sidebar-toggle__segment--top {
+  transform: rotate(-45deg) translateY(2px) scaleY(1.2) translateX(0);
+}
+
+.df-sidebar-toggle[data-position="left"][data-collapsed="true"] .df-sidebar-toggle__inner:hover .df-sidebar-toggle__segment--bottom {
+  transform: rotate(45deg) translateY(-2px) scaleY(1.2) translateX(0);
+}
+
+/* Right position - expanded state */
+.df-sidebar-toggle[data-position="right"][data-collapsed="false"] .df-sidebar-toggle__inner:hover .df-sidebar-toggle__segment--top {
+  transform: rotate(-45deg) translateY(2px) scaleY(1.2);
+}
+
+.df-sidebar-toggle[data-position="right"][data-collapsed="false"] .df-sidebar-toggle__inner:hover .df-sidebar-toggle__segment--bottom {
+  transform: rotate(45deg) translateY(-2px) scaleY(1.2);
+}
+
+/* Right position - collapsed state */
+.df-sidebar-toggle[data-position="right"][data-collapsed="true"] .df-sidebar-toggle__segment {
+  transform: translateX(-2px);
+}
+
+.df-sidebar-toggle[data-position="right"][data-collapsed="true"] .df-sidebar-toggle__inner:hover .df-sidebar-toggle__segment--top {
+  transform: rotate(45deg) translateY(2px) scaleY(1.2) translateX(0);
+}
+
+.df-sidebar-toggle[data-position="right"][data-collapsed="true"] .df-sidebar-toggle__inner:hover .df-sidebar-toggle__segment--bottom {
+  transform: rotate(-45deg) translateY(-2px) scaleY(1.2) translateX(0);
+}
+
+/* Collapsed state - common */
+.df-sidebar-toggle[data-collapsed="true"] {
+  width: 60px;
+  max-height: 400px;
+  top: 50%;
+  bottom: auto;
+  transform: translateY(-50%);
+}
+
+.df-sidebar-toggle--left[data-collapsed="true"] {
+  right: -60px;
+}
+
+.df-sidebar-toggle--right[data-collapsed="true"] {
+  left: -60px;
+}
+
+/* Hover reveal animation for left collapsed toggle */
+.group:hover .df-sidebar-toggle[data-collapsed="true"][data-position="left"] .df-sidebar-toggle__inner {
+  transform: translateX(-22px);
+}

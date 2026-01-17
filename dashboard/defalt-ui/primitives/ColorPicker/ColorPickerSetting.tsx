@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
-import { ColorIndicator, type KoenigSwatch } from './ColorPicker'
+import { ColorIndicator } from './ColorIndicator'
+import type { KoenigSwatch, ColorPickerSettingProps } from './types'
 import './ColorPickerSetting.css'
-import type { ColorPickerSettingProps } from './types'
 
 export default function ColorPickerSetting({
   label,

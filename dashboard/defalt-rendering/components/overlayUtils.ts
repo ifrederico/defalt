@@ -50,7 +50,7 @@ export type OverlayStyle = {
 }
 
 const getDeepScrollPosition = (element: HTMLElement): ScrollPosition => {
-  let totalScroll = { x: 0, y: 0 }
+  const totalScroll = { x: 0, y: 0 }
   let current: HTMLElement | null = element
 
   while (current && current !== element.ownerDocument.documentElement) {

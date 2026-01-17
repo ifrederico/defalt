@@ -8,9 +8,19 @@ import { RightDetailPanel } from './layout/RightDetailPanel'
 import { SectionDetailPanel } from './layout/sidebar/pages/components/SectionDetailPanel'
 import { PreviewErrorBoundary } from './components/ErrorBoundary'
 import { useWorkspaceContext } from './contexts/useWorkspaceContext'
-import { useThemeContext } from './contexts/useThemeContext'
+import {
+    useHeaderStyleValue,
+    usePostFeedStyleValue,
+    usePostFeedStyleOptions,
+    useShowImagesInFeed,
+    useShowAuthor,
+    useShowPublishDate,
+    useShowPublicationInfoSidebar,
+    useThemeActions,
+} from './stores/themeStore'
 import { useToast } from './components/ToastContext'
 import { useMediaQuery } from '@defalt/utils/hooks'
+import { BREAKPOINTS } from '@defalt/utils/constants'
 import type { StickyHeaderMode } from '@defalt/rendering/custom-source/handlebars/headerCustomization'
 import { LoadingState } from '@defalt/ui/primitives/LoadingState'
 import { SidebarToggle } from '@defalt/ui'
@@ -24,7 +34,7 @@ export function AppContent() {
     const scrollToSectionId = useScrollToSectionId()
     const leftSidebarCollapsed = useLeftSidebarCollapsed()
     const { selectSection, setScrollToSectionId, clearSelection, setActiveDetail, toggleLeftSidebar } = useUIActions()
-    const isWideScreen = useMediaQuery('(min-width: 1348px)')
+    const isWideScreen = useMediaQuery(`(min-width: ${BREAKPOINTS.WIDE_SCREEN}px)`)
     const ghostOverlayTimeoutRef = useRef<number | null>(null)
 
     const {
@@ -96,20 +106,20 @@ export function AppContent() {
         onNavigationLayoutChange,
     } = useWorkspaceContext()
 
+    const headerStyleValue = useHeaderStyleValue()
+    const postFeedStyleValue = usePostFeedStyleValue()
+    const postFeedStyleOptions = usePostFeedStyleOptions()
+    const showImagesInFeed = useShowImagesInFeed()
+    const showAuthor = useShowAuthor()
+    const showPublishDate = useShowPublishDate()
+    const showPublicationInfoSidebar = useShowPublicationInfoSidebar()
     const {
-        headerStyleValue,
-        postFeedStyleValue,
-        postFeedStyleOptions,
-        onPostFeedStyleChange,
-        showImagesInFeed,
-        onShowImagesInFeedToggle,
-        showAuthor,
-        onShowAuthorToggle,
-        showPublishDate,
-        onShowPublishDateToggle,
-        showPublicationInfoSidebar,
-        onShowPublicationInfoSidebarToggle,
-    } = useThemeContext()
+        setPostFeedStyle: onPostFeedStyleChange,
+        setShowImagesInFeed: onShowImagesInFeedToggle,
+        setShowAuthor: onShowAuthorToggle,
+        setShowPublishDate: onShowPublishDateToggle,
+        setShowPublicationInfoSidebar: onShowPublicationInfoSidebarToggle,
+    } = useThemeActions()
     const { showToast } = useToast()
 
 	    const resolveSectionLabel = useCallback((sectionId: string): string => {
@@ -157,7 +167,7 @@ export function AppContent() {
         }
         const label = resolveSectionLabel(normalizedId)
         selectSection(normalizedId, label)
-    }, [activeDetail, resolveSectionLabel, normalizeSectionId, selectSection])
+    }, [activeDetail, resolveSectionLabel, selectSection])
 
     useEffect(() => {
         if (!activeDetail) {
@@ -175,7 +185,7 @@ export function AppContent() {
         if (normalizedId !== activeDetail.id) {
             setActiveDetail({ ...activeDetail, id: normalizedId })
         }
-    }, [activeDetail, normalizeSectionId, resolveSectionLabel, setActiveDetail])
+    }, [activeDetail, resolveSectionLabel, setActiveDetail])
 
     // Effect to handle checkout success
     useEffect(() => {

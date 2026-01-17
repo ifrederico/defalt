@@ -134,18 +134,11 @@ export const IMAGE_POSITION_OPTIONS = ['left', 'right'] as const
 export type ImagePositionOption = typeof IMAGE_POSITION_OPTIONS[number]
 
 export const imageLayoutConfigSchema = z.object({
-  invert: z.boolean().optional(),
   imageWidth: z.enum(IMAGE_WIDTH_OPTIONS).default('1/2'),
   imagePosition: z.enum(IMAGE_POSITION_OPTIONS).default('left')
 })
 
 export const imageLayoutShape = imageLayoutConfigSchema.shape
-
-export const invertSetting: SettingSchema = {
-  type: 'checkbox',
-  id: 'invert',
-  label: 'Invert',
-}
 
 export const imageWidthSetting: SettingSchema = {
   type: 'select',
@@ -157,3 +150,135 @@ export const imageWidthSetting: SettingSchema = {
     { label: 'Three quarters', value: '3/4' }
   ]
 }
+
+export const imagePositionSetting: SettingSchema = {
+  type: 'radio',
+  id: 'imagePosition',
+  label: 'Image position',
+  options: [
+    { label: 'Left', value: 'left' },
+    { label: 'Right', value: 'right' }
+  ]
+}
+
+// =============================================================================
+// Tags Configuration Factories
+// =============================================================================
+
+/**
+ * Creates a tags schema with a single primary tag.
+ * Use this for sections that filter content by one Ghost tag.
+ *
+ * @param defaultTag - The default tag value (e.g., '#hero', '#cards')
+ * @returns A Zod schema shape for single-tag configuration
+ *
+ * @example
+ * export const heroConfigSchema = z.object({
+ *   ...createPrimaryTagSchema('#hero'),
+ *   // other fields...
+ * })
+ */
+export const createPrimaryTagSchema = (defaultTag: string) => ({
+  tags: z.object({
+    primary: z.string().default(defaultTag)
+  }).default({ primary: defaultTag })
+})
+
+/**
+ * Creates a tags schema with left and right tags for dual-column layouts.
+ * Use this for grid sections that display content from two different tags.
+ *
+ * @param leftDefault - The default tag for the left column
+ * @param rightDefault - The default tag for the right column
+ * @returns A Zod schema shape for dual-tag configuration
+ *
+ * @example
+ * export const ghostGridConfigSchema = z.object({
+ *   ...createDualTagSchema('#grid-left', '#grid-right'),
+ *   // other fields...
+ * })
+ */
+export const createDualTagSchema = (leftDefault: string, rightDefault: string) => ({
+  tags: z.object({
+    left: z.string().default(leftDefault),
+    right: z.string().default(rightDefault)
+  }).default({ left: leftDefault, right: rightDefault })
+})
+
+// =============================================================================
+// Title Size
+// =============================================================================
+
+export const TITLE_SIZE_VALUES = ['small', 'normal', 'large'] as const
+export type TitleSizeOption = typeof TITLE_SIZE_VALUES[number]
+
+export const TITLE_SIZE_OPTIONS = [
+  { label: 'Small', value: TITLE_SIZE_VALUES[0] },
+  { label: 'Normal', value: TITLE_SIZE_VALUES[1] },
+  { label: 'Large', value: TITLE_SIZE_VALUES[2] }
+] as const
+
+export const titleSizeConfigSchema = z.object({
+  titleSize: z.enum(TITLE_SIZE_VALUES).default('normal')
+})
+
+export const titleSizeShape = titleSizeConfigSchema.shape
+
+export const titleSizeSetting: SettingSchema = {
+  type: 'select',
+  id: 'titleSize',
+  label: 'Title size',
+  options: [...TITLE_SIZE_OPTIONS]
+}
+
+// =============================================================================
+// Primary Cards (Ghost Editor Card List)
+// =============================================================================
+
+const primaryCardsHeaderSetting: SettingSchema = {
+  type: 'header',
+  id: 'primary-cards-header',
+  label: 'Primary Cards',
+  helpUrl: 'https://ghost.org/help/cards/'
+}
+
+const primaryCardsHelpSetting: SettingSchema = {
+  type: 'paragraph',
+  id: 'primary-cards-help',
+  content: 'Launch the dynamic card menu by clicking the + button, or type / on a new line.'
+}
+
+const primaryCardsListSetting: SettingSchema = {
+  type: 'cardList',
+  id: 'primary-cards-list',
+  items: [
+    { label: 'Image', suffix: '/image', icon: 'Image' },
+    { label: 'Divider', suffix: '/hr', icon: 'Minus' },
+    { label: 'Button', suffix: '/button', icon: 'RectangleEllipsis' },
+    { label: 'Bookmark', suffix: '/url', icon: 'Bookmark' },
+    { label: 'Gallery', suffix: '/gallery', icon: 'Images' },
+    { label: 'Public preview', suffix: '/paywall', icon: 'Eye' },
+    { label: 'Call to action', suffix: '/cta', icon: 'MousePointer' },
+    { label: 'Callout', suffix: '/callout', icon: 'MessageSquareWarning' },
+    { label: 'Signup', suffix: '/signup', icon: 'UserPlus' },
+    { label: 'Header', suffix: '/header', icon: 'GalleryVertical' },
+    { label: 'Toggle', suffix: '/toggle', icon: 'ChevronDown' },
+    { label: 'Video', suffix: '/video', icon: 'Play' },
+    { label: 'Audio', suffix: '/audio', icon: 'Music4' },
+    { label: 'File', suffix: '/file', icon: 'Paperclip' },
+    { label: 'Product', suffix: '/product', icon: 'Star' },
+    { label: 'HTML', suffix: '/html', icon: 'Code' },
+    { label: 'Markdown', suffix: '/md', icon: 'BookOpen' }
+  ]
+}
+
+/**
+ * Primary Cards Settings Group
+ * Complete settings for displaying the Ghost Editor card list.
+ * Use this when you need the header, help text, and card list together.
+ */
+export const primaryCardsSettings: SettingSchema[] = [
+  primaryCardsHeaderSetting,
+  primaryCardsHelpSetting,
+  primaryCardsListSetting
+]

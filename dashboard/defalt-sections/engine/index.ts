@@ -80,7 +80,6 @@ export {
 
   // Image layout
   imageLayoutShape,
-  invertSetting,
   imageWidthSetting
 } from './commonSettings.js'
 
@@ -114,6 +113,39 @@ export {
 } from './sectionRegistry.js'
 
 // =============================================================================
+// Settings Walker (Schema Traversal)
+// =============================================================================
+
+export {
+  // Core walker
+  walkSettingsSchema,
+  walkSectionSettings,
+
+  // Utility functions
+  getAllSettingIds,
+  getSectionSettingIds,
+  findSettings,
+  findSettingsByType,
+  getSettingById,
+  hasSettingId,
+
+  // Default value extraction
+  getSettingDefault,
+  buildDefaultsFromSchema,
+
+  // Validation helpers
+  findUnknownConfigKeys,
+
+  // Block instance helpers
+  walkBlockInstances,
+
+  // Types
+  type SettingLocation,
+  type WalkCallback,
+  type FilterPredicate
+} from './settingsWalker.js'
+
+// =============================================================================
 // Premium Config
 // =============================================================================
 
@@ -126,8 +158,6 @@ export { isPremium, getPremiumFeatures } from '@defalt/utils/config/premiumConfi
 // Hero section
 export { type HeroConfig, heroConfigSchema, heroSettingsSchema } from '../sections/hero/schema.js'
 export { heroDefaults } from '../sections/hero/defaults.js'
-// Backward compatibility alias
-export type { HeroConfig as HeroSectionConfig } from '../sections/hero/schema.js'
 
 // Ghost Cards section
 export {

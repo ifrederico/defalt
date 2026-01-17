@@ -39,6 +39,7 @@ import { THEME_DOCUMENT_FILENAME, normalizeThemeDocument } from './defalt-utils/
 import type { ThemeDocument } from './defalt-utils/config/themeConfig'
 import type { SubscriptionTier } from './defalt-utils/types/subscription'
 import { CSRF_COOKIE_NAME, CSRF_HEADER_NAME } from './defalt-utils/security/constants.js'
+import { isPlainObject } from './defalt-utils/helpers/typeGuards.js'
 
 // Inline helper functions (previously in server-utils/helpers.ts)
 const headerValue = (value: string | string[] | undefined): string | undefined =>
@@ -62,9 +63,6 @@ async function readRequestBody(req: IncomingMessage, limitBytes = 2 * 1024 * 102
     req.on('error', reject)
   })
 }
-
-const isPlainObject = (value: unknown): value is Record<string, unknown> =>
-  typeof value === 'object' && value !== null && !Array.isArray(value)
 
 const parseCookies = (cookieHeader: string | undefined): Record<string, string> => {
   if (!cookieHeader) {

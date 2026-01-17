@@ -33,6 +33,7 @@ import {
 } from 'lucide-react'
 import type { SectionSettingSchema } from '@defalt/sections/engine'
 import { SliderField, ToggleSwitch, ColorPickerSetting, Select, InlineControlRow, TextInput, TextArea } from '@defalt/ui'
+import { DEFAULT_ACCENT_COLOR } from '@defalt/utils/config/themeConfig'
 
 // Icon name to component mapping for radio buttons and card lists
 const ICON_MAP: Record<string, LucideIcon> = {
@@ -62,7 +63,7 @@ const ICON_MAP: Record<string, LucideIcon> = {
 }
 
 const DEFAULT_COLOR_SWATCHES = [
-  { title: 'Accent', hex: '#AC1E3E', accent: true },
+  { title: 'Accent', hex: DEFAULT_ACCENT_COLOR, accent: true },
   { title: 'Grey', hex: '#e5e7eb' },
   { title: 'Black', hex: '#000000' },
   { title: 'White', hex: '#ffffff' }
@@ -145,7 +146,6 @@ export function renderSettingInput(
         />
       )
     case 'richtext':
-      // TODO: Replace with TipTap rich text editor when implementing WYSIWYG
       return (
         <TextArea
           className="min-h-[80px]"
@@ -246,7 +246,6 @@ export function renderSettingInput(
       )
     }
     case 'image_picker':
-      // TODO: Add drag-drop image upload with preview
       return (
         <div className="space-y-2">
           <label className="font-md text-foreground">{setting.label}</label>

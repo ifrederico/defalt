@@ -5,27 +5,18 @@ import { FOOTER_ROOT_SELECTOR, TEMPLATE_CONTAINER_SELECTOR } from '../../custom-
 import { isFixedSection } from '@defalt/utils/config/sectionRegistry'
 import { useFrame } from '../AutoFrame/useFrame'
 import { getOverlayStyle, resolveSectionElement, type OverlayStyle } from '../overlayUtils'
-import {
-  heroConfigSchema,
-  ghostCardsConfigSchema,
-  ghostGridConfigSchema,
-  imageWithTextConfigSchema,
-  type SectionInstance,
-  getSectionDefinition
-} from '@defalt/sections/engine'
-import {
-  resolveContainerPaddingX,
-  resolveImageAspectRatio,
-  resolveImageColumns,
-  resolveHeroDefaultTag,
-  resolveImageWithTextDefaultTag,
-  resolveGhostCardsDefaultTag,
-  toTagFilter
-} from '@defalt/rendering/derived/sectionDerived'
-import { formatInternalTag } from '@defalt/sections/utils/tagUtils'
-import { sanitizeHexColor } from '@defalt/utils/security/sanitizers'
-import { DEFAULT_CUSTOM_SECTION_PADDING, type SectionPadding } from '@defalt/utils/config/themeConfig'
+import { type SectionInstance, getSectionDefinition } from '@defalt/sections/engine'
+import { type SectionPadding } from '@defalt/utils/config/themeConfig'
 import { withBasePath } from '@defalt/utils/env/basePath'
+import {
+  buildSectionSnippet,
+  PARTIAL_FILENAME_MAP,
+  getCachedSnippet,
+  setCachedSnippet,
+  sanitizeTemplateForCopy,
+  inlineStylePartialForCopy
+} from './snippetBuilder'
+import { copyToClipboard, createCopyStatusHandler } from './copyToClipboard'
 
 type SectionActionBarProps = {
   selectedSectionId?: string | null
@@ -51,175 +42,6 @@ const isFooterParentSection = (sectionId: string) => sectionId.toLowerCase() ===
 const isFooterChildSection = (sectionId: string) => {
   const normalized = sectionId.toLowerCase()
   return normalized === 'footerbar' || normalized === 'footer-bar' || normalized === 'footersignup' || normalized === 'footer-signup'
-}
-
-const TEMPLATE_SNIPPET_CACHE = new Map<string, string>()
-const TEMPLATE_SNIPPET_CACHE_VERSION = 'clean-v4'
-const PARTIAL_FILENAME_MAP: Record<string, string> = {
-  hero: 'defalt-hero.hbs',
-  ghostCards: 'defalt-ghost-cards.hbs',
-  ghostGrid: 'defalt-ghost-grid.hbs',
-  'image-with-text': 'defalt-image-with-text.hbs'
-}
-
-const normalizePaddingValue = (value: unknown, fallback: number): number => {
-  if (typeof value === 'number' && Number.isFinite(value)) {
-    return Math.max(0, Math.round(value))
-  }
-  return Math.max(0, Math.round(fallback))
-}
-
-const resolvePadding = (padding?: SectionPadding): SectionPadding => {
-  const base = padding ?? DEFAULT_CUSTOM_SECTION_PADDING
-  return {
-    top: normalizePaddingValue(base.top, DEFAULT_CUSTOM_SECTION_PADDING.top),
-    bottom: normalizePaddingValue(base.bottom, DEFAULT_CUSTOM_SECTION_PADDING.bottom),
-    left: normalizePaddingValue(base.left ?? 0, DEFAULT_CUSTOM_SECTION_PADDING.left ?? 0),
-    right: normalizePaddingValue(base.right ?? 0, DEFAULT_CUSTOM_SECTION_PADDING.right ?? 0)
-  }
-}
-
-const buildSectionStyle = (padding: SectionPadding): string => {
-  const styles: string[] = []
-  if (padding.top > 0) styles.push(`padding-top: ${padding.top}px`)
-  if (padding.bottom > 0) styles.push(`padding-bottom: ${padding.bottom}px`)
-  if ((padding.left ?? 0) > 0) styles.push(`padding-left: ${padding.left}px`)
-  if ((padding.right ?? 0) > 0) styles.push(`padding-right: ${padding.right}px`)
-  return styles.join('; ')
-}
-
-const resolveGhostGridDefaultTags = (instanceId: string): { left: string; right: string } => {
-  const baseId = 'ghost-grid'
-  let suffix = ''
-  if (instanceId !== baseId && instanceId.startsWith(`${baseId}-`)) {
-    const raw = Number.parseInt(instanceId.slice(baseId.length + 1), 10)
-    if (Number.isFinite(raw) && raw > 1) {
-      suffix = `-${raw}`
-    }
-  }
-  return {
-    left: `#grid-left${suffix}`,
-    right: `#grid-right${suffix}`
-  }
-}
-
-const escapeRegExp = (value: string): string => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-
-const stripPreviewBlocks = (template: string): string => {
-  const withoutPagesElse = template.replace(
-    /\{\{#if\s+pages\}\}([\s\S]*?)\{\{else\}\}[\s\S]*?\{\{\/if\}\}/g,
-    '{{#if pages}}$1{{/if}}'
-  )
-  const withoutPostsElse = withoutPagesElse.replace(
-    /\{\{#if\s+posts\}\}([\s\S]*?)\{\{else\}\}[\s\S]*?\{\{\/if\}\}/g,
-    '{{#if posts}}$1{{/if}}'
-  )
-  const withoutElsePreview = withoutPostsElse.replace(
-    /\{\{else\}\}\s*\{\{#if\s+isPreview\}\}[\s\S]*?\{\{\/if\}\}/g,
-    ''
-  )
-  return withoutElsePreview.replace(/\{\{#if\s+isPreview\}\}[\s\S]*?\{\{\/if\}\}/g, '')
-}
-
-const stripPlaceholderCss = (template: string): string =>
-  template.replace(
-    /(^|\n)\s*[^\n{]*placeholder[^\n{]*\{[\s\S]*?\}\s*/g,
-    '\n'
-  )
-
-const tidyTemplateWhitespace = (template: string): string =>
-  template
-    .replace(/\n{3,}/g, '\n\n')
-    .replace(/\n\s*\n<\/style>/g, '\n</style>')
-    .trim()
-
-const sanitizeTemplateForCopy = (template: string): string =>
-  tidyTemplateWhitespace(stripPlaceholderCss(stripPreviewBlocks(template)))
-
-const inlineStylePartialForCopy = async (templatePath: string, template: string): Promise<string> => {
-  if (!templatePath.endsWith('.hbs')) {
-    return template
-  }
-  const styleTemplatePath = templatePath.replace(/\.hbs$/, '.styles.hbs')
-  const stylePartialName = `sections/${templatePath.replace(/\.hbs$/, '.styles')}`
-  const regex = new RegExp(`\\{\\{>\\s*["']${escapeRegExp(stylePartialName)}["']\\s*\\}\\}`, 'g')
-
-  try {
-    const url = withBasePath(`/sections/${styleTemplatePath}`)
-    const response = await fetch(url)
-    if (!response.ok) {
-      return template
-    }
-    const styleContent = await response.text()
-    return template.replace(regex, styleContent.trim())
-  } catch {
-    return template
-  }
-}
-
-const buildSectionSnippet = (section: SectionInstance, padding?: SectionPadding): string => {
-  const sectionStyle = buildSectionStyle(resolvePadding(padding))
-
-  if (section.definitionId === 'hero') {
-    const parsed = heroConfigSchema.safeParse(section.config ?? {})
-    const heroConfig = parsed.success ? parsed.data : heroConfigSchema.parse({})
-    const containerPaddingX = resolveContainerPaddingX(heroConfig.contentWidth)
-    const backgroundColor = sanitizeHexColor(heroConfig.backgroundColor, 'transparent')
-    const internalTag = formatInternalTag(heroConfig.tags?.primary) || resolveHeroDefaultTag(section.id)
-    const tagFilter = toTagFilter(internalTag)
-    const imageOnRight = heroConfig.invert === true || heroConfig.imagePosition === 'right'
-    const { imageColumn, textColumn } = resolveImageColumns(heroConfig.imageWidth)
-    const imageAspectRatio = resolveImageAspectRatio(heroConfig.imageAspect)
-    const imageBorderRadius = Math.max(0, Math.min(96, Math.round(heroConfig.imageBorderRadius)))
-
-    return `{{> "defalt-hero" sectionId=${JSON.stringify(section.id)} sectionStyle=${JSON.stringify(sectionStyle)} contentWidth=${JSON.stringify(heroConfig.contentWidth)} containerPaddingX=${JSON.stringify(containerPaddingX)} backgroundColor=${JSON.stringify(backgroundColor)} textAlignment=${JSON.stringify(heroConfig.textAlignment)} pageTitle=${heroConfig.pageTitle} imageOnRight=${imageOnRight} imageColumn=${JSON.stringify(imageColumn)} textColumn=${JSON.stringify(textColumn)} imageAspectRatio=${JSON.stringify(imageAspectRatio)} imageBorderRadius=${imageBorderRadius} tagFilter=${JSON.stringify(tagFilter)} internalTag=${JSON.stringify(internalTag)} }}`
-  }
-
-  if (section.definitionId === 'ghostCards') {
-    const parsed = ghostCardsConfigSchema.safeParse(section.config ?? {})
-    const cardsConfig = parsed.success ? parsed.data : ghostCardsConfigSchema.parse({})
-    const containerPaddingX = resolveContainerPaddingX(cardsConfig.contentWidth)
-    const backgroundColor = sanitizeHexColor(cardsConfig.backgroundColor, 'transparent')
-    const internalTag = formatInternalTag(cardsConfig.tags?.primary) || resolveGhostCardsDefaultTag(section.id)
-    const tagFilter = toTagFilter(internalTag)
-
-    return `{{> "defalt-ghost-cards" sectionId=${JSON.stringify(section.id)} sectionStyle=${JSON.stringify(sectionStyle)} contentWidth=${JSON.stringify(cardsConfig.contentWidth)} containerPaddingX=${JSON.stringify(containerPaddingX)} backgroundColor=${JSON.stringify(backgroundColor)} pageTitle=${cardsConfig.pageTitle} textAlignment=${JSON.stringify(cardsConfig.textAlignment)} titleSize=${JSON.stringify(cardsConfig.titleSize)} tagFilter=${JSON.stringify(tagFilter)} internalTag=${JSON.stringify(internalTag)} }}`
-  }
-
-  if (section.definitionId === 'ghostGrid') {
-    const parsed = ghostGridConfigSchema.safeParse(section.config ?? {})
-    const gridConfig = parsed.success ? parsed.data : ghostGridConfigSchema.parse({})
-    const containerPaddingX = resolveContainerPaddingX(gridConfig.contentWidth)
-    const backgroundColor = sanitizeHexColor(gridConfig.backgroundColor, 'transparent')
-    const defaults = resolveGhostGridDefaultTags(section.id)
-    const internalTagLeft = formatInternalTag(gridConfig.tags?.left) || defaults.left
-    const internalTagRight = formatInternalTag(gridConfig.tags?.right) || defaults.right
-    const leftTagFilter = toTagFilter(internalTagLeft)
-    const rightTagFilter = toTagFilter(internalTagRight)
-    const anyTagFilter = `${leftTagFilter},${rightTagFilter}`
-
-    return `{{> "defalt-ghost-grid" sectionId=${JSON.stringify(section.id)} sectionStyle=${JSON.stringify(sectionStyle)} contentWidth=${JSON.stringify(gridConfig.contentWidth)} containerPaddingX=${JSON.stringify(containerPaddingX)} backgroundColor=${JSON.stringify(backgroundColor)} pageTitle=${gridConfig.pageTitle} textAlignment=${JSON.stringify(gridConfig.textAlignment)} titleSize=${JSON.stringify(gridConfig.titleSize)} stackOnMobile=${gridConfig.stackOnMobile} gap=${gridConfig.gap} leftTagFilter=${JSON.stringify(leftTagFilter)} rightTagFilter=${JSON.stringify(rightTagFilter)} anyTagFilter=${JSON.stringify(anyTagFilter)} internalTagLeft=${JSON.stringify(internalTagLeft)} internalTagRight=${JSON.stringify(internalTagRight)} }}`
-  }
-
-  if (section.definitionId === 'image-with-text') {
-    const parsed = imageWithTextConfigSchema.safeParse(section.config ?? {})
-    const imageTextConfig = parsed.success ? parsed.data : imageWithTextConfigSchema.parse({})
-    const containerPaddingX = resolveContainerPaddingX(imageTextConfig.contentWidth)
-    const backgroundColor = sanitizeHexColor(imageTextConfig.backgroundColor, 'transparent')
-    const innerBackgroundColor = sanitizeHexColor(imageTextConfig.innerBackgroundColor, 'transparent')
-    const innerBackgroundPadding = Math.max(0, Math.min(120, Math.round(imageTextConfig.innerBackgroundPadding)))
-    const innerBackgroundRadius = Math.max(0, Math.min(96, Math.round(imageTextConfig.innerBackgroundRadius)))
-    const internalTag = formatInternalTag(imageTextConfig.tags?.primary) || resolveImageWithTextDefaultTag(section.id)
-    const tagFilter = toTagFilter(internalTag)
-    const imageOnRight = imageTextConfig.invert === true || imageTextConfig.imagePosition === 'right'
-    const { imageColumn, textColumn } = resolveImageColumns(imageTextConfig.imageWidth)
-    const imageAspectRatio = resolveImageAspectRatio(imageTextConfig.imageAspect)
-    const imageBorderRadius = Math.max(0, Math.min(96, Math.round(imageTextConfig.imageBorderRadius)))
-
-    return `{{> "defalt-image-with-text" sectionId=${JSON.stringify(section.id)} sectionStyle=${JSON.stringify(sectionStyle)} contentWidth=${JSON.stringify(imageTextConfig.contentWidth)} containerPaddingX=${JSON.stringify(containerPaddingX)} backgroundColor=${JSON.stringify(backgroundColor)} innerBackgroundColor=${JSON.stringify(innerBackgroundColor)} innerBackgroundPadding=${innerBackgroundPadding} innerBackgroundRadius=${innerBackgroundRadius} textAlignment=${JSON.stringify(imageTextConfig.textAlignment)} pageTitle=${imageTextConfig.pageTitle} imageOnRight=${imageOnRight} imageColumn=${JSON.stringify(imageColumn)} textColumn=${JSON.stringify(textColumn)} imageAspectRatio=${JSON.stringify(imageAspectRatio)} imageBorderRadius=${imageBorderRadius} tagFilter=${JSON.stringify(tagFilter)} internalTag=${JSON.stringify(internalTag)} }}`
-  }
-
-  return ''
 }
 
 export function SectionActionBar({
@@ -405,9 +227,9 @@ export function SectionActionBar({
       return
     }
 
-    const cacheKey = `${templatePath}::${TEMPLATE_SNIPPET_CACHE_VERSION}`
-    if (TEMPLATE_SNIPPET_CACHE.has(cacheKey)) {
-      setPartialSnippet(TEMPLATE_SNIPPET_CACHE.get(cacheKey) ?? '')
+    const cached = getCachedSnippet(templatePath)
+    if (cached !== undefined) {
+      setPartialSnippet(cached)
       return
     }
 
@@ -424,7 +246,7 @@ export function SectionActionBar({
         const inlined = await inlineStylePartialForCopy(templatePath, content)
         const sanitized = sanitizeTemplateForCopy(inlined)
         if (cancelled) return
-        TEMPLATE_SNIPPET_CACHE.set(cacheKey, sanitized)
+        setCachedSnippet(templatePath, sanitized)
         setPartialSnippet(sanitized)
       } catch {
         if (!cancelled) {
@@ -539,27 +361,7 @@ export function SectionActionBar({
     setIsCodeOpen((current) => !current)
   }
 
-  const notifyCopySuccess = (target: 'include' | 'partial') => {
-    if (copyTimeoutRef.current !== null) {
-      window.clearTimeout(copyTimeoutRef.current)
-    }
-    setCopyStatus({ target, status: 'success' })
-    copyTimeoutRef.current = window.setTimeout(() => {
-      setCopyStatus(null)
-      copyTimeoutRef.current = null
-    }, 1200)
-  }
-
-  const notifyCopyFailure = (target: 'include' | 'partial') => {
-    if (copyTimeoutRef.current !== null) {
-      window.clearTimeout(copyTimeoutRef.current)
-    }
-    setCopyStatus({ target, status: 'error' })
-    copyTimeoutRef.current = window.setTimeout(() => {
-      setCopyStatus(null)
-      copyTimeoutRef.current = null
-    }, 1200)
-  }
+  const { notifySuccess, notifyFailure } = createCopyStatusHandler(setCopyStatus, copyTimeoutRef)
 
   const handleCopySnippet = (event: ReactMouseEvent<HTMLButtonElement>) => {
     event.preventDefault()
@@ -567,37 +369,13 @@ export function SectionActionBar({
     if (!includeSnippet) {
       return
     }
-    const clipboard = frameDocument?.defaultView?.navigator?.clipboard ?? navigator.clipboard
-    if (clipboard?.writeText) {
-      void clipboard
-        .writeText(includeSnippet)
-        .then(() => notifyCopySuccess('include'))
-        .catch(() => {
-          notifyCopyFailure('include')
-        })
-      return
-    }
-    if (frameDocument) {
-      const textarea = frameDocument.createElement('textarea')
-      textarea.value = includeSnippet
-      textarea.setAttribute('readonly', 'true')
-      textarea.style.position = 'absolute'
-      textarea.style.left = '-9999px'
-      frameDocument.body.appendChild(textarea)
-      textarea.select()
-      try {
-        const copied = frameDocument.execCommand('copy')
-        if (copied) {
-          notifyCopySuccess('include')
-        } else {
-          notifyCopyFailure('include')
-        }
-      } catch {
-        notifyCopyFailure('include')
-      } finally {
-        frameDocument.body.removeChild(textarea)
+    void copyToClipboard(includeSnippet, frameDocument).then((success) => {
+      if (success) {
+        notifySuccess('include')
+      } else {
+        notifyFailure('include')
       }
-    }
+    })
   }
 
   const handleCopyPartial = (event: ReactMouseEvent<HTMLButtonElement>) => {
@@ -606,37 +384,13 @@ export function SectionActionBar({
     if (!partialSnippet) {
       return
     }
-    const clipboard = frameDocument?.defaultView?.navigator?.clipboard ?? navigator.clipboard
-    if (clipboard?.writeText) {
-      void clipboard
-        .writeText(partialSnippet)
-        .then(() => notifyCopySuccess('partial'))
-        .catch(() => {
-          notifyCopyFailure('partial')
-        })
-      return
-    }
-    if (frameDocument) {
-      const textarea = frameDocument.createElement('textarea')
-      textarea.value = partialSnippet
-      textarea.setAttribute('readonly', 'true')
-      textarea.style.position = 'absolute'
-      textarea.style.left = '-9999px'
-      frameDocument.body.appendChild(textarea)
-      textarea.select()
-      try {
-        const copied = frameDocument.execCommand('copy')
-        if (copied) {
-          notifyCopySuccess('partial')
-        } else {
-          notifyCopyFailure('partial')
-        }
-      } catch {
-        notifyCopyFailure('partial')
-      } finally {
-        frameDocument.body.removeChild(textarea)
+    void copyToClipboard(partialSnippet, frameDocument).then((success) => {
+      if (success) {
+        notifySuccess('partial')
+      } else {
+        notifyFailure('partial')
       }
-    }
+    })
   }
 
   return (

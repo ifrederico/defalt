@@ -9,45 +9,24 @@ import {
   extractMainSettings,
   DEFAULT_HEADER_SETTINGS,
   DEFAULT_MAIN_SETTINGS,
+  DEFAULT_ACCENT_COLOR,
   clearDraftDocument,
   clearWorkspaceStorage,
   consumeStorageNormalizationEvent,
   persistSavedThemeDocument,
   loadEditorState,
   persistEditorState,
-  SECTION_ID_MAP,
-		  CONFIG_TO_ID_MAP,
-	  CSS_DEFAULT_PADDING,
-	  DEFAULT_CUSTOM_SECTION_PADDING,
-	  CSS_DEFAULT_MARGIN,
-	  PADDING_BLOCK_SECTIONS,
-	  type WorkspaceSnapshot,
-	  type ThemeDocument,
-	  type PageConfig,
-  type SectionConfig,
-  type SectionSettings,
-  type SectionPadding,
-  type SectionType,
+  type WorkspaceSnapshot,
+  type ThemeDocument,
+  type PageConfig,
   type EditorState,
-  type FooterConfig,
   type HeaderSettingsSnapshot,
   type MainSettingsSnapshot,
   type NavigationLayoutSetting
 } from '@defalt/utils/config/themeConfig'
-import {
-  buildSectionInstance,
-  getSectionDefinition,
-  NAVIGATION_LAYOUT_VALUES,
-  type SectionInstance
-} from '@defalt/sections/engine'
-import { applyDefaultTagsForSection, normalizeSectionId, resolveCustomSectionLabel } from '@defalt/utils/config/sectionRegistry'
+import { NAVIGATION_LAYOUT_VALUES } from '@defalt/sections/engine'
 import { Ghost as GhostIcon } from 'lucide-react'
-import {
-  footerDefaultsById,
-  footerItemsDefault,
-  getTemplateDefaults,
-  type SidebarItem
-} from '@defalt/utils/config/sectionRegistry'
+import { getTemplateDefaults, type SidebarItem } from '@defalt/utils/config/sectionRegistry'
 import { useSaveQueue, isAbortError, throwIfAborted } from '@defalt/utils/hooks'
 import { TIMING } from '@defalt/utils/constants'
 import { apiPath } from '@defalt/utils/api/apiPath'
@@ -58,6 +37,14 @@ import { GlobalSettingCommand } from '@defalt/utils/history/commands'
 import { useSectionManager, useAnnouncementBars } from './editor'
 import type { ToastHandler, SectionHydrationData, AnnouncementBarsHydrationData } from './editor'
 import type { TagState } from '@defalt/utils/config/sectionRegistry'
+import {
+  buildPageConfigFromState,
+  buildHeaderConfigFromState,
+  buildFooterConfigFromState,
+  hydrateWorkspaceState,
+  resolveWorkspaceSnapshot,
+  parseBgColorFromPackageJson
+} from '../workspace'
 
 export type { WorkspacePage }
 
@@ -78,19 +65,6 @@ type PersistExtras = {
   packageJson?: string
 }
 
-const normalizeSectionCustomConfig = (
-  definitionId: string | undefined,
-  instanceId: string,
-  customConfig: unknown
-): Record<string, unknown> | undefined => {
-  if (!definitionId) {
-    return customConfig && typeof customConfig === 'object'
-      ? { ...(customConfig as Record<string, unknown>) }
-      : undefined
-  }
-  return applyDefaultTagsForSection(definitionId, instanceId, customConfig)
-}
-
 export function useWorkspace({
   currentPage,
   packageJson,
@@ -105,7 +79,7 @@ export function useWorkspace({
   const { executeCommand, resetHistory } = useHistoryContext()
 
   // Workspace-level state
-  const [accentColor, setAccentColor] = useState('#AC1E3E')
+  const [accentColor, setAccentColor] = useState(DEFAULT_ACCENT_COLOR)
   const [bgColor, setBgColor] = useState('#ffffff')
   const [pageLayout, setPageLayout] = useState<'narrow' | 'normal'>('normal')
   const [borderThickness, setBorderThickness] = useState(1)
@@ -187,11 +161,11 @@ export function useWorkspace({
   })
 
   useEffect(() => {
-    tagStateRef.current.customSections = sectionManager.customSectionsRef.current
+    tagStateRef.current.customSections = sectionManager.customSections
   }, [sectionManager.customSections])
 
   useEffect(() => {
-    tagStateRef.current.announcementBars = announcementBarsManager.announcementBarsRef.current
+    tagStateRef.current.announcementBars = announcementBarsManager.announcementBars
   }, [announcementBarsManager.announcementBars])
 
   const templateDefaults = useMemo(() => getTemplateDefaults(currentPage), [currentPage])
@@ -203,161 +177,46 @@ export function useWorkspace({
     return map
   }, [templateDefaults])
 
-  // Build config functions
+  // Build config functions using pure functions from workspace module
   const buildPageConfig = useCallback((): PageConfig => {
-    const templateOrder = sectionManager.templateItems
-      .map((item) => SECTION_ID_MAP[item.id] || item.id)
-      .filter((key) => key !== 'header' && key !== 'footerBar' && key !== 'footerSignup')
-
-    const sections: Record<string, SectionConfig> = {}
-
-    sectionManager.templateItems.forEach((item) => {
-      if (item.id === 'header') {
-        return
-      }
-      const configKey = SECTION_ID_MAP[item.id] || item.id
-      const customInstance = sectionManager.customSections[item.id]
-      const visible = !(sectionManager.sectionVisibility[item.id] ?? false)
-      const definition = customInstance ? getSectionDefinition(customInstance.definitionId) : undefined
-      const usesUnifiedPadding = definition?.usesUnifiedPadding ?? PADDING_BLOCK_SECTIONS.has(configKey)
-      const padding = sectionManager.sectionPadding[item.id]
-
-      const settings: SectionConfig['settings'] = {
-        visible
-      }
-
-      if (customInstance) {
-        settings.definitionId = customInstance.definitionId
-        settings.customConfig = customInstance.config as Record<string, unknown>
-      }
-
-      if (padding) {
-        if (usesUnifiedPadding) {
-          settings.paddingBlock = padding.top
-        } else {
-          settings.padding = { ...padding }
-        }
-      }
-
-      const margin = sectionManager.sectionMargins[item.id]
-      if (margin) {
-        const normalizedMargin: { top?: number, bottom?: number } = {}
-        if (typeof margin.top === 'number' && Number.isFinite(margin.top)) {
-          normalizedMargin.top = Math.max(0, margin.top)
-        }
-        if (typeof margin.bottom === 'number' && Number.isFinite(margin.bottom)) {
-          normalizedMargin.bottom = Math.max(0, margin.bottom)
-        }
-        if (normalizedMargin.top !== undefined || normalizedMargin.bottom !== undefined) {
-          settings.margin = normalizedMargin
-        }
-      }
-
-      const sectionType: SectionType = customInstance ? 'custom' : (configKey === 'main' ? 'main' : 'header')
-
-      sections[configKey] = {
-        type: sectionType,
-        settings
-      }
+    return buildPageConfigFromState({
+      sectionVisibility: sectionManager.sectionVisibility,
+      sectionPadding: sectionManager.sectionPadding,
+      sectionMargins: sectionManager.sectionMargins,
+      customSections: sectionManager.customSections,
+      templateItems: sectionManager.templateItems,
+      footerItems: sectionManager.footerItems
     })
+  }, [sectionManager.customSections, sectionManager.sectionMargins, sectionManager.sectionPadding, sectionManager.sectionVisibility, sectionManager.templateItems, sectionManager.footerItems])
 
-    return {
-      order: templateOrder,
-      sections
-    }
-  }, [sectionManager.customSections, sectionManager.sectionMargins, sectionManager.sectionPadding, sectionManager.sectionVisibility, sectionManager.templateItems])
-
-  const buildHeaderConfig = useCallback((): SectionConfig => {
+  const buildHeaderConfig = useCallback(() => {
     const headerSnapshot = workspaceSnapshotRef.current.headerSettings ?? DEFAULT_HEADER_SETTINGS
-    const headerHidden = sectionManager.sectionVisibility.header ?? false
-    const headerPadding = sectionManager.sectionPadding.header
-
-	  const settings: SectionSettings = {
-	    visible: !headerHidden,
-	    navigationLayout: headerSnapshot.navigationLayout,
-	    stickyHeaderMode: headerSnapshot.stickyHeaderMode,
-	    searchEnabled: headerSnapshot.searchEnabled,
-	    typographyCase: headerSnapshot.typographyCase,
-	    announcementBars: announcementBarsManager.announcementBars
-	  }
-
-    if (headerPadding) {
-      const { top, bottom, left, right } = headerPadding
-      if (top !== 0 || bottom !== 0 || (left && left !== 0) || (right && right !== 0)) {
-        settings.padding = { ...headerPadding }
+    return buildHeaderConfigFromState(
+      {
+        sectionVisibility: sectionManager.sectionVisibility,
+        sectionPadding: sectionManager.sectionPadding,
+        sectionMargins: sectionManager.sectionMargins,
+        customSections: sectionManager.customSections,
+        templateItems: sectionManager.templateItems,
+        footerItems: sectionManager.footerItems
+      },
+      {
+        headerSettings: headerSnapshot,
+        announcementBars: announcementBarsManager.announcementBars
       }
-    }
+    )
+  }, [announcementBarsManager.announcementBars, sectionManager.sectionPadding, sectionManager.sectionVisibility, sectionManager.sectionMargins, sectionManager.customSections, sectionManager.templateItems, sectionManager.footerItems])
 
-    return {
-      type: 'header',
-      settings
-    }
-	  }, [announcementBarsManager.announcementBars, sectionManager.sectionPadding, sectionManager.sectionVisibility])
-
-  const buildFooterConfig = useCallback((): FooterConfig => {
-    const order = sectionManager.footerItems.map((item) => SECTION_ID_MAP[item.id] || item.id)
-    const sections: Record<string, SectionConfig> = {}
-
-    sectionManager.footerItems.forEach((item) => {
-      const configKey = SECTION_ID_MAP[item.id] || item.id
-      const visible = !(sectionManager.sectionVisibility[item.id] ?? false)
-      const padding = sectionManager.sectionPadding[item.id]
-      const isPaddingBlockSection = PADDING_BLOCK_SECTIONS.has(configKey)
-
-      const settings: SectionSettings = {
-        visible
-      }
-
-      if (padding) {
-        if (isPaddingBlockSection) {
-          settings.paddingBlock = padding.top
-        } else {
-          settings.padding = { ...padding }
-        }
-      }
-
-      const margin = sectionManager.sectionMargins[item.id]
-      if (margin) {
-        const normalizedMargin: { top?: number, bottom?: number } = {}
-        if (typeof margin.top === 'number' && Number.isFinite(margin.top)) {
-          normalizedMargin.top = Math.max(0, margin.top)
-        }
-        if (typeof margin.bottom === 'number' && Number.isFinite(margin.bottom)) {
-          normalizedMargin.bottom = Math.max(0, margin.bottom)
-        }
-        if (normalizedMargin.top !== undefined || normalizedMargin.bottom !== undefined) {
-          settings.margin = normalizedMargin
-        }
-      }
-
-      sections[configKey] = {
-        type: configKey === 'footerSignup' ? 'footer-signup' : 'footer-bar',
-        settings
-      }
+  const buildFooterConfig = useCallback(() => {
+    return buildFooterConfigFromState({
+      sectionVisibility: sectionManager.sectionVisibility,
+      sectionPadding: sectionManager.sectionPadding,
+      sectionMargins: sectionManager.sectionMargins,
+      customSections: sectionManager.customSections,
+      templateItems: sectionManager.templateItems,
+      footerItems: sectionManager.footerItems
     })
-
-    // Footer container margin
-    const footerContainerMargin = sectionManager.sectionMargins['footer']
-    let margin: { top?: number; bottom?: number } | undefined
-    if (footerContainerMargin) {
-      const normalizedMargin: { top?: number; bottom?: number } = {}
-      if (typeof footerContainerMargin.top === 'number' && Number.isFinite(footerContainerMargin.top)) {
-        normalizedMargin.top = Math.max(0, footerContainerMargin.top)
-      }
-      if (typeof footerContainerMargin.bottom === 'number' && Number.isFinite(footerContainerMargin.bottom)) {
-        normalizedMargin.bottom = Math.max(0, footerContainerMargin.bottom)
-      }
-      if (normalizedMargin.top !== undefined || normalizedMargin.bottom !== undefined) {
-        margin = normalizedMargin
-      }
-    }
-
-    return {
-      order,
-      sections,
-      margin
-    }
-  }, [sectionManager.footerItems, sectionManager.sectionMargins, sectionManager.sectionPadding, sectionManager.sectionVisibility])
+  }, [sectionManager.footerItems, sectionManager.sectionMargins, sectionManager.sectionPadding, sectionManager.sectionVisibility, sectionManager.customSections, sectionManager.templateItems])
 
   const getWorkspaceSnapshot = useCallback(() => workspaceSnapshotRef.current, [])
 
@@ -365,344 +224,46 @@ export function useWorkspace({
     workspaceSnapshotRef.current = snapshot
   }, [])
 
-  // Hydrate function
+  // Hydrate function - uses pure hydrateWorkspaceState from workspace module
   const hydrateFromEditorState = useCallback((state: EditorState): WorkspaceSnapshot => {
-    const headerConfig = state.header
-    const footerConfig = state.footer
-    const pageConfig = state.page
-    const packageJsonValue = state.packageJson
-
-    const allowSubscribe = currentPage === 'home'
-
-    const templateOrder = Array.isArray(pageConfig.order) ? pageConfig.order : []
-    const newTemplateItems: SidebarItem[] = []
-    const newCustomSections: Record<string, SectionInstance> = {}
-    const invalidCustomSections: string[] = []
-
-    templateOrder.forEach((configKey) => {
-      const rawItemId = CONFIG_TO_ID_MAP[configKey] || configKey
-      const normalizedItemId = normalizeSectionId(rawItemId)
-      if (!allowSubscribe && normalizedItemId === 'subheader') {
-        return
-      }
-      const sectionConfig = pageConfig.sections[configKey]
-      const definitionId = sectionConfig?.settings?.definitionId
-
-      if (definitionId) {
-        const normalizedCustomConfig = normalizeSectionCustomConfig(
-          definitionId,
-          normalizedItemId,
-          sectionConfig?.settings?.customConfig
-        )
-        const instance = buildSectionInstance(definitionId, normalizedItemId, normalizedCustomConfig)
-        if (instance) {
-          newCustomSections[normalizedItemId] = instance
-          newTemplateItems.push({
-            id: normalizedItemId,
-            label: resolveCustomSectionLabel(normalizedItemId, definitionId),
-            definitionId,
-            icon: sectionManager.definitionIconMap[definitionId] || GhostIcon
-          })
-          return
-        }
-
-        const defaultInstance = buildSectionInstance(definitionId, normalizedItemId)
-        if (defaultInstance) {
-          invalidCustomSections.push(normalizedItemId)
-          newCustomSections[normalizedItemId] = defaultInstance
-          newTemplateItems.push({
-            id: normalizedItemId,
-            label: resolveCustomSectionLabel(normalizedItemId, definitionId),
-            definitionId,
-            icon: sectionManager.definitionIconMap[definitionId] || GhostIcon
-          })
-          return
-        }
-      }
-
-      const defaultItem = templateDefaultsById[normalizedItemId]
-      if (defaultItem) {
-        newTemplateItems.push({ ...defaultItem })
-      } else {
-        newTemplateItems.push({
-          id: normalizedItemId,
-          label: normalizedItemId.replace(/[-_]/g, ' ')
-        })
-      }
+    // Use pure function to extract all hydration data
+    const result = hydrateWorkspaceState({
+      state,
+      currentPage: currentPage === 'home' ? 'home' : currentPage as 'about' | 'post' | 'page',
+      templateDefaults,
+      templateDefaultsById,
+      definitionIconMap: sectionManager.definitionIconMap,
+      defaultIcon: GhostIcon
     })
 
-    const seenTemplateIds = new Set(newTemplateItems.map((item) => item.id))
-    templateDefaults.forEach((item) => {
-      if (!seenTemplateIds.has(item.id)) {
-        newTemplateItems.push({ ...item })
-      }
-    })
-
-    const footerOrder = Array.isArray(footerConfig.order) ? footerConfig.order : []
-    const newFooterItems = footerOrder.map((configKey) => {
-      const itemId = CONFIG_TO_ID_MAP[configKey] || configKey
-      const defaultItem = footerDefaultsById[itemId]
-      return defaultItem
-        ? { ...defaultItem }
-        : {
-          id: itemId,
-          label: itemId.replace(/[-_]/g, ' ')
-        }
-    })
-
-    const newVisibility: Record<string, boolean> = {}
-    const newPadding: Record<string, { top: number, bottom: number, left?: number, right?: number }> = {}
-    const newMargins: Record<string, { top?: number, bottom?: number }> = {}
-
-    Object.entries(pageConfig.sections).forEach(([key, section]) => {
-      const rawItemId = CONFIG_TO_ID_MAP[key] || key
-      const stateId = normalizeSectionId(rawItemId)
-      if (!allowSubscribe && stateId === 'subheader') {
-        return
-      }
-      const definitionId = section.settings.definitionId
-      const definition = definitionId ? getSectionDefinition(definitionId) : undefined
-
-      const defaultPadding = (() => {
-        const cssDefault = CSS_DEFAULT_PADDING[key]
-        if (typeof cssDefault === 'number') {
-          return { top: cssDefault, bottom: cssDefault, left: 0, right: 0 }
-        }
-        if (cssDefault) {
-          return {
-            top: typeof cssDefault.top === 'number' ? cssDefault.top : 0,
-            bottom: typeof cssDefault.bottom === 'number' ? cssDefault.bottom : 0,
-            left: typeof cssDefault.left === 'number' ? cssDefault.left : 0,
-            right: typeof cssDefault.right === 'number' ? cssDefault.right : 0,
-          }
-        }
-	        if (definition) {
-	          return { ...DEFAULT_CUSTOM_SECTION_PADDING }
-	        }
-	        return { top: 0, bottom: 0, left: 0, right: 0 }
-	      })()
-
-      const usesUnifiedPadding = definition?.usesUnifiedPadding ?? PADDING_BLOCK_SECTIONS.has(key)
-
-      newVisibility[stateId] = section.settings.visible === false
-
-      const resolvePaddingValue = (value: unknown, defaultValue: number) => {
-        if (typeof value === 'number' && Number.isFinite(value)) {
-          return value
-        }
-        return defaultValue
-      }
-
-      if (typeof section.settings.paddingBlock === 'number') {
-        const unified = resolvePaddingValue(section.settings.paddingBlock, defaultPadding.top)
-        newPadding[stateId] = {
-          top: unified,
-          bottom: unified,
-          left: defaultPadding.left,
-          right: defaultPadding.right
-        }
-      } else if (section.settings.padding) {
-        const paddingSettings = section.settings.padding as SectionPadding
-        newPadding[stateId] = {
-          top: resolvePaddingValue(paddingSettings?.top, defaultPadding.top),
-          bottom: resolvePaddingValue(paddingSettings?.bottom, defaultPadding.bottom),
-          left: resolvePaddingValue(paddingSettings?.left, defaultPadding.left ?? 0),
-          right: resolvePaddingValue(paddingSettings?.right, defaultPadding.right ?? 0)
-        }
-      } else {
-        newPadding[stateId] = defaultPadding
-      }
-
-      if (usesUnifiedPadding) {
-        const existing = newPadding[stateId]
-        const value = existing?.top ?? defaultPadding.top
-        newPadding[stateId] = {
-          top: value,
-          bottom: value,
-          left: existing?.left ?? defaultPadding.left ?? 0,
-          right: existing?.right ?? defaultPadding.right ?? 0
-        }
-      }
-
-      const marginDefaults = CSS_DEFAULT_MARGIN[key]
-      const resolveMarginValue = (value: unknown, defaultValue?: number) => {
-        if (typeof value === 'number' && Number.isFinite(value)) {
-          return Math.max(0, value)
-        }
-        if (typeof defaultValue === 'number' && Number.isFinite(defaultValue)) {
-          return Math.max(0, defaultValue)
-        }
-        return undefined
-      }
-      const marginSettings = (section.settings as SectionSettings & { margin?: { top?: number, bottom?: number } }).margin
-      const resolvedTop = resolveMarginValue(marginSettings?.top, marginDefaults?.top)
-      const resolvedBottom = resolveMarginValue(marginSettings?.bottom, marginDefaults?.bottom)
-      if (resolvedTop !== undefined || resolvedBottom !== undefined) {
-        newMargins[stateId] = {
-          ...(resolvedTop !== undefined ? { top: resolvedTop } : {}),
-          ...(resolvedBottom !== undefined ? { bottom: resolvedBottom } : {})
-        }
-      }
-    })
-
-    const footerSections = footerConfig.sections || {}
-    footerOrder.forEach((key) => {
-      const section = footerSections[key]
-      const stateId = CONFIG_TO_ID_MAP[key] || key
-      const cssDefault = CSS_DEFAULT_PADDING[stateId]
-      const cssMarginDefault = CSS_DEFAULT_MARGIN[stateId]
-
-      // Set visibility from saved section or default to visible
-      if (section) {
-        newVisibility[stateId] = section.settings.visible === false
-      }
-
-      // Set padding from saved section or CSS defaults
-      if (section && typeof section.settings.paddingBlock === 'number') {
-        const value = section.settings.paddingBlock
-        newPadding[stateId] = {
-          top: value,
-          bottom: value,
-          left: typeof cssDefault === 'object' ? cssDefault.left ?? 0 : 0,
-          right: typeof cssDefault === 'object' ? cssDefault.right ?? 0 : 0
-        }
-      } else if (section && section.settings.padding) {
-        const paddingSettings = section.settings.padding as SectionPadding
-        newPadding[stateId] = {
-          top: paddingSettings.top ?? (typeof cssDefault === 'object' ? cssDefault.top ?? 0 : 0),
-          bottom: paddingSettings.bottom ?? (typeof cssDefault === 'object' ? cssDefault.bottom ?? 0 : 0),
-          left: paddingSettings.left ?? (typeof cssDefault === 'object' ? cssDefault.left ?? 0 : 0),
-          right: paddingSettings.right ?? (typeof cssDefault === 'object' ? cssDefault.right ?? 0 : 0)
-        }
-      } else if (typeof cssDefault === 'number') {
-        newPadding[stateId] = { top: cssDefault, bottom: cssDefault, left: 0, right: 0 }
-      } else if (cssDefault) {
-        newPadding[stateId] = {
-          top: cssDefault.top ?? 0,
-          bottom: cssDefault.bottom ?? 0,
-          left: cssDefault.left ?? 0,
-          right: cssDefault.right ?? 0
-        }
-      }
-
-      // Set margins from saved section or CSS defaults
-      const sectionMargin = section
-        ? (section.settings as SectionSettings & { margin?: { top?: number, bottom?: number } }).margin
-        : undefined
-      const resolvedTop = (() => {
-        if (sectionMargin && typeof sectionMargin.top === 'number') {
-          return Math.max(0, sectionMargin.top)
-        }
-        if (cssMarginDefault && typeof cssMarginDefault.top === 'number') {
-          return Math.max(0, cssMarginDefault.top)
-        }
-        return undefined
-      })()
-      const resolvedBottom = (() => {
-        if (sectionMargin && typeof sectionMargin.bottom === 'number') {
-          return Math.max(0, sectionMargin.bottom)
-        }
-        if (cssMarginDefault && typeof cssMarginDefault.bottom === 'number') {
-          return Math.max(0, cssMarginDefault.bottom)
-        }
-        return undefined
-      })()
-      if (resolvedTop !== undefined || resolvedBottom !== undefined) {
-        newMargins[stateId] = {
-          ...(resolvedTop !== undefined ? { top: resolvedTop } : {}),
-          ...(resolvedBottom !== undefined ? { bottom: resolvedBottom } : {})
-        }
-      }
-    })
-
-    // Footer container margin
-    const footerContainerMarginDefault = CSS_DEFAULT_MARGIN.footer
-    const footerContainerMargin = footerConfig.margin
-    const footerResolvedTop = (() => {
-      if (footerContainerMargin && typeof footerContainerMargin.top === 'number') {
-        return Math.max(0, footerContainerMargin.top)
-      }
-      if (footerContainerMarginDefault && typeof footerContainerMarginDefault.top === 'number') {
-        return Math.max(0, footerContainerMarginDefault.top)
-      }
-      return undefined
-    })()
-    const footerResolvedBottom = (() => {
-      if (footerContainerMargin && typeof footerContainerMargin.bottom === 'number') {
-        return Math.max(0, footerContainerMargin.bottom)
-      }
-      if (footerContainerMarginDefault && typeof footerContainerMarginDefault.bottom === 'number') {
-        return Math.max(0, footerContainerMarginDefault.bottom)
-      }
-      return undefined
-    })()
-    if (footerResolvedTop !== undefined || footerResolvedBottom !== undefined) {
-      newMargins['footer'] = {
-        ...(footerResolvedTop !== undefined ? { top: footerResolvedTop } : {}),
-        ...(footerResolvedBottom !== undefined ? { bottom: footerResolvedBottom } : {})
-      }
+    // Hydrate announcement bars
+    const announcementBarsData: AnnouncementBarsHydrationData = {
+      announcementBars: result.announcementBars
     }
-
-	    const headerHidden = headerConfig.settings.visible === false
-	    newVisibility.header = headerHidden
-	
-	    // Hydrate announcement bars (header-level)
-	    const headerAnnouncementBars = (headerConfig.settings as SectionSettings).announcementBars
-	    const announcementBarsData: AnnouncementBarsHydrationData = {
-	      announcementBars: Array.isArray(headerAnnouncementBars) ? headerAnnouncementBars : []
-	    }
-	    announcementBarsManager.hydrateAnnouncementBars(announcementBarsData)
-
-    const headerPadding = headerConfig.settings.padding
-    if (headerPadding) {
-      const top = headerPadding.top ?? 0
-      const bottom = headerPadding.bottom ?? 0
-      const left = headerPadding.left ?? 0
-      const right = headerPadding.right ?? 0
-      if (top !== 0 || bottom !== 0 || left !== 0 || right !== 0) {
-        newPadding.header = { top, bottom, left, right }
-      }
-    } else if (typeof headerConfig.settings.paddingBlock === 'number') {
-      const value = headerConfig.settings.paddingBlock
-      if (value !== 0) {
-        newPadding.header = {
-          top: value,
-          bottom: value,
-          left: 0,
-          right: 0
-        }
-      }
-    }
+    announcementBarsManager.hydrateAnnouncementBars(announcementBarsData)
 
     // Hydrate section manager
     const sectionData: SectionHydrationData = {
-      sectionVisibility: newVisibility,
-      sectionPadding: newPadding,
-      sectionMargins: newMargins,
-      templateItems: newTemplateItems.length > 0 ? newTemplateItems : templateDefaults.map((item) => ({ ...item })),
-      footerItems: newFooterItems.length > 0 ? newFooterItems : footerItemsDefault.map((item) => ({ ...item })),
-      customSections: newCustomSections
+      sectionVisibility: result.sectionVisibility,
+      sectionPadding: result.sectionPadding,
+      sectionMargins: result.sectionMargins,
+      templateItems: result.templateItems,
+      footerItems: result.footerItems,
+      customSections: result.customSections
     }
     sectionManager.hydrateSection(sectionData)
 
-    const document = loadPersistedThemeDocument()
-    const headerSettings = extractHeaderSettings(headerConfig, document)
-    const mainSettings = extractMainSettings(pageConfig, document)
+    // Update snapshot ref
+    workspaceSnapshotRef.current = result.snapshot
 
-    const snapshot: WorkspaceSnapshot = {
-      headerSettings,
-      mainSettings,
-      ...(typeof packageJsonValue === 'string' ? { packageJson: packageJsonValue } : {})
-    }
-    workspaceSnapshotRef.current = snapshot
-
-    if (invalidCustomSections.length > 0) {
-      const preview = invalidCustomSections.slice(0, 3).join(', ')
-      const suffix = invalidCustomSections.length > 3 ? ` +${invalidCustomSections.length - 3} more` : ''
+    // Show toast for invalid custom sections
+    if (result.invalidCustomSections.length > 0) {
+      const preview = result.invalidCustomSections.slice(0, 3).join(', ')
+      const suffix = result.invalidCustomSections.length > 3 ? ` +${result.invalidCustomSections.length - 3} more` : ''
       showToast('Invalid saved settings', `Reset to defaults: ${preview}${suffix}`, 'error')
     }
 
-    return snapshot
+    return result.snapshot
     // eslint-disable-next-line react-hooks/exhaustive-deps -- stable refs from hooks
   }, [currentPage, sectionManager.definitionIconMap, templateDefaults, templateDefaultsById, sectionManager.hydrateSection, announcementBarsManager.hydrateAnnouncementBars, showToast])
 
@@ -711,13 +272,7 @@ export function useWorkspace({
 
   const resolveWorkspaceState = useCallback((extras?: PersistExtras): WorkspaceSnapshot => {
     const base = getWorkspaceSnapshot()
-    return {
-      headerSettings: extras?.headerSettings ?? base.headerSettings ?? DEFAULT_HEADER_SETTINGS,
-      mainSettings: extras?.mainSettings ?? base.mainSettings ?? DEFAULT_MAIN_SETTINGS,
-      ...(extras?.packageJson !== undefined
-        ? { packageJson: extras.packageJson }
-        : base.packageJson ? { packageJson: base.packageJson } : {})
-    }
+    return resolveWorkspaceSnapshot(base, extras)
   }, [getWorkspaceSnapshot])
 
   const commitConfig = useCallback((extras?: PersistExtras, targetPage?: string): PageConfig => {
@@ -785,18 +340,8 @@ export function useWorkspace({
     const headerSettings = snapshot.headerSettings ?? DEFAULT_HEADER_SETTINGS
     const mainSettings = snapshot.mainSettings ?? DEFAULT_MAIN_SETTINGS
 
-    let parsedBgColor = '#ffffff'
-    if (typeof snapshot.packageJson === 'string' && snapshot.packageJson.length > 0) {
-      try {
-        const pkgJson = JSON.parse(snapshot.packageJson)
-        parsedBgColor = pkgJson?.config?.custom?.site_background_color?.default ?? '#ffffff'
-      } catch {
-        // ignore parse failure
-      }
-    }
-
     setAccentColor(headerSettings.accentColor)
-    setBgColor(parsedBgColor)
+    setBgColor(parseBgColorFromPackageJson(snapshot.packageJson))
     setNavigationLayout(headerSettings.navigationLayout)
     setStickyHeaderMode(headerSettings.stickyHeaderMode as 'Always' | 'Scroll up' | 'Never')
     setHeaderSearchEnabled(headerSettings.searchEnabled)
@@ -901,14 +446,16 @@ export function useWorkspace({
     hasLoadedFromCloudRef.current = true
     setCloudSyncStatus('syncing')
     loadThemeFromCloud()
-      .then((cloudDoc) => {
-        if (cloudDoc) {
-          persistThemeDocument(cloudDoc)
-          persistSavedThemeDocument(cloudDoc)
+      .then((result) => {
+        if (result.success && result.data) {
+          persistThemeDocument(result.data)
+          persistSavedThemeDocument(result.data)
           reloadWorkspace()
           setCloudSyncStatus('ready')
-        } else {
+        } else if (result.success) {
           setCloudSyncStatus('idle')
+        } else {
+          setCloudSyncStatus('error')
         }
       })
       .catch(() => {
@@ -927,11 +474,12 @@ export function useWorkspace({
     sectionManager.sectionVisibility,
     sectionManager.footerItems,
     sectionManager.templateItems,
-	    sectionManager.sectionPadding,
-	    sectionManager.customSections,
-	    announcementBarsManager.announcementBars,
-	    scheduleSave
-	  ])
+    sectionManager.sectionPadding,
+    sectionManager.sectionMargins,
+    sectionManager.customSections,
+    announcementBarsManager.announcementBars,
+    scheduleSave
+  ])
 
   // Cleanup on unmount
   useEffect(() => {
@@ -1180,16 +728,8 @@ export function useWorkspace({
       ? normalized.packageJson as string
       : packageJson
 
-    let parsedBgColor = '#ffffff'
-    try {
-      const pkgJson = JSON.parse(packageJsonValue)
-      parsedBgColor = pkgJson?.config?.custom?.site_background_color?.default ?? '#ffffff'
-    } catch {
-      // ignore
-    }
-
     setAccentColor(headerSettings.accentColor)
-    setBgColor(parsedBgColor)
+    setBgColor(parseBgColorFromPackageJson(packageJsonValue))
     setNavigationLayout(headerSettings.navigationLayout)
     setStickyHeaderMode(headerSettings.stickyHeaderMode as 'Always' | 'Scroll up' | 'Never')
     setHeaderSearchEnabled(headerSettings.searchEnabled)
@@ -1229,12 +769,8 @@ export function useWorkspace({
 
         if (isAuthenticated && user) {
           setCloudSyncStatus('syncing')
-          try {
-            await saveThemeToCloud(document)
-            setCloudSyncStatus('ready')
-          } catch {
-            setCloudSyncStatus('error')
-          }
+          const result = await saveThemeToCloud(document)
+          setCloudSyncStatus(result.success ? 'ready' : 'error')
         } else {
           setCloudSyncStatus('idle')
         }

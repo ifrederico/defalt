@@ -10,6 +10,21 @@ export type Swatch = {
   transparent?: boolean
 }
 
+export type KoenigSwatch = {
+  title: string
+  hex?: string
+  accent?: boolean
+  transparent?: boolean
+  image?: boolean
+  customContent?: ReactNode
+}
+
+export type EyeDropperAPI = {
+  open: () => Promise<{ sRGBHex: string }>
+}
+
+export type EyeDropperWindow = typeof window & { EyeDropper?: new () => EyeDropperAPI }
+
 export type ColorPickerSettingProps = {
   label: string
   value: string

@@ -3,6 +3,7 @@ import {
   SECTION_ID_MAP,
   CSS_DEFAULT_PADDING,
   DEFAULT_CUSTOM_SECTION_PADDING,
+  SUBHEADER_MARGIN_DEFAULT,
   type SectionPadding
 } from '@defalt/utils/config/themeConfig'
 import { useSyncedState } from '@defalt/utils/hooks'
@@ -17,6 +18,7 @@ import { parseGhostCardIdSuffix } from '@defalt/sections/utils/tagUtils'
 import { SECTION_ICON_MAP, GhostIcon } from '@defalt/utils/config/sectionIcons'
 import { sanitizeNumericValue, resolveNumericValue } from '@defalt/utils/helpers/numericHelpers'
 import { deepClone } from '@defalt/utils/helpers/deepClone'
+import { isPlainRecord } from '@defalt/utils/helpers/typeGuards'
 import {
   footerItemsDefault,
   getTemplateDefaults,
@@ -52,7 +54,6 @@ import type {
 
 const SUBHEADER_SECTION_ID = 'subheader'
 const SUBHEADER_PADDING_DEFAULT = CSS_DEFAULT_PADDING.subheader as number
-const SUBHEADER_MARGIN_DEFAULT = 40
 const SUBHEADER_MARGIN_STYLES = new Set(['Highlight', 'Magazine'])
 const SUBHEADER_PADDING_STYLES = new Set(['Landing', 'Search'])
 
@@ -60,9 +61,6 @@ const GHOST_CARD_TAG_BASE = '#cards'
 
 const generateCustomSectionId = (definitionId: string, existingIds: Set<string>) =>
   buildCustomSectionInstanceId(definitionId, existingIds)
-
-const isPlainRecord = (value: unknown): value is Record<string, unknown> =>
-  typeof value === 'object' && value !== null && !Array.isArray(value)
 
 const getNextGhostCardsSuffix = (sections: Record<string, SectionInstance>) => {
   let maxSuffix = 0

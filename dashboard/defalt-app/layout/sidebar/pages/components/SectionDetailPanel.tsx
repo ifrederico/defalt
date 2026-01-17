@@ -2,6 +2,8 @@ import { useMemo, useCallback } from 'react'
 import { PanelHeader, type TagConfig } from '@defalt/ui'
 import { SectionDetailRenderer, type SectionDetail } from './SectionDetailRenderer'
 import type { SectionsPanelProps } from '../SectionsPanelBase'
+import { useAnnouncementBars, useCustomSections } from '@defalt/app/stores'
+import { isPlainRecord } from '@defalt/utils/helpers/typeGuards'
 
 export type SectionDetailPanelProps = {
   activeDetail: SectionDetail
@@ -10,13 +12,14 @@ export type SectionDetailPanelProps = {
 }
 
 export function SectionDetailPanel({ activeDetail, onBack, props }: SectionDetailPanelProps) {
-  const isPlainRecord = (value: unknown): value is Record<string, unknown> =>
-    typeof value === 'object' && value !== null && !Array.isArray(value)
+  // Access data directly from stores
+  const announcementBars = useAnnouncementBars()
+  const customSections = useCustomSections()
 
   // Look up tags for the active section from its config
   const { activeTag, activeTags, canEditSingleTag } = useMemo(() => {
     // Check for announcement bar block selection (block-level tag)
-    const announcementBar = props.announcementBars.find((bar) => bar.id === activeDetail.id)
+    const announcementBar = announcementBars.find((bar) => bar.id === activeDetail.id)
     if (announcementBar) {
       // If a block is selected, get the block's tag
       if (activeDetail.blockIndex !== undefined) {
@@ -29,7 +32,7 @@ export function SectionDetailPanel({ activeDetail, onBack, props }: SectionDetai
       return { activeTag: undefined, activeTags: undefined, canEditSingleTag: false }
     }
 
-    const customSection = props.customSections[activeDetail.id]
+    const customSection = customSections[activeDetail.id]
     if (!customSection?.config) {
       return { activeTag: undefined, activeTags: undefined, canEditSingleTag: false }
     }
@@ -51,12 +54,12 @@ export function SectionDetailPanel({ activeDetail, onBack, props }: SectionDetai
     // Check for single tag
     const tagValue = typeof tags.primary === 'string' ? tags.primary : ''
     return { activeTag: tagValue, activeTags: undefined, canEditSingleTag: true }
-  }, [activeDetail.id, activeDetail.blockIndex, props.announcementBars, props.customSections])
+  }, [activeDetail.id, activeDetail.blockIndex, announcementBars, customSections])
 
   // Handler to update a single tag in section config
   const handleTagChange = useCallback((newTag: string) => {
     // Announcement bar block tag change
-    const announcementBar = props.announcementBars.find((bar) => bar.id === activeDetail.id)
+    const announcementBar = announcementBars.find((bar) => bar.id === activeDetail.id)
     if (announcementBar && activeDetail.blockIndex !== undefined) {
       // Update the block's tag
       const blockIndex = activeDetail.blockIndex
@@ -69,7 +72,7 @@ export function SectionDetailPanel({ activeDetail, onBack, props }: SectionDetai
       return
     }
     // Custom sections use tags.primary
-    const customSection = props.customSections[activeDetail.id]
+    const customSection = customSections[activeDetail.id]
     if (customSection) {
       props.onUpdateCustomSection(activeDetail.id, (config) => {
         const next = { ...(config as Record<string, unknown>) }
@@ -79,7 +82,7 @@ export function SectionDetailPanel({ activeDetail, onBack, props }: SectionDetai
         return next
       })
     }
-  }, [activeDetail.id, activeDetail.blockIndex, props])
+  }, [activeDetail.id, activeDetail.blockIndex, announcementBars, customSections, props])
 
   // Build tags array for multiple tags
   const tagsConfig = useMemo<TagConfig[] | undefined>(() => {

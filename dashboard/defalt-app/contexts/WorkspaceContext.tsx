@@ -2,53 +2,78 @@ import { useState, useMemo, useCallback, useEffect, useRef, type ReactNode } fro
 import * as AlertDialog from '@radix-ui/react-alert-dialog'
 import { WorkspaceContext } from './WorkspaceContextBase'
 import type { WorkspaceContextValue } from './WorkspaceContext.types'
-import { useThemeContext } from './useThemeContext'
+import {
+  usePackageJson,
+  useHeaderAndFooterColorValue,
+  useTitleFontValue,
+  useBodyFontValue,
+  useSignupHeadingValue,
+  useSignupSubheadingValue,
+  useHeaderStyleValue,
+  useHeaderTextValue,
+  useBackgroundImageEnabled,
+  useShowFeaturedPosts,
+  usePostFeedStyleValue,
+  usePostFeedStyleOptions,
+  useShowImagesInFeed,
+  useShowAuthor,
+  useShowPublishDate,
+  useShowPublicationInfoSidebar,
+  useShowPostMetadata,
+  useEnableDropCapsOnPosts,
+  useShowRelatedArticles,
+  useThemeActions,
+} from '../stores/themeStore'
 import { useAuth } from '../hooks/useAuth'
 import { useToast } from '../components/ToastContext'
 import { useHistoryContext } from './useHistoryContext'
 import { useWorkspace, type WorkspacePage } from '../hooks/useWorkspace'
 import { usePreview } from '../hooks/usePreview'
 import { useExport } from '../hooks/useExport'
+import { useAiSections } from '../hooks/editor'
 import { sanitizeHexColor } from '@defalt/utils/security/sanitizers'
-import { SECTION_ID_MAP, PADDING_BLOCK_SECTIONS } from '@defalt/utils/config/themeConfig'
-import { STORAGE_KEYS } from '@defalt/utils/constants'
+import { SECTION_ID_MAP, PADDING_BLOCK_SECTIONS, DEFAULT_ACCENT_COLOR } from '@defalt/utils/config/themeConfig'
 import { trackEvent } from '@defalt/utils/analytics/umami'
 import { UpgradeModal } from '../components/UpgradeModal'
 import { AppButton } from '@defalt/ui/primitives/AppButton'
 import type { StickyHeaderMode } from '@defalt/rendering/custom-source/HandlebarsRenderer'
 import { useUIActions } from '../stores'
+import { useWorkspaceStore } from '../stores/workspaceStore'
 import { NAVIGATION_LAYOUT_VALUES } from '@defalt/sections/engine'
 
 export function WorkspaceProvider({ children }: { children: ReactNode }) {
+  // Theme store values
+  const packageJson = usePackageJson()
+  const headerAndFooterColorValue = useHeaderAndFooterColorValue()
+  const titleFontValue = useTitleFontValue()
+  const bodyFontValue = useBodyFontValue()
+  const signupHeadingValue = useSignupHeadingValue()
+  const signupSubheadingValue = useSignupSubheadingValue()
+  const headerStyleValue = useHeaderStyleValue()
+  const headerTextValue = useHeaderTextValue()
+  const backgroundImageEnabled = useBackgroundImageEnabled()
+  const showFeaturedPosts = useShowFeaturedPosts()
+  const postFeedStyleValue = usePostFeedStyleValue()
+  const postFeedStyleOptions = usePostFeedStyleOptions()
+  const showImagesInFeed = useShowImagesInFeed()
+  const showAuthor = useShowAuthor()
+  const showPublishDate = useShowPublishDate()
+  const showPublicationInfoSidebar = useShowPublicationInfoSidebar()
+  const showPostMetadata = useShowPostMetadata()
+  const enableDropCapsOnPosts = useEnableDropCapsOnPosts()
+  const showRelatedArticles = useShowRelatedArticles()
+
+  // Theme store actions
   const {
-    packageJson,
-    onPackageJsonChange: setPackageJson,
+    setPackageJson,
     resetPackageJson,
-    headerAndFooterColorValue,
-    titleFontValue,
-    bodyFontValue,
-    signupHeadingValue,
-    signupSubheadingValue,
-    headerStyleValue,
-    headerTextValue,
-    backgroundImageEnabled,
-    showFeaturedPosts,
-    onShowFeaturedPostsToggle: handleShowFeaturedPostsToggle,
-    postFeedStyleValue,
-    postFeedStyleOptions,
-    onPostFeedStyleChange: handlePostFeedStyleChange,
-    showImagesInFeed,
-    onShowImagesInFeedToggle: handleShowImagesInFeedToggle,
-    showAuthor,
-    onShowAuthorToggle: handleShowAuthorToggle,
-    showPublishDate,
-    onShowPublishDateToggle: handleShowPublishDateToggle,
-    showPublicationInfoSidebar,
-    onShowPublicationInfoSidebarToggle: handleShowPublicationInfoSidebarToggle,
-    showPostMetadata,
-    enableDropCapsOnPosts,
-    showRelatedArticles,
-  } = useThemeContext()
+    setShowFeaturedPosts: handleShowFeaturedPostsToggle,
+    setPostFeedStyle: handlePostFeedStyleChange,
+    setShowImagesInFeed: handleShowImagesInFeedToggle,
+    setShowAuthor: handleShowAuthorToggle,
+    setShowPublishDate: handleShowPublishDateToggle,
+    setShowPublicationInfoSidebar: handleShowPublicationInfoSidebarToggle,
+  } = useThemeActions()
 
   const {
     user,
@@ -73,24 +98,14 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     open: false,
     sourceLabel: 'Workspace'
   })
-  const [aiSections, setAiSections] = useState<Array<{ id: string, name: string, html: string }>>(() => {
-    if (typeof window === 'undefined') return []
-    try {
-      const stored = localStorage.getItem(STORAGE_KEYS.AI_SECTIONS)
-      return stored ? JSON.parse(stored) : []
-    } catch {
-      return []
-    }
-  })
 
-  // Persist AI sections to localStorage
-  useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEYS.AI_SECTIONS, JSON.stringify(aiSections))
-    } catch {
-      // localStorage might be full or unavailable
-    }
-  }, [aiSections])
+  const {
+    aiSections,
+    addAiSection,
+    removeAiSection,
+    renameAiSection,
+    reorderAiSections
+  } = useAiSections()
 
   const showError = useCallback((title: string, message: string) => {
     setErrorDialog({ open: true, title, message })
@@ -245,47 +260,6 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     setPreviewPage(page)
   }, [cancelActiveSave, setPreviewPage])
 
-  const slugify = useCallback(
-    (value: string) => value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '') || 'ai-section',
-    []
-  )
-
-  const addAiSection = useCallback((section: { id?: string, name: string, html: string }) => {
-    setAiSections((prev) => {
-      const baseId = section.id ? slugify(section.id) : `ai-${slugify(section.name)}`
-      const baseName = section.name
-      let uniqueId = baseId
-      let uniqueName = baseName
-      let counter = 1
-      // Find a unique ID and name
-      while (prev.some((s) => s.id === uniqueId || s.name === uniqueName)) {
-        uniqueId = `${baseId}-${counter}`
-        uniqueName = `${baseName} (${counter})`
-        counter += 1
-      }
-      return [...prev, { id: uniqueId, name: uniqueName, html: section.html }]
-    })
-  }, [slugify])
-
-  const removeAiSection = useCallback((id: string) => {
-    setAiSections((prev) => prev.filter((s) => s.id !== id))
-  }, [])
-
-  const renameAiSection = useCallback((id: string, newName: string) => {
-    setAiSections((prev) =>
-      prev.map((s) => (s.id === id ? { ...s, name: newName } : s))
-    )
-  }, [])
-
-  const reorderAiSections = useCallback((startIndex: number, endIndex: number) => {
-    setAiSections((prev) => {
-      const result = Array.from(prev)
-      const [removed] = result.splice(startIndex, 1)
-      result.splice(endIndex, 0, removed)
-      return result
-    })
-  }, [])
-
   const showFeaturedPostsRef = useRef(showFeaturedPosts)
   const visibilityToggleTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const previousHeaderStyleRef = useRef(headerStyleValue)
@@ -363,7 +337,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
   }, [applySubheaderSpacing, headerStyleValue, workspaceHydrated])
 
   const sanitizedAccentColor = useMemo(
-    () => sanitizeHexColor(accentColor, '#AC1E3E'),
+    () => sanitizeHexColor(accentColor, DEFAULT_ACCENT_COLOR),
     [accentColor]
   )
 
@@ -589,6 +563,53 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
       }
     }
   }, [])
+
+  // Sync state to workspaceStore for direct access by deep components
+  const syncState = useWorkspaceStore((s) => s.syncState)
+  useEffect(() => {
+    syncState({
+      previewData,
+      dataSource,
+      accentColor,
+      sectionVisibility,
+      sectionPadding,
+      sectionMargins,
+      templateItems,
+      footerItems,
+      templateDefinitions,
+      customSections,
+      navigationLayoutValue: navigationLayout,
+      navigationLayoutOptions,
+      navigationLayoutError,
+      stickyHeaderValue: stickyHeaderMode,
+      stickyHeaderOptions,
+      isSearchEnabled: isHeaderSearchEnabled,
+      typographyCase: headerTypographyCase,
+      announcementBars,
+      aiSections,
+    })
+  }, [
+    syncState,
+    previewData,
+    dataSource,
+    accentColor,
+    sectionVisibility,
+    sectionPadding,
+    sectionMargins,
+    templateItems,
+    footerItems,
+    templateDefinitions,
+    customSections,
+    navigationLayout,
+    navigationLayoutOptions,
+    navigationLayoutError,
+    stickyHeaderMode,
+    stickyHeaderOptions,
+    isHeaderSearchEnabled,
+    headerTypographyCase,
+    announcementBars,
+    aiSections,
+  ])
 
   const handleResetToDefaultClick = useCallback(() => {
     setResetDialogOpen(true)

@@ -1,4 +1,5 @@
 import { TEMPLATE_SECTION_SELECTORS, FOOTER_SECTION_SELECTORS, FOOTER_ROOT_SELECTOR, toSelectorList } from './sectionSelectors'
+import { Z_INDEX } from '@defalt/utils/constants'
 type StickyCleanupWindow = Window & {
   __ghEditorStickyCleanup?: () => void
 }
@@ -24,7 +25,7 @@ const STICKY_HEADER_STYLES = `
   .gh-navigation:not(.is-open).is-sticky-scroll-up {
     position: sticky;
     top: 0;
-    z-index: 4000000;
+    z-index: ${Z_INDEX.STICKY_HEADER};
   }
 
   .gh-navigation:not(.is-open).is-sticky-scroll-up {

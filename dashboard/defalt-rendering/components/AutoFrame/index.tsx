@@ -1,19 +1,8 @@
-import { createContext } from 'react'
 import { useCallback, useMemo, useRef, useState } from 'react'
 import type { ReactNode, CSSProperties } from 'react'
 import { createPortal } from 'react-dom'
-
-export type AutoFrameContextValue = {
-  document: Document | null
-  window: Window | null
-  frameRoot: HTMLDivElement | null
-}
-
-export const AutoFrameContext = createContext<AutoFrameContextValue>({
-  document: null,
-  window: null,
-  frameRoot: null,
-})
+import { AutoFrameContext } from './AutoFrameContext'
+export { AutoFrameContext, type AutoFrameContextValue } from './AutoFrameContext'
 
 export type AutoFrameProps = {
   children?: ReactNode
@@ -81,6 +70,7 @@ export function AutoFrame({
         title={title}
         style={iframeStyle}
         srcDoc={FRAME_SRC_DOC}
+        sandbox="allow-scripts"
         onLoad={handleLoad}
       />
       {frameRoot && frameDoc && (

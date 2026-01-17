@@ -7,9 +7,6 @@ import {
   Ghost as GhostIcon,
   GalleryVertical,
   Grid3x3,
-  MessageSquareQuote,
-  MessageCircleQuestionMark,
-  SquareUserRound,
   LayoutList
 } from 'lucide-react'
 
@@ -19,13 +16,9 @@ import {
  */
 export const SECTION_ICON_MAP: Record<string, LucideIcon> = {
   'hero': GalleryVertical,
-  'grid': Grid3x3,
-  'testimonials': MessageSquareQuote,
-  'faq': MessageCircleQuestionMark,
-  'about': SquareUserRound,
   'image-with-text': LayoutList,
   'ghostCards': GhostIcon,
-  'ghostGrid': GhostIcon,
+  'ghostGrid': Grid3x3,
 }
 
 /**

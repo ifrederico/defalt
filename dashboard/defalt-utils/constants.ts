@@ -3,6 +3,15 @@ export const TIMING = {
   SAVE_STATUS_DISPLAY_MS: 2000
 }
 
+export const Z_INDEX = {
+  STICKY_HEADER: 4000000,
+  PORTAL_OVERLAY: 9999
+}
+
+export const BREAKPOINTS = {
+  WIDE_SCREEN: 1348
+}
+
 export const STORAGE_KEYS = {
   // Ghost connection & data source
   GHOST_CONNECTION: 'defalt:ghost-connection',

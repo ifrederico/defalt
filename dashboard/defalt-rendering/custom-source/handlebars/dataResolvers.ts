@@ -1,5 +1,6 @@
 import Handlebars from 'handlebars'
 import { safeJsonForScript } from '@defalt/utils/security/sanitizers'
+import { escapeHtml } from '@defalt/utils/helpers'
 import { PREVIEW_PLACEHOLDER_URL } from '@defalt/utils/constants'
 
 // Types from HandlebarsRenderer.tsx
@@ -84,15 +85,8 @@ export function slugify(value: string) {
     .replace(/(^-|-$)+/g, '')
 }
 
-export function escapeHtml(value?: string) {
-  if (!value) return ''
-  return value
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;')
-}
+// Re-export escapeHtml for backward compatibility
+export { escapeHtml } from '@defalt/utils/helpers'
 
 export function toRelativeUrl(href?: string, siteUrl?: string) {
   if (!href) {

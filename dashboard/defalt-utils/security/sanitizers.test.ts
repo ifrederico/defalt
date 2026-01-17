@@ -65,6 +65,22 @@ describe('sanitizeHexColor', () => {
 
 describe('sanitizeToken', () => {
   it('removes script-sensitive characters', () => {
-    expect(sanitizeToken('<script>alert(1)</script>')).toBe('scriptalert(1)/script')
+    // Removes <>, (), and other characters that could break attribute contexts
+    expect(sanitizeToken('<script>alert(1)</script>')).toBe('scriptalert1/script')
+  })
+
+  it('removes quotes and backticks', () => {
+    expect(sanitizeToken('class"onclick="evil()')).toBe('classonclick=evil')
+    expect(sanitizeToken("class'onclick='evil()")).toBe('classonclick=evil')
+    expect(sanitizeToken('class`${evil}`')).toBe('class$evil')
+  })
+
+  it('removes control characters', () => {
+    expect(sanitizeToken('test\x00value\x1fend')).toBe('testvalueend')
+  })
+
+  it('preserves safe characters', () => {
+    expect(sanitizeToken('my-class_name')).toBe('my-class_name')
+    expect(sanitizeToken('class1 class2')).toBe('class1 class2')
   })
 })

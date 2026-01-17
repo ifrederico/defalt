@@ -1,13 +1,17 @@
-import { type ReactNode } from 'react'
-import { ThemeProvider } from './contexts/ThemeContext'
+import { type ReactNode, useEffect } from 'react'
 import { WorkspaceProvider } from './contexts/WorkspaceContext'
+import { useThemeStore } from './stores/themeStore'
 
 export function AppProviders({ children }: { children: ReactNode }) {
+    const initialize = useThemeStore((s) => s.initialize)
+
+    useEffect(() => {
+        void initialize()
+    }, [initialize])
+
     return (
-        <ThemeProvider>
-            <WorkspaceProvider>
-                {children}
-            </WorkspaceProvider>
-        </ThemeProvider>
+        <WorkspaceProvider>
+            {children}
+        </WorkspaceProvider>
     )
 }

@@ -4,6 +4,65 @@
  */
 
 /**
+ * Normalizes a boolean value, returning the default if not a boolean.
+ *
+ * @param value - The value to normalize
+ * @param defaultValue - Value to return if input is not a boolean
+ * @returns A boolean value
+ */
+export function normalizeBoolean(value: unknown, defaultValue: boolean): boolean {
+  if (typeof value === 'boolean') {
+    return value
+  }
+  return defaultValue
+}
+
+/**
+ * Normalizes a numeric value, ensuring it's a valid finite number.
+ * Returns default value if input is undefined, null, NaN, or Infinity.
+ *
+ * @param value - The value to normalize
+ * @param defaultValue - Value to return if input is invalid
+ * @returns A finite number
+ */
+export function normalizeNumericValue(value: unknown, defaultValue: number): number {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return value
+  }
+  return defaultValue
+}
+
+/**
+ * Clamps a number between min and max values.
+ * Returns min if value is not finite.
+ *
+ * @param value - The value to clamp
+ * @param min - Minimum allowed value
+ * @param max - Maximum allowed value
+ * @returns Clamped number
+ */
+export function clampValue(value: number, min: number, max: number): number {
+  if (!Number.isFinite(value)) {
+    return min
+  }
+  return Math.min(Math.max(value, min), max)
+}
+
+/**
+ * Rounds a value to a specific step increment.
+ *
+ * @param value - The value to round
+ * @param step - The step increment (default: 1)
+ * @returns Rounded value
+ */
+export function roundToStep(value: number, step = 1): number {
+  if (!Number.isFinite(value) || step <= 0) {
+    return value
+  }
+  return Math.round(value / step) * step
+}
+
+/**
  * Sanitizes a numeric value, ensuring it's a valid finite number.
  * Returns default value if input is undefined, null, NaN, or Infinity.
  *

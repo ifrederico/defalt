@@ -27,7 +27,7 @@
             {{#foreach pages}}
               <div
                 class="announcement-bar__item"
-                style="font-size: {{#if (eq ../typographySize 'small')}}1.2rem{{else if (eq ../typographySize 'large')}}1.6rem{{else if (eq ../typographySize 'x-large')}}1.8rem{{else}}1.4rem{{/if}}; font-weight: {{#if (eq ../typographyWeight 'light')}}300{{else if (eq ../typographyWeight 'bold')}}700{{else}}500{{/if}}; letter-spacing: {{#if (eq ../typographySpacing 'tight')}}-0.02em{{else if (eq ../typographySpacing 'wide')}}0.05em{{else}}0{{/if}}; text-transform: {{#if (eq ../typographyCase 'uppercase')}}uppercase{{else}}none{{/if}};"
+                style="{{typographyStyle size=../typographySize weight=../typographyWeight spacing=../typographySpacing case=../typographyCase}}"
               >
                 {{{html}}}
               </div>
@@ -37,10 +37,10 @@
             {{#if ../text}}
               <span
                 class="announcement-bar__item"
-                style="font-size: {{#if (eq ../typographySize 'small')}}1.2rem{{else if (eq ../typographySize 'large')}}1.6rem{{else if (eq ../typographySize 'x-large')}}1.8rem{{else}}1.4rem{{/if}}; font-weight: {{#if (eq ../typographyWeight 'light')}}300{{else if (eq ../typographyWeight 'bold')}}700{{else}}500{{/if}}; letter-spacing: {{#if (eq ../typographySpacing 'tight')}}-0.02em{{else if (eq ../typographySpacing 'wide')}}0.05em{{else}}0{{/if}}; text-transform: {{#if (eq ../typographyCase 'uppercase')}}uppercase{{else}}none{{/if}};"
+                style="{{typographyStyle size=../typographySize weight=../typographyWeight spacing=../typographySpacing case=../typographyCase}}"
               >{{../text}}</span>
             {{else}}
-              <span class="announcement-bar__item" style="font-size: {{#if (eq ../typographySize 'small')}}1.2rem{{else if (eq ../typographySize 'large')}}1.6rem{{else if (eq ../typographySize 'x-large')}}1.8rem{{else}}1.4rem{{/if}}; font-weight: {{#if (eq ../typographyWeight 'light')}}300{{else if (eq ../typographyWeight 'bold')}}700{{else}}500{{/if}}; letter-spacing: {{#if (eq ../typographySpacing 'tight')}}-0.02em{{else if (eq ../typographySpacing 'wide')}}0.05em{{else}}0{{/if}}; text-transform: {{#if (eq ../typographyCase 'uppercase')}}uppercase{{else}}none{{/if}};">Tag a Ghost page with {{../tag}}</span>
+              <span class="announcement-bar__item" style="{{typographyStyle size=../typographySize weight=../typographyWeight spacing=../typographySpacing case=../typographyCase}}">Tag a Ghost page with {{../tag}}</span>
             {{/if}}
           {{/if}}
         {{/get}}

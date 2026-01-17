@@ -38,12 +38,10 @@ export type ThemeExportInputs = {
 }
 
 const PREMIUM_SECTION_PARTIALS: Record<string, string> = {
-  about: 'defalt-about.hbs',
-  faq: 'defalt-faq.hbs',
-  grid: 'defalt-grid.hbs',
-  testimonials: 'defalt-testimonials.hbs',
   'image-with-text': 'defalt-image-with-text.hbs',
-  hero: 'defalt-hero.hbs'
+  hero: 'defalt-hero.hbs',
+  ghostCards: 'defalt-ghost-cards.hbs',
+  ghostGrid: 'defalt-ghost-grid.hbs'
 }
 
 export function buildThemeAssetsConfig(
@@ -214,7 +212,9 @@ export async function applyThemeExportCustomizations({
 }
 
 export async function createThemeArchive(themeDir: string, outputDir: string): Promise<string> {
-  const packageName = await readThemePackageName(themeDir)
+  const rawPackageName = await readThemePackageName(themeDir)
+  // Sanitize package name to prevent path traversal: only allow alphanumeric, dash, underscore
+  const packageName = rawPackageName.replace(/[^a-zA-Z0-9_-]/g, '-').slice(0, 64) || 'theme'
   const zipPath = path.join(outputDir, `${packageName}.zip`)
   await fs.mkdir(outputDir, { recursive: true })
 

@@ -11,11 +11,10 @@
 
 import { z } from 'zod'
 import type { SettingSchema, BlockSchema } from '../../engine/schemaTypes.js'
+import { ANNOUNCEMENT_BAR_PADDING_DEFAULTS, DEFAULT_ACCENT_COLOR } from '../../../defalt-utils/config/themeDefaults.js'
 
-export const ANNOUNCEMENT_BAR_PADDING_DEFAULTS = {
-  top: 8,
-  bottom: 8
-} as const
+// Re-export for backwards compatibility
+export { ANNOUNCEMENT_BAR_PADDING_DEFAULTS }
 
 const ANNOUNCEMENT_TYPOGRAPHY_SIZE_VALUES = ['small', 'normal', 'large', 'x-large'] as const
 const ANNOUNCEMENT_TYPOGRAPHY_WEIGHT_VALUES = ['light', 'default', 'bold'] as const
@@ -130,7 +129,7 @@ export const announcementBarBlocksSchema: BlockSchema[] = [
 export const announcementBarConfigSchema = z.object({
   // --- Container Settings ---
   width: z.enum(['default', 'narrow']).default('default'),
-  backgroundColor: z.string().default('#AC1E3E'),
+  backgroundColor: z.string().default(DEFAULT_ACCENT_COLOR),
   textColor: z.string().default('#ffffff'),
   dividerThickness: z.number().min(0).max(5).default(0),
   dividerColor: z.string().default('#e5e7eb'),

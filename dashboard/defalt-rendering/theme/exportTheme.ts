@@ -11,7 +11,10 @@ import {
   CSS_DEFAULT_MARGIN,
   DEFAULT_CUSTOM_SECTION_PADDING,
 } from '../../defalt-utils/config/themeConfig.js'
+import { Z_INDEX } from '../../defalt-utils/constants.js'
 import { sanitizeCustomCss, sanitizeHexColor } from '../../defalt-utils/security/sanitizers.js'
+import { escapeHandlebarsString, escapeRegExp } from '../../defalt-utils/helpers/escapeUtils.js'
+import { extractSectionPadding, buildSectionStyle } from '../../defalt-utils/helpers/paddingUtils.js'
 import type {
   PageConfig,
   FooterConfig,
@@ -66,10 +69,6 @@ function getSectionStyleTemplatePath(sectionId: string): string | null {
     return null
   }
   return templatePath.replace(/\.hbs$/, '.styles.hbs')
-}
-
-function escapeRegExp(value: string): string {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 }
 
 /**
@@ -143,77 +142,6 @@ type TemplateBuildResult = {
   partialFiles: TemplatePartial[]
 }
 
-function escapeHandlebarsString(value: string): string {
-  if (typeof value !== 'string') {
-    return ''
-  }
-
-  return value
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;')
-    .replace(/`/g, '&#96;')
-    .replace(/{/g, '&#123;')
-    .replace(/}/g, '&#125;')
-}
-
-function normalizePaddingValue(value: unknown, defaultValue: number): number {
-  if (typeof value === 'number' && Number.isFinite(value)) {
-    return Math.max(0, Math.round(value))
-  }
-  return Math.max(0, Math.round(defaultValue))
-}
-
-function resolveSectionPadding(
-  sectionConfig: ThemeConfig['sections'][string] | undefined,
-  defaultPadding: PaddingConfig
-): PaddingConfig {
-  const settings = sectionConfig?.settings
-  if (!settings) {
-    return { ...defaultPadding }
-  }
-
-  const rawPadding = settings.padding as { top?: unknown, bottom?: unknown, left?: unknown, right?: unknown } | undefined
-  if (rawPadding && (typeof rawPadding === 'object')) {
-    const top = normalizePaddingValue(rawPadding.top, defaultPadding.top)
-    const bottom = normalizePaddingValue(rawPadding.bottom, defaultPadding.bottom)
-    const left = normalizePaddingValue(rawPadding.left, defaultPadding.left ?? 0)
-    const right = normalizePaddingValue(rawPadding.right, defaultPadding.right ?? 0)
-    return { top, bottom, left, right }
-  }
-
-  const paddingBlock = settings.paddingBlock
-  if (typeof paddingBlock === 'number') {
-    const unified = normalizePaddingValue(paddingBlock, defaultPadding.top)
-    return {
-      top: unified,
-      bottom: unified,
-      left: defaultPadding.left,
-      right: defaultPadding.right
-    }
-  }
-
-  return { ...defaultPadding }
-}
-
-function buildSectionStyle(padding: PaddingConfig): string {
-  const styles: string[] = []
-  if (padding.top > 0) {
-    styles.push(`padding-top: ${padding.top}px`)
-  }
-  if (padding.bottom > 0) {
-    styles.push(`padding-bottom: ${padding.bottom}px`)
-  }
-  if ((padding.left ?? 0) > 0) {
-    styles.push(`padding-left: ${padding.left}px`)
-  }
-  if ((padding.right ?? 0) > 0) {
-    styles.push(`padding-right: ${padding.right}px`)
-  }
-  return styles.join('; ')
-}
 
 export function generateHomeTemplate(
   pageConfig: PageConfig,
@@ -302,7 +230,7 @@ export function generateHomeTemplate(
       const sectionVisible = sectionConfig?.settings?.visible !== false
       let sectionPartial = ''
 
-      const resolvedPadding = resolveSectionPadding(sectionConfig, DEFAULT_CUSTOM_SECTION_PADDING)
+      const resolvedPadding = extractSectionPadding(sectionConfig?.settings, DEFAULT_CUSTOM_SECTION_PADDING)
       const sectionStyle = buildSectionStyle(resolvedPadding)
 
       if (definitionId === 'hero') {
@@ -318,7 +246,7 @@ export function generateHomeTemplate(
         const backgroundColor = sanitizeHexColor(heroConfig.backgroundColor, 'transparent')
         const internalTag = formatInternalTag(heroConfig.tags?.primary) || resolveHeroDefaultTag(key)
         const tagFilter = toTagFilter(internalTag)
-        const imageOnRight = heroConfig.invert === true || heroConfig.imagePosition === 'right'
+        const imageOnRight = heroConfig.imagePosition === 'right'
         const { imageColumn, textColumn } = resolveImageColumns(heroConfig.imageWidth)
         const imageAspectRatio = resolveImageAspectRatio(heroConfig.imageAspect)
         const imageBorderRadius = Math.max(0, Math.min(96, Math.round(heroConfig.imageBorderRadius)))
@@ -379,7 +307,7 @@ export function generateHomeTemplate(
         const innerBackgroundRadius = Math.max(0, Math.min(96, Math.round(imageTextConfig.innerBackgroundRadius)))
         const internalTag = formatInternalTag(imageTextConfig.tags?.primary) || resolveImageWithTextDefaultTag(key)
         const tagFilter = toTagFilter(internalTag)
-        const imageOnRight = imageTextConfig.invert === true || imageTextConfig.imagePosition === 'right'
+        const imageOnRight = imageTextConfig.imagePosition === 'right'
         const { imageColumn, textColumn } = resolveImageColumns(imageTextConfig.imageWidth)
         const imageAspectRatio = resolveImageAspectRatio(imageTextConfig.imageAspect)
         const imageBorderRadius = Math.max(0, Math.min(96, Math.round(imageTextConfig.imageBorderRadius)))
@@ -618,7 +546,7 @@ export async function applyNavigationCustomization(themeDir: string, config: The
 .gh-navigation.is-sticky-scroll-up {
   position: sticky;
   top: 0;
-  z-index: 4000000;
+  z-index: ${Z_INDEX.STICKY_HEADER};
 }
 
 .gh-navigation.is-sticky-scroll-up {
@@ -1044,7 +972,7 @@ export async function applyMainSectionCustomization(themeDir: string, config: Th
   }
 
   const mainSection = config.sections?.main
-  const resolvedPadding = resolveSectionPadding(mainSection, defaultPadding)
+  const resolvedPadding = extractSectionPadding(mainSection?.settings, defaultPadding)
 
   // Style block (prepended to template content)
   const styleBlock = [

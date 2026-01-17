@@ -3,6 +3,10 @@ import { ChevronLeft, Tag, X } from 'lucide-react'
 import * as Popover from '@radix-ui/react-popover'
 import { FloatingTooltip } from '../primitives/FloatingTooltip'
 import { TextInput } from '../primitives/TextInput'
+import { cn } from '../utils/cn'
+import { formatInternalTag } from '@defalt/utils/helpers'
+
+const POPOVER_CONTENT_CLASSES = 'bg-surface border border-border rounded-md shadow-lg p-3 z-50'
 
 export type TagConfig = {
   id: string
@@ -30,10 +34,8 @@ function MultiTagInput({ config, onSave }: { config: TagConfig; onSave: () => vo
   }, [config.value])
 
   const handleBlur = useCallback(() => {
-    if (inputValue.trim()) {
-      const normalizedTag = inputValue.trim().startsWith('#')
-        ? inputValue.trim()
-        : `#${inputValue.trim()}`
+    const normalizedTag = formatInternalTag(`#${inputValue.trim().replace(/^#+/, '')}`)
+    if (normalizedTag) {
       config.onChange(normalizedTag)
     }
   }, [inputValue, config])
@@ -69,11 +71,11 @@ export function PanelHeader({ title, onBack, tag, onTagChange, tags }: PanelHead
   }, [tag])
 
   const handleSave = useCallback(() => {
-    if (onTagChange && inputValue.trim()) {
-      const normalizedTag = inputValue.trim().startsWith('#')
-        ? inputValue.trim()
-        : `#${inputValue.trim()}`
-      onTagChange(normalizedTag)
+    if (onTagChange) {
+      const normalizedTag = formatInternalTag(`#${inputValue.trim().replace(/^#+/, '')}`)
+      if (normalizedTag) {
+        onTagChange(normalizedTag)
+      }
     }
     setIsOpen(false)
   }, [inputValue, onTagChange])
@@ -133,7 +135,7 @@ export function PanelHeader({ title, onBack, tag, onTagChange, tags }: PanelHead
             </FloatingTooltip>
             <Popover.Portal>
               <Popover.Content
-                className="bg-surface border border-border rounded-md shadow-lg p-3 z-50 w-[240px]"
+                className={cn(POPOVER_CONTENT_CLASSES, 'w-[240px]')}
                 sideOffset={4}
                 align="end"
               >
@@ -178,7 +180,7 @@ export function PanelHeader({ title, onBack, tag, onTagChange, tags }: PanelHead
             </FloatingTooltip>
             <Popover.Portal>
               <Popover.Content
-                className="bg-surface border border-border rounded-md shadow-lg p-3 z-50 w-[220px]"
+                className={cn(POPOVER_CONTENT_CLASSES, 'w-[220px]')}
                 sideOffset={4}
                 align="end"
               >

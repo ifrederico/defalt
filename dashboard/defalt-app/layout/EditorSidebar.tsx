@@ -6,7 +6,31 @@ import type { SectionsPanelProps } from './sidebar/pages/SectionsPanelBase'
 import { ThemeSettingsPanel } from './sidebar/ThemeSettingsPanel'
 import { AIPanel } from './sidebar/AIPanel'
 import { SidebarToggle } from '@defalt/ui'
-import { useThemeContext } from '../contexts/useThemeContext'
+import {
+    useHeaderAndFooterColorValue,
+    useHeaderAndFooterColorOptions,
+    useTitleFontValue,
+    useTitleFontOptions,
+    useBodyFontValue,
+    useBodyFontOptions,
+    useSignupHeadingValue,
+    useSignupSubheadingValue,
+    useHeaderStyleValue,
+    useHeaderStyleOptions,
+    useHeaderTextValue,
+    useBackgroundImageEnabled,
+    useShowFeaturedPosts,
+    usePostFeedStyleValue,
+    usePostFeedStyleOptions,
+    useShowImagesInFeed,
+    useShowAuthor,
+    useShowPublishDate,
+    useShowPublicationInfoSidebar,
+    useShowPostMetadata,
+    useEnableDropCapsOnPosts,
+    useShowRelatedArticles,
+    useThemeActions,
+} from '../stores/themeStore'
 import { useWorkspaceContext } from '../contexts/useWorkspaceContext'
 import { useActiveTab, useActiveDetail, useLeftSidebarCollapsed, useUIActions } from '../stores'
 
@@ -21,50 +45,52 @@ export function EditorSidebar({
   const activeDetail = useActiveDetail()
   const leftSidebarCollapsed = useLeftSidebarCollapsed()
   const { toggleLeftSidebar, setActiveDetail } = useUIActions()
-  const theme = useThemeContext()
   const workspace = useWorkspaceContext()
 
+  // Theme store values
+  const headerAndFooterColorValue = useHeaderAndFooterColorValue()
+  const headerAndFooterColorOptions = useHeaderAndFooterColorOptions()
+  const titleFontValue = useTitleFontValue()
+  const titleFontOptions = useTitleFontOptions()
+  const bodyFontValue = useBodyFontValue()
+  const bodyFontOptions = useBodyFontOptions()
+  const signupHeadingValue = useSignupHeadingValue()
+  const signupSubheadingValue = useSignupSubheadingValue()
+  const headerStyleValue = useHeaderStyleValue()
+  const headerStyleOptions = useHeaderStyleOptions()
+  const headerTextValue = useHeaderTextValue()
+  const backgroundImageEnabled = useBackgroundImageEnabled()
+  const showFeaturedPosts = useShowFeaturedPosts()
+  const postFeedStyleValue = usePostFeedStyleValue()
+  const postFeedStyleOptions = usePostFeedStyleOptions()
+  const showImagesInFeed = useShowImagesInFeed()
+  const showAuthor = useShowAuthor()
+  const showPublishDate = useShowPublishDate()
+  const showPublicationInfoSidebar = useShowPublicationInfoSidebar()
+  const showPostMetadata = useShowPostMetadata()
+  const enableDropCapsOnPosts = useEnableDropCapsOnPosts()
+  const showRelatedArticles = useShowRelatedArticles()
+
+  // Theme store actions
   const {
-    headerAndFooterColorValue,
-    headerAndFooterColorOptions,
-    onHeaderAndFooterColorChange,
-    titleFontValue,
-    titleFontOptions,
-    onTitleFontChange,
-    bodyFontValue,
-    bodyFontOptions,
-    onBodyFontChange,
-    signupHeadingValue,
-    onSignupHeadingChange,
-    signupSubheadingValue,
-    onSignupSubheadingChange,
-    headerStyleValue,
-    headerStyleOptions,
-    onHeaderStyleChange,
-    headerTextValue,
-    onHeaderTextChange,
-    backgroundImageEnabled,
-    onBackgroundImageToggle,
-    showFeaturedPosts,
-    onShowFeaturedPostsToggle,
-    postFeedStyleValue,
-    postFeedStyleOptions,
-    onPostFeedStyleChange,
-    showImagesInFeed,
-    onShowImagesInFeedToggle,
-    showAuthor,
-    onShowAuthorToggle,
-    showPublishDate,
-    onShowPublishDateToggle,
-    showPublicationInfoSidebar,
-    onShowPublicationInfoSidebarToggle,
-    showPostMetadata,
-    onShowPostMetadataToggle,
-    enableDropCapsOnPosts,
-    onEnableDropCapsOnPostsToggle,
-    showRelatedArticles,
-    onShowRelatedArticlesToggle,
-  } = theme
+    setHeaderAndFooterColor: onHeaderAndFooterColorChange,
+    setTitleFont: onTitleFontChange,
+    setBodyFont: onBodyFontChange,
+    setSignupHeading: onSignupHeadingChange,
+    setSignupSubheading: onSignupSubheadingChange,
+    setHeaderStyle: onHeaderStyleChange,
+    setHeaderText: onHeaderTextChange,
+    setBackgroundImageEnabled: onBackgroundImageToggle,
+    setShowFeaturedPosts: onShowFeaturedPostsToggle,
+    setPostFeedStyle: onPostFeedStyleChange,
+    setShowImagesInFeed: onShowImagesInFeedToggle,
+    setShowAuthor: onShowAuthorToggle,
+    setShowPublishDate: onShowPublishDateToggle,
+    setShowPublicationInfoSidebar: onShowPublicationInfoSidebarToggle,
+    setShowPostMetadata: onShowPostMetadataToggle,
+    setEnableDropCapsOnPosts: onEnableDropCapsOnPostsToggle,
+    setShowRelatedArticles: onShowRelatedArticlesToggle,
+  } = useThemeActions()
 
   const {
     accentColor,

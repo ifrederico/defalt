@@ -188,11 +188,22 @@ export function sanitizeHexColor(value: string | undefined | null, defaultValue:
   return defaultValue
 }
 
+/**
+ * Sanitize a token for safe use in CSS class names, IDs, and data attributes.
+ * Removes characters that could break out of attribute contexts or inject HTML/JS.
+ */
 export function sanitizeToken(value: string | undefined | null): string {
   if (typeof value !== 'string') {
     return ''
   }
-  return value.replace(/[<>]/g, '').trim()
+  // Remove HTML special chars, quotes, backticks, and control characters
+  // Only allow alphanumeric, dash, underscore, and space (for class lists)
+  // eslint-disable-next-line no-control-regex
+  const CONTROL_CHARS = /[\u0000-\u001f\u007f]/g
+  return value
+    .replace(/[<>"'`&;(){}[\]\\]/g, '')
+    .replace(CONTROL_CHARS, '')
+    .trim()
 }
 
 const isPropertyAllowed = (property: string): boolean => {

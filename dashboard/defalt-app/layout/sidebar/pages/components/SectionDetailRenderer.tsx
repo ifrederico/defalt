@@ -2,7 +2,7 @@ import { useMemo, useState, useCallback, type ReactNode } from 'react'
 import type { SectionsPanelProps } from '../SectionsPanelBase'
 import type { PaddingControls, SectionConfigSchema, AnnouncementBarSectionConfig, HeaderSectionConfig, SourceThemeConfig } from '@defalt/sections/engine'
 import { getSectionDefinition } from '@defalt/sections/engine'
-import { SECTION_ID_MAP, PADDING_BLOCK_SECTIONS, CSS_DEFAULT_MARGIN, type AnnouncementBlock } from '@defalt/utils/config/themeConfig'
+import { SECTION_ID_MAP, PADDING_BLOCK_SECTIONS, CSS_DEFAULT_MARGIN, SUBHEADER_MARGIN_DEFAULT, type AnnouncementBlock } from '@defalt/utils/config/themeConfig'
 import { announcementBarBlocksSchema } from '@defalt/sections/engine'
 import { formatInternalTag, toApiTagSlug } from '@defalt/sections/utils/tagUtils'
 import { SchemaSectionSettings } from '../../components/SchemaSectionSettings'
@@ -12,6 +12,23 @@ import { SectionPaddingSettings, type SectionSpacingMode } from './SectionPaddin
 import * as Separator from '@radix-ui/react-separator'
 import { Copy, Pencil, X, Check as CheckIcon } from 'lucide-react'
 import { SettingSection, TextInput } from '@defalt/ui'
+import {
+  useCustomSections,
+  useAiSections,
+  useAnnouncementBars,
+  useHeaderSettings,
+  useSectionPadding,
+  useSectionMargins,
+  useDataSource,
+  usePreviewData,
+} from '@defalt/app/stores'
+import {
+  usePostFeedStyleValue,
+  useShowImagesInFeed,
+  useShowAuthor,
+  useShowPublishDate,
+  useShowPublicationInfoSidebar,
+} from '@defalt/app/stores/themeStore'
 
 export type SectionDetail = {
   id: string
@@ -22,30 +39,43 @@ export type SectionDetail = {
   blockIndex?: number
 }
 
-const SUBHEADER_MARGIN_DEFAULT = 40
-
 export type SectionDetailRendererProps = {
   activeDetail: SectionDetail | null
   props: SectionsPanelProps
 }
 
 export function SectionDetailRenderer({ activeDetail, props }: SectionDetailRendererProps): ReactNode {
-  const activeCustomSection = activeDetail ? props.customSections[activeDetail.id] : undefined
+  // Access data directly from stores instead of drilling through props
+  const customSections = useCustomSections()
+  const aiSections = useAiSections()
+  const announcementBars = useAnnouncementBars()
+  const headerSettingsFromStore = useHeaderSettings()
+  const sectionPadding = useSectionPadding()
+  const sectionMargins = useSectionMargins()
+  const dataSource = useDataSource()
+  const previewData = usePreviewData()
+  const postFeedStyleValue = usePostFeedStyleValue()
+  const showImagesInFeed = useShowImagesInFeed()
+  const showAuthor = useShowAuthor()
+  const showPublishDate = useShowPublishDate()
+  const showPublicationInfoSidebar = useShowPublicationInfoSidebar()
+
+  const activeCustomSection = activeDetail ? customSections[activeDetail.id] : undefined
   const activeAiSection = activeDetail
-    ? props.aiSections?.find((s) => s.id === activeDetail.id)
+    ? aiSections?.find((s) => s.id === activeDetail.id)
     : undefined
   const activeAnnouncementBar = useMemo(
-    () => (activeDetail ? props.announcementBars.find((bar) => bar.id === activeDetail.id) : undefined),
-    [activeDetail, props.announcementBars]
+    () => (activeDetail ? announcementBars.find((bar) => bar.id === activeDetail.id) : undefined),
+    [activeDetail, announcementBars]
   )
 
-  // Build unified header config from individual props
+  // Build unified header config from store
   const headerConfig = useMemo<HeaderSectionConfig>(() => ({
-    navigationLayout: props.navigationLayoutValue as HeaderSectionConfig['navigationLayout'],
-    stickyHeader: props.stickyHeaderValue as HeaderSectionConfig['stickyHeader'],
-    searchEnabled: props.isSearchEnabled,
-    typographyCase: props.typographyCase
-  }), [props.navigationLayoutValue, props.stickyHeaderValue, props.isSearchEnabled, props.typographyCase])
+    navigationLayout: headerSettingsFromStore.navigationLayout as HeaderSectionConfig['navigationLayout'],
+    stickyHeader: headerSettingsFromStore.stickyHeader as HeaderSectionConfig['stickyHeader'],
+    searchEnabled: headerSettingsFromStore.isSearchEnabled,
+    typographyCase: headerSettingsFromStore.typographyCase
+  }), [headerSettingsFromStore])
 
   const announcementBarConfig = useMemo<AnnouncementBarSectionConfig | null>(() => {
     if (!activeAnnouncementBar) {
@@ -129,20 +159,20 @@ export function SectionDetailRenderer({ activeDetail, props }: SectionDetailRend
     }
   }, [activeAnnouncementBar, announcementBarConfig, props])
 
-  // Build unified theme config from individual props (for main appearance settings)
+  // Build unified theme config from store values (for main appearance settings)
   const mainThemeConfig = useMemo<SourceThemeConfig>(() => ({
-    postFeedStyle: props.postFeedStyleValue as SourceThemeConfig['postFeedStyle'],
-    showImagesInFeed: props.showImagesInFeed,
-    showAuthor: props.showAuthor,
-    showPublishDate: props.showPublishDate,
-    showPublicationInfoSidebar: props.showPublicationInfoSidebar,
+    postFeedStyle: postFeedStyleValue as SourceThemeConfig['postFeedStyle'],
+    showImagesInFeed,
+    showAuthor,
+    showPublishDate,
+    showPublicationInfoSidebar,
     // Post settings (not editable in main appearance, but part of schema)
     showPostMetadata: true,
     enableDropCapsOnPosts: false,
     showRelatedArticles: true,
     // Padding is handled separately
     padding: { top: 0, bottom: 0 }
-  }), [props.postFeedStyleValue, props.showImagesInFeed, props.showAuthor, props.showPublishDate, props.showPublicationInfoSidebar])
+  }), [postFeedStyleValue, showImagesInFeed, showAuthor, showPublishDate, showPublicationInfoSidebar])
 
   // Handler to update theme config - dispatches to individual callbacks
   const handleMainThemeConfigUpdate = useCallback((updater: (config: SourceThemeConfig) => SourceThemeConfig) => {
@@ -203,13 +233,13 @@ export function SectionDetailRenderer({ activeDetail, props }: SectionDetailRend
         const block = activeAnnouncementBar.content.announcements[blockIndex]
         if (block) {
           const ghostMatch = (() => {
-            if (props.dataSource !== 'ghost') {
+            if (dataSource !== 'ghost') {
               return null
             }
             const internalTag = formatInternalTag(block.tag) || '#announcement'
             const tagSlug = toApiTagSlug(internalTag)
-            const previewPages = Array.isArray((props.previewData as unknown as { pages?: unknown[] })?.pages)
-              ? (props.previewData as unknown as { pages: Array<{ title?: unknown; custom_excerpt?: unknown; html?: unknown; tags?: Array<{ slug?: unknown; name?: unknown; visibility?: unknown }> }> }).pages
+            const previewPages = Array.isArray((previewData as unknown as { pages?: unknown[] })?.pages)
+              ? (previewData as unknown as { pages: Array<{ title?: unknown; custom_excerpt?: unknown; html?: unknown; tags?: Array<{ slug?: unknown; name?: unknown; visibility?: unknown }> }> }).pages
               : []
 
             const matchedPage = previewPages.find((page) =>
@@ -267,8 +297,8 @@ export function SectionDetailRenderer({ activeDetail, props }: SectionDetailRend
     }
     // Main appearance settings - use schema-driven theme settings
     if (activeDetail.id === 'main') {
-      const padding = props.sectionPadding[activeDetail.id] ?? { top: 0, bottom: 0, left: 0, right: 0 }
-      const margin = props.sectionMargins[activeDetail.id]
+      const padding = sectionPadding[activeDetail.id] ?? { top: 0, bottom: 0, left: 0, right: 0 }
+      const margin = sectionMargins[activeDetail.id]
       return (
         <SchemaThemeSettings
           config={mainThemeConfig}
@@ -281,8 +311,8 @@ export function SectionDetailRenderer({ activeDetail, props }: SectionDetailRend
       )
     }
     if (activeDetail.id === 'footer') {
-      const padding = props.sectionPadding[activeDetail.id] ?? { top: 0, bottom: 0, left: 0, right: 0 }
-      const margin = props.sectionMargins[activeDetail.id]
+      const padding = sectionPadding[activeDetail.id] ?? { top: 0, bottom: 0, left: 0, right: 0 }
+      const margin = sectionMargins[activeDetail.id]
       const footerDefaultMargin = CSS_DEFAULT_MARGIN.footer
       return (
         <SettingsPanel>
@@ -306,7 +336,7 @@ export function SectionDetailRenderer({ activeDetail, props }: SectionDetailRend
       const definition = getSectionDefinition(activeCustomSection.definitionId)
       if (definition?.settingsSchema && definition.settingsSchema.length > 0) {
         const config = activeCustomSection.config as SectionConfigSchema
-        const padding = props.sectionPadding[sectionId] ?? { top: 0, bottom: 0, left: 0, right: 0 }
+        const padding = sectionPadding[sectionId] ?? { top: 0, bottom: 0, left: 0, right: 0 }
         const paddingControls: PaddingControls = definition.paddingControls ?? 'vertical'
         const hasPaddingControls = paddingControls !== 'none'
         return (
@@ -332,11 +362,11 @@ export function SectionDetailRenderer({ activeDetail, props }: SectionDetailRend
     const defaultMargin = isMarginHeaderStyle
       ? { top: SUBHEADER_MARGIN_DEFAULT, bottom: 0 }
       : CSS_DEFAULT_MARGIN[configKey]
-    const supportsMargin = isMarginHeaderStyle || Boolean(defaultMargin) || Boolean(props.sectionMargins[activeDetail.id])
-    const shouldRenderSpacingControls = isMarginHeaderStyle || isPaddingBlockSection || props.sectionPadding[activeDetail.id] || supportsMargin
+    const supportsMargin = isMarginHeaderStyle || Boolean(defaultMargin) || Boolean(sectionMargins[activeDetail.id])
+    const shouldRenderSpacingControls = isMarginHeaderStyle || isPaddingBlockSection || sectionPadding[activeDetail.id] || supportsMargin
     if (shouldRenderSpacingControls) {
-      const padding = props.sectionPadding[activeDetail.id] ?? { top: 0, bottom: 0, left: 0, right: 0 }
-      const margin = props.sectionMargins[activeDetail.id]
+      const padding = sectionPadding[activeDetail.id] ?? { top: 0, bottom: 0, left: 0, right: 0 }
+      const margin = sectionMargins[activeDetail.id]
       const hasExplicitMargin = isSubheader && (margin?.top !== undefined || margin?.bottom !== undefined)
       const spacingMode: SectionSpacingMode = hasExplicitMargin
         ? 'margin'
@@ -368,7 +398,7 @@ export function SectionDetailRenderer({ activeDetail, props }: SectionDetailRend
       )
     }
     return <GenericCustomSectionNotice label={activeDetail.label} />
-  }, [activeDetail, activeCustomSection, activeAiSection, activeAnnouncementBar, props, headerConfig, announcementBarConfig, handleHeaderConfigUpdate, handleAnnouncementBarConfigUpdate, mainThemeConfig, handleMainThemeConfigUpdate])
+  }, [activeDetail, activeCustomSection, activeAiSection, activeAnnouncementBar, props, headerConfig, announcementBarConfig, handleHeaderConfigUpdate, handleAnnouncementBarConfigUpdate, mainThemeConfig, handleMainThemeConfigUpdate, dataSource, previewData, sectionMargins, sectionPadding])
 }
 
 function SettingsPanel({ children }: { children: React.ReactNode }) {

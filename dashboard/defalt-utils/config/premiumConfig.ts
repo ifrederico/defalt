@@ -2,10 +2,6 @@
 
 export const PREMIUM_FEATURES = new Set<string>([
   'hero',
-  'grid',
-  'testimonials',
-  'faq',
-  'about',
   'image-with-text',
 ])
 

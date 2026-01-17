@@ -3,13 +3,15 @@ import * as DropdownMenu from '@radix-ui/react-dropdown-menu'
 import { ChevronDown, Check } from 'lucide-react'
 import { cn } from '../utils/cn'
 
-export type SelectItem<TValue> = {
+type Primitive = string | number | boolean
+
+export type SelectItem<TValue extends Primitive> = {
   value: TValue
   label: string
   disabled?: boolean
 }
 
-export type SelectProps<TValue> = {
+export type SelectProps<TValue extends Primitive> = {
   selected: TValue
   items: SelectItem<TValue>[]
   onSelect: (value: TValue) => void
@@ -31,7 +33,7 @@ const DEFAULT_CONTENT_CLASSES =
 const DEFAULT_ITEM_CLASSES =
   'relative flex cursor-default select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none transition-colors focus:bg-subtle data-[highlighted]:bg-subtle data-[disabled]:pointer-events-none data-[disabled]:opacity-50'
 
-export function Select<TValue>({
+export function Select<TValue extends Primitive>({
   selected,
   items,
   onSelect,

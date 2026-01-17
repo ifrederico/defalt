@@ -7,13 +7,14 @@ import type { SettingSchema } from '../../engine/schemaTypes.js'
 import {
   contentWidthPxShape,
   contentWidthPxSetting,
+  createPrimaryTagSchema,
   createTextAlignmentSetting,
   imageAppearanceShape,
   imageAspectSetting,
   imageBorderRadiusSetting,
   imageLayoutShape,
+  imagePositionSetting,
   imageWidthSetting,
-  invertSetting,
   textAlignmentShape,
   transparentBackgroundSetting,
   transparentBackgroundShape
@@ -22,9 +23,7 @@ import {
 // Zod config schema
 export const imageWithTextConfigSchema = z.object({
   // Ghost tag for content filtering
-  tags: z.object({
-    primary: z.string().default('#image-text')
-  }).default({ primary: '#image-text' }),
+  ...createPrimaryTagSchema('#image-text'),
 
   // Appearance
   ...contentWidthPxShape,
@@ -56,7 +55,7 @@ export const imageWithTextSettingsSchema: SettingSchema[] = [
   { type: 'range', id: 'innerBackgroundRadius', label: 'Radius', min: 0, max: 96, step: 1, unit: 'px' },
 
   { type: 'header', id: 'layout-header', label: 'Layout' },
-  invertSetting,
+  imagePositionSetting,
   imageWidthSetting,
   imageAspectSetting,
   imageBorderRadiusSetting,

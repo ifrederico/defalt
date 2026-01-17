@@ -7,6 +7,7 @@ import {
   toSelectorList,
   getSectionSelector,
 } from './sectionSelectors'
+import { Z_INDEX } from '@defalt/utils/constants'
 import { throttle } from '@defalt/utils/performance/throttle'
 import {
   applyHeaderCustomizations,
@@ -907,7 +908,7 @@ function ensurePortalMock() {
     align-items: center;
     justify-content: center;
     background: rgba(15, 23, 42, 0.45);
-    z-index: 9999;
+    z-index: ${Z_INDEX.PORTAL_OVERLAY};
   `
 
   wrapper.innerHTML = `

@@ -46,11 +46,47 @@ export interface RenderSectionOptions extends RenderOptions {
 }
 
 // =============================================================================
+// LRU Cache
+// =============================================================================
+
+class LRUCache<T> {
+  private cache = new Map<string, T>()
+  private readonly maxSize: number
+
+  constructor(maxSize: number) {
+    this.maxSize = maxSize
+  }
+
+  get(key: string): T | undefined {
+    const value = this.cache.get(key)
+    if (value !== undefined) {
+      // Move to end (most recently used)
+      this.cache.delete(key)
+      this.cache.set(key, value)
+    }
+    return value
+  }
+
+  set(key: string, value: T): void {
+    if (this.cache.has(key)) {
+      this.cache.delete(key)
+    } else if (this.cache.size >= this.maxSize) {
+      // Delete oldest (first) entry
+      const firstKey = this.cache.keys().next().value
+      if (firstKey !== undefined) {
+        this.cache.delete(firstKey)
+      }
+    }
+    this.cache.set(key, value)
+  }
+}
+
+// =============================================================================
 // Template Cache
 // =============================================================================
 
-const templateCache = new Map<string, HandlebarsTemplateDelegate>()
-const partialCache = new Map<string, string>()
+const templateCache = new LRUCache<HandlebarsTemplateDelegate>(100)
+const partialCache = new LRUCache<string>(50)
 const hbs = Handlebars.create()
 
 // =============================================================================
@@ -389,11 +425,70 @@ function registerSectionHelpers(): void {
     if (!image) return ''
     return image
   })
+
+  // Typography style helper - generates inline CSS for typography settings
+  // Usage: {{typographyStyle size=typographySize weight=typographyWeight spacing=typographySpacing case=typographyCase}}
+  hbs.registerHelper('typographyStyle', function (options: HelperOptions) {
+    const hash = (options?.hash ?? {}) as Record<string, unknown>
+    const size = hash.size as string | undefined
+    const weight = hash.weight as string | undefined
+    const spacing = hash.spacing as string | undefined
+    const textCase = hash.case as string | undefined
+
+    const styles: string[] = []
+
+    // Font size mapping
+    const fontSizeMap: Record<string, string> = {
+      'small': '1.2rem',
+      'normal': '1.4rem',
+      'large': '1.6rem',
+      'x-large': '1.8rem'
+    }
+    styles.push(`font-size: ${fontSizeMap[size ?? ''] ?? '1.4rem'}`)
+
+    // Font weight mapping
+    const fontWeightMap: Record<string, string> = {
+      'light': '300',
+      'default': '500',
+      'bold': '700'
+    }
+    styles.push(`font-weight: ${fontWeightMap[weight ?? ''] ?? '500'}`)
+
+    // Letter spacing mapping
+    const letterSpacingMap: Record<string, string> = {
+      'tight': '-0.02em',
+      'regular': '0',
+      'wide': '0.05em'
+    }
+    styles.push(`letter-spacing: ${letterSpacingMap[spacing ?? ''] ?? '0'}`)
+
+    // Text transform mapping
+    const textTransformMap: Record<string, string> = {
+      'default': 'none',
+      'uppercase': 'uppercase'
+    }
+    styles.push(`text-transform: ${textTransformMap[textCase ?? ''] ?? 'none'}`)
+
+    return styles.join('; ')
+  })
 }
 
 // =============================================================================
 // Template Fetching & Compilation
 // =============================================================================
+
+/**
+ * Validate template path to prevent path traversal attacks
+ */
+function isValidTemplatePath(templatePath: string): boolean {
+  if (!templatePath || typeof templatePath !== 'string') return false
+  if (templatePath.includes('..')) return false
+  if (templatePath.startsWith('/')) return false
+  if (!templatePath.endsWith('.hbs')) return false
+  // Allow alphanumeric, dashes, underscores, dots (for .preview.hbs etc), and forward slashes
+  if (!/^[\w\-./]+\.hbs$/.test(templatePath)) return false
+  return true
+}
 
 /**
  * Fetch and compile a section template
@@ -403,6 +498,10 @@ async function fetchAndCompileTemplate(
   templatePath: string,
   basePath: string
 ): Promise<HandlebarsTemplateDelegate> {
+  if (!isValidTemplatePath(templatePath)) {
+    throw new Error(`Invalid template path: ${templatePath}`)
+  }
+
   // Check cache first (include templatePath to avoid preview/live collisions)
   const cacheKey = `${sectionId}::${templatePath}`
   const cached = templateCache.get(cacheKey)

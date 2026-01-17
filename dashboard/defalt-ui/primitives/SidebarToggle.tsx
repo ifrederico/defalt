@@ -1,5 +1,6 @@
 import type { MouseEventHandler } from 'react'
 import { cn } from '../utils/cn'
+import './SidebarToggle.css'
 
 export type SidebarToggleProps = {
   position: 'left' | 'right'

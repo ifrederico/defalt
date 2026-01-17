@@ -1,9 +1,10 @@
 import {
   formatInternalTag,
   parseGhostCardIdSuffix,
-  resolveHeroTagFromId,
-  resolveImageWithTextTagFromId
-} from '../../defalt-sections/utils/tagUtils.js'
+  resolveHeroDefaultTag,
+  resolveImageWithTextDefaultTag
+} from '../helpers/tagFilterUtils.js'
+import { isPlainRecord } from '../helpers/typeGuards.js'
 import type { LucideIcon } from 'lucide-react'
 import type { SectionInstance } from '@defalt/sections/engine'
 import type { AnnouncementBarInstance } from './themeConfig'
@@ -50,9 +51,6 @@ export type TagState = {
 }
 
 const MAX_CUSTOM_INSTANCES = 5
-
-const isPlainRecord = (value: unknown): value is Record<string, unknown> =>
-  typeof value === 'object' && value !== null && !Array.isArray(value)
 
 const TEMPLATE_DEFAULT_ORDER_BY_PAGE: Record<string, string[]> = {
   home: ['subheader', 'featured', 'main'],
@@ -115,7 +113,7 @@ const CUSTOM_SECTION_REGISTRY: Record<string, CustomSectionRegistryEntry> = {
     label: 'Hero',
     maxInstances: MAX_CUSTOM_INSTANCES,
     tagKeys: ['primary'],
-    resolveDefaultTags: (instanceId) => ({ primary: resolveHeroTagFromId(instanceId) }),
+    resolveDefaultTags: (instanceId) => ({ primary: resolveHeroDefaultTag(instanceId) }),
     normalizeTagValue: (_field, value) => formatInternalTag(value)
   },
   'image-with-text': {
@@ -124,7 +122,7 @@ const CUSTOM_SECTION_REGISTRY: Record<string, CustomSectionRegistryEntry> = {
     label: 'Image with text',
     maxInstances: MAX_CUSTOM_INSTANCES,
     tagKeys: ['primary'],
-    resolveDefaultTags: (instanceId) => ({ primary: resolveImageWithTextTagFromId(instanceId) }),
+    resolveDefaultTags: (instanceId) => ({ primary: resolveImageWithTextDefaultTag(instanceId) }),
     normalizeTagValue: (_field, value) => formatInternalTag(value)
   },
   ghostCards: {

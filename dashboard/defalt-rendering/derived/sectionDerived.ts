@@ -1,9 +1,20 @@
-import {
-  parseGhostCardIdSuffix,
-  toApiTagSlug,
-  resolveHeroTagFromId,
-  resolveImageWithTextTagFromId
-} from '../../defalt-sections/utils/tagUtils.js'
+/**
+ * Section Derived Values
+ *
+ * Pure functions for deriving rendering values from section config.
+ * Re-exports tag utilities from defalt-utils for convenience.
+ *
+ * NOTE: Uses relative imports because this file is in the Vite plugin dependency chain.
+ * Path aliases like @defalt/* aren't resolved during config bundling.
+ */
+
+// Re-export tag utilities from defalt-utils (the source of truth)
+export {
+  toTagFilter,
+  resolveHeroDefaultTag,
+  resolveImageWithTextDefaultTag,
+  resolveGhostCardsDefaultTag
+} from '../../defalt-utils/helpers/tagFilterUtils.js'
 
 export const resolveContainerPaddingX = (contentWidth: unknown): string =>
   contentWidth === 'none' ? '0px' : 'var(--container-gap, 24px)'
@@ -21,18 +32,4 @@ export const resolveImageAspectRatio = (imageAspect: unknown): string => {
   if (imageAspect === 'tall') return '9 / 16'
   if (imageAspect === 'landscape') return '4 / 3'
   return ''
-}
-
-export const toTagFilter = (internalTag: string): string => `tag:${toApiTagSlug(internalTag)}`
-
-export const resolveHeroDefaultTag = (sectionId: string): string =>
-  resolveHeroTagFromId(sectionId)
-
-export const resolveImageWithTextDefaultTag = (sectionId: string): string =>
-  resolveImageWithTextTagFromId(sectionId)
-
-export const resolveGhostCardsDefaultTag = (sectionId: string): string => {
-  const suffix = parseGhostCardIdSuffix(sectionId)
-  if (suffix <= 1) return '#cards'
-  return `#cards-${suffix}`
 }
