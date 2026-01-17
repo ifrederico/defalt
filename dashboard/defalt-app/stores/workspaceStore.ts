@@ -115,7 +115,7 @@ const defaultState: WorkspaceState = {
   footerItems: [],
   templateDefinitions: [],
   customSections: {},
-  navigationLayoutValue: 'text',
+  navigationLayoutValue: 'Logo in the middle',
   navigationLayoutOptions: [],
   navigationLayoutError: null,
   stickyHeaderValue: 'Always',

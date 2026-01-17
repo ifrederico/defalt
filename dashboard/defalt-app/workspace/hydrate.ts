@@ -104,7 +104,12 @@ const getDefaultPadding = (key: string, definitionId?: string): PaddingDefaults 
     }
   }
   if (definitionId) {
-    return { ...DEFAULT_CUSTOM_SECTION_PADDING }
+    return {
+      top: DEFAULT_CUSTOM_SECTION_PADDING.top,
+      bottom: DEFAULT_CUSTOM_SECTION_PADDING.bottom,
+      left: DEFAULT_CUSTOM_SECTION_PADDING.left ?? 0,
+      right: DEFAULT_CUSTOM_SECTION_PADDING.right ?? 0
+    }
   }
   return { top: 0, bottom: 0, left: 0, right: 0 }
 }
